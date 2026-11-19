@@ -915,7 +915,7 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
       case VodDownloadEnqueue.queued:
         showDsToast(context: context, title: t.settings.downloadQueuedNotice, status: DsStatus.success);
       case VodDownloadEnqueue.duplicate:
-        showDsToast(context: context, title: t.vod.downloadDuplicate);
+        showDsToast(context: context, title: t.player.downloadDuplicate);
       case VodDownloadEnqueue.failed:
         showDsToast(context: context, title: t.settings.downloadStatusFailed, description: result.error, status: DsStatus.danger);
     }
@@ -1100,7 +1100,7 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
     if (_handle != null && ref.read(roomPresentationProvider.notifier).pipAvailable)
       PlayerBarButton(
         iconAsset: 'assets/icons/pip.svg',
-        label: t.vod.pip,
+        label: t.player.pipOn,
         onPressed: () {
           _wake();
           unawaited(_togglePip());
@@ -1143,7 +1143,7 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
         if (item.phase == VodDownloadPhase.done) {
           showDsToast(
             context: context,
-            title: t.vod.downloadDone(name: item.fileName),
+            title: t.player.downloadDone(name: item.fileName),
             status: DsStatus.success,
           );
         } else if (item.phase == VodDownloadPhase.failed) {
@@ -1174,7 +1174,7 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
       body = Center(
         child: DsEmptyState(
           icon: const DsIcon(DsIcons.cloudOff),
-          title: Text(t.vod.loadFailed),
+          title: Text(t.common.loadFailed),
           description: Text('${detail.error}'),
           actions: [
             DsButton(
@@ -1638,7 +1638,7 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
                               DsButton.icon(
                                 variant: DsButtonVariant.ghost,
                                 size: DsSize.sm,
-                                semanticLabel: t.vod.downloadPause,
+                                semanticLabel: t.player.downloadPause,
                                 onPressed: () => unawaited(ref.read(vodDownloadsProvider.notifier).pause(download.id)),
                                 icon: const DsIcon(DsIcons.pause),
                               ),
@@ -1751,7 +1751,7 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
                             DsButton.icon(
                               variant: DsButtonVariant.ghost,
                               size: DsSize.sm,
-                              semanticLabel: t.vod.download,
+                              semanticLabel: t.player.download,
                               onPressed: (episode?.cid ?? 0) <= 0 ? null : () => unawaited(_startDownload()),
                               icon: const DsIcon(DsIcons.download),
                             ),
@@ -1997,7 +1997,7 @@ final class _SeasonHead extends StatelessWidget {
                         size: DsSize.sm,
                         leading: const DsIcon(DsIcons.download, size: 14),
                         onPressed: canDownload ? onDownload : null,
-                        child: Text(t.vod.download),
+                        child: Text(t.player.download),
                       ),
                       DsButton.icon(
                         variant: DsButtonVariant.ghost,
@@ -2084,7 +2084,7 @@ final class _SeasonBlurbState extends State<_SeasonBlurb> {
               variant: DsButtonVariant.ghost,
               size: DsSize.sm,
               onPressed: () => setState(() => _expanded = !_expanded),
-              child: Text(_expanded ? t.vod.collapse : t.vod.expand),
+              child: Text(_expanded ? t.common.collapse : t.common.expand),
             ),
           ],
         );

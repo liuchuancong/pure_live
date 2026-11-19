@@ -1520,7 +1520,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
         if (item.phase == VodDownloadPhase.done) {
           showDsToast(
             context: context,
-            title: t.vod.downloadDone(name: item.fileName),
+            title: t.player.downloadDone(name: item.fileName),
             status: DsStatus.success,
           );
         } else if (item.phase == VodDownloadPhase.failed) {
@@ -1665,7 +1665,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                 ? Center(
                     child: DsEmptyState(
                       icon: const DsIcon(DsIcons.cloudOff),
-                      title: Text(t.vod.loadFailed),
+                      title: Text(t.common.loadFailed),
                       description: Text(_error!),
                       actions: [DsButton(onPressed: () => unawaited(_load()), child: Text(t.vod.retry))],
                     ),
@@ -2011,7 +2011,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                                         }, style: theme.typography.caption.copyWith(color: OnVideoColors.foreground)),
                                         PlayerBarButton(
                                           iconAsset: 'assets/icons/pause.svg',
-                                          label: t.vod.downloadPause,
+                                          label: t.player.downloadPause,
                                           size: 28,
                                           iconSize: 16,
                                           onPressed: () =>
@@ -2161,7 +2161,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
       if (pipAvailable && presentation != PresentationMode.pip)
         PlayerBarButton(
           iconAsset: 'assets/icons/pip.svg',
-          label: t.vod.pip,
+          label: t.player.pipOn,
           onPressed: () {
             _wake();
             unawaited(_togglePip());
@@ -2424,7 +2424,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
       ),
       DsMenuItem(
         leading: const DsIcon(DsIcons.download),
-        label: Text(t.vod.download),
+        label: Text(t.player.download),
         onPressed: _part == null || _detail == null
             ? null
             : () {
@@ -2469,7 +2469,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
       case VodDownloadEnqueue.queued:
         showDsToast(context: context, title: t.settings.downloadQueuedNotice, status: DsStatus.success);
       case VodDownloadEnqueue.duplicate:
-        showDsToast(context: context, title: t.vod.downloadDuplicate);
+        showDsToast(context: context, title: t.player.downloadDuplicate);
       case VodDownloadEnqueue.failed:
         showDsToast(context: context, title: t.settings.downloadStatusFailed, description: result.error, status: DsStatus.danger);
     }
@@ -3066,7 +3066,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                 variant: DsButtonVariant.ghost,
                 size: DsSize.sm,
                 onPressed: () => setState(() => _introExpanded = !_introExpanded),
-                child: Text(_introExpanded ? t.vod.collapse : t.vod.expand),
+                child: Text(_introExpanded ? t.common.collapse : t.common.expand),
               ),
           ],
         );
@@ -3159,7 +3159,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                   size: DsSize.sm,
                   onPressed: _part == null ? null : () => unawaited(_startDownload()),
                   leading: const DsIcon(DsIcons.download, size: 14),
-                  child: Text(t.vod.download),
+                  child: Text(t.player.download),
                 ),
                 DsButton.icon(
                   variant: DsButtonVariant.ghost,

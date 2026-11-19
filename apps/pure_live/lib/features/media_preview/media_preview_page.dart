@@ -1599,7 +1599,7 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
         if (handle != null && _presentation.pipAvailable)
           pill(
             pip ? DsIcons.pictureInPictureExit : DsIcons.pictureInPicture,
-            pip ? t.player.pipOff : t.vod.pip,
+            pip ? t.player.pipOff : t.player.pipOn,
             onPressed: () => unawaited(_togglePip()),
           ),
         // The mini window is the destinations' last stop: keep the frame,

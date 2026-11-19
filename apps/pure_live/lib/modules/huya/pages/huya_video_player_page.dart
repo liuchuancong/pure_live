@@ -632,7 +632,7 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
       if (wasActive && after?.phase == HuyaDownloadPhase.done) {
         showDsToast(
           context: context,
-          title: context.t.vod.downloadDone(name: after!.fileName),
+          title: context.t.player.downloadDone(name: after!.fileName),
           status: DsStatus.success,
         );
       }
@@ -953,7 +953,7 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
       case HuyaDownloadEnqueue.queued:
         showDsToast(context: context, title: t.settings.downloadQueuedNotice, status: DsStatus.success);
       case HuyaDownloadEnqueue.duplicate:
-        showDsToast(context: context, title: t.vod.downloadDuplicate);
+        showDsToast(context: context, title: t.player.downloadDuplicate);
       case HuyaDownloadEnqueue.failed:
         showDsToast(context: context, title: t.settings.downloadStatusFailed, description: result.error, status: DsStatus.danger);
     }
@@ -977,7 +977,7 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
         }, style: DsTheme.of(context).typography.small.copyWith(color: OnVideoColors.foreground));
         trailing = PlayerBarButton(
           iconAsset: 'assets/icons/pause.svg',
-          label: t.vod.downloadPause,
+          label: t.player.downloadPause,
           onPressed: () => unawaited(ref.read(huyaDownloadsProvider.notifier).pause(widget.id)),
         );
       case HuyaDownloadPhase.paused:
@@ -1041,7 +1041,7 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
       if (detail?.video case final video?)
         PlayerBarButton(
           icon: DsIcons.download,
-          label: t.vod.download,
+          label: t.player.download,
           onPressed: () {
             _wake();
             unawaited(_startDownload(video));
@@ -1061,7 +1061,7 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
       if (pipAvailable && presentation != PresentationMode.pip)
         PlayerBarButton(
           iconAsset: 'assets/icons/pip.svg',
-          label: t.vod.pip,
+          label: t.player.pipOn,
           onPressed: () {
             _wake();
             unawaited(_togglePip());
@@ -1439,7 +1439,7 @@ final class _InfoState extends State<_Info> {
                 size: DsSize.sm,
                 leading: const DsIcon(DsIcons.download, size: 14),
                 onPressed: widget.onDownload,
-                child: Text(t.vod.download),
+                child: Text(t.player.download),
               ),
             ],
           ),
@@ -1470,7 +1470,7 @@ final class _InfoState extends State<_Info> {
                       variant: DsButtonVariant.ghost,
                       size: DsSize.sm,
                       onPressed: () => setState(() => _briefExpanded = !_briefExpanded),
-                      child: Text(_briefExpanded ? t.vod.collapse : t.vod.expand),
+                      child: Text(_briefExpanded ? t.common.collapse : t.common.expand),
                     ),
                 ],
               );
@@ -1530,7 +1530,7 @@ final class _Related extends StatelessWidget {
             padding: const EdgeInsets.symmetric(vertical: DsSpace.s12),
             child: DsEmptyState(
               icon: const DsIcon(DsIcons.cloudOff),
-              title: Text(t.vod.loadFailed),
+              title: Text(t.common.loadFailed),
               actions: [
                 DsButton(
                   variant: DsButtonVariant.ghost,

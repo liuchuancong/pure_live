@@ -662,7 +662,7 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> wit
       setState(() => _downloadProgress = null);
       showDsToast(
         context: context,
-        title: t.vod.downloadDone(name: file.uri.pathSegments.last),
+        title: t.player.downloadDone(name: file.uri.pathSegments.last),
         status: DsStatus.success,
       );
     } on ArchiveReplayDownloadException catch (failure) {
@@ -672,7 +672,7 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> wit
         context: context,
         // A replay the downloader cannot rebuild says so; only a broken
         // request reads as a plain failure worth trying again.
-        title: failure.code == ArchiveReplayDownloadFailure.network ? t.settings.downloadStatusFailed : t.vod.downloadUnsupported,
+        title: failure.code == ArchiveReplayDownloadFailure.network ? t.settings.downloadStatusFailed : t.room.replayDownloadUnsupported,
         status: DsStatus.danger,
       );
     }
@@ -1056,7 +1056,7 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> wit
       if (pipAvailable && presentation != PresentationMode.pip)
         PlayerBarButton(
           iconAsset: 'assets/icons/pip.svg',
-          label: t.vod.pip,
+          label: t.player.pipOn,
           onPressed: () {
             _wake();
             unawaited(_togglePip());
@@ -1069,7 +1069,7 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> wit
         PlayerBarButton(
           icon: _downloadProgress == null ? DsIcons.download : DsIcons.squareStop,
           label: _downloadProgress == null
-              ? t.vod.download
+              ? t.player.download
               : t.settings.downloadPercent(percent: '${(_downloadProgress! * 100).round()}'),
           onPressed: _downloadProgress == null
               ? () {

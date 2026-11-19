@@ -577,8 +577,8 @@ List<SettingsSearchHit> settingsSearchCatalog(Translations t) {
     _hit(SettingsSection.vod, t.vod.cardSeasonState, 'season update state episode 更新状态 连载 完结 话数'),
     _hit(SettingsSection.vod, t.vod.score, 'season rating score stars 评分 分数 评价'),
     _hit(SettingsSection.vodPlayback, t.vod.playbackReset, 'playback reset defaults speed quality finish 播放 恢复 默认 重置'),
-    _hit(SettingsSection.vodDownload, t.vod.downloadQuality, 'download rendition resolution mp4 flv 下载 画质 清晰度 档位'),
-    _hit(SettingsSection.vodDownload, t.vod.downloadDanmaku, 'danmaku comments sidecar file 弹幕 同时 保存 旁挂'),
+    _hit(SettingsSection.vodDownload, t.player.downloadQuality, 'download rendition resolution mp4 flv 下载 画质 清晰度 档位'),
+    _hit(SettingsSection.vodDownload, t.player.downloadDanmaku, 'danmaku comments sidecar file 弹幕 同时 保存 旁挂'),
     _hit(SettingsSection.vodDownload, t.common.downloadRetried, 'failed task try again 重试 失败 任务'),
     _hit(SettingsSection.vodDownload, t.common.downloadRetryDelay, 'retry interval wait seconds 重试 间隔 等待 秒'),
     _hit(

@@ -618,7 +618,7 @@ final class _RemoteVideoList extends StatelessWidget {
       return Center(
         child: DsEmptyState(
           icon: const DsIcon(DsIcons.cloudOff),
-          title: Text(t.vod.loadFailed),
+          title: Text(t.common.loadFailed),
           description: Text('$error'),
           actions: [DsButton(onPressed: onRetry, child: Text(t.vod.retry))],
         ),

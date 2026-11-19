@@ -52,7 +52,7 @@ Future<void> showCastUriDialog(
 }) {
   return showAppDialog<void>(
     context: context,
-    builder: (context) => _CastDialog(url: url, title: title ?? context.t.room.castTitle, headers: headers),
+    builder: (context) => _CastDialog(url: url, title: title ?? context.t.player.castTitle, headers: headers),
   );
 }
 
@@ -73,7 +73,7 @@ final class _CastDialog extends ConsumerWidget {
     final t = context.t;
     final controller = ref.watch(castControllerProvider);
     return AppDialog(
-      title: Text(t.room.castTitle),
+      title: Text(t.player.castTitle),
       description: SizedBox(
         width: 380,
         child: ListenableBuilder(
@@ -89,20 +89,20 @@ final class _CastDialog extends ConsumerWidget {
                   DsListRow(
                     leading: const DsIcon(DsIcons.cast),
                     title: Text(controller.device?.name ?? ''),
-                    description: Text(t.room.casting),
+                    description: Text(t.player.casting),
                     trailing: DsButton(
                       variant: DsButtonVariant.secondary,
                       size: DsSize.sm,
                       onPressed: () => unawaited(controller.stopCasting()),
-                      child: Text(t.room.castStop),
+                      child: Text(t.player.castStop),
                     ),
                   ),
                 if (devices.isEmpty)
                   Center(
                     child: DsEmptyState(
                       icon: const DsIcon(DsIcons.cast),
-                      title: Text(t.room.castSearching),
-                      description: Text(t.room.castSearchingHint),
+                      title: Text(t.player.castSearching),
+                      description: Text(t.player.castSearchingHint),
                     ),
                   )
                 else
@@ -110,7 +110,7 @@ final class _CastDialog extends ConsumerWidget {
                     constraints: const BoxConstraints(maxHeight: 320),
                     child: SingleChildScrollView(
                       child: DsListSection(
-                        header: Text(t.room.castDevices),
+                        header: Text(t.player.castDevices),
                         children: [
                           for (final device in devices)
                             DsListRow(

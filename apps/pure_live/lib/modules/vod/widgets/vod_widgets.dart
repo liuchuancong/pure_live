@@ -755,7 +755,7 @@ final class _VodSeasonBlurbState extends State<_VodSeasonBlurb> {
               variant: DsButtonVariant.ghost,
               size: DsSize.sm,
               onPressed: () => setState(() => _expanded = !_expanded),
-              child: Text(_expanded ? t.vod.collapse : t.vod.expand),
+              child: Text(_expanded ? t.common.collapse : t.common.expand),
             ),
           ],
         );

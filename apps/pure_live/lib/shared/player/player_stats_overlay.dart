@@ -102,18 +102,18 @@ final class _PlayerStatsOverlayState extends State<PlayerStatsOverlay> {
     if (metrics == null) return const SizedBox.shrink();
     final rows = <(String, String)>[
       (
-        t.room.statsPicture,
+        t.player.statsPicture,
         _width == null || _height == null
             ? '—'
             : '${_width!}×${_height!}${_fps == null ? '' : ' · ${_fps!.toStringAsFixed(0)} fps'}',
       ),
-      (t.room.statsBitrate, _bitrate(metrics)),
-      (t.room.statsBuffer, _buffer(metrics)),
-      (t.room.statsDropped, _dropped(metrics)),
-      if ((metrics.decoder ?? '').isNotEmpty) (t.room.statsDecoder, metrics.decoder!),
+      (t.player.statsBitrate, _bitrate(metrics)),
+      (t.player.statsBuffer, _buffer(metrics)),
+      (t.player.statsDropped, _dropped(metrics)),
+      if ((metrics.decoder ?? '').isNotEmpty) (t.player.statsDecoder, metrics.decoder!),
       if ((metrics.renderer ?? '').isNotEmpty) (t.room.statsRenderer, metrics.renderer!),
       (t.room.statsProcess, _process(metrics)),
-      (t.room.statsBackend, widget.handle.backendId),
+      (t.player.statsBackend, widget.handle.backendId),
     ];
     return IgnorePointer(
       child: Container(

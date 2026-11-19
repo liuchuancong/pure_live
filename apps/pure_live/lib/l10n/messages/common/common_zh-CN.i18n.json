@@ -1,7 +1,7 @@
 {
   "appTitle": "Pure Live",
   "empty": "这里还没有内容",
-  "loadFailed": "加载失败",
+  "loadFailed": "视频信息加载失败",
   "close": "关闭",
   "cancel": "取消",
   "confirm": "确定",
@@ -102,5 +102,7 @@
   "downloadRetryOff": "不重试",
   "downloadRetryDelayDesc": "两次自动重试之间等待的时间。",
   "downloadRetryDelay": "重试间隔",
-  "downloadRetryDesc": "失败的下载在后台自动再试，已经下到的字节会接着用。"
+  "downloadRetryDesc": "失败的下载在后台自动再试，已经下到的字节会接着用。",
+  "expand": "展开",
+  "collapse": "收起"
 }

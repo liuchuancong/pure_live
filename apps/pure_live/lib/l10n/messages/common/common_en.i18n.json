@@ -1,7 +1,7 @@
 {
   "appTitle": "Pure Live",
   "empty": "Nothing here yet",
-  "loadFailed": "Could not load",
+  "loadFailed": "The video did not load",
   "close": "Close",
   "cancel": "Cancel",
   "confirm": "Confirm",
@@ -102,5 +102,7 @@
   "downloadRetryOff": "No retry",
   "downloadRetryDelayDesc": "How long to wait between two automatic retries.",
   "downloadRetryDelay": "Retry interval",
-  "downloadRetryDesc": "A failed download tries again in the background, carrying on from the bytes already written."
+  "downloadRetryDesc": "A failed download tries again in the background, carrying on from the bytes already written.",
+  "expand": "More",
+  "collapse": "Less"
 }

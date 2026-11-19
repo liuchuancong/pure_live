@@ -312,8 +312,8 @@ final class VodDownloadsPane extends ConsumerWidget {
             ),
             SettingsChoiceRow<VodQualityChoice>(
               leading: const DsIcon(DsIcons.gauge),
-              title: t.vod.downloadQuality,
-              description: t.vod.downloadQualityDesc,
+              title: t.player.downloadQuality,
+              description: t.player.downloadQualityDesc,
               value: quality,
               options: [
                 for (final choice in VodQualityChoice.values) DsSelectOption(value: choice, label: choice.label(t)),
@@ -322,8 +322,8 @@ final class VodDownloadsPane extends ConsumerWidget {
             ),
             SettingsConfigRow(
               leading: const DsIcon(DsIcons.captions),
-              title: t.vod.downloadDanmaku,
-              description: t.vod.downloadDanmakuDesc,
+              title: t.player.downloadDanmaku,
+              description: t.player.downloadDanmakuDesc,
               control: DsSwitch(
                 value: danmaku,
                 onChanged: (value) => ref.read(vodDownloadDanmakuProvider.notifier).set(value: value),

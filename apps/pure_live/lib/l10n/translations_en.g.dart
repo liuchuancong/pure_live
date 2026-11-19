@@ -405,7 +405,7 @@ class _Translations$common$en extends Translations$common$zh_CN {
 	// Translations
 	@override String get appTitle => 'Pure Live';
 	@override String get empty => 'Nothing here yet';
-	@override String get loadFailed => 'Could not load';
+	@override String get loadFailed => 'The video did not load';
 	@override String get close => 'Close';
 	@override String get cancel => 'Cancel';
 	@override String get confirm => 'Confirm';
@@ -507,6 +507,8 @@ class _Translations$common$en extends Translations$common$zh_CN {
 	@override String get downloadRetryDelayDesc => 'How long to wait between two automatic retries.';
 	@override String get downloadRetryDelay => 'Retry interval';
 	@override String get downloadRetryDesc => 'A failed download tries again in the background, carrying on from the bytes already written.';
+	@override String get expand => 'More';
+	@override String get collapse => 'Less';
 }
 
 // Path: favorites
@@ -1975,6 +1977,26 @@ class _Translations$player$en extends Translations$player$zh_CN {
 	@override String get progress => 'Playback progress';
 	@override String get playFromStart => 'From the start';
 	@override String get fullscreenOff => 'Leave fullscreen';
+	@override String get castTitle => 'Cast to a device';
+	@override String get castSearching => 'Looking for devices nearby';
+	@override String get castSearchingHint => 'Make sure the TV and this computer share the local network.';
+	@override String get castDevices => 'Available devices';
+	@override String get casting => 'Casting';
+	@override String get castStop => 'Stop casting';
+	@override String get statsPicture => 'Picture';
+	@override String get statsBitrate => 'Bitrate';
+	@override String get statsBuffer => 'Buffer';
+	@override String get statsDropped => 'Dropped';
+	@override String get statsDecoder => 'Decoder';
+	@override String get statsBackend => 'Engine';
+	@override String get download => 'Download video';
+	@override String downloadDone({required String name}) => 'Saved to ${name}';
+	@override String get downloadPause => 'Pause download';
+	@override String get downloadDuplicate => 'Already in the queue';
+	@override String get downloadQuality => 'Download quality';
+	@override String get downloadQualityDesc => 'The rendition a download asks the source for; 1080P+ and 4K need a signed-in account.';
+	@override String get downloadDanmaku => 'Save danmaku too';
+	@override String get downloadDanmakuDesc => 'Writes the danmaku sidecar files, in the chosen formats, beside the finished video.';
 }
 
 // Path: popular
@@ -2307,12 +2329,6 @@ class _Translations$room$en extends Translations$room$zh_CN {
 	@override String get lockControls => 'Lock the controls';
 	@override String get unlockControls => 'Unlock the controls';
 	@override String get chatTitle => 'Chat';
-	@override String get castTitle => 'Cast to a device';
-	@override String get castSearching => 'Looking for devices nearby';
-	@override String get castSearchingHint => 'Make sure the TV and this computer share the local network.';
-	@override String get castDevices => 'Available devices';
-	@override String get casting => 'Casting';
-	@override String get castStop => 'Stop casting';
 	@override String get castStarted => 'Casting started';
 	@override String get castFailed => 'The cast failed; the device may not reach this line';
 	@override String get backToRoom => 'Back to room';
@@ -2423,14 +2439,8 @@ class _Translations$room$en extends Translations$room$zh_CN {
 	@override String get expandChat => 'Expand chat';
 	@override String get theaterOn => 'Theater mode';
 	@override String get theaterOff => 'Exit theater mode';
-	@override String get statsPicture => 'Picture';
-	@override String get statsBitrate => 'Bitrate';
-	@override String get statsBuffer => 'Buffer';
-	@override String get statsDropped => 'Dropped';
-	@override String get statsDecoder => 'Decoder';
 	@override String get statsRenderer => 'Renderer';
 	@override String get statsProcess => 'Process';
-	@override String get statsBackend => 'Engine';
 	@override String get shortcutsHelp => 'Keyboard shortcuts';
 	@override String get shortcutsHint => 'Keys available on this screen';
 	@override String get shortcutPlayPause => 'Play or pause';
@@ -2497,6 +2507,7 @@ class _Translations$room$en extends Translations$room$zh_CN {
 	@override String get recordLabelSegment => 'Segments';
 	@override String recordSegmentN({required Object index}) => 'Segment ${index}';
 	@override String get recordFilesPane => 'Files';
+	@override String get replayDownloadUnsupported => 'This replay\'s format cannot be downloaded yet';
 }
 
 // Path: search
@@ -4311,8 +4322,6 @@ class _Translations$vod$en extends Translations$vod$zh_CN {
 	@override String get durationOver60 => 'Over 60 min';
 	@override String get related => 'Related';
 	@override String get changeRelated => 'Shuffle';
-	@override String get expand => 'More';
-	@override String get collapse => 'Less';
 	@override String get parts => 'Parts';
 	@override String get views => 'Views';
 	@override String get score => 'Rating';
@@ -4347,10 +4356,8 @@ class _Translations$vod$en extends Translations$vod$zh_CN {
 	@override String get longPressSpeedDesc => 'The rate a held picture runs at, back to the part\'s own when it lets go.';
 	@override String get seekPreview => 'Seek preview';
 	@override String get seekPreviewDesc => 'A paused pointer on the line shows that frame and its time.';
-	@override String get pip => 'Picture in picture';
 	@override String get silentNotice => 'This rendition has picture only; pick another quality for sound.';
 	@override String get opening => 'Opening the video…';
-	@override String get loadFailed => 'The video did not load';
 	@override String get openFailed => 'The video could not be opened';
 	@override String get up => 'Uploader';
 	@override String get openingSpeed => 'Opening speed';
@@ -4412,16 +4419,7 @@ class _Translations$vod$en extends Translations$vod$zh_CN {
 	@override String get savedVideo => 'Favourited';
 	@override String get saveAdded => 'Added to favourites';
 	@override String get saveRemoved => 'Removed from favourites';
-	@override String get download => 'Download video';
-	@override String downloadDone({required String name}) => 'Saved to ${name}';
-	@override String get downloadUnsupported => 'This replay\'s format cannot be downloaded yet';
 	@override String get downloadCancelled => 'Download cancelled';
-	@override String get downloadPause => 'Pause download';
-	@override String get downloadDuplicate => 'This part is already in the queue';
-	@override String get downloadQuality => 'Download quality';
-	@override String get downloadQualityDesc => 'The rendition a download asks the source for; 1080P+ and 4K need a signed-in account.';
-	@override String get downloadDanmaku => 'Save danmaku too';
-	@override String get downloadDanmakuDesc => 'Writes the danmaku sidecar files, in the chosen formats, beside the finished video.';
 	@override String get previewTitle => 'Download preview';
 	@override String get previewUnavailable => 'This part has no finished file yet';
 	@override String get downloadFilterEmptyDesc => 'Pick another filter, or add a download from a video page first.';
@@ -5199,7 +5197,7 @@ extension on TranslationsEn {
 			'backup.cloud.errUnknown' => ({required String code}) => 'The action failed (${code})',
 			'common.appTitle' => 'Pure Live',
 			'common.empty' => 'Nothing here yet',
-			'common.loadFailed' => 'Could not load',
+			'common.loadFailed' => 'The video did not load',
 			'common.close' => 'Close',
 			'common.cancel' => 'Cancel',
 			'common.confirm' => 'Confirm',
@@ -5303,6 +5301,8 @@ extension on TranslationsEn {
 			'common.downloadRetryDelayDesc' => 'How long to wait between two automatic retries.',
 			'common.downloadRetryDelay' => 'Retry interval',
 			'common.downloadRetryDesc' => 'A failed download tries again in the background, carrying on from the bytes already written.',
+			'common.expand' => 'More',
+			'common.collapse' => 'Less',
 			'favorites.emptyTitle' => 'No followed rooms yet',
 			'favorites.emptyDescription' => 'Follow a room and it shows up here.',
 			'favorites.unfollow' => 'Unfollow',
@@ -5773,10 +5773,10 @@ extension on TranslationsEn {
 			'iptv.aspect4x3' => '4:3',
 			'iptv.aspectFill' => 'Fill',
 			'iptv.aspectZoom' => 'Crop',
-			'iptv.digitHint' => 'Type a channel number',
-			'iptv.digitNoChannel' => ({required Object number}) => 'No channel numbered ${number}',
 			_ => null,
 		} ?? switch (path) {
+			'iptv.digitHint' => 'Type a channel number',
+			'iptv.digitNoChannel' => ({required Object number}) => 'No channel numbered ${number}',
 			'iptv.reminderAction' => 'Remind',
 			'iptv.reminderCancelAction' => 'Cancel reminder',
 			'iptv.reminderSet' => ({required Object title}) => 'Reminder set for “${title}”',
@@ -6287,10 +6287,10 @@ extension on TranslationsEn {
 			'music.lyricRomanization' => 'Show romanization',
 			'music.lyricRomanizationDesc' => 'Show the romanization when the lyric has one.',
 			'music.lyricSwapSecondary' => 'Translation/romanization order',
-			'music.lyricSwapSecondaryDesc' => 'Swap translation and romanization under a lyric line.',
-			'music.lyricTraditionalize' => 'Traditional Chinese',
 			_ => null,
 		} ?? switch (path) {
+			'music.lyricSwapSecondaryDesc' => 'Swap translation and romanization under a lyric line.',
+			'music.lyricTraditionalize' => 'Traditional Chinese',
 			'music.lyricTraditionalizeDesc' => 'Rewrite lyric text into traditional Chinese.',
 			'music.lyricWordTimed' => 'Word-by-word lyrics',
 			'music.lyricWordTimedDesc' => 'Play karaoke-style word timing when the platform provides it.',
@@ -6685,6 +6685,26 @@ extension on TranslationsEn {
 			'player.progress' => 'Playback progress',
 			'player.playFromStart' => 'From the start',
 			'player.fullscreenOff' => 'Leave fullscreen',
+			'player.castTitle' => 'Cast to a device',
+			'player.castSearching' => 'Looking for devices nearby',
+			'player.castSearchingHint' => 'Make sure the TV and this computer share the local network.',
+			'player.castDevices' => 'Available devices',
+			'player.casting' => 'Casting',
+			'player.castStop' => 'Stop casting',
+			'player.statsPicture' => 'Picture',
+			'player.statsBitrate' => 'Bitrate',
+			'player.statsBuffer' => 'Buffer',
+			'player.statsDropped' => 'Dropped',
+			'player.statsDecoder' => 'Decoder',
+			'player.statsBackend' => 'Engine',
+			'player.download' => 'Download video',
+			'player.downloadDone' => ({required String name}) => 'Saved to ${name}',
+			'player.downloadPause' => 'Pause download',
+			'player.downloadDuplicate' => 'Already in the queue',
+			'player.downloadQuality' => 'Download quality',
+			'player.downloadQualityDesc' => 'The rendition a download asks the source for; 1080P+ and 4K need a signed-in account.',
+			'player.downloadDanmaku' => 'Save danmaku too',
+			'player.downloadDanmakuDesc' => 'Writes the danmaku sidecar files, in the chosen formats, beside the finished video.',
 			'popular.allPlatforms' => 'All platforms',
 			'popular.allPlatformsHint' => 'Tap one to switch to it right away; hide and reorder platforms under Platform display.',
 			'popular.page' => ({required int page, required int total}) => 'Page ${page} of ${total}',
@@ -6781,6 +6801,8 @@ extension on TranslationsEn {
 			'recorder.caCustomPickFailed' => 'The certificate file could not be read',
 			'recorder.caCustomClear' => 'Use bundled',
 			'recorder.caCustomCleared' => 'Recording uses the bundled root store again',
+			_ => null,
+		} ?? switch (path) {
 			'recorder.startNowBusyOther' => 'Another window is recording this room',
 			'recorder.startNowCaFailed' => 'The custom CA bundle cannot be read — pick it again or switch to the bundled store',
 			'recorder.stateSaved' => 'Saved',
@@ -6803,8 +6825,6 @@ extension on TranslationsEn {
 			'recorder.filterTitle' => 'Filter recordings',
 			'recorder.filterPlatformGroup' => 'Platform',
 			'recorder.refresh' => 'Refresh',
-			_ => null,
-		} ?? switch (path) {
 			'recorder.reset' => 'Clear filters',
 			'recorder.selectedCount' => ({required int count}) => '${count} selected',
 			'recorder.deleteSelected' => 'Delete selected',
@@ -6992,12 +7012,6 @@ extension on TranslationsEn {
 			'room.lockControls' => 'Lock the controls',
 			'room.unlockControls' => 'Unlock the controls',
 			'room.chatTitle' => 'Chat',
-			'room.castTitle' => 'Cast to a device',
-			'room.castSearching' => 'Looking for devices nearby',
-			'room.castSearchingHint' => 'Make sure the TV and this computer share the local network.',
-			'room.castDevices' => 'Available devices',
-			'room.casting' => 'Casting',
-			'room.castStop' => 'Stop casting',
 			'room.castStarted' => 'Casting started',
 			'room.castFailed' => 'The cast failed; the device may not reach this line',
 			'room.backToRoom' => 'Back to room',
@@ -7108,14 +7122,8 @@ extension on TranslationsEn {
 			'room.expandChat' => 'Expand chat',
 			'room.theaterOn' => 'Theater mode',
 			'room.theaterOff' => 'Exit theater mode',
-			'room.statsPicture' => 'Picture',
-			'room.statsBitrate' => 'Bitrate',
-			'room.statsBuffer' => 'Buffer',
-			'room.statsDropped' => 'Dropped',
-			'room.statsDecoder' => 'Decoder',
 			'room.statsRenderer' => 'Renderer',
 			'room.statsProcess' => 'Process',
-			'room.statsBackend' => 'Engine',
 			'room.shortcutsHelp' => 'Keyboard shortcuts',
 			'room.shortcutsHint' => 'Keys available on this screen',
 			'room.shortcutPlayPause' => 'Play or pause',
@@ -7182,6 +7190,7 @@ extension on TranslationsEn {
 			'room.recordLabelSegment' => 'Segments',
 			'room.recordSegmentN' => ({required Object index}) => 'Segment ${index}',
 			'room.recordFilesPane' => 'Files',
+			'room.replayDownloadUnsupported' => 'This replay\'s format cannot be downloaded yet',
 			'search.idleTitle' => 'Search',
 			'search.idleDescription' => 'Type to search rooms, streamers or areas.',
 			'search.suggestionsTitle' => 'Suggestions',
@@ -7306,6 +7315,8 @@ extension on TranslationsEn {
 			'settings.groupData' => 'Data',
 			'settings.groupAbout' => 'About',
 			'settings.groupIptv' => 'IPTV',
+			_ => null,
+		} ?? switch (path) {
 			'settings.groupVod' => 'Bilibili video',
 			'settings.generalDescription' => 'Browsing, window and startup pages.',
 			'settings.appearanceDescription' => 'Theme, typography and colours.',
@@ -7317,8 +7328,6 @@ extension on TranslationsEn {
 			'settings.dataCacheDescription' => 'Watch data and the cover cache.',
 			'settings.personalizationChooseTheme' => 'Choose a theme to apply',
 			'settings.sitesDescription' => 'Preferred platform and platform display, account and tag management, and each platform\'s quirks.',
-			_ => null,
-		} ?? switch (path) {
 			'settings.iptvDescription' => 'Guide updates and source syncing.',
 			'settings.vodDescription' => 'Bilibili account, default quality and video-station behaviour.',
 			'settings.dataDescription' => 'Live watch history and follows.',
@@ -7820,6 +7829,8 @@ extension on TranslationsEn {
 			'settings.iptvGroupsDescription' => 'Chooses which groups appear in the channel lists and the zapping.',
 			'settings.navDanmaku' => 'Danmaku',
 			'settings.navMiniDanmaku' => 'Mini-window danmaku',
+			_ => null,
+		} ?? switch (path) {
 			'settings.navKernel' => 'Player engine',
 			'settings.navRecording' => 'Recording',
 			'settings.videoDescription' => 'Quality, audio and how the picture fits.',
@@ -7831,8 +7842,6 @@ extension on TranslationsEn {
 			'settings.playerOneClickDesc' => 'Restores the Standard preset; playing rooms apply at once, others next time.',
 			'settings.playerOneClickConfirmTitle' => 'Apply the recommended setup?',
 			'settings.playerOneClickConfirmBody' => ({required Object preset}) => 'Switches to ${preset} and drops manual output and decoders; a playing room rebuilds briefly.',
-			_ => null,
-		} ?? switch (path) {
 			'settings.playerOneClickApplied' => ({required Object preset}) => 'Applied "${preset}"',
 			'settings.playerCompatFix' => 'Glitch / green-screen fix',
 			'settings.playerCompatFixDesc' => 'Android only; renders straight to the surface with forced hardware decoding. Try it for drift or tearing.',
@@ -8334,6 +8343,8 @@ extension on TranslationsEn {
 			'settings.wallpaperCategoryFantasyArt' => 'Fantasy Art',
 			'settings.wallpaperCategoryFinalFantasy' => 'Final Fantasy',
 			'settings.tagManagement' => 'Tag management',
+			_ => null,
+		} ?? switch (path) {
 			'settings.tagManagementDesc' => 'Customize and manage the tags rooms are filtered by',
 			'settings.tagAdd' => 'Add tag',
 			'settings.tagEdit' => 'Edit tag',
@@ -8345,8 +8356,6 @@ extension on TranslationsEn {
 			'settings.tagNoteHint' => 'Write a short note for this tag',
 			'settings.tagNameEmpty' => 'A tag name cannot be empty',
 			'settings.tagNameDuplicate' => 'A tag with this name already exists',
-			_ => null,
-		} ?? switch (path) {
 			'settings.tagSaveFailed' => 'Tag changes were not saved; please retry',
 			'settings.tagStale' => 'This tag was deleted or changed elsewhere',
 			'settings.tagAddedToast' => ({required String name}) => 'Added the tag “${name}”',
@@ -8848,6 +8857,8 @@ extension on TranslationsEn {
 			'toolbox.nodeHint' => 'Run a check to test this platform.',
 			'toolbox.nodeAnswer' => ({required int count}) => '${count} rooms returned',
 			'toolbox.nodeSourceRecommended' => 'Recommended endpoint',
+			_ => null,
+		} ?? switch (path) {
 			'toolbox.nodeSourceHot' => 'Hot-list endpoint',
 			'toolbox.nodeSummary' => ({required Object ok, required Object tested, required Object total}) => '${ok} / ${tested} reachable · ${total} platforms',
 			'toolbox.nodeUntestedSummary' => ({required Object total}) => 'Not tested yet · ${total} platforms',
@@ -8859,8 +8870,6 @@ extension on TranslationsEn {
 			'toolbox.logsSearch' => 'Search logs…',
 			'toolbox.logsEmptyTitle' => 'No logs yet',
 			'toolbox.logsEmptyDescription' => 'Startup, network requests and errors appear here.',
-			_ => null,
-		} ?? switch (path) {
 			'toolbox.logsAutoOn' => 'Auto-scroll on',
 			'toolbox.logsAutoOff' => 'Auto-scroll off (scroll to the bottom to resume)',
 			'toolbox.logsLines' => ({required int count}) => '${count} lines',
@@ -8950,8 +8959,6 @@ extension on TranslationsEn {
 			'vod.durationOver60' => 'Over 60 min',
 			'vod.related' => 'Related',
 			'vod.changeRelated' => 'Shuffle',
-			'vod.expand' => 'More',
-			'vod.collapse' => 'Less',
 			'vod.parts' => 'Parts',
 			'vod.views' => 'Views',
 			'vod.score' => 'Rating',
@@ -8986,10 +8993,8 @@ extension on TranslationsEn {
 			'vod.longPressSpeedDesc' => 'The rate a held picture runs at, back to the part\'s own when it lets go.',
 			'vod.seekPreview' => 'Seek preview',
 			'vod.seekPreviewDesc' => 'A paused pointer on the line shows that frame and its time.',
-			'vod.pip' => 'Picture in picture',
 			'vod.silentNotice' => 'This rendition has picture only; pick another quality for sound.',
 			'vod.opening' => 'Opening the video…',
-			'vod.loadFailed' => 'The video did not load',
 			'vod.openFailed' => 'The video could not be opened',
 			'vod.up' => 'Uploader',
 			'vod.openingSpeed' => 'Opening speed',
@@ -9051,16 +9056,7 @@ extension on TranslationsEn {
 			'vod.savedVideo' => 'Favourited',
 			'vod.saveAdded' => 'Added to favourites',
 			'vod.saveRemoved' => 'Removed from favourites',
-			'vod.download' => 'Download video',
-			'vod.downloadDone' => ({required String name}) => 'Saved to ${name}',
-			'vod.downloadUnsupported' => 'This replay\'s format cannot be downloaded yet',
 			'vod.downloadCancelled' => 'Download cancelled',
-			'vod.downloadPause' => 'Pause download',
-			'vod.downloadDuplicate' => 'This part is already in the queue',
-			'vod.downloadQuality' => 'Download quality',
-			'vod.downloadQualityDesc' => 'The rendition a download asks the source for; 1080P+ and 4K need a signed-in account.',
-			'vod.downloadDanmaku' => 'Save danmaku too',
-			'vod.downloadDanmakuDesc' => 'Writes the danmaku sidecar files, in the chosen formats, beside the finished video.',
 			'vod.previewTitle' => 'Download preview',
 			'vod.previewUnavailable' => 'This part has no finished file yet',
 			'vod.downloadFilterEmptyDesc' => 'Pick another filter, or add a download from a video page first.',

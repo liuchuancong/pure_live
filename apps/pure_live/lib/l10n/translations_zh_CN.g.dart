@@ -1015,8 +1015,8 @@ class Translations$common$zh_CN {
 	/// zh-CN: '这里还没有内容'
 	String get empty => '这里还没有内容';
 
-	/// zh-CN: '加载失败'
-	String get loadFailed => '加载失败';
+	/// zh-CN: '视频信息加载失败'
+	String get loadFailed => '视频信息加载失败';
 
 	/// zh-CN: '关闭'
 	String get close => '关闭';
@@ -1320,6 +1320,12 @@ class Translations$common$zh_CN {
 
 	/// zh-CN: '失败的下载在后台自动再试，已经下到的字节会接着用。'
 	String get downloadRetryDesc => '失败的下载在后台自动再试，已经下到的字节会接着用。';
+
+	/// zh-CN: '展开'
+	String get expand => '展开';
+
+	/// zh-CN: '收起'
+	String get collapse => '收起';
 }
 
 // Path: favorites
@@ -5544,6 +5550,66 @@ class Translations$player$zh_CN {
 
 	/// zh-CN: '退出全屏'
 	String get fullscreenOff => '退出全屏';
+
+	/// zh-CN: '投屏到设备'
+	String get castTitle => '投屏到设备';
+
+	/// zh-CN: '正在搜索附近的设备'
+	String get castSearching => '正在搜索附近的设备';
+
+	/// zh-CN: '请确认电视与电脑在同一局域网。'
+	String get castSearchingHint => '请确认电视与电脑在同一局域网。';
+
+	/// zh-CN: '可用设备'
+	String get castDevices => '可用设备';
+
+	/// zh-CN: '正在投屏'
+	String get casting => '正在投屏';
+
+	/// zh-CN: '停止投屏'
+	String get castStop => '停止投屏';
+
+	/// zh-CN: '画面'
+	String get statsPicture => '画面';
+
+	/// zh-CN: '码率'
+	String get statsBitrate => '码率';
+
+	/// zh-CN: '缓冲'
+	String get statsBuffer => '缓冲';
+
+	/// zh-CN: '丢帧'
+	String get statsDropped => '丢帧';
+
+	/// zh-CN: '解码'
+	String get statsDecoder => '解码';
+
+	/// zh-CN: '内核'
+	String get statsBackend => '内核';
+
+	/// zh-CN: '下载视频'
+	String get download => '下载视频';
+
+	/// zh-CN: '已下载到 {name: String}'
+	String downloadDone({required String name}) => '已下载到 ${name}';
+
+	/// zh-CN: '暂停下载'
+	String get downloadPause => '暂停下载';
+
+	/// zh-CN: '已在下载队列'
+	String get downloadDuplicate => '已在下载队列';
+
+	/// zh-CN: '下载画质'
+	String get downloadQuality => '下载画质';
+
+	/// zh-CN: '下载向源站请求的画质；1080P+ 与 4K 需要登录账号。'
+	String get downloadQualityDesc => '下载向源站请求的画质；1080P+ 与 4K 需要登录账号。';
+
+	/// zh-CN: '同时保存弹幕'
+	String get downloadDanmaku => '同时保存弹幕';
+
+	/// zh-CN: '下载完成后在视频旁写入所选格式的弹幕文件。'
+	String get downloadDanmakuDesc => '下载完成后在视频旁写入所选格式的弹幕文件。';
 }
 
 // Path: popular
@@ -6487,24 +6553,6 @@ class Translations$room$zh_CN {
 	/// zh-CN: '聊天'
 	String get chatTitle => '聊天';
 
-	/// zh-CN: '投屏到设备'
-	String get castTitle => '投屏到设备';
-
-	/// zh-CN: '正在搜索附近的设备'
-	String get castSearching => '正在搜索附近的设备';
-
-	/// zh-CN: '请确认电视与电脑在同一局域网。'
-	String get castSearchingHint => '请确认电视与电脑在同一局域网。';
-
-	/// zh-CN: '可用设备'
-	String get castDevices => '可用设备';
-
-	/// zh-CN: '正在投屏'
-	String get casting => '正在投屏';
-
-	/// zh-CN: '停止投屏'
-	String get castStop => '停止投屏';
-
 	/// zh-CN: '已开始投屏'
 	String get castStarted => '已开始投屏';
 
@@ -6835,29 +6883,11 @@ class Translations$room$zh_CN {
 	/// zh-CN: '退出剧院模式'
 	String get theaterOff => '退出剧院模式';
 
-	/// zh-CN: '画面'
-	String get statsPicture => '画面';
-
-	/// zh-CN: '码率'
-	String get statsBitrate => '码率';
-
-	/// zh-CN: '缓冲'
-	String get statsBuffer => '缓冲';
-
-	/// zh-CN: '丢帧'
-	String get statsDropped => '丢帧';
-
-	/// zh-CN: '解码'
-	String get statsDecoder => '解码';
-
 	/// zh-CN: '渲染'
 	String get statsRenderer => '渲染';
 
 	/// zh-CN: '进程'
 	String get statsProcess => '进程';
-
-	/// zh-CN: '内核'
-	String get statsBackend => '内核';
 
 	/// zh-CN: '快捷键'
 	String get shortcutsHelp => '快捷键';
@@ -7056,6 +7086,9 @@ class Translations$room$zh_CN {
 
 	/// zh-CN: '录制文件'
 	String get recordFilesPane => '录制文件';
+
+	/// zh-CN: '这条回放的格式暂不支持下载'
+	String get replayDownloadUnsupported => '这条回放的格式暂不支持下载';
 }
 
 // Path: search
@@ -12391,12 +12424,6 @@ class Translations$vod$zh_CN {
 	/// zh-CN: '换一换'
 	String get changeRelated => '换一换';
 
-	/// zh-CN: '展开'
-	String get expand => '展开';
-
-	/// zh-CN: '收起'
-	String get collapse => '收起';
-
 	/// zh-CN: '分P'
 	String get parts => '分P';
 
@@ -12499,17 +12526,11 @@ class Translations$vod$zh_CN {
 	/// zh-CN: '指针停在进度条上时，显示那一帧的画面和它的时间。'
 	String get seekPreviewDesc => '指针停在进度条上时，显示那一帧的画面和它的时间。';
 
-	/// zh-CN: '小窗播放'
-	String get pip => '小窗播放';
-
 	/// zh-CN: '这个清晰度只有画面，没有声音；换一个清晰度试试。'
 	String get silentNotice => '这个清晰度只有画面，没有声音；换一个清晰度试试。';
 
 	/// zh-CN: '正在打开视频…'
 	String get opening => '正在打开视频…';
-
-	/// zh-CN: '视频信息加载失败'
-	String get loadFailed => '视频信息加载失败';
 
 	/// zh-CN: '视频打开失败'
 	String get openFailed => '视频打开失败';
@@ -12694,35 +12715,8 @@ class Translations$vod$zh_CN {
 	/// zh-CN: '已取消收藏'
 	String get saveRemoved => '已取消收藏';
 
-	/// zh-CN: '下载视频'
-	String get download => '下载视频';
-
-	/// zh-CN: '已下载到 {name: String}'
-	String downloadDone({required String name}) => '已下载到 ${name}';
-
-	/// zh-CN: '这条回放的格式暂不支持下载'
-	String get downloadUnsupported => '这条回放的格式暂不支持下载';
-
 	/// zh-CN: '已取消下载'
 	String get downloadCancelled => '已取消下载';
-
-	/// zh-CN: '暂停下载'
-	String get downloadPause => '暂停下载';
-
-	/// zh-CN: '该分P已在下载队列'
-	String get downloadDuplicate => '该分P已在下载队列';
-
-	/// zh-CN: '默认下载画质'
-	String get downloadQuality => '默认下载画质';
-
-	/// zh-CN: '下载时向哔哩哔哩请求的清晰度，1080P+ 与 4K 需要登录账号。'
-	String get downloadQualityDesc => '下载时向哔哩哔哩请求的清晰度，1080P+ 与 4K 需要登录账号。';
-
-	/// zh-CN: '同时保存弹幕'
-	String get downloadDanmaku => '同时保存弹幕';
-
-	/// zh-CN: '下载完成时把弹幕按「弹幕保存格式」写进视频所在目录。'
-	String get downloadDanmakuDesc => '下载完成时把弹幕按「弹幕保存格式」写进视频所在目录。';
 
 	/// zh-CN: '下载预览'
 	String get previewTitle => '下载预览';
@@ -14062,7 +14056,7 @@ extension on Translations {
 			'backup.cloud.errUnknown' => ({required String code}) => '操作失败（${code}）',
 			'common.appTitle' => 'Pure Live',
 			'common.empty' => '这里还没有内容',
-			'common.loadFailed' => '加载失败',
+			'common.loadFailed' => '视频信息加载失败',
 			'common.close' => '关闭',
 			'common.cancel' => '取消',
 			'common.confirm' => '确定',
@@ -14166,6 +14160,8 @@ extension on Translations {
 			'common.downloadRetryDelayDesc' => '两次自动重试之间等待的时间。',
 			'common.downloadRetryDelay' => '重试间隔',
 			'common.downloadRetryDesc' => '失败的下载在后台自动再试，已经下到的字节会接着用。',
+			'common.expand' => '展开',
+			'common.collapse' => '收起',
 			'favorites.emptyTitle' => '还没有关注的房间',
 			'favorites.emptyDescription' => '在房间里点关注，就会出现在这里。',
 			'favorites.unfollow' => '取消关注',
@@ -14636,10 +14632,10 @@ extension on Translations {
 			'iptv.aspect4x3' => '4:3',
 			'iptv.aspectFill' => '铺满',
 			'iptv.aspectZoom' => '裁剪',
-			'iptv.digitHint' => '输入频道号跳转',
-			'iptv.digitNoChannel' => ({required Object number}) => '没有频道号 ${number}',
 			_ => null,
 		} ?? switch (path) {
+			'iptv.digitHint' => '输入频道号跳转',
+			'iptv.digitNoChannel' => ({required Object number}) => '没有频道号 ${number}',
 			'iptv.reminderAction' => '预约',
 			'iptv.reminderCancelAction' => '取消预约',
 			'iptv.reminderSet' => ({required Object title}) => '已预约「${title}」',
@@ -15150,10 +15146,10 @@ extension on Translations {
 			'music.lyricRomanization' => '显示音译',
 			'music.lyricRomanizationDesc' => '歌词带音译或罗马音时一并显示。',
 			'music.lyricSwapSecondary' => '翻译/音译顺序',
-			'music.lyricSwapSecondaryDesc' => '交换翻译与音译在歌词行中的先后顺序。',
-			'music.lyricTraditionalize' => '简体转繁体',
 			_ => null,
 		} ?? switch (path) {
+			'music.lyricSwapSecondaryDesc' => '交换翻译与音译在歌词行中的先后顺序。',
+			'music.lyricTraditionalize' => '简体转繁体',
 			'music.lyricTraditionalizeDesc' => '把歌词文本改写为繁体中文。',
 			'music.lyricWordTimed' => '逐字歌词',
 			'music.lyricWordTimedDesc' => '平台提供逐字时间轴时按字高亮演唱。',
@@ -15548,6 +15544,26 @@ extension on Translations {
 			'player.progress' => '播放进度',
 			'player.playFromStart' => '从头播放',
 			'player.fullscreenOff' => '退出全屏',
+			'player.castTitle' => '投屏到设备',
+			'player.castSearching' => '正在搜索附近的设备',
+			'player.castSearchingHint' => '请确认电视与电脑在同一局域网。',
+			'player.castDevices' => '可用设备',
+			'player.casting' => '正在投屏',
+			'player.castStop' => '停止投屏',
+			'player.statsPicture' => '画面',
+			'player.statsBitrate' => '码率',
+			'player.statsBuffer' => '缓冲',
+			'player.statsDropped' => '丢帧',
+			'player.statsDecoder' => '解码',
+			'player.statsBackend' => '内核',
+			'player.download' => '下载视频',
+			'player.downloadDone' => ({required String name}) => '已下载到 ${name}',
+			'player.downloadPause' => '暂停下载',
+			'player.downloadDuplicate' => '已在下载队列',
+			'player.downloadQuality' => '下载画质',
+			'player.downloadQualityDesc' => '下载向源站请求的画质；1080P+ 与 4K 需要登录账号。',
+			'player.downloadDanmaku' => '同时保存弹幕',
+			'player.downloadDanmakuDesc' => '下载完成后在视频旁写入所选格式的弹幕文件。',
 			'popular.allPlatforms' => '全部平台',
 			'popular.allPlatformsHint' => '点一个直接切过去；在「平台显示」里隐藏和排序。',
 			'popular.page' => ({required int page, required int total}) => '第 ${page} 页，共 ${total} 页',
@@ -15644,6 +15660,8 @@ extension on Translations {
 			'recorder.caCustomNotPem' => '这不是 PEM 文本的证书束（应包含 -----BEGIN CERTIFICATE-----）',
 			'recorder.caCustomPickFailed' => '读取证书文件失败',
 			'recorder.caCustomClear' => '恢复内置',
+			_ => null,
+		} ?? switch (path) {
 			'recorder.caCustomCleared' => '已恢复使用内置根证书',
 			'recorder.startNowBusyOther' => '另一个窗口正在录制这个房间',
 			'recorder.startNowCaFailed' => '自定义 CA 证书读不到，先重新选择或恢复内置',
@@ -15666,8 +15684,6 @@ extension on Translations {
 			'recorder.filterTitle' => '筛选录像',
 			'recorder.filterPlatformGroup' => '平台',
 			'recorder.refresh' => '刷新',
-			_ => null,
-		} ?? switch (path) {
 			'recorder.reset' => '清空筛选',
 			'recorder.selectedCount' => ({required int count}) => '已选 ${count} 项',
 			'recorder.deleteSelected' => '删除选中',
@@ -15855,12 +15871,6 @@ extension on Translations {
 			'room.lockControls' => '锁定控件',
 			'room.unlockControls' => '解锁控件',
 			'room.chatTitle' => '聊天',
-			'room.castTitle' => '投屏到设备',
-			'room.castSearching' => '正在搜索附近的设备',
-			'room.castSearchingHint' => '请确认电视与电脑在同一局域网。',
-			'room.castDevices' => '可用设备',
-			'room.casting' => '正在投屏',
-			'room.castStop' => '停止投屏',
 			'room.castStarted' => '已开始投屏',
 			'room.castFailed' => '投屏失败，设备可能无法访问这条线路',
 			'room.backToRoom' => '返回直播间',
@@ -15971,14 +15981,8 @@ extension on Translations {
 			'room.expandChat' => '展开聊天',
 			'room.theaterOn' => '剧院模式',
 			'room.theaterOff' => '退出剧院模式',
-			'room.statsPicture' => '画面',
-			'room.statsBitrate' => '码率',
-			'room.statsBuffer' => '缓冲',
-			'room.statsDropped' => '丢帧',
-			'room.statsDecoder' => '解码',
 			'room.statsRenderer' => '渲染',
 			'room.statsProcess' => '进程',
-			'room.statsBackend' => '内核',
 			'room.shortcutsHelp' => '快捷键',
 			'room.shortcutsHint' => '当前画面可用的按键',
 			'room.shortcutPlayPause' => '播放 / 暂停',
@@ -16045,6 +16049,7 @@ extension on Translations {
 			'room.recordLabelSegment' => '分段',
 			'room.recordSegmentN' => ({required Object index}) => '第 ${index} 段',
 			'room.recordFilesPane' => '录制文件',
+			'room.replayDownloadUnsupported' => '这条回放的格式暂不支持下载',
 			'search.idleTitle' => '搜索',
 			'search.idleDescription' => '输入关键词，搜索房间、主播或分区。',
 			'search.suggestionsTitle' => '搜索建议',
@@ -16169,6 +16174,8 @@ extension on Translations {
 			'settings.groupData' => '数据',
 			'settings.groupAbout' => '关于',
 			'settings.groupIptv' => 'IPTV',
+			_ => null,
+		} ?? switch (path) {
 			'settings.groupVod' => 'Bilibili 视频',
 			'settings.generalDescription' => '浏览、窗口与启动设置。',
 			'settings.appearanceDescription' => '主题、字体与配色。',
@@ -16180,8 +16187,6 @@ extension on Translations {
 			'settings.dataCacheDescription' => '观看数据与封面缓存。',
 			'settings.personalizationChooseTheme' => '选择要应用的主题',
 			'settings.sitesDescription' => '首选平台与平台显示，账号管理与标签管理，以及各平台的特殊设置。',
-			_ => null,
-		} ?? switch (path) {
 			'settings.iptvDescription' => '节目单自动更新与来源同步。',
 			'settings.vodDescription' => 'Bilibili 账号、默认清晰度与视频站行为。',
 			'settings.dataDescription' => '直播观看历史与关注数据。',
@@ -16683,6 +16688,8 @@ extension on Translations {
 			'settings.iptvGroupsDescription' => '决定哪些分组出现在频道列表和换台里。',
 			'settings.navDanmaku' => '弹幕',
 			'settings.navMiniDanmaku' => '小窗弹幕',
+			_ => null,
+		} ?? switch (path) {
 			'settings.navKernel' => '播放器内核',
 			'settings.navRecording' => '录制',
 			'settings.videoDescription' => '画质、音量与画面比例。',
@@ -16694,8 +16701,6 @@ extension on Translations {
 			'settings.playerOneClickDesc' => '恢复「标准」预设；播放中的立即生效，其余下次打开。',
 			'settings.playerOneClickConfirmTitle' => '应用推荐配置？',
 			'settings.playerOneClickConfirmBody' => ({required Object preset}) => '切换到「${preset}」并撤销手动输出与解码器；正在播放的直播会短暂重建。',
-			_ => null,
-		} ?? switch (path) {
 			'settings.playerOneClickApplied' => ({required Object preset}) => '已应用「${preset}」',
 			'settings.playerCompatFix' => '花屏 / 绿屏修复',
 			'settings.playerCompatFixDesc' => '仅 Android；直出表面并强制硬解，音画不同步或撕裂时先试。',
@@ -17197,6 +17202,8 @@ extension on Translations {
 			'settings.wallpaperCategoryFantasyArt' => '奇幻艺术',
 			'settings.wallpaperCategoryFinalFantasy' => '最终幻想',
 			'settings.tagManagement' => '标签管理',
+			_ => null,
+		} ?? switch (path) {
 			'settings.tagManagementDesc' => '自定义和管理直播间的过滤标签',
 			'settings.tagAdd' => '添加标签',
 			'settings.tagEdit' => '编辑标签',
@@ -17208,8 +17215,6 @@ extension on Translations {
 			'settings.tagNoteHint' => '给这个标签写一句备注',
 			'settings.tagNameEmpty' => '标签名称不能为空',
 			'settings.tagNameDuplicate' => '已存在同名标签',
-			_ => null,
-		} ?? switch (path) {
 			'settings.tagSaveFailed' => '标签更改未保存，请重试',
 			'settings.tagStale' => '这个标签已在别处被删除或修改',
 			'settings.tagAddedToast' => ({required String name}) => '已添加标签“${name}”',
@@ -17711,6 +17716,8 @@ extension on Translations {
 			'toolbox.nodeHint' => '点「测速」检查这个平台。',
 			'toolbox.nodeAnswer' => ({required int count}) => '返回 ${count} 个房间',
 			'toolbox.nodeSourceRecommended' => '推荐接口',
+			_ => null,
+		} ?? switch (path) {
 			'toolbox.nodeSourceHot' => '热门接口',
 			'toolbox.nodeSummary' => ({required Object ok, required Object tested, required Object total}) => '${ok} / ${tested} 可用 · 共 ${total} 个平台',
 			'toolbox.nodeUntestedSummary' => ({required Object total}) => '尚未测速 · 共 ${total} 个平台',
@@ -17722,8 +17729,6 @@ extension on Translations {
 			'toolbox.logsSearch' => '搜索日志…',
 			'toolbox.logsEmptyTitle' => '还没有日志',
 			'toolbox.logsEmptyDescription' => '应用启动、网络请求与错误会记录在这里。',
-			_ => null,
-		} ?? switch (path) {
 			'toolbox.logsAutoOn' => '自动滚动已开启',
 			'toolbox.logsAutoOff' => '自动滚动已关闭（滚动到底部可开启）',
 			'toolbox.logsLines' => ({required int count}) => '${count} 行',
@@ -17813,8 +17818,6 @@ extension on Translations {
 			'vod.durationOver60' => '60 分钟以上',
 			'vod.related' => '相关推荐',
 			'vod.changeRelated' => '换一换',
-			'vod.expand' => '展开',
-			'vod.collapse' => '收起',
 			'vod.parts' => '分P',
 			'vod.views' => '播放',
 			'vod.score' => '评分',
@@ -17849,10 +17852,8 @@ extension on Translations {
 			'vod.longPressSpeedDesc' => '按住画面时用的倍速，松手回到原来的速度。',
 			'vod.seekPreview' => '进度条预览',
 			'vod.seekPreviewDesc' => '指针停在进度条上时，显示那一帧的画面和它的时间。',
-			'vod.pip' => '小窗播放',
 			'vod.silentNotice' => '这个清晰度只有画面，没有声音；换一个清晰度试试。',
 			'vod.opening' => '正在打开视频…',
-			'vod.loadFailed' => '视频信息加载失败',
 			'vod.openFailed' => '视频打开失败',
 			'vod.up' => 'UP主',
 			'vod.openingSpeed' => '默认倍速',
@@ -17914,16 +17915,7 @@ extension on Translations {
 			'vod.savedVideo' => '已收藏',
 			'vod.saveAdded' => '已加入收藏',
 			'vod.saveRemoved' => '已取消收藏',
-			'vod.download' => '下载视频',
-			'vod.downloadDone' => ({required String name}) => '已下载到 ${name}',
-			'vod.downloadUnsupported' => '这条回放的格式暂不支持下载',
 			'vod.downloadCancelled' => '已取消下载',
-			'vod.downloadPause' => '暂停下载',
-			'vod.downloadDuplicate' => '该分P已在下载队列',
-			'vod.downloadQuality' => '默认下载画质',
-			'vod.downloadQualityDesc' => '下载时向哔哩哔哩请求的清晰度，1080P+ 与 4K 需要登录账号。',
-			'vod.downloadDanmaku' => '同时保存弹幕',
-			'vod.downloadDanmakuDesc' => '下载完成时把弹幕按「弹幕保存格式」写进视频所在目录。',
 			'vod.previewTitle' => '下载预览',
 			'vod.previewUnavailable' => '这个分P还没有下载完成的文件',
 			'vod.downloadFilterEmptyDesc' => '换一个筛选，或先去视频页添加下载。',
