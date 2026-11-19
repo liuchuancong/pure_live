@@ -87,11 +87,16 @@ enum HongguoView {
 /// page — the home feed, the shelves, the boards, the viewer's own lists,
 /// the account and the search.
 final class HongguoPage extends ConsumerStatefulWidget {
-  /// The module's entry page, opening on [view].
-  const HongguoPage({this.view = HongguoView.home, super.key});
+  /// The module's entry page, opening on [view]; [initialSearch] names the
+  /// query a deep link arrived with, searched as though typed in the search
+  /// view.
+  const HongguoPage({this.view = HongguoView.home, this.initialSearch, super.key});
 
   /// The view the page opens on; the module's menu names it.
   final HongguoView view;
+
+  /// The query the route's `?q=` carried; null arrives from the menu.
+  final String? initialSearch;
 
   @override
   ConsumerState<HongguoPage> createState() => _HongguoPageState();
@@ -129,7 +134,7 @@ final class _HongguoPageState extends ConsumerState<HongguoPage> {
               HongguoView.history => const _HistoryView(),
               HongguoView.reservations => const _ReservationsView(),
               HongguoView.account => _AccountView(onGo: (view) => setState(() => _view = view)),
-              HongguoView.search => const _SearchView(),
+              HongguoView.search => _SearchView(initialSearch: widget.initialSearch),
             },
           ),
         ),
@@ -1867,7 +1872,10 @@ final class _AccountViewState extends ConsumerState<_AccountView> {
 /// The station's search: the field above the grid; the grid's end continues
 /// the query by the cursor the last page carried.
 final class _SearchView extends ConsumerStatefulWidget {
-  const _SearchView();
+  const _SearchView({this.initialSearch});
+
+  /// The query the route's `?q=` carried; null arrives from the menu.
+  final String? initialSearch;
 
   @override
   ConsumerState<_SearchView> createState() => _SearchViewState();
@@ -1903,6 +1911,13 @@ final class _SearchViewState extends ConsumerState<_SearchView> {
 
   /// Runs the handed word: the field reads it, the search answers it.
   void _takeHandoff() {
+    // The deep link's word outranks the toolbar's: it reads as the query the
+    // route itself carried.
+    if (widget.initialSearch case final word? when word.isNotEmpty) {
+      _query.value = TextEditingValue(text: word, selection: TextSelection.collapsed(offset: word.length));
+      unawaited(ref.read(hongguoSearchProvider.notifier).search(word, genre: _genre));
+      return;
+    }
     final word = ref.read(hongguoSearchHandoffProvider.notifier).take();
     if (word == null || word.isEmpty || !mounted) return;
     _query.value = TextEditingValue(

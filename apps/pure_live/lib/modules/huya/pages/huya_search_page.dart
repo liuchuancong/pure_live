@@ -19,8 +19,12 @@ import 'package:pure_live/shared/shared.dart';
 const double _kSearchHeadMaxWidth = 960;
 
 final class HuyaSearchPage extends ConsumerStatefulWidget {
-  /// The search page.
-  const HuyaSearchPage({super.key});
+  /// The search page; [initialWord] names the query a deep link arrived
+  /// with, searched as though typed here.
+  const HuyaSearchPage({this.initialWord, super.key});
+
+  /// The query the route's `?q=` carried; null arrives from the menu.
+  final String? initialWord;
 
   @override
   ConsumerState<HuyaSearchPage> createState() => _HuyaSearchPageState();
@@ -40,6 +44,14 @@ final class _HuyaSearchPageState extends ConsumerState<HuyaSearchPage> {
       _field.text = handed;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) unawaited(ref.read(huyaSearchProvider.notifier).search(handed));
+      });
+    }
+    // The deep link's word outranks the toolbar's.
+    if (widget.initialWord case final word? when word.isNotEmpty && word != handed) {
+      _word = word;
+      _field.text = word;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) unawaited(ref.read(huyaSearchProvider.notifier).search(word));
       });
     }
   }

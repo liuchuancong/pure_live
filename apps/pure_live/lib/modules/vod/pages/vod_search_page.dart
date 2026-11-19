@@ -59,8 +59,12 @@ const double _kSearchHeadMaxWidth = 960;
 /// so the viewer's spacing, the card/list layout, the wide pager and the
 /// narrow append all work here as they do on the feeds.
 final class VodSearchPage extends ConsumerStatefulWidget {
-  /// The search page.
-  const VodSearchPage({super.key});
+  /// The search page; [initialWord] names the query a deep link arrived
+  /// with, searched as though typed here.
+  const VodSearchPage({this.initialWord, super.key});
+
+  /// The query the route's `?q=` carried; null arrives from the menu.
+  final String? initialWord;
 
   @override
   ConsumerState<VodSearchPage> createState() => _VodSearchPageState();
@@ -92,6 +96,12 @@ final class _VodSearchPageState extends ConsumerState<VodSearchPage> {
         selection: TextSelection.collapsed(offset: query.length),
       );
     });
+    // The deep link's word outranks the last visit's: the field reads it and
+    // the search answers it, the take-handoff path's own two steps.
+    if (widget.initialWord case final word? when word.isNotEmpty) {
+      _search.value = TextEditingValue(text: word, selection: TextSelection.collapsed(offset: word.length));
+      _run();
+    }
   }
 
   /// Runs the handed word: the field reads it, the search answers it.

@@ -68,10 +68,14 @@ enum MusicView {
 /// 本地音乐 plays the device's files, and 下载 keeps the queue.
 final class MusicPage extends ConsumerStatefulWidget {
   /// The music module's entry page, opening on [view].
-  const MusicPage({this.view = MusicView.library, super.key});
+  const MusicPage({this.view = MusicView.library, this.initialSearch, super.key});
 
   /// The view the page opens on; the module's menu names it.
   final MusicView view;
+
+  /// The query the route's `?q=` carried; it opens the library already
+  /// searching, the toolbar's handoff without the toolbar.
+  final String? initialSearch;
 
   @override
   ConsumerState<MusicPage> createState() => _MusicPageState();
@@ -109,6 +113,11 @@ final class _MusicPageState extends ConsumerState<MusicPage> {
     // post-frame take catches one handed as the page arrives.
     ref.listenManual(musicSearchHandoffProvider, (_, _) => _takeHandoff());
     WidgetsBinding.instance.addPostFrameCallback((_) => _takeHandoff());
+    // The deep link's word outranks the toolbar's.
+    if (widget.initialSearch case final word? when word.isNotEmpty && _pendingSearch == null) {
+      _pendingSearch = word;
+      _view = MusicView.library;
+    }
   }
 
   /// Moves the handed word into the library (the 推荐 page's own hot chip

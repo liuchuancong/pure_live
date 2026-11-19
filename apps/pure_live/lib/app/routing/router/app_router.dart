@@ -16,8 +16,8 @@ import 'package:pure_live/app/windows/chrome/window_chrome.dart' show WindowChro
 import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/layouts/layouts.dart';
-import 'package:pure_live/modules/hongguo/hongguo.dart' show HongguoPlayerPage, HongguoSeriesPage;
-import 'package:pure_live/modules/huya/huya.dart' show HuyaUploaderPage, HuyaVideoPlayerPage;
+import 'package:pure_live/modules/hongguo/hongguo.dart' show HongguoPage, HongguoPlayerPage, HongguoSeriesPage, HongguoView;
+import 'package:pure_live/modules/huya/huya.dart' show HuyaSearchPage, HuyaUploaderPage, HuyaVideoPlayerPage;
 import 'package:pure_live/modules/iptv/iptv.dart';
 import 'package:pure_live/modules/live/archive/archive_catalog_page.dart';
 import 'package:pure_live/modules/live/archive/archive_navigation.dart';
@@ -32,7 +32,7 @@ import 'package:pure_live/modules/live/room/room.dart';
 import 'package:pure_live/modules/live/search/search.dart';
 import 'package:pure_live/modules/live/toolbox/toolbox.dart';
 import 'package:pure_live/modules/music/music.dart'
-    show MusicAlbumPage, MusicArtistPage, MusicEffectsPage, MusicPlayerPage;
+    show MusicAlbumPage, MusicArtistPage, MusicEffectsPage, MusicPage, MusicPlayerPage;
 import 'package:pure_live/modules/vod/vod.dart';
 import 'package:pure_live/shared/shared.dart';
 
@@ -560,6 +560,29 @@ GoRouter buildAppRouter({
             },
           ),
         ),
+      ),
+      // The four stations' search pages: a deep link lands on one already
+      // answering its `?q=`, the live branch's /search without the branch —
+      // the menu entries still swap the content area in place.
+      GoRoute(
+        path: RouteNames.vodSearch,
+        builder: (context, state) =>
+            WindowChromeFrame(child: VodSearchPage(initialWord: state.uri.queryParameters['q'])),
+      ),
+      GoRoute(
+        path: RouteNames.huyaSearch,
+        builder: (context, state) =>
+            WindowChromeFrame(child: HuyaSearchPage(initialWord: state.uri.queryParameters['q'])),
+      ),
+      GoRoute(
+        path: RouteNames.musicSearch,
+        builder: (context, state) =>
+            WindowChromeFrame(child: MusicPage(initialSearch: state.uri.queryParameters['q'])),
+      ),
+      GoRoute(
+        path: RouteNames.hongguoSearch,
+        builder: (context, state) =>
+            WindowChromeFrame(child: HongguoPage(view: HongguoView.search, initialSearch: state.uri.queryParameters['q'])),
       ),
       // The video station's cards push one archive's page; the route is
       // written by hand rather than generated, so a cards-only change never

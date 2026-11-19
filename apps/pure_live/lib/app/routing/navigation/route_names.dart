@@ -54,6 +54,22 @@ abstract final class RouteNames {
   /// search request rides in as `extra`.
   static const String webSearch = '/web-search';
 
+  /// The video station's search page, pushed on the root navigator; the
+  /// query rides in as `?q=`.
+  static const String vodSearch = '/vod/search';
+
+  /// The huya station's search page, pushed on the root navigator; the
+  /// query rides in as `?q=`.
+  static const String huyaSearch = '/huya/search';
+
+  /// The music station's search view, pushed on the root navigator; the
+  /// query rides in as `?q=`.
+  static const String musicSearch = '/music/search';
+
+  /// The hongguo station's search view, pushed on the root navigator; the
+  /// query rides in as `?q=`.
+  static const String hongguoSearch = '/hongguo/search';
+
   /// One Bilibili archive's page, pushed on the root navigator above the
   /// shell: the video station's cards open it.
   static const String vodVideo = '/vod/:bvid';
