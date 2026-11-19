@@ -36,7 +36,8 @@ import 'package:pure_live/modules/live/room/panels/room_panel.dart' show showRoo
 import 'package:pure_live/modules/live/room/player/sleep_timer.dart' show SleepTimerController, sleepTimerProvider;
 import 'package:pure_live/modules/vod/widgets/vod_picture_gestures.dart' show VodPictureGestures, VodTapSide;
 import 'package:pure_live/modules/vod/widgets/vod_player_chrome.dart' show VodGestureKind, VodGestureTip, VodSeekBar;
-import 'package:pure_live/modules/vod/widgets/vod_widgets.dart' show VodVideoRow, vodDateText, vodDurationText;
+import 'package:pure_live/modules/vod/widgets/vod_widgets.dart'
+    show VodFoldedText, VodVideoRow, vodDateText, vodDurationText;
 import 'package:pure_live/shared/shared.dart';
 
 /// One Huya video: the picture the station's own player would show, the
@@ -1374,10 +1375,6 @@ final class _Info extends StatefulWidget {
 }
 
 final class _InfoState extends State<_Info> {
-  /// The brief folds to six lines until the viewer asks for the rest — the
-  /// same 展开 every other detail page answers with.
-  bool _briefExpanded = false;
-
   @override
   Widget build(BuildContext context) {
     final t = context.t;
@@ -1455,39 +1452,7 @@ final class _InfoState extends State<_Info> {
               ),
             ],
           ),
-        if (brief.isNotEmpty)
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final style = theme.typography.body.copyWith(color: colors.textMuted);
-              final painter = TextPainter(
-                text: TextSpan(text: brief, style: style),
-                maxLines: 6,
-                textDirection: Directionality.of(context),
-                textScaler: MediaQuery.textScalerOf(context),
-              )..layout(maxWidth: constraints.maxWidth);
-              final overflows = painter.didExceedMaxLines;
-              painter.dispose();
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                spacing: DsSpace.s4,
-                children: [
-                  Text(
-                    brief,
-                    maxLines: _briefExpanded ? null : 6,
-                    overflow: _briefExpanded ? null : TextOverflow.ellipsis,
-                    style: style,
-                  ),
-                  if (overflows)
-                    DsButton(
-                      variant: DsButtonVariant.ghost,
-                      size: DsSize.sm,
-                      onPressed: () => setState(() => _briefExpanded = !_briefExpanded),
-                      child: Text(_briefExpanded ? t.common.collapse : t.common.expand),
-                    ),
-                ],
-              );
-            },
-          ),
+        if (brief.isNotEmpty) VodFoldedText(text: brief),
         if (tags.isNotEmpty)
           Wrap(
             spacing: DsSpace.s8,

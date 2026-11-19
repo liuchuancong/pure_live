@@ -38,7 +38,8 @@ import 'package:pure_live/shared/player/playback_layout.dart' show kPlaybackWide
 import 'package:pure_live/shared/player/player_bar_choice.dart' show PlayerBarChoice;
 import 'package:pure_live/shared/player/player_bar_tier.dart' show PlayerBarButton, PlayerBarTier;
 import 'package:pure_live/shared/player/player_control_bar.dart' show PlayerControlBar;
-import 'package:pure_live/shared/player/player_overlay.dart' show PlayerGlassPill;
+import 'package:pure_live/shared/player/player_overlay.dart'
+    show PlayerGlassPill, PlayerOverlayPanel, PlayerPanelHost, PlayerPanelOption;
 import 'package:pure_live/shared/player/player_seek_layer.dart' show PlayerSeekLayer;
 import 'package:pure_live/shared/shared.dart'
     show
@@ -95,6 +96,12 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
 
   /// The quality picker's box; the bar's panel language hangs from it.
   final GlobalKey _qualityAnchor = GlobalKey();
+
+  /// The bar's box; the panel host measures its card against it.
+  final GlobalKey _barAnchor = GlobalKey();
+
+  /// The bar panel standing now; a tap anywhere else puts it away.
+  String? _openPanel;
 
   /// The pointer's answers: the chip a gesture left on the picture, the sound
   /// and the rate a drag or a hold is setting, and the bar's own patience. The
@@ -1619,6 +1626,7 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
                   // shade, one inset, and the archive's own buttons inside
                   // it, so the two detail pages answer alike.
                   child: PlayerControlBar(
+                    key: _barAnchor,
                     padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s12, 0, DsSpace.s12, DsSpace.s8),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1761,30 +1769,14 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
                               ),
                             ),
                             if (qualities.isNotEmpty)
-                              DsMenuAnchor(
-                                semanticLabel: _qualityMenuLabel(t),
-                                builder: (context, controller, child) => PlayerBarChoice(
-                                  anchorKey: _qualityAnchor,
-                                  label: _qualityMenuLabel(t),
-                                  value: _qualityMenuLabel(t),
-                                  icon: DsIcons.settings2,
-                                  onPressed: controller.open,
-                                ),
-                                items: [
-                                  for (final quality in qualities)
-                                    DsMenuItem(
-                                      label: Text(quality.label),
-                                      checked: quality.qn == _openedQn,
-                                      onPressed: () {
-                                        final current = _episode;
-                                        if (current != null) {
-                                          unawaited(
-                                            _openEpisode(current, qn: quality.qn, resumeFrom: _transport?.position),
-                                          );
-                                        }
-                                      },
-                                    ),
-                                ],
+                              PlayerBarChoice(
+                                anchorKey: _qualityAnchor,
+                                label: t.player.quality,
+                                value: _qualityMenuLabel(t),
+                                icon: DsIcons.settings2,
+                                selected: _openPanel == 'quality',
+                                onPressed: () =>
+                                    setState(() => _openPanel = _openPanel == 'quality' ? null : 'quality'),
                               ),
                             PlayerBarButton(
                               icon: DsIcons.download,
@@ -1828,6 +1820,41 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
                         ),
                       ],
                     ),
+                  ),
+                ),
+              // The bar's pickers hang their cards over the picture: a tap
+              // anywhere else closes whichever one stands.
+              if (showBar && _openPanel != null)
+                Positioned.fill(
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () => setState(() => _openPanel = null),
+                    child: const SizedBox.expand(),
+                  ),
+                ),
+              if (showBar && _openPanel == 'quality' && qualities.isNotEmpty)
+                PlayerPanelHost(
+                  anchorKey: _qualityAnchor,
+                  barKey: _barAnchor,
+                  width: 220,
+                  child: PlayerOverlayPanel(
+                    title: t.player.quality,
+                    children: [
+                      for (final quality in qualities)
+                        PlayerPanelOption(
+                          label: quality.label,
+                          selected: quality.qn == _openedQn,
+                          onPressed: () {
+                            setState(() => _openPanel = null);
+                            final current = _episode;
+                            if (current != null) {
+                              unawaited(
+                                _openEpisode(current, qn: quality.qn, resumeFrom: _transport?.position),
+                              );
+                            }
+                          },
+                        ),
+                    ],
                   ),
                 ),
             ],
