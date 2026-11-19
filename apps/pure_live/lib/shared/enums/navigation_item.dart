@@ -13,9 +13,6 @@ enum NavigationItem {
   /// The channels branch.
   channels(DsIcons.layoutGrid),
 
-  /// The discover branch.
-  discover(DsIcons.compass),
-
   /// The history branch.
   history(DsIcons.history),
 
@@ -47,15 +44,6 @@ enum NavigationItem {
 
   /// The settings branch.
   settings(DsIcons.settings),
-
-  /// The appearance branch.
-  appearance(DsIcons.palette),
-
-  /// The network proxy branch.
-  proxy(DsIcons.globe),
-
-  /// The user branch.
-  user(DsIcons.circleUser),
 
   /// The VOD module's own entry: the station's home (推荐/热门/动态).
   vod(DsIcons.film),
@@ -162,7 +150,6 @@ enum NavigationItem {
   String label(Translations t) => switch (this) {
     NavigationItem.live => t.navigation.live,
     NavigationItem.channels => t.iptv.live,
-    NavigationItem.discover => t.navigation.discover,
     NavigationItem.history => t.navigation.history,
     NavigationItem.multiview => t.navigation.multiview,
     NavigationItem.favorites => t.navigation.favorites,
@@ -173,9 +160,6 @@ enum NavigationItem {
     NavigationItem.logs => t.toolbox.toolLogsTitle,
     NavigationItem.record => t.navigation.record,
     NavigationItem.settings => t.navigation.settings,
-    NavigationItem.appearance => t.navigation.appearance,
-    NavigationItem.proxy => t.navigation.proxy,
-    NavigationItem.user => t.navigation.user,
     NavigationItem.vod => t.vod.home,
     NavigationItem.vodPgc => t.vod.pgcTitle,
     NavigationItem.vodRegions => t.vod.regions,

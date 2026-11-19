@@ -5344,9 +5344,6 @@ class Translations$navigation$zh_CN {
 	/// zh-CN: '频道'
 	String get channels => '频道';
 
-	/// zh-CN: '发现'
-	String get discover => '发现';
-
 	/// zh-CN: '观看记录'
 	String get history => '观看记录';
 
@@ -5373,15 +5370,6 @@ class Translations$navigation$zh_CN {
 
 	/// zh-CN: '设置'
 	String get settings => '设置';
-
-	/// zh-CN: '外观'
-	String get appearance => '外观';
-
-	/// zh-CN: '网络代理'
-	String get proxy => '网络代理';
-
-	/// zh-CN: '用户'
-	String get user => '用户';
 
 	/// zh-CN: '分区'
 	String get vodRegions => '分区';
@@ -15490,7 +15478,6 @@ extension on Translations {
 			'navigation.home' => '首页',
 			'navigation.live' => '直播',
 			'navigation.channels' => '频道',
-			'navigation.discover' => '发现',
 			'navigation.history' => '观看记录',
 			'navigation.multiview' => '多画面',
 			'navigation.favorites' => '关注',
@@ -15500,9 +15487,6 @@ extension on Translations {
 			'navigation.toolbox' => '工具箱',
 			'navigation.record' => '录制中心',
 			'navigation.settings' => '设置',
-			'navigation.appearance' => '外观',
-			'navigation.proxy' => '网络代理',
-			'navigation.user' => '用户',
 			'navigation.vodRegions' => '分区',
 			'navigation.vodDownloads' => '下载管理',
 			'navigation.iptvGuide' => '节目单',
@@ -15669,12 +15653,12 @@ extension on Translations {
 			'recorder.caCustomMissing' => ({required Object name}) => '${name} 已不在原位置，录制会失败；请重新选择或清除',
 			'recorder.caCustomNotPem' => '这不是 PEM 文本的证书束（应包含 -----BEGIN CERTIFICATE-----）',
 			'recorder.caCustomPickFailed' => '读取证书文件失败',
-			_ => null,
-		} ?? switch (path) {
 			'recorder.caCustomClear' => '恢复内置',
 			'recorder.caCustomCleared' => '已恢复使用内置根证书',
 			'recorder.startNowBusyOther' => '另一个窗口正在录制这个房间',
 			'recorder.startNowCaFailed' => '自定义 CA 证书读不到，先重新选择或恢复内置',
+			_ => null,
+		} ?? switch (path) {
 			'recorder.menuMore' => '更多操作',
 			'recorder.openRoom' => '进入直播间',
 			'recorder.openFolder' => '打开文件夹',
@@ -16183,12 +16167,12 @@ extension on Translations {
 			'settings.navFloatingWindow' => '小窗与画中画',
 			'settings.groupData' => '数据',
 			'settings.groupAbout' => '关于',
-			_ => null,
-		} ?? switch (path) {
 			'settings.groupIptv' => 'IPTV',
 			'settings.groupVod' => 'Bilibili 视频',
 			'settings.generalDescription' => '浏览、窗口与启动设置。',
 			'settings.appearanceDescription' => '主题、字体与配色。',
+			_ => null,
+		} ?? switch (path) {
 			'settings.personalizationDescription' => '主题、外观、背景与导航。',
 			'settings.liveSettingsDescription' => '直播资源、弹幕与录制。',
 			'settings.liveSourcesDescription' => '平台、账号与自动刷新。',
@@ -16697,12 +16681,12 @@ extension on Translations {
 			'settings.navIptvGroups' => '分组显示',
 			'settings.iptvGroupsDescription' => '决定哪些分组出现在频道列表和换台里。',
 			'settings.navDanmaku' => '弹幕',
-			_ => null,
-		} ?? switch (path) {
 			'settings.navMiniDanmaku' => '小窗弹幕',
 			'settings.navKernel' => '播放器内核',
 			'settings.navRecording' => '录制',
 			'settings.videoDescription' => '画质、音量与画面比例。',
+			_ => null,
+		} ?? switch (path) {
 			'settings.danmakuDescription' => '弹幕显示、样式与屏蔽。',
 			'settings.miniDanmakuDescription' => '画中画小窗里的弹幕。',
 			'settings.kernelDescription' => '内核、硬件解码、预设与画质增强。',
@@ -17211,12 +17195,12 @@ extension on Translations {
 			'settings.wallpaperCategoryFantasyArt' => '奇幻艺术',
 			'settings.wallpaperCategoryFinalFantasy' => '最终幻想',
 			'settings.tagManagement' => '标签管理',
-			_ => null,
-		} ?? switch (path) {
 			'settings.tagManagementDesc' => '自定义和管理直播间的过滤标签',
 			'settings.tagAdd' => '添加标签',
 			'settings.tagEdit' => '编辑标签',
 			'settings.tagPin' => '移到最前',
+			_ => null,
+		} ?? switch (path) {
 			'settings.tagSaveAction' => '保存',
 			'settings.tagNameLabel' => '标签名称',
 			'settings.tagNameHint' => '例如“常看”“睡前听”',
@@ -17725,12 +17709,12 @@ extension on Translations {
 			'toolbox.nodeHint' => '点「测速」检查这个平台。',
 			'toolbox.nodeAnswer' => ({required int count}) => '返回 ${count} 个房间',
 			'toolbox.nodeSourceRecommended' => '推荐接口',
-			_ => null,
-		} ?? switch (path) {
 			'toolbox.nodeSourceHot' => '热门接口',
 			'toolbox.nodeSummary' => ({required Object ok, required Object tested, required Object total}) => '${ok} / ${tested} 可用 · 共 ${total} 个平台',
 			'toolbox.nodeUntestedSummary' => ({required Object total}) => '尚未测速 · 共 ${total} 个平台',
 			'toolbox.logsSection' => '日志与诊断',
+			_ => null,
+		} ?? switch (path) {
 			'toolbox.logsExport' => '复制日志',
 			'toolbox.logsClear' => '清空日志',
 			'toolbox.logsClearConfirm' => '清空内存日志？',

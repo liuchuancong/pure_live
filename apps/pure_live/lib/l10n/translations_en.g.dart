@@ -1896,7 +1896,6 @@ class _Translations$navigation$en extends Translations$navigation$zh_CN {
 	@override String get home => 'Home';
 	@override String get live => 'Live';
 	@override String get channels => 'Channels';
-	@override String get discover => 'Discover';
 	@override String get history => 'Watch history';
 	@override String get multiview => 'Multi-view';
 	@override String get favorites => 'Favorites';
@@ -1906,9 +1905,6 @@ class _Translations$navigation$en extends Translations$navigation$zh_CN {
 	@override String get toolbox => 'Toolbox';
 	@override String get record => 'Recording';
 	@override String get settings => 'Settings';
-	@override String get appearance => 'Appearance';
-	@override String get proxy => 'Network proxy';
-	@override String get user => 'User';
 	@override String get vodRegions => 'Regions';
 	@override String get vodDownloads => 'Downloads';
 	@override String get iptvGuide => 'Guide';
@@ -6625,7 +6621,6 @@ extension on TranslationsEn {
 			'navigation.home' => 'Home',
 			'navigation.live' => 'Live',
 			'navigation.channels' => 'Channels',
-			'navigation.discover' => 'Discover',
 			'navigation.history' => 'Watch history',
 			'navigation.multiview' => 'Multi-view',
 			'navigation.favorites' => 'Favorites',
@@ -6635,9 +6630,6 @@ extension on TranslationsEn {
 			'navigation.toolbox' => 'Toolbox',
 			'navigation.record' => 'Recording',
 			'navigation.settings' => 'Settings',
-			'navigation.appearance' => 'Appearance',
-			'navigation.proxy' => 'Network proxy',
-			'navigation.user' => 'User',
 			'navigation.vodRegions' => 'Regions',
 			'navigation.vodDownloads' => 'Downloads',
 			'navigation.iptvGuide' => 'Guide',
@@ -6804,12 +6796,12 @@ extension on TranslationsEn {
 			'recorder.caCustomNotPem' => 'That is not a PEM certificate bundle (it should contain -----BEGIN CERTIFICATE-----)',
 			'recorder.caCustomPickFailed' => 'The certificate file could not be read',
 			'recorder.caCustomClear' => 'Use bundled',
-			_ => null,
-		} ?? switch (path) {
 			'recorder.caCustomCleared' => 'Recording uses the bundled root store again',
 			'recorder.startNowBusyOther' => 'Another window is recording this room',
 			'recorder.startNowCaFailed' => 'The custom CA bundle cannot be read — pick it again or switch to the bundled store',
 			'recorder.stateSaved' => 'Saved',
+			_ => null,
+		} ?? switch (path) {
 			'recorder.menuMore' => 'More actions',
 			'recorder.openRoom' => 'Open live room',
 			'recorder.openFolder' => 'Open folder',
@@ -7318,12 +7310,12 @@ extension on TranslationsEn {
 			'settings.navFloatingWindow' => 'Floating window & PiP',
 			'settings.groupData' => 'Data',
 			'settings.groupAbout' => 'About',
-			_ => null,
-		} ?? switch (path) {
 			'settings.groupIptv' => 'IPTV',
 			'settings.groupVod' => 'Bilibili video',
 			'settings.generalDescription' => 'Browsing, window and startup pages.',
 			'settings.appearanceDescription' => 'Theme, typography and colours.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.personalizationDescription' => 'Theme, appearance, background and navigation.',
 			'settings.liveSettingsDescription' => 'Live sources, danmaku and recording.',
 			'settings.liveSourcesDescription' => 'Platforms, accounts and auto refresh.',
@@ -7832,12 +7824,12 @@ extension on TranslationsEn {
 			'settings.navIptvGroups' => 'Group visibility',
 			'settings.iptvGroupsDescription' => 'Chooses which groups appear in the channel lists and the zapping.',
 			'settings.navDanmaku' => 'Danmaku',
-			_ => null,
-		} ?? switch (path) {
 			'settings.navMiniDanmaku' => 'Mini-window danmaku',
 			'settings.navKernel' => 'Player engine',
 			'settings.navRecording' => 'Recording',
 			'settings.videoDescription' => 'Quality, audio and how the picture fits.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.danmakuDescription' => 'Danmaku visibility, style and shields.',
 			'settings.miniDanmakuDescription' => 'Danmaku in the compact window.',
 			'settings.kernelDescription' => 'Engine, hardware decoding, presets and picture enhancement.',
@@ -8346,12 +8338,12 @@ extension on TranslationsEn {
 			'settings.wallpaperCategoryFantasyArt' => 'Fantasy Art',
 			'settings.wallpaperCategoryFinalFantasy' => 'Final Fantasy',
 			'settings.tagManagement' => 'Tag management',
-			_ => null,
-		} ?? switch (path) {
 			'settings.tagManagementDesc' => 'Customize and manage the tags rooms are filtered by',
 			'settings.tagAdd' => 'Add tag',
 			'settings.tagEdit' => 'Edit tag',
 			'settings.tagPin' => 'Move to top',
+			_ => null,
+		} ?? switch (path) {
 			'settings.tagSaveAction' => 'Save',
 			'settings.tagNameLabel' => 'Tag name',
 			'settings.tagNameHint' => 'e.g. "Regulars", "Before sleep"',
@@ -8860,12 +8852,12 @@ extension on TranslationsEn {
 			'toolbox.nodeHint' => 'Run a check to test this platform.',
 			'toolbox.nodeAnswer' => ({required int count}) => '${count} rooms returned',
 			'toolbox.nodeSourceRecommended' => 'Recommended endpoint',
-			_ => null,
-		} ?? switch (path) {
 			'toolbox.nodeSourceHot' => 'Hot-list endpoint',
 			'toolbox.nodeSummary' => ({required Object ok, required Object tested, required Object total}) => '${ok} / ${tested} reachable · ${total} platforms',
 			'toolbox.nodeUntestedSummary' => ({required Object total}) => 'Not tested yet · ${total} platforms',
 			'toolbox.logsSection' => 'Logs & diagnostics',
+			_ => null,
+		} ?? switch (path) {
 			'toolbox.logsExport' => 'Copy log',
 			'toolbox.logsClear' => 'Clear logs',
 			'toolbox.logsClearConfirm' => 'Clear the in-memory log?',
