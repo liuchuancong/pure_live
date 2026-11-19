@@ -354,6 +354,7 @@ final class _AppShellState extends ConsumerState<AppShell> {
       NavigationItem.musicLibrary,
     ],
     AppModule.hongguo => const [
+      NavigationItem.hongguoSearch,
       NavigationItem.hongguoHome,
       NavigationItem.hongguoFind,
       NavigationItem.hongguoRank,

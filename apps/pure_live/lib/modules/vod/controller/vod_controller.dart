@@ -20,10 +20,7 @@ enum VodSearchKind {
   cinema,
 
   /// Users (`bili_user`).
-  user,
-
-  /// Live rooms (`live_room`).
-  liveRoom;
+  user;
 
   /// Whether the sort/length filters apply — they are the video endpoint's.
   bool get filterable => this == VodSearchKind.video;
@@ -39,7 +36,6 @@ typedef VodState = ({
   List<VodVideo> videos,
   List<VodSeason> seasons,
   List<VodUser> users,
-  List<VodLiveRoom> rooms,
   int nextPage,
   bool hasMore,
   bool loading,
@@ -52,7 +48,6 @@ VodState _initial(VodSearchKind kind) => (
   videos: const [],
   seasons: const [],
   users: const [],
-  rooms: const [],
   nextPage: 1,
   hasMore: true,
   loading: false,
@@ -116,7 +111,6 @@ final class VodController extends Notifier<VodState> {
       videos: page == 1 ? const [] : state.videos,
       seasons: page == 1 ? const [] : state.seasons,
       users: page == 1 ? const [] : state.users,
-      rooms: page == 1 ? const [] : state.rooms,
       nextPage: state.nextPage,
       hasMore: state.hasMore,
       loading: true,
@@ -137,7 +131,6 @@ final class VodController extends Notifier<VodState> {
             videos: videos,
             seasons: const [],
             users: const [],
-            rooms: const [],
             nextPage: page + 1,
             hasMore: hasMore && _freshWins(page, videos.length),
             loading: false,
@@ -155,7 +148,6 @@ final class VodController extends Notifier<VodState> {
             videos: const [],
             seasons: seasons,
             users: const [],
-            rooms: const [],
             nextPage: page + 1,
             hasMore: hasMore && _freshWins(page, seasons.length),
             loading: false,
@@ -172,26 +164,8 @@ final class VodController extends Notifier<VodState> {
             videos: const [],
             seasons: const [],
             users: users,
-            rooms: const [],
             nextPage: page + 1,
             hasMore: hasMore && _freshWins(page, users.length),
-            loading: false,
-            error: null,
-          );
-        case VodSearchKind.liveRoom:
-          final answer = await client.searchLiveRooms(query, page: page);
-          hasMore = answer.hasMore;
-          if (!ref.mounted || generation != _generation) return;
-          final rooms = _merged(state.rooms, answer.rooms, page == 1, (room) => '${room.roomId}');
-          state = (
-            kind: kind,
-            query: query,
-            videos: const [],
-            seasons: const [],
-            users: const [],
-            rooms: rooms,
-            nextPage: page + 1,
-            hasMore: hasMore && _freshWins(page, rooms.length),
             loading: false,
             error: null,
           );
@@ -204,7 +178,6 @@ final class VodController extends Notifier<VodState> {
         videos: state.videos,
         seasons: state.seasons,
         users: state.users,
-        rooms: state.rooms,
         nextPage: state.nextPage,
         hasMore: false,
         loading: false,

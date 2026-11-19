@@ -1963,23 +1963,15 @@ final class _SearchViewState extends ConsumerState<_SearchView> {
                   tabs: [for (final genre in HongguoGenre.values) DsTab(value: genre, label: Text(genre.label(t)))],
                 ),
               ),
-              Row(
-                spacing: DsSpace.s8,
-                children: [
-                  Expanded(
-                    child: DsTextField(
-                      controller: _query,
-                      semanticLabel: t.hongguo.searchHint,
-                      onChanged: controller.suggest,
-                      onSubmitted: (value) => unawaited(controller.search(value, genre: _genre)),
-                    ),
-                  ),
-                  DsButton(
-                    variant: DsButtonVariant.primary,
-                    onPressed: () => unawaited(controller.search(_query.text, genre: _genre)),
-                    child: Text(t.hongguo.search),
-                  ),
-                ],
+              // The other stations' search field: submit asks, the
+              // magnifier names the box — a button beside it was one more
+              // place to look before the words went out.
+              DsSearchField(
+                controller: _query,
+                placeholder: t.hongguo.searchHint,
+                semanticLabel: t.hongguo.searchHint,
+                onChanged: controller.suggest,
+                onSubmitted: (value) => unawaited(controller.search(value, genre: _genre)),
               ),
               // The two chip walls name themselves, or they read as one: the
               // words the field is asking for, and the words this device

@@ -1,3 +1,5 @@
+import 'dart:convert' show jsonDecode, jsonEncode;
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show FutureProviderFamily;
 import 'package:live_net/live_net.dart' show ClientProfile;
@@ -517,6 +519,74 @@ final class HuyaInlineSearchController extends Notifier<String?> {
 
 /// The word the station's page should show next.
 final huyaInlineSearchProvider = NotifierProvider<HuyaInlineSearchController, String?>(HuyaInlineSearchController.new);
+
+/// The preference key the viewer's recent huya searches live under.
+const String kHuyaSearchHistoryKey = 'huya.search.history';
+
+/// How many searches the station page remembers.
+const int kHuyaSearchHistoryLimit = 20;
+
+/// The queries the viewer searched, newest first — the 搜索历史 the other
+/// stations keep about themselves, the same list the live search keeps.
+final class HuyaSearchHistoryController extends Notifier<List<String>> {
+  @override
+  List<String> build() {
+    try {
+      final raw = StoragePrefs.getString(kHuyaSearchHistoryKey);
+      if (raw == null || raw.isEmpty) return const [];
+      final json = jsonDecode(raw);
+      if (json is! List) return const [];
+      return [
+        for (final entry in json)
+          if (entry is String && entry.trim().isNotEmpty) entry,
+      ];
+    } on Object {
+      return const [];
+    }
+  }
+
+  /// Puts [query] at the front, dropping an older copy. The duplicate test
+  /// reads case-insensitively — a re-ask of "abc" after "ABC" is one search
+  /// said twice, not two words.
+  Future<void> record(String query) async {
+    final word = query.trim();
+    if (word.isEmpty) return;
+    if (state.isNotEmpty && state.first.toLowerCase() == word.toLowerCase()) return;
+    state = [
+      word,
+      ...state.where((entry) => entry.toLowerCase() != word.toLowerCase()),
+    ].take(kHuyaSearchHistoryLimit).toList();
+    await _save();
+  }
+
+  /// Forgets one query.
+  Future<void> remove(String query) async {
+    state = [
+      for (final entry in state)
+        if (entry != query) entry,
+    ];
+    await _save();
+  }
+
+  /// Forgets every query.
+  Future<void> clear() async {
+    state = const [];
+    await _save();
+  }
+
+  Future<void> _save() async {
+    try {
+      await StoragePrefs.setString(kHuyaSearchHistoryKey, jsonEncode(state));
+    } on Object {
+      // A preference; a closed store loses it.
+    }
+  }
+}
+
+/// The viewer's recent huya searches.
+final huyaSearchHistoryProvider = NotifierProvider<HuyaSearchHistoryController, List<String>>(
+  HuyaSearchHistoryController.new,
+);
 
 /// One video's own page, read once per id and kept while the player is open.
 final FutureProviderFamily<HuyaVideoDetail, String> huyaVideoDetailProvider =

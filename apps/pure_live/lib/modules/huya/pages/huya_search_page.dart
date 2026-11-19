@@ -55,6 +55,7 @@ final class _HuyaSearchPageState extends ConsumerState<HuyaSearchPage> {
     if (trimmed.isEmpty) return;
     setState(() => _word = trimmed);
     unawaited(ref.read(huyaSearchProvider.notifier).search(trimmed));
+    unawaited(ref.read(huyaSearchHistoryProvider.notifier).record(trimmed));
   }
 
   void _open(String id) {
@@ -91,9 +92,10 @@ final class _HuyaSearchPageState extends ConsumerState<HuyaSearchPage> {
           ),
           if (_word.isEmpty)
             Expanded(
-              child: Center(
-                child: DsEmptyState(icon: const DsIcon(DsIcons.search), title: Text(t.huya.searchEmpty)),
-              ),
+              // The page's first face: the words this device searched, each
+              // a chip that asks again — the other stations' 搜索历史 wall.
+              // A device with no searches keeps the bare invitation.
+              child: _HuyaSearchIdle(onPick: _run),
             )
           else ...[
             Padding(
@@ -153,6 +155,97 @@ final class _HuyaSearchPageState extends ConsumerState<HuyaSearchPage> {
           ],
         ],
       ),
+    );
+  }
+}
+
+/// The search page's first face: the words this device searched, each one a
+/// chip that asks again, with the wall's own way out beside it — the same
+/// 搜索历史 wall the other stations keep.
+final class _HuyaSearchIdle extends ConsumerWidget {
+  const _HuyaSearchIdle({required this.onPick});
+
+  final ValueChanged<String> onPick;
+
+  /// Asks before the whole wall goes: a full clear cannot be undone, and
+  /// the button sits beside chips a slip of the finger can reach.
+  Future<void> _clearHistory(BuildContext context, WidgetRef ref) async {
+    final t = context.t;
+    final confirmed = await showAppConfirm(
+      context: context,
+      title: t.common.clearSearchHistoryTitle,
+      description: t.common.clearSearchHistoryBody,
+      confirmLabel: t.huya.searchHistoryClear,
+      cancelLabel: t.common.cancel,
+      destructive: true,
+    );
+    if (!confirmed || !context.mounted) return;
+    unawaited(ref.read(huyaSearchHistoryProvider.notifier).clear());
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final t = context.t;
+    final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
+    final history = ref.watch(huyaSearchHistoryProvider);
+    if (history.isEmpty) {
+      return Center(
+        child: DsEmptyState(icon: const DsIcon(DsIcons.search), title: Text(t.huya.searchEmpty)),
+      );
+    }
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
+    return ListView(
+      padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s12),
+      children: [
+        Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: _kSearchHeadMaxWidth),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(t.huya.searchHistory, style: theme.typography.caption.copyWith(color: colors.textMuted)),
+                const SizedBox(height: DsSpace.s8),
+                Row(
+                  spacing: DsSpace.s8,
+                  children: [
+                    Expanded(
+                      child: Wrap(
+                        spacing: DsSpace.s8,
+                        runSpacing: DsSpace.s8,
+                        children: [
+                          for (final word in history)
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              spacing: DsSpace.s4,
+                              children: [
+                                DsChip(label: Text(word), selected: false, onChanged: (_) => onPick(word)),
+                                DsButton.icon(
+                                  variant: DsButtonVariant.ghost,
+                                  size: DsSize.sm,
+                                  semanticLabel: t.huya.searchHistoryRemove(word: word),
+                                  onPressed: () => ref.read(huyaSearchHistoryProvider.notifier).remove(word),
+                                  icon: const DsIcon(DsIcons.x, size: 14),
+                                ),
+                              ],
+                            ),
+                        ],
+                      ),
+                    ),
+                    DsButton(
+                      size: DsSize.sm,
+                      variant: DsButtonVariant.ghost,
+                      onPressed: () => unawaited(_clearHistory(context, ref)),
+                      child: Text(t.huya.searchHistoryClear),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

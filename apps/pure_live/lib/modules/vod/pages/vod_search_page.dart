@@ -4,12 +4,10 @@ import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show GoRouterHelper;
-import 'package:live_sites/live_sites.dart';
 import 'package:live_vod/live_vod.dart';
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/layouts/page_layout_scope.dart';
-import 'package:pure_live/modules/live/popular/popular.dart' show RoomCard, RoomCardMenu;
 import 'package:pure_live/modules/vod/controller/vod_controller.dart';
 import 'package:pure_live/modules/vod/widgets/vod_toolbar.dart' show VodFeedToolbar, kVodFeedTabsStyle;
 import 'package:pure_live/modules/vod/widgets/vod_widgets.dart'
@@ -22,7 +20,6 @@ String vodSearchKindLabel(Translations t, VodSearchKind kind) => switch (kind) {
   VodSearchKind.bangumi => t.vod.searchKindBangumi,
   VodSearchKind.cinema => t.vod.searchKindCinema,
   VodSearchKind.user => t.vod.searchKindUser,
-  VodSearchKind.liveRoom => t.vod.searchKindLiveRoom,
 };
 
 /// The archive tab's sorts, in the station's own order.
@@ -184,10 +181,6 @@ final class _VodSearchPageState extends ConsumerState<VodSearchPage> {
 
   void _openSeason(VodSeason season) => unawaited(context.push('/vod/season/${season.seasonId}'));
 
-  void _openRoom(VodLiveRoom room) {
-    unawaited(openRoom(context, platform: 'bilibili', roomId: '${room.roomId}'));
-  }
-
   @override
   Widget build(BuildContext context) {
     final t = context.t;
@@ -303,7 +296,6 @@ final class _VodSearchPageState extends ConsumerState<VodSearchPage> {
                   onRefresh: _rerun,
                   onVideo: _openVideo,
                   onSeason: _openSeason,
-                  onRoom: _openRoom,
                 )
               : _SearchIdleHistory(onPick: _pickHistory),
         ),
@@ -416,7 +408,6 @@ final class _SearchResults extends StatelessWidget {
     required this.onRefresh,
     required this.onVideo,
     required this.onSeason,
-    required this.onRoom,
   });
 
   final VodState state;
@@ -432,7 +423,6 @@ final class _SearchResults extends StatelessWidget {
 
   final ValueChanged<VodVideo> onVideo;
   final ValueChanged<VodSeason> onSeason;
-  final ValueChanged<VodLiveRoom> onRoom;
 
   @override
   Widget build(BuildContext context) {
@@ -515,45 +505,9 @@ final class _SearchResults extends StatelessWidget {
           emptyDescription: t.vod.noResultsDescription,
           itemBuilder: (context, user) => VodUserRow(user: user),
         );
-      case VodSearchKind.liveRoom:
-        return PagedCardGrid<VodLiveRoom>(
-          items: state.rooms,
-          crossSpacing: settings.crossSpacing,
-          mainSpacing: settings.mainSpacing,
-          isLoading: state.loading,
-          hasMore: state.hasMore,
-          onLoadMore: controller.loadMore,
-          error: state.error?.message,
-          onRetry: retry,
-          onRefresh: onRefresh,
-          refreshError: state.error?.message,
-          emptyIcon: DsIcons.radio,
-          emptyTitle: t.vod.noResultsTitle,
-          emptyDescription: t.vod.noResultsDescription,
-          itemBuilder: (context, room) {
-            final live = _liveRoomOf(room);
-            return RoomCardMenu(
-              room: live,
-              onOpen: () => onRoom(room),
-              child: RoomCard(room: live, onOpen: () => onRoom(room), livePreview: true),
-            );
-          },
-        );
     }
   }
 }
-
-/// One live-room hit as the shared card's room: the station answers a search
-/// with the same room the live feeds show, minus the fields a search hit does
-/// not carry.
-LiveRoom _liveRoomOf(VodLiveRoom room) => LiveRoom.normalized(
-  platform: SiteIds.bilibili,
-  roomId: '${room.roomId}',
-  content: RoomContent.of(title: room.title, coverUrl: room.coverUrl ?? ''),
-  anchor: LiveAnchor.of(name: room.anchor ?? '', avatarUrl: room.avatar),
-  audience: RoomAudience.of(onlineViewers: room.online),
-  broadcast: RoomBroadcast.of(liveStatus: LiveStatus.live),
-);
 
 /// The search page's first face: the words this device searched, each
 /// one a chip that asks again, with the wall's own way out beside it —

@@ -849,6 +849,9 @@ class _Translations$huya$en extends Translations$huya$zh_CN {
 	@override String get live => 'Live';
 	@override String searchResults({required int count, required String word}) => '${count} videos for “${word}”';
 	@override String get searchEmpty => 'No videos found';
+	@override String get searchHistory => 'Search history';
+	@override String get searchHistoryClear => 'Clear';
+	@override String searchHistoryRemove({required Object word}) => 'Remove "${word}"';
 	@override String get searchEmptyDescription => 'Try another word.';
 	@override String get backToBrowse => 'Back to browse';
 	@override String rankUpdated({required String time}) => 'Updated ${time}';
@@ -5616,6 +5619,9 @@ extension on TranslationsEn {
 			'huya.live' => 'Live',
 			'huya.searchResults' => ({required int count, required String word}) => '${count} videos for “${word}”',
 			'huya.searchEmpty' => 'No videos found',
+			'huya.searchHistory' => 'Search history',
+			'huya.searchHistoryClear' => 'Clear',
+			'huya.searchHistoryRemove' => ({required Object word}) => 'Remove "${word}"',
 			'huya.searchEmptyDescription' => 'Try another word.',
 			'huya.backToBrowse' => 'Back to browse',
 			'huya.rankUpdated' => ({required String time}) => 'Updated ${time}',
@@ -5779,11 +5785,11 @@ extension on TranslationsEn {
 			'iptv.aspectLabel' => 'Aspect',
 			'iptv.aspectAuto' => 'Default',
 			'iptv.aspect16x9' => '16:9',
+			_ => null,
+		} ?? switch (path) {
 			'iptv.aspect4x3' => '4:3',
 			'iptv.aspectFill' => 'Fill',
 			'iptv.aspectZoom' => 'Crop',
-			_ => null,
-		} ?? switch (path) {
 			'iptv.digitHint' => 'Type a channel number',
 			'iptv.digitNoChannel' => ({required Object number}) => 'No channel numbered ${number}',
 			'iptv.reminderAction' => 'Remind',
@@ -6293,11 +6299,11 @@ extension on TranslationsEn {
 			'music.lyricTiming' => 'Timing',
 			'music.lyricTranslationDesc' => 'Show the translation when the lyric has one.',
 			'music.lyricRomanization' => 'Show romanization',
+			_ => null,
+		} ?? switch (path) {
 			'music.lyricRomanizationDesc' => 'Show the romanization when the lyric has one.',
 			'music.lyricSwapSecondary' => 'Translation/romanization order',
 			'music.lyricSwapSecondaryDesc' => 'Swap translation and romanization under a lyric line.',
-			_ => null,
-		} ?? switch (path) {
 			'music.lyricTraditionalize' => 'Traditional Chinese',
 			'music.lyricTraditionalizeDesc' => 'Rewrite lyric text into traditional Chinese.',
 			'music.lyricWordTimed' => 'Word-by-word lyrics',
@@ -6807,11 +6813,11 @@ extension on TranslationsEn {
 			'recorder.caCustomPicked' => ({required Object name}) => 'In use: ${name}',
 			'recorder.caCustomMissing' => ({required Object name}) => '${name} is no longer where the row found it — recordings will fail; pick it again or clear it',
 			'recorder.caCustomNotPem' => 'That is not a PEM certificate bundle (it should contain -----BEGIN CERTIFICATE-----)',
+			_ => null,
+		} ?? switch (path) {
 			'recorder.caCustomPickFailed' => 'The certificate file could not be read',
 			'recorder.caCustomClear' => 'Use bundled',
 			'recorder.caCustomCleared' => 'Recording uses the bundled root store again',
-			_ => null,
-		} ?? switch (path) {
 			'recorder.startNowBusyOther' => 'Another window is recording this room',
 			'recorder.startNowCaFailed' => 'The custom CA bundle cannot be read — pick it again or switch to the bundled store',
 			'recorder.stateSaved' => 'Saved',
@@ -7321,11 +7327,11 @@ extension on TranslationsEn {
 			'settings.navAudio' => 'Audio & volume',
 			'settings.navPicture' => 'Picture & floating',
 			'settings.navFloatingWindow' => 'Floating window & PiP',
+			_ => null,
+		} ?? switch (path) {
 			'settings.groupData' => 'Data',
 			'settings.groupAbout' => 'About',
 			'settings.groupIptv' => 'IPTV',
-			_ => null,
-		} ?? switch (path) {
 			'settings.groupVod' => 'Bilibili video',
 			'settings.generalDescription' => 'Browsing, window and startup pages.',
 			'settings.appearanceDescription' => 'Theme, typography and colours.',
@@ -7835,11 +7841,11 @@ extension on TranslationsEn {
 			'settings.navIptvBrowse' => 'Zapping and display',
 			'settings.iptvBrowseDescription' => 'How the channel number, the zap direction, the clock and the programme line are shown.',
 			'settings.navIptvGroups' => 'Group visibility',
+			_ => null,
+		} ?? switch (path) {
 			'settings.iptvGroupsDescription' => 'Chooses which groups appear in the channel lists and the zapping.',
 			'settings.navDanmaku' => 'Danmaku',
 			'settings.navMiniDanmaku' => 'Mini-window danmaku',
-			_ => null,
-		} ?? switch (path) {
 			'settings.navKernel' => 'Player engine',
 			'settings.navRecording' => 'Recording',
 			'settings.videoDescription' => 'Quality, audio and how the picture fits.',
@@ -8349,11 +8355,11 @@ extension on TranslationsEn {
 			'settings.wallpaperCategoryCityscape' => 'Cityscape',
 			'settings.wallpaperCategoryDigitalArt' => 'Digital Art',
 			'settings.wallpaperCategoryFantasyArt' => 'Fantasy Art',
+			_ => null,
+		} ?? switch (path) {
 			'settings.wallpaperCategoryFinalFantasy' => 'Final Fantasy',
 			'settings.tagManagement' => 'Tag management',
 			'settings.tagManagementDesc' => 'Customize and manage the tags rooms are filtered by',
-			_ => null,
-		} ?? switch (path) {
 			'settings.tagAdd' => 'Add tag',
 			'settings.tagEdit' => 'Edit tag',
 			'settings.tagPin' => 'Move to top',
@@ -8863,11 +8869,11 @@ extension on TranslationsEn {
 			'toolbox.nodeFailed' => 'Failed',
 			'toolbox.nodeNoSites' => 'No platform can be tested',
 			'toolbox.nodeHint' => 'Run a check to test this platform.',
+			_ => null,
+		} ?? switch (path) {
 			'toolbox.nodeAnswer' => ({required int count}) => '${count} rooms returned',
 			'toolbox.nodeSourceRecommended' => 'Recommended endpoint',
 			'toolbox.nodeSourceHot' => 'Hot-list endpoint',
-			_ => null,
-		} ?? switch (path) {
 			'toolbox.nodeSummary' => ({required Object ok, required Object tested, required Object total}) => '${ok} / ${tested} reachable · ${total} platforms',
 			'toolbox.nodeUntestedSummary' => ({required Object total}) => 'Not tested yet · ${total} platforms',
 			'toolbox.logsSection' => 'Logs & diagnostics',
