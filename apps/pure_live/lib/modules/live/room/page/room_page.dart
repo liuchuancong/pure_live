@@ -496,7 +496,7 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
   void _onSleepFire() {
     unawaited(ref.read(roomProvider.notifier).pause());
     if (mounted) {
-      showDsToast(context: context, title: context.t.room.sleepDone);
+      showDsToast(context: context, title: context.t.player.sleepDone);
     }
   }
 

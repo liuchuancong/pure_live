@@ -371,7 +371,7 @@ final class _WallpaperVideoPlayerState extends State<WallpaperVideoPlayer> {
             onHover: (_) => _wakeBar(),
             onExit: (_) => _scheduleHideBar(),
             child: DsPressable(
-              semanticLabel: _playing ? t.room.pause : t.room.play,
+              semanticLabel: _playing ? t.player.pause : t.player.play,
               onPressed: () => unawaited(_toggle()),
               builder: (context, states, _) => const SizedBox.expand(),
             ),
@@ -414,7 +414,7 @@ final class _WallpaperVideoPlayerState extends State<WallpaperVideoPlayer> {
                       ),
                       PlayerBarButton(
                         iconAsset: _playing ? 'assets/icons/pause.svg' : 'assets/icons/play.svg',
-                        label: _playing ? t.room.pause : t.room.play,
+                        label: _playing ? t.player.pause : t.player.play,
                         onPressed: () => unawaited(_toggle()),
                       ),
                       PlayerBarButton(
@@ -445,7 +445,7 @@ final class _WallpaperVideoPlayerState extends State<WallpaperVideoPlayer> {
                       ),
                       PlayerBarButton(
                         iconAsset: _muted ? 'assets/icons/volume-muted.svg' : 'assets/icons/volume.svg',
-                        label: _muted ? t.room.unmute : t.room.mute,
+                        label: _muted ? t.player.unmute : t.player.mute,
                         onPressed: () => unawaited(_toggleMute()),
                       ),
                       ...widget.barActions,

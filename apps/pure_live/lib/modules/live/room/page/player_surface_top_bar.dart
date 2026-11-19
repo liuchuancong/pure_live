@@ -151,7 +151,7 @@ final class _PlayerTopBarState extends ConsumerState<_PlayerTopBar> {
         final audioPill = PlayerGlassPill(
           child: PlayerBarButton(
             icon: widget.room.audioOnly ? DsIcons.video : DsIcons.headphones,
-            label: widget.room.audioOnly ? t.room.restoreVideo : t.room.audioOnlyMode,
+            label: widget.room.audioOnly ? t.player.restoreVideo : t.player.audioOnlyMode,
             selected: widget.room.audioOnly,
             onPressed: () {
               widget.onWake();
@@ -163,7 +163,7 @@ final class _PlayerTopBarState extends ConsumerState<_PlayerTopBar> {
             ? PlayerGlassPill(
                 child: PlayerBarButton(
                   icon: DsIcons.camera,
-                  label: t.room.screenshot,
+                  label: t.player.screenshot,
                   onPressed: () {
                     widget.onWake();
                     unawaited(takeRoomScreenshot(context, ref, capture));
@@ -483,7 +483,7 @@ final class _TopToolCluster extends ConsumerWidget {
                 if (canShot)
                   chip(
                     icon: DsIcons.camera,
-                    label: context.t.room.screenshot,
+                    label: context.t.player.screenshot,
                     onPressed: () {
                       final handle = room.handle;
                       if (handle == null || !handle.canCaptureScreenshot) return;
@@ -505,7 +505,7 @@ final class _TopToolCluster extends ConsumerWidget {
                 if (audioMode)
                   chip(
                     icon: audioOnly ? DsIcons.video : DsIcons.headphones,
-                    label: audioOnly ? context.t.room.restoreVideo : context.t.room.audioOnlyMode,
+                    label: audioOnly ? context.t.player.restoreVideo : context.t.player.audioOnlyMode,
                     onPressed: () => unawaited(ref.read(roomProvider.notifier).setAudioOnly(value: !audioOnly)),
                   ),
                 // The way into or out of the small window; on a narrow cluster
@@ -514,7 +514,7 @@ final class _TopToolCluster extends ConsumerWidget {
                 if (pipChip && pipAvailable && (!small || presentation == PresentationMode.pip))
                   chip(
                     icon: DsIcons.pictureInPicture2,
-                    label: presentation == PresentationMode.pip ? context.t.room.pipOff : context.t.room.pipOn,
+                    label: presentation == PresentationMode.pip ? context.t.player.pipOff : context.t.player.pipOn,
                     onPressed: () => unawaited(toggleRoomPip(context, ref)),
                   ),
                 if (onMore != null) chip(icon: DsIcons.ellipsis, label: context.t.common.more, onPressed: onMore),

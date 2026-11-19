@@ -576,7 +576,7 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
     final t = context.t;
     showDsToast(
       context: context,
-      title: file == null ? t.room.screenshotFailed : t.room.screenshotSaved(name: file.uri.pathSegments.last),
+      title: file == null ? t.player.screenshotFailed : t.player.screenshotSaved(name: file.uri.pathSegments.last),
       status: file == null ? DsStatus.danger : DsStatus.success,
     );
   }
@@ -1049,7 +1049,7 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
           PlayerGlassPill(
             child: PlayerBarButton(
               iconAsset: 'assets/icons/pip-exit.svg',
-              label: t.room.pipOff,
+              label: t.player.pipOff,
               autofocus: true,
               onPressed: () {
                 final handle = _handle;
@@ -1585,21 +1585,21 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
         // A kernel that cannot hand a frame back loses the pill rather than
         // offering one that only toasts a failure.
         if (handle?.canCaptureScreenshot ?? false)
-          pill(DsIcons.camera, t.room.screenshot, onPressed: () => unawaited(_screenshot())),
+          pill(DsIcons.camera, t.player.screenshot, onPressed: () => unawaited(_screenshot())),
         // 投屏 of the file itself. A renderer cannot read this disk, but the
         // DLNA backend serves the path over the LAN through its own media
         // server, so a finished take casts the way a stream does.
         if (_current case final entry? when entry.exists)
           pill(
             DsIcons.cast,
-            t.room.cast,
+            t.player.cast,
             onPressed: () =>
                 unawaited(showCastUriDialog(context, url: File(entry.path).uri.toString(), title: entry.title)),
           ),
         if (handle != null && _presentation.pipAvailable)
           pill(
             pip ? DsIcons.pictureInPictureExit : DsIcons.pictureInPicture,
-            pip ? t.room.pipOff : t.vod.pip,
+            pip ? t.player.pipOff : t.vod.pip,
             onPressed: () => unawaited(_togglePip()),
           ),
         // The mini window is the destinations' last stop: keep the frame,
@@ -1616,7 +1616,7 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
               // to spread across itself.
               DsMenuItem(
                 leading: DsIcon(_audioOnly ? DsIcons.video : DsIcons.headphones),
-                label: Text(_audioOnly ? t.room.restoreVideo : t.room.audioOnlyMode),
+                label: Text(_audioOnly ? t.player.restoreVideo : t.player.audioOnlyMode),
                 checked: _audioOnly,
                 onPressed: handle == null ? null : () => unawaited(_setAudioOnly(!_audioOnly)),
               ),
@@ -1628,7 +1628,7 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
                 ),
               DsMenuItem(
                 leading: const DsIcon(DsIcons.activity),
-                label: Text(t.room.statsToggle),
+                label: Text(t.player.statsToggle),
                 checked: ref.watch(playerStatsVisibleProvider),
                 onPressed: handle == null ? null : () => ref.read(playerStatsVisibleProvider.notifier).toggle(),
               ),
@@ -1688,7 +1688,7 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
           width: 96,
           child: DsSlider(
             value: _volume,
-            semanticLabel: t.room.volume,
+            semanticLabel: t.player.volume,
             onChanged: handle == null ? null : (value) => unawaited(_setVolume(value)),
           ),
         ),
@@ -1722,7 +1722,7 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
       if (_desktop)
         PlayerBarButton(
           icon: windowFullscreen ? DsIcons.copy : DsIcons.square,
-          label: windowFullscreen ? t.room.windowFullscreenOff : t.room.windowFullscreenOn,
+          label: windowFullscreen ? t.player.windowFullscreenOff : t.player.windowFullscreenOn,
           selected: windowFullscreen,
           onPressed: handle == null ? null : () => unawaited(_toggleWindowFullscreen()),
         ),

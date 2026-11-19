@@ -141,7 +141,7 @@ final class _DirectLinkDialogState extends ConsumerState<DirectLinkDialog> {
                       for (final (index, line) in _lines.indexed)
                         DsListRow(
                           leading: const DsIcon(DsIcons.link2),
-                          title: Text(line.lineLabel ?? t.room.line(n: index + 1)),
+                          title: Text(line.lineLabel ?? t.player.lineNumber(n: index + 1)),
                           description: Text(line.url, maxLines: 1, overflow: TextOverflow.ellipsis),
                           trailing: DsButton(
                             variant: DsButtonVariant.ghost,

@@ -413,14 +413,14 @@ final class _HongguoSeriesHeadState extends ConsumerState<HongguoSeriesHead> {
                     size: DsSize.sm,
                     leading: const DsIcon(DsIcons.play, size: 14),
                     onPressed: hasEpisode ? () => widget.onPlay(resume: true) : null,
-                    child: Text(row == null ? t.hongguo.play : t.hongguo.continueWatching),
+                    child: Text(row == null ? t.player.play : t.hongguo.continueWatching),
                   ),
                   if (row != null && hasEpisode)
                     DsButton(
                       variant: DsButtonVariant.secondary,
                       size: DsSize.sm,
                       onPressed: () => widget.onPlay(episode: detail.episodes.first),
-                      child: Text(t.hongguo.playFromStart),
+                      child: Text(t.player.playFromStart),
                     ),
                   // The bookmark stays a quiet ghost whether it is on or off —
                   // only the heart and the word change, so the row keeps one

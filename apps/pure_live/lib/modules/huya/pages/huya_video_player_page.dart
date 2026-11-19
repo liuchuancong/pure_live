@@ -485,7 +485,7 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
   /// room's own toast.
   void _onSleepFire() {
     unawaited(_handle?.pause() ?? Future<void>.value());
-    if (mounted) showDsToast(context: context, title: context.t.room.sleepDone);
+    if (mounted) showDsToast(context: context, title: context.t.player.sleepDone);
   }
 
   /// Keeps the frame the video is showing in the viewer's screenshot folder,
@@ -499,7 +499,7 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
     final t = context.t;
     showDsToast(
       context: context,
-      title: file == null ? t.room.screenshotFailed : t.room.screenshotSaved(name: file.uri.pathSegments.last),
+      title: file == null ? t.player.screenshotFailed : t.player.screenshotSaved(name: file.uri.pathSegments.last),
       status: file == null ? DsStatus.danger : DsStatus.success,
     );
   }
@@ -1050,7 +1050,7 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
       if (_handle?.canCaptureScreenshot ?? false)
         PlayerBarButton(
           icon: DsIcons.camera,
-          label: t.room.screenshot,
+          label: t.player.screenshot,
           onPressed: () {
             _wake();
             unawaited(_screenshot());
@@ -1144,7 +1144,7 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
             child: presentation == PresentationMode.pip
                 ? PlayerBarButton(
                     iconAsset: 'assets/icons/pip-exit.svg',
-                    label: t.room.pipOff,
+                    label: t.player.pipOff,
                     autofocus: true,
                     onPressed: () {
                       _wake();
@@ -1227,7 +1227,7 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
       children: [
         PlayerBarButton(
           iconAsset: playing ? 'assets/icons/pause.svg' : 'assets/icons/play.svg',
-          label: playing ? t.room.pause : t.room.play,
+          label: playing ? t.player.pause : t.player.play,
           onPressed: () {
             _wake();
             unawaited(controller.togglePlayPause());
@@ -1236,7 +1236,7 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
         // The bar owns the sound the way the live room's does: the mute
         // button and the slider beside it, the slider speaking past a mute.
         PlayerBarButton(
-          label: _muted ? t.room.unmute : t.room.mute,
+          label: _muted ? t.player.unmute : t.player.mute,
           iconAsset: _muted ? 'assets/icons/volume-muted.svg' : 'assets/icons/volume.svg',
           onPressed: () {
             _wake();
@@ -1251,7 +1251,7 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
               _wake();
               unawaited(_setVolume(value));
             },
-            semanticLabel: t.room.volume,
+            semanticLabel: t.player.volume,
           ),
         ),
         if (!compact) const Spacer(),
@@ -1262,7 +1262,7 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
         if (!compact) const Spacer(),
         if (controller.qualities.length > 1)
           DsMenuAnchor(
-            semanticLabel: t.huya.quality,
+            semanticLabel: t.player.quality,
             align: DsAlign.end,
             items: [
               for (final quality in controller.qualities)
@@ -1277,7 +1277,7 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
               icon: DsIcons.gauge,
               label:
                   controller.qualities.where((item) => item.id == controller.qualityId).firstOrNull?.label ??
-                  t.huya.quality,
+                  t.player.quality,
               onPressed: () {
                 _wake();
                 menu.toggle();
@@ -1285,7 +1285,7 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
             ),
           ),
         DsMenuAnchor(
-          semanticLabel: t.huya.speed,
+          semanticLabel: t.player.speed,
           align: DsAlign.end,
           items: [
             for (final rate in _speedChoices)
@@ -1307,8 +1307,8 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
           PlayerBarButton(
             icon: presentation == PresentationMode.windowFullscreen ? DsIcons.copy : DsIcons.square,
             label: presentation == PresentationMode.windowFullscreen
-                ? t.room.windowFullscreenOff
-                : t.room.windowFullscreenOn,
+                ? t.player.windowFullscreenOff
+                : t.player.windowFullscreenOn,
             selected: presentation == PresentationMode.windowFullscreen,
             onPressed: () {
               _wake();
@@ -1661,7 +1661,7 @@ final class _HuyaMoreContent extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (labeled) playerMoreSectionLabel(context, t.room.moreSettings),
+        if (labeled) playerMoreSectionLabel(context, t.player.moreSettings),
         Padding(
           padding: const EdgeInsetsDirectional.symmetric(horizontal: DsSpace.s8, vertical: DsSpace.s4),
           child: Column(
@@ -1672,8 +1672,8 @@ final class _HuyaMoreContent extends ConsumerWidget {
               // choices the room's reads, and its fire pauses the video where
               // it stands.
               PlayerMoreRow(
-                label: t.room.sleep,
-                value: t.room.sleepOff,
+                label: t.player.sleep,
+                value: t.player.sleepOff,
                 onTap: () => unawaited(showRoomSleepTimer(context)),
               ),
               // The auto-hide pace: the reference's segments — 常显, then the

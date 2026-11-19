@@ -127,14 +127,14 @@ final class PictureActionButton extends ConsumerWidget {
       ),
       RoomPictureAction.retry => (t.common.retry, () => unawaited(controller.retry())),
       RoomPictureAction.switchLine => (
-        t.room.lineLabel,
+        t.player.line,
         () {
           final current = ref.read(roomProvider);
           if (current.lines.length < 2) return;
           unawaited(controller.selectLine((current.lineIndex + 1) % current.lines.length));
         },
       ),
-      RoomPictureAction.playAgain => (t.room.play, () => unawaited(controller.retry())),
+      RoomPictureAction.playAgain => (t.player.play, () => unawaited(controller.retry())),
       RoomPictureAction.openReplays => (
         t.room.replayOpen,
         room == null ? null : () => unawaited(_openReplays(context, ref, room)),
@@ -1159,7 +1159,7 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
                       child: PlayerGlassPill(
                         child: PlayerBarButton(
                           iconAsset: 'assets/icons/pip-exit.svg',
-                          label: context.t.room.pipOff,
+                          label: context.t.player.pipOff,
                           onPressed: widget.onLeave,
                         ),
                       ),

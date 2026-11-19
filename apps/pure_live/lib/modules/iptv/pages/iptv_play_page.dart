@@ -644,7 +644,7 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
   /// the room's own toast.
   void _onSleepFire() {
     unawaited(_handle?.pause() ?? Future<void>.value());
-    if (mounted) showDsToast(context: context, title: context.t.room.sleepDone);
+    if (mounted) showDsToast(context: context, title: context.t.player.sleepDone);
   }
 
   /// The picture's double click: fullscreen in, fullscreen out — the
@@ -1207,7 +1207,7 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
     final t = context.t;
     showDsToast(
       context: context,
-      title: file == null ? t.room.screenshotFailed : t.room.screenshotSaved(name: file.uri.pathSegments.last),
+      title: file == null ? t.player.screenshotFailed : t.player.screenshotSaved(name: file.uri.pathSegments.last),
       status: file == null ? DsStatus.danger : DsStatus.success,
     );
   }
@@ -1369,10 +1369,10 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
       if (replay != null) headerVerb(DsIcons.radio, t.iptv.backToLive, () => unawaited(_open())),
     ];
     final demoVerbs = [
-      if (channel != null && !headerNarrow) headerVerb(DsIcons.cast, t.room.cast, () => _cast(channel)),
+      if (channel != null && !headerNarrow) headerVerb(DsIcons.cast, t.player.cast, () => _cast(channel)),
       // A channel ends itself when the viewer falls asleep: the timer's
       // panel reads the same choices the room's reads.
-      if (channel != null) headerVerb(DsIcons.timer, t.room.sleep, () => unawaited(showRoomSleepTimer(context))),
+      if (channel != null) headerVerb(DsIcons.timer, t.player.sleep, () => unawaited(showRoomSleepTimer(context))),
       if (hasTake) headerVerb(DsIcons.listVideo, t.iptv.viewRecordings, () => unawaited(_openRecordings())),
     ];
     final verbs = [...navVerbs, ...demoVerbs];
@@ -1800,13 +1800,13 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
                                                 const _BarDivider(),
                                               ],
                                               PlayerBarButton(
-                                                label: playing ? t.room.pause : t.room.play,
+                                                label: playing ? t.player.pause : t.player.play,
                                                 iconAsset: playing ? 'assets/icons/pause.svg' : 'assets/icons/play.svg',
                                                 onPressed: () =>
                                                     unawaited(_playback?.togglePlayPause() ?? Future<void>.value()),
                                               ),
                                               PlayerBarButton(
-                                                label: muted ? t.room.unmute : t.room.mute,
+                                                label: muted ? t.player.unmute : t.player.mute,
                                                 iconAsset: muted
                                                     ? 'assets/icons/volume-muted.svg'
                                                     : 'assets/icons/volume.svg',
@@ -1821,7 +1821,7 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
                                                     onChanged: handle == null
                                                         ? null
                                                         : (value) => unawaited(_setVolume(value / 100)),
-                                                    semanticLabel: t.room.volume,
+                                                    semanticLabel: t.player.volume,
                                                   ),
                                                 ),
                                               const _BarDivider(),
@@ -1838,17 +1838,17 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
                                                 ),
                                               if (_urls.length > 1 && !tight)
                                                 DsMenuAnchor(
-                                                  semanticLabel: t.room.lineLabel,
+                                                  semanticLabel: t.player.line,
                                                   items: [
                                                     for (final (index, _) in _urls.indexed)
                                                       DsMenuItem(
                                                         checked: index == _lineIndex,
-                                                        label: Text(t.room.line(n: '${index + 1}')),
+                                                        label: Text(t.player.lineNumber(n: '${index + 1}')),
                                                         onPressed: () => unawaited(_selectLine(index)),
                                                       ),
                                                   ],
                                                   builder: (context, controller, _) => PlayerBarButton(
-                                                    label: t.room.lineLabel,
+                                                    label: t.player.line,
                                                     icon: DsIcons.route,
                                                     onPressed: controller.toggle,
                                                   ),
@@ -1887,7 +1887,7 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
                                                     for (final (index, _) in _urls.indexed)
                                                       DsMenuItem(
                                                         checked: index == _lineIndex,
-                                                        label: Text(t.room.line(n: '${index + 1}')),
+                                                        label: Text(t.player.lineNumber(n: '${index + 1}')),
                                                         onPressed: () => unawaited(_selectLine(index)),
                                                       ),
                                                     for (final mode in IptvAspectMode.values)
@@ -1917,8 +1917,8 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
                                               if (_desktop)
                                                 PlayerBarButton(
                                                   label: windowFullscreen
-                                                      ? t.room.windowFullscreenOff
-                                                      : t.room.windowFullscreenOn,
+                                                      ? t.player.windowFullscreenOff
+                                                      : t.player.windowFullscreenOn,
                                                   icon: windowFullscreen ? DsIcons.copy : DsIcons.square,
                                                   selected: windowFullscreen,
                                                   onPressed: handle == null
@@ -2451,16 +2451,16 @@ final class _PipStrip extends StatelessWidget {
             ),
           ),
           _IconButton(
-            semanticLabel: playing ? t.room.pause : t.room.play,
+            semanticLabel: playing ? t.player.pause : t.player.play,
             iconAsset: playing ? 'assets/icons/pause.svg' : 'assets/icons/play.svg',
             onPressed: onPlayPause,
           ),
           _IconButton(
-            semanticLabel: muted ? t.room.unmute : t.room.mute,
+            semanticLabel: muted ? t.player.unmute : t.player.mute,
             iconAsset: muted ? 'assets/icons/volume-muted.svg' : 'assets/icons/volume.svg',
             onPressed: onMute,
           ),
-          _IconButton(semanticLabel: t.room.pipOff, icon: DsIcons.expand, onPressed: onRestore),
+          _IconButton(semanticLabel: t.player.pipOff, icon: DsIcons.expand, onPressed: onRestore),
           _IconButton(semanticLabel: t.common.close, icon: DsIcons.x, onPressed: onClose),
         ],
       ),
@@ -2720,10 +2720,10 @@ final class _IptvCluster extends StatelessWidget {
           // stays, the room's own rule for the one verb the window cannot
           // lose.
           if (pipAvailable)
-            chip(label: inPip ? t.room.pipOff : t.room.pipOn, icon: DsIcons.pictureInPicture2, onPressed: onPip),
+            chip(label: inPip ? t.player.pipOff : t.player.pipOn, icon: DsIcons.pictureInPicture2, onPressed: onPip),
           if (canWindowFullscreen)
             chip(
-              label: windowFullscreen ? t.room.windowFullscreenOff : t.room.windowFullscreenOn,
+              label: windowFullscreen ? t.player.windowFullscreenOff : t.player.windowFullscreenOn,
               icon: windowFullscreen ? DsIcons.copy : DsIcons.square,
               selected: windowFullscreen,
               onPressed: onWindowFullscreen,
@@ -2732,7 +2732,7 @@ final class _IptvCluster extends StatelessWidget {
           // does, so it stays beside the window verbs instead of folding
           // into the ⋯.
           if (onMiniWindow != null) chip(label: t.common.miniWindow, icon: DsIcons.appWindow, onPressed: onMiniWindow),
-          if (!narrow && canScreenshot) chip(label: t.room.screenshot, icon: DsIcons.camera, onPressed: onScreenshot),
+          if (!narrow && canScreenshot) chip(label: t.player.screenshot, icon: DsIcons.camera, onPressed: onScreenshot),
           if (replay) chip(label: t.iptv.backToLive, icon: DsIcons.radio, onPressed: onBackToLive),
           DsMenuAnchor(
             semanticLabel: t.common.more,
@@ -2744,11 +2744,11 @@ final class _IptvCluster extends StatelessWidget {
                   onPressed: onGuide,
                 ),
               if (onCast != null)
-                DsMenuItem(leading: const DsIcon(DsIcons.cast, size: 15), label: Text(t.room.cast), onPressed: onCast),
+                DsMenuItem(leading: const DsIcon(DsIcons.cast, size: 15), label: Text(t.player.cast), onPressed: onCast),
               if (onSleep != null)
                 DsMenuItem(
                   leading: const DsIcon(DsIcons.timer, size: 15),
-                  label: Text(t.room.sleep),
+                  label: Text(t.player.sleep),
                   onPressed: onSleep,
                 ),
               if (onRecordings != null)
@@ -2760,14 +2760,14 @@ final class _IptvCluster extends StatelessWidget {
               DsMenuItem(
                 leading: const DsIcon(DsIcons.activity, size: 15),
                 checked: statsOn,
-                label: Text(t.room.statsToggle),
+                label: Text(t.player.statsToggle),
                 onPressed: onStats,
               ),
               if (onAudioOnly != null)
                 DsMenuItem(
                   leading: DsIcon(audioOnly ? DsIcons.video : DsIcons.headphones, size: 15),
                   checked: audioOnly,
-                  label: Text(audioOnly ? t.room.restoreVideo : t.room.audioOnlyMode),
+                  label: Text(audioOnly ? t.player.restoreVideo : t.player.audioOnlyMode),
                   onPressed: onAudioOnly,
                 ),
             ],

@@ -347,7 +347,7 @@ final class _ToggleSourceDialogState extends ConsumerState<_ToggleSourceDialog> 
                         trailing: DsButton.icon(
                           variant: DsButtonVariant.secondary,
                           size: DsSize.sm,
-                          semanticLabel: t.music.play,
+                          semanticLabel: t.player.play,
                           onPressed: () => unawaited(ref.read(musicPlayerProvider.notifier).play(candidate)),
                           icon: const DsIcon(DsIcons.play, size: 16),
                         ),

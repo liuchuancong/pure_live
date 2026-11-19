@@ -1005,7 +1005,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
     final t = context.t;
     showDsToast(
       context: context,
-      title: file == null ? t.room.screenshotFailed : t.room.screenshotSaved(name: file.uri.pathSegments.last),
+      title: file == null ? t.player.screenshotFailed : t.player.screenshotSaved(name: file.uri.pathSegments.last),
       status: file == null ? DsStatus.danger : DsStatus.success,
     );
   }
@@ -2270,7 +2270,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
             child: inPip
                 ? PlayerBarButton(
                     iconAsset: 'assets/icons/pip-exit.svg',
-                    label: t.room.pipOff,
+                    label: t.player.pipOff,
                     autofocus: true,
                     onPressed: () {
                       _wake();
@@ -2279,7 +2279,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
                   )
                 : PlayerBarButton(
                     icon: DsIcons.minimize,
-                    label: t.hongguo.exitFullscreen,
+                    label: t.player.fullscreenOff,
                     autofocus: true,
                     onPressed: () => unawaited(_toggleFullscreen()),
                   ),
@@ -2383,7 +2383,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
                       if (handle?.canCaptureScreenshot ?? false)
                         PlayerBarButton(
                           icon: DsIcons.camera,
-                          label: t.room.screenshot,
+                          label: t.player.screenshot,
                           onPressed: () {
                             _wake();
                             unawaited(_screenshot());
@@ -2406,7 +2406,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
                       if (pipIn && !pipInMode)
                         PlayerBarButton(
                           icon: DsIcons.pictureInPicture,
-                          label: t.room.pipOn,
+                          label: t.player.pipOn,
                           onPressed: () {
                             _wake();
                             unawaited(_togglePip());
@@ -2434,7 +2434,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
                     items: [
                       DsMenuItem(
                         leading: const DsIcon(DsIcons.activity),
-                        label: Text(t.room.statsToggle),
+                        label: Text(t.player.statsToggle),
                         trailing: statsVisible ? const DsIcon(DsIcons.check, size: 16) : null,
                         onPressed: handle == null ? null : () => ref.read(playerStatsVisibleProvider.notifier).toggle(),
                       ),
@@ -2445,7 +2445,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
                       ),
                       DsMenuItem(
                         leading: const DsIcon(DsIcons.headphones),
-                        label: Text(t.room.audioOnlyMode),
+                        label: Text(t.player.audioOnlyMode),
                         trailing: _audioOnly ? const DsIcon(DsIcons.check, size: 16) : null,
                         onPressed: handle == null
                             ? null
@@ -2529,7 +2529,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
                     setState(() => _dragSeconds = null);
                     unawaited(_seekTo(seconds));
                   },
-            semanticLabel: t.hongguo.progress,
+            semanticLabel: t.player.progress,
           );
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -2555,7 +2555,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
                 children: [
                   PlayerBarButton(
                     iconAsset: playing ? 'assets/icons/pause.svg' : 'assets/icons/play.svg',
-                    label: playing ? t.hongguo.pause : t.hongguo.play,
+                    label: playing ? t.player.pause : t.player.play,
                     focusNode: _playFocus,
                     onPressed: handle == null
                         ? null
@@ -2582,7 +2582,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
                   // beside it waits for a bar that can pay for it.
                   PlayerBarButton(
                     iconAsset: _effectivelyMuted ? 'assets/icons/volume-muted.svg' : 'assets/icons/volume.svg',
-                    label: _effectivelyMuted ? t.hongguo.unmute : t.hongguo.mute,
+                    label: _effectivelyMuted ? t.player.unmute : t.player.mute,
                     onPressed: handle == null
                         ? null
                         : () {
@@ -2596,7 +2596,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
                       child: DsSlider(
                         value: _effectivelyMuted ? 0 : _volume,
                         onChanged: handle == null ? null : (value) => unawaited(_setVolume(value)),
-                        semanticLabel: t.hongguo.volume,
+                        semanticLabel: t.player.volume,
                       ),
                     ),
                   const Spacer(),
@@ -2613,14 +2613,14 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
                     panel: _HongguoPanel.speed,
                     icon: DsIcons.timer,
                     label: speedLabel,
-                    semanticLabel: t.hongguo.speed,
+                    semanticLabel: t.player.speed,
                     compact: !labels,
                   ),
                   _pickerButton(
                     panel: _HongguoPanel.quality,
                     icon: DsIcons.gauge,
-                    label: (_attempted?.quality ?? 0) > 0 ? '${_attempted!.quality}P' : t.hongguo.quality,
-                    semanticLabel: t.hongguo.quality,
+                    label: (_attempted?.quality ?? 0) > 0 ? '${_attempted!.quality}P' : t.player.quality,
+                    semanticLabel: t.player.quality,
                     compact: !labels,
                   ),
                   // The window verbs, then the way out of the picture's box —
@@ -2632,8 +2632,8 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
                           ? DsIcons.copy
                           : DsIcons.square,
                       label: ref.watch(roomPresentationProvider) == PresentationMode.windowFullscreen
-                          ? t.room.windowFullscreenOff
-                          : t.room.windowFullscreenOn,
+                          ? t.player.windowFullscreenOff
+                          : t.player.windowFullscreenOn,
                       selected: ref.watch(roomPresentationProvider) == PresentationMode.windowFullscreen,
                       onPressed: handle == null ? null : () => unawaited(_toggleWindowFullscreen()),
                     ),
@@ -2643,7 +2643,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
                   if (ref.watch(roomPresentationProvider) != PresentationMode.pip)
                     PlayerBarButton(
                       icon: immersive ? DsIcons.minimize : DsIcons.maximize,
-                      label: immersive ? t.hongguo.exitFullscreen : t.hongguo.fullscreen,
+                      label: immersive ? t.player.fullscreenOff : t.player.fullscreen,
                       onPressed: handle == null ? null : () => unawaited(_toggleFullscreen()),
                     ),
                 ],
@@ -2794,7 +2794,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
         );
       case _HongguoPanel.speed:
         return PlayerOverlayPanel(
-          title: t.hongguo.speed,
+          title: t.player.speed,
           width: _panelWidth(panel),
           children: [
             for (final speed in _speedChoices)
@@ -2811,7 +2811,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
       case _HongguoPanel.quality:
         final choice = ref.watch(hongguoSettingsProvider).quality;
         return PlayerOverlayPanel(
-          title: t.hongguo.quality,
+          title: t.player.quality,
           width: _panelWidth(panel),
           children: [
             for (final value in HongguoQualityChoice.values)

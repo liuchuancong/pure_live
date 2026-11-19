@@ -135,7 +135,7 @@ final class _RoomMoreContent extends ConsumerWidget {
                 child: _Circle(
                   color: const Color(0xFF8B5CF6),
                   icon: DsIcons.cast,
-                  label: t.room.cast,
+                  label: t.player.cast,
                   onTap: room.lines.isEmpty
                       ? null
                       : () => unawaited(
@@ -159,7 +159,7 @@ final class _RoomMoreContent extends ConsumerWidget {
                 child: _Circle(
                   color: const Color(0xFFE11D48),
                   icon: DsIcons.headphones,
-                  label: room.audioOnly ? t.room.restoreVideo : t.room.audioOnlyMode,
+                  label: room.audioOnly ? t.player.restoreVideo : t.player.audioOnlyMode,
                   lit: room.audioOnly,
                   onTap: () => unawaited(ref.read(roomProvider.notifier).setAudioOnly(value: !room.audioOnly)),
                 ),
@@ -277,16 +277,16 @@ final class _RoomMoreContent extends ConsumerWidget {
                     ),
             ),
             DsListRow(
-              title: Text(t.room.lineLabel),
+              title: Text(t.player.line),
               leading: const DsIcon(DsIcons.route),
-              detail: room.lines.isEmpty ? null : Text(t.room.line(n: room.lineIndex + 1)),
+              detail: room.lines.isEmpty ? null : Text(t.player.lineNumber(n: room.lineIndex + 1)),
               showChevron: true,
               onPressed: room.lines.isEmpty
                   ? null
                   : () => unawaited(
                       showRoomChoicePanel(
                         context,
-                        title: t.room.lineLabel,
+                        title: t.player.line,
                         options: [
                           for (final (index, line) in room.lines.indexed)
                             RoomChoiceOption(
@@ -320,9 +320,9 @@ final class _RoomMoreContent extends ConsumerWidget {
               ),
             ),
             DsListRow(
-              title: Text(t.room.sleep),
+              title: Text(t.player.sleep),
               leading: const DsIcon(DsIcons.timer),
-              detail: Text(sleepMinutes == null ? t.room.sleepOff : asmrSleepDurationLabel(sleepMinutes)),
+              detail: Text(sleepMinutes == null ? t.player.sleepOff : asmrSleepDurationLabel(sleepMinutes)),
               showChevron: true,
               // The timer's panel takes the menu's place: the menu puts
               // itself away first, per the sheet's own traffic.
@@ -462,7 +462,7 @@ Future<void> showRoomChoicePanel(
 /// `host|protocol|format|codec`, which never belongs on a row).
 String roomLineShortLabel(Translations t, LivePlayLine line, int index) {
   final own = (line.lineLabel ?? '').trim();
-  if (own.isEmpty || own.contains('|') || own.length > 14) return t.room.line(n: index + 1);
+  if (own.isEmpty || own.contains('|') || own.length > 14) return t.player.lineNumber(n: index + 1);
   return own;
 }
 

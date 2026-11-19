@@ -90,7 +90,7 @@ final class _PresentationCluster extends ConsumerWidget {
           if (showPip)
             PlayerBarButton(
               iconAsset: presentation == PresentationMode.pip ? 'assets/icons/pip-exit.svg' : 'assets/icons/pip.svg',
-              label: presentation == PresentationMode.pip ? t.room.pipOff : t.room.pipOn,
+              label: presentation == PresentationMode.pip ? t.player.pipOff : t.player.pipOn,
               selected: presentation == PresentationMode.pip,
               onPressed: () {
                 onWake();
@@ -100,7 +100,7 @@ final class _PresentationCluster extends ConsumerWidget {
           if (castLine != null)
             PlayerBarButton(
               icon: DsIcons.cast,
-              label: t.room.cast,
+              label: t.player.cast,
               onPressed: () {
                 onWake();
                 unawaited(showCastDialog(context, line: castLine, title: detail?.content.title));
@@ -132,7 +132,7 @@ final class _PipCenterPlay extends ConsumerWidget {
         final glyph = compact ? 18.0 : 28.0;
         return PlayerGlassPill(
           child: DsPressable(
-            semanticLabel: playing ? context.t.room.pause : context.t.room.play,
+            semanticLabel: playing ? context.t.player.pause : context.t.player.play,
             onPressed: () => unawaited(ref.read(roomProvider.notifier).togglePlayPause()),
             builder: (context, states, _) => Container(
               width: side,
@@ -192,7 +192,7 @@ final class _PipTransportBar extends ConsumerWidget {
               PlayerGlassPill(
                 child: PlayerBarButton(
                   iconAsset: muted ? 'assets/icons/volume-muted.svg' : 'assets/icons/volume.svg',
-                  label: muted ? t.room.unmute : t.room.mute,
+                  label: muted ? t.player.unmute : t.player.mute,
                   onPressed: () => unawaited(controller.setMuted(value: !muted)),
                 ),
               ),
@@ -205,7 +205,7 @@ final class _PipTransportBar extends ConsumerWidget {
                     value: (room.volume * 100).clamp(0.0, 100.0),
                     max: 100,
                     onChanged: (value) => unawaited(controller.setVolume(value / 100)),
-                    semanticLabel: t.room.volume,
+                    semanticLabel: t.player.volume,
                   ),
                 ),
               PlayerGlassPill(

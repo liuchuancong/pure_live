@@ -101,7 +101,7 @@ final class _ControlBarState extends ConsumerState<_ControlBar> {
           final crowded = constraints.maxWidth < 320;
           final play = PlayerBarButton(
             iconAsset: playing ? 'assets/icons/pause.svg' : 'assets/icons/play.svg',
-            label: playing ? t.room.pause : t.room.play,
+            label: playing ? t.player.pause : t.player.play,
             autofocus: widget.autofocusPlay,
             onPressed: () {
               widget.onWake();
@@ -127,7 +127,7 @@ final class _ControlBarState extends ConsumerState<_ControlBar> {
           final muteButton = !pip && player != null
               ? PlayerBarButton(
                   iconAsset: muted ? 'assets/icons/volume-muted.svg' : 'assets/icons/volume.svg',
-                  label: muted ? t.room.unmute : t.room.mute,
+                  label: muted ? t.player.unmute : t.player.mute,
                   onPressed: () {
                     widget.onWake();
                     unawaited(controller.setMuted(value: !muted));
@@ -144,7 +144,7 @@ final class _ControlBarState extends ConsumerState<_ControlBar> {
                       widget.onWake();
                       unawaited(controller.setVolume(value / 100));
                     },
-                    semanticLabel: t.room.volume,
+                    semanticLabel: t.player.volume,
                   ),
                 )
               : null;
@@ -167,8 +167,8 @@ final class _ControlBarState extends ConsumerState<_ControlBar> {
               ? PlayerBarButton(
                   icon: presentation == PresentationMode.windowFullscreen ? DsIcons.copy : DsIcons.square,
                   label: presentation == PresentationMode.windowFullscreen
-                      ? t.room.windowFullscreenOff
-                      : t.room.windowFullscreenOn,
+                      ? t.player.windowFullscreenOff
+                      : t.player.windowFullscreenOn,
                   selected: presentation == PresentationMode.windowFullscreen,
                   onPressed: () {
                     widget.onWake();

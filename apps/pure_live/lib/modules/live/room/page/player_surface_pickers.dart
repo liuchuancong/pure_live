@@ -57,7 +57,7 @@ final class _StreamPickerRow extends ConsumerWidget {
             picker: _Picker.line,
             icon: DsIcons.route,
             label: _lineShortLabel(t, line, lineIndex),
-            semanticLabel: t.room.lineLabel,
+            semanticLabel: t.player.line,
           ),
         _button(
           context,
@@ -177,7 +177,7 @@ enum _Picker { quality, line, fit }
 /// `host|protocol|format|codec`, which never belongs on a button.
 String _lineShortLabel(Translations t, LivePlayLine line, int index) {
   final own = (line.lineLabel ?? '').trim();
-  if (own.isEmpty || own.contains('|') || own.length > 14) return t.room.line(n: index + 1);
+  if (own.isEmpty || own.contains('|') || own.length > 14) return t.player.lineNumber(n: index + 1);
   return own;
 }
 
@@ -256,7 +256,7 @@ extension _PlayerSurfaceStreamPickers on _PlayerSurfaceState {
         );
       case _Picker.line:
         return PlayerOverlayPanel(
-          title: t.room.lineLabel,
+          title: t.player.line,
           width: _panelWidth(picker),
           children: [
             for (final (index, option) in room.lines.indexed)

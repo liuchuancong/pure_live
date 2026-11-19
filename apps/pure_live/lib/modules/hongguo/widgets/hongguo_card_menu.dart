@@ -78,7 +78,7 @@ final class HongguoCardMenu extends ConsumerWidget {
       if (openable)
         DsMenuItem(
           leading: const DsIcon(DsIcons.play),
-          label: Text(hongguoResumeSeconds(seen) != null ? t.hongguo.continueWatching : t.hongguo.play),
+          label: Text(hongguoResumeSeconds(seen) != null ? t.hongguo.continueWatching : t.player.play),
           onPressed: () => _play(context, ref, seen),
         ),
       if (openable)

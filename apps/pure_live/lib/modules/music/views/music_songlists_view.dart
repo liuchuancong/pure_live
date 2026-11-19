@@ -647,7 +647,7 @@ final class MusicPlaylistsViewState extends ConsumerState<MusicPlaylistsView> {
                 items: [
                   DsMenuItem(
                     leading: const DsIcon(DsIcons.play),
-                    label: Text(t.music.play),
+                    label: Text(t.player.play),
                     onPressed: playlist.tracks.isEmpty
                         ? null
                         : () => unawaited(ref.read(musicPlayerProvider.notifier).playAll(playlist.tracks)),

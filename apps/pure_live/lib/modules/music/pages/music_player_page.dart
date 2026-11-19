@@ -1320,12 +1320,12 @@ final class _Volume extends StatelessWidget {
         DsButton.icon(
           variant: DsButtonVariant.ghost,
           size: DsSize.sm,
-          semanticLabel: muted ? t.room.unmute : t.room.mute,
+          semanticLabel: muted ? t.player.unmute : t.player.mute,
           onPressed: onMute,
           icon: DsIcon(muted ? DsIcons.volumeOff : DsIcons.volume),
         ),
         Expanded(
-          child: DsSlider(value: muted ? 0 : volume, onChanged: onVolume, semanticLabel: t.music.volume),
+          child: DsSlider(value: muted ? 0 : volume, onChanged: onVolume, semanticLabel: t.player.volume),
         ),
       ],
     );
@@ -1397,7 +1397,7 @@ final class _TransportBarState extends ConsumerState<_TransportBar> {
               child: DsSlider(
                 value: total <= 0 ? 0 : position.inMilliseconds.clamp(0, total).toDouble(),
                 max: total <= 0 ? 1 : total.toDouble(),
-                semanticLabel: t.music.progress,
+                semanticLabel: t.player.progress,
                 // A thin accent rail rather than the dialog-sized default.
                 style: DsSliderStyle(
                   trackHeight: 4,
@@ -1439,7 +1439,7 @@ final class _TransportBarState extends ConsumerState<_TransportBar> {
         ),
         _PlayButton(
           playing: playing,
-          semanticLabel: playing ? t.music.pause : t.music.play,
+          semanticLabel: playing ? t.player.pause : t.player.play,
           onTap: () => unawaited(controller.toggle()),
         ),
         DsButton.icon(

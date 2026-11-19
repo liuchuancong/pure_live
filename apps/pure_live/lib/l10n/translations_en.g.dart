@@ -640,16 +640,7 @@ class _Translations$hongguo$en extends Translations$hongguo$zh_CN {
 	@override String get todayTag => 'New';
 	@override String get loadFailed => 'The series did not load';
 	@override String get opening => 'Opening…';
-	@override String get play => 'Play';
 	@override String get continueWatching => 'Continue';
-	@override String get playFromStart => 'From the start';
-	@override String get pause => 'Pause';
-	@override String get mute => 'Mute';
-	@override String get unmute => 'Unmute';
-	@override String get volume => 'Volume';
-	@override String get progress => 'Playback progress';
-	@override String get speed => 'Speed';
-	@override String get quality => 'Quality';
 	@override String get speedHolding => '2.0x · swipe up to lock';
 	@override String get speedLocked => '2.0x locked · hold and swipe down to unlock';
 	@override String get speedLockedToast => '2.0x locked';
@@ -657,8 +648,6 @@ class _Translations$hongguo$en extends Translations$hongguo$zh_CN {
 	@override String get firstEpisode => 'This is the first episode';
 	@override String get lastEpisode => 'This is the last episode';
 	@override String get nextEpisode => 'Next episode';
-	@override String get fullscreen => 'Fullscreen';
-	@override String get exitFullscreen => 'Exit fullscreen';
 	@override String get expand => 'More';
 	@override String get collapse => 'Less';
 	@override String get boardAll => 'All';
@@ -885,8 +874,6 @@ class _Translations$huya$en extends Translations$huya$zh_CN {
 	@override String get backToBrowse => 'Back to browse';
 	@override String rankUpdated({required String time}) => 'Updated ${time}';
 	@override String get homeEmpty => 'Nothing on the home page right now.';
-	@override String get quality => 'Quality';
-	@override String get speed => 'Speed';
 	@override String get errorTitle => 'The videos did not load';
 	@override String get noResultsDescription => 'Try another keyword.';
 	@override String get views => 'Views';
@@ -1375,8 +1362,6 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get searchFailed => 'The search failed';
 	@override String songsCount({required Object count}) => '${count} songs';
 	@override String playsCount({required Object count}) => '${count} plays';
-	@override String get play => 'Play';
-	@override String get pause => 'Pause';
 	@override String get next => 'Next';
 	@override String get previous => 'Previous';
 	@override String get modeList => 'Play in order';
@@ -1400,8 +1385,6 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get queueUnplayable => 'Couldn\'t play';
 	@override String get nowPlaying => 'Now playing';
 	@override String get stagePanels => 'Lyrics & queue';
-	@override String get volume => 'Volume';
-	@override String get progress => 'Progress';
 	@override String get lyrics => 'Lyrics';
 	@override String get lyricsEmpty => 'This song has no lyrics yet.';
 	@override String get lyricLoadFailed => 'Couldn\'t load the lyrics';
@@ -2006,6 +1989,31 @@ class _Translations$player$en extends Translations$player$zh_CN {
 	@override String get line => 'Line';
 	@override String get fullscreen => 'Fullscreen';
 	@override String get danmaku => 'Danmaku';
+	@override String get play => 'Play';
+	@override String get pause => 'Pause';
+	@override String get mute => 'Mute';
+	@override String get unmute => 'Unmute';
+	@override String get volume => 'Volume';
+	@override String get screenshot => 'Screenshot';
+	@override String screenshotSaved({required Object name}) => 'Saved ${name}';
+	@override String get screenshotFailed => 'That frame could not be captured';
+	@override String get sleep => 'Sleep timer';
+	@override String get sleepDone => 'The sleep timer ended; playback is paused';
+	@override String get sleepOff => 'Stop the timer';
+	@override String get statsToggle => 'Statistics';
+	@override String get cast => 'Cast';
+	@override String get audioOnlyMode => 'Audio mode';
+	@override String get moreSettings => 'Settings';
+	@override String get restoreVideo => 'Restore video';
+	@override String get windowFullscreenOn => 'Window fullscreen';
+	@override String get windowFullscreenOff => 'Leave window fullscreen';
+	@override String get pipOn => 'Picture-in-picture';
+	@override String get pipOff => 'Leave picture-in-picture';
+	@override String lineNumber({required Object n}) => 'Line ${n}';
+	@override String get speed => 'Speed';
+	@override String get progress => 'Playback progress';
+	@override String get playFromStart => 'From the start';
+	@override String get fullscreenOff => 'Leave fullscreen';
 }
 
 // Path: popular
@@ -2320,23 +2328,13 @@ class _Translations$room$en extends Translations$room$zh_CN {
 	@override String unfollowConfirm({required Object name}) => 'Unfollow ${name}\'s room?';
 	@override String get reloadRoom => 'Reopen the room';
 	@override String get quality => 'Quality';
-	@override String get lineLabel => 'Line';
 	@override String get chatColumnWidth => 'Chat column width';
-	@override String get moreSettings => 'Settings';
-	@override String line({required Object n}) => 'Line ${n}';
-	@override String get play => 'Play';
-	@override String get pause => 'Pause';
 	@override String get noChat => 'No chat yet';
 	@override String get chatConnecting => 'Connecting to chat…';
 	@override String get chatClosed => 'The chat connection closed';
 	@override String get chatUnsupported => 'This room has no live chat';
 	@override String get chatFailedTitle => 'Chat did not connect';
 	@override String get system => 'System';
-	@override String get mute => 'Mute';
-	@override String get unmute => 'Unmute';
-	@override String get volume => 'Volume';
-	@override String get sleep => 'Sleep timer';
-	@override String get sleepOff => 'Stop the timer';
 	@override String sleepRemaining({required Object time}) => 'Timer set · ${time} left';
 	@override String get sendHint => 'Say something';
 	@override String get send => 'Send';
@@ -2348,11 +2346,6 @@ class _Translations$room$en extends Translations$room$zh_CN {
 	@override String get lockControls => 'Lock the controls';
 	@override String get unlockControls => 'Unlock the controls';
 	@override String get chatTitle => 'Chat';
-	@override String get windowFullscreenOn => 'Window fullscreen';
-	@override String get windowFullscreenOff => 'Leave window fullscreen';
-	@override String get pipOn => 'Picture-in-picture';
-	@override String get pipOff => 'Leave picture-in-picture';
-	@override String get cast => 'Cast';
 	@override String get castTitle => 'Cast to a device';
 	@override String get castSearching => 'Looking for devices nearby';
 	@override String get castSearchingHint => 'Make sure the TV and this computer share the local network.';
@@ -2361,9 +2354,6 @@ class _Translations$room$en extends Translations$room$zh_CN {
 	@override String get castStop => 'Stop casting';
 	@override String get castStarted => 'Casting started';
 	@override String get castFailed => 'The cast failed; the device may not reach this line';
-	@override String get sleepDone => 'The sleep timer ended; playback is paused';
-	@override String get audioOnlyMode => 'Audio mode';
-	@override String get restoreVideo => 'Restore video';
 	@override String get backToRoom => 'Back to room';
 	@override String get openingRoom => 'Opening the room';
 	@override String get playbackFailed => 'Playback failed';
@@ -2472,7 +2462,6 @@ class _Translations$room$en extends Translations$room$zh_CN {
 	@override String get expandChat => 'Expand chat';
 	@override String get theaterOn => 'Theater mode';
 	@override String get theaterOff => 'Exit theater mode';
-	@override String get statsToggle => 'Statistics';
 	@override String get statsPicture => 'Picture';
 	@override String get statsBitrate => 'Bitrate';
 	@override String get statsBuffer => 'Buffer';
@@ -2481,9 +2470,6 @@ class _Translations$room$en extends Translations$room$zh_CN {
 	@override String get statsRenderer => 'Renderer';
 	@override String get statsProcess => 'Process';
 	@override String get statsBackend => 'Engine';
-	@override String get screenshot => 'Screenshot';
-	@override String screenshotSaved({required Object name}) => 'Saved ${name}';
-	@override String get screenshotFailed => 'That frame could not be captured';
 	@override String get shortcutsHelp => 'Keyboard shortcuts';
 	@override String get shortcutsHint => 'Keys available on this screen';
 	@override String get shortcutPlayPause => 'Play or pause';
@@ -2529,7 +2515,6 @@ class _Translations$room$en extends Translations$room$zh_CN {
 	@override String get replayEmpty => 'No replays here yet';
 	@override String get replayFailed => 'Couldn\'t load the replays';
 	@override String get replayQuality => 'Quality';
-	@override String get replayRate => 'Speed';
 	@override String get replayParts => 'Parts';
 	@override String get shortcutChatColumn => 'Fold/unfold the chat column';
 	@override String get danmakuChip => 'Danmaku';
@@ -4365,12 +4350,9 @@ class _Translations$vod$en extends Translations$vod$zh_CN {
 	@override String get favorites => 'Favourites';
 	@override String get description => 'Description';
 	@override String get noDescription => 'This video has no description.';
-	@override String get play => 'Play';
-	@override String get pause => 'Pause';
 	@override String get nextPart => 'Next part';
 	@override String get previousPart => 'Previous part';
 	@override String resumedAt({required Object time}) => 'Resumed at ${time}';
-	@override String get playFromStart => 'From the start';
 	@override String nextPartIn({required int seconds}) => 'Next part in ${seconds}s';
 	@override String headRemaining({required Object time}) => 'Opening left: ${time}';
 	@override String get skipHead => 'Skip opening';
@@ -4393,19 +4375,11 @@ class _Translations$vod$en extends Translations$vod$zh_CN {
 	@override String get longPressSpeedDesc => 'The rate a held picture runs at, back to the part\'s own when it lets go.';
 	@override String get seekPreview => 'Seek preview';
 	@override String get seekPreviewDesc => 'A paused pointer on the line shows that frame and its time.';
-	@override String get mute => 'Mute';
-	@override String get unmute => 'Unmute';
-	@override String get volume => 'Volume';
-	@override String get quality => 'Quality';
-	@override String get speed => 'Speed';
-	@override String get fullscreen => 'Fullscreen';
-	@override String get exitFullscreen => 'Exit fullscreen';
 	@override String get pip => 'Picture in picture';
 	@override String get silentNotice => 'This rendition has picture only; pick another quality for sound.';
 	@override String get opening => 'Opening the video…';
 	@override String get loadFailed => 'The video did not load';
 	@override String get openFailed => 'The video could not be opened';
-	@override String get progress => 'Playback progress';
 	@override String get up => 'Uploader';
 	@override String get openingSpeed => 'Opening speed';
 	@override String get openingSpeedDesc => 'Speed a video opens with; the in-player menu only changes this one.';
@@ -5488,16 +5462,7 @@ extension on TranslationsEn {
 			'hongguo.todayTag' => 'New',
 			'hongguo.loadFailed' => 'The series did not load',
 			'hongguo.opening' => 'Opening…',
-			'hongguo.play' => 'Play',
 			'hongguo.continueWatching' => 'Continue',
-			'hongguo.playFromStart' => 'From the start',
-			'hongguo.pause' => 'Pause',
-			'hongguo.mute' => 'Mute',
-			'hongguo.unmute' => 'Unmute',
-			'hongguo.volume' => 'Volume',
-			'hongguo.progress' => 'Playback progress',
-			'hongguo.speed' => 'Speed',
-			'hongguo.quality' => 'Quality',
 			'hongguo.speedHolding' => '2.0x · swipe up to lock',
 			'hongguo.speedLocked' => '2.0x locked · hold and swipe down to unlock',
 			'hongguo.speedLockedToast' => '2.0x locked',
@@ -5505,8 +5470,6 @@ extension on TranslationsEn {
 			'hongguo.firstEpisode' => 'This is the first episode',
 			'hongguo.lastEpisode' => 'This is the last episode',
 			'hongguo.nextEpisode' => 'Next episode',
-			'hongguo.fullscreen' => 'Fullscreen',
-			'hongguo.exitFullscreen' => 'Exit fullscreen',
 			'hongguo.expand' => 'More',
 			'hongguo.collapse' => 'Less',
 			'hongguo.boardAll' => 'All',
@@ -5724,8 +5687,6 @@ extension on TranslationsEn {
 			'huya.backToBrowse' => 'Back to browse',
 			'huya.rankUpdated' => ({required String time}) => 'Updated ${time}',
 			'huya.homeEmpty' => 'Nothing on the home page right now.',
-			'huya.quality' => 'Quality',
-			'huya.speed' => 'Speed',
 			'huya.errorTitle' => 'The videos did not load',
 			'huya.noResultsDescription' => 'Try another keyword.',
 			'huya.views' => 'Views',
@@ -5854,8 +5815,6 @@ extension on TranslationsEn {
 			'iptv.autoSyncDesc' => 'Updates silently in the background at a cold start.',
 			'iptv.browseChannelNumber' => 'Show the channel number',
 			'iptv.browseChannelNumberDesc' => 'Prints the dial number beside the channel name.',
-			_ => null,
-		} ?? switch (path) {
 			'iptv.browseReverse' => 'Reverse channel stepping',
 			'iptv.browseReverseDesc' => 'Makes the up key step down the list and the down key step up.',
 			'iptv.browseClock' => 'Show the time',
@@ -5869,6 +5828,8 @@ extension on TranslationsEn {
 			'iptv.recentWatched' => ({required Object time}) => 'Watched ${time}',
 			'iptv.recentRemove' => 'Remove from recent',
 			'iptv.recentClear' => 'Clear recently watched',
+			_ => null,
+		} ?? switch (path) {
 			'iptv.recentClearTitle' => 'Clear the recently watched list?',
 			'iptv.recentClearDesc' => 'Only this device\'s records are deleted; favourites and channels stay.',
 			'iptv.recentEmptyTitle' => 'Nothing watched yet',
@@ -6189,8 +6150,6 @@ extension on TranslationsEn {
 			'music.searchFailed' => 'The search failed',
 			'music.songsCount' => ({required Object count}) => '${count} songs',
 			'music.playsCount' => ({required Object count}) => '${count} plays',
-			'music.play' => 'Play',
-			'music.pause' => 'Pause',
 			'music.next' => 'Next',
 			'music.previous' => 'Previous',
 			'music.modeList' => 'Play in order',
@@ -6214,8 +6173,6 @@ extension on TranslationsEn {
 			'music.queueUnplayable' => 'Couldn\'t play',
 			'music.nowPlaying' => 'Now playing',
 			'music.stagePanels' => 'Lyrics & queue',
-			'music.volume' => 'Volume',
-			'music.progress' => 'Progress',
 			'music.lyrics' => 'Lyrics',
 			'music.lyricsEmpty' => 'This song has no lyrics yet.',
 			'music.lyricLoadFailed' => 'Couldn\'t load the lyrics',
@@ -6368,8 +6325,6 @@ extension on TranslationsEn {
 			'music.downloadIncludeRomanizationDesc' => 'Write the romanization into the downloaded lyric file and embedded tag.',
 			'music.downloadWriteLyric' => 'Save a lyric file',
 			'music.downloadWriteLyricDesc' => 'Write a sibling .lrc next to the audio file.',
-			_ => null,
-		} ?? switch (path) {
 			'music.downloadSkipExisting' => 'Skip existing files',
 			'music.downloadSkipExistingDesc' => 'Do not download when the output file is already there.',
 			'music.downloadGroupByList' => 'Group by playlist',
@@ -6387,6 +6342,8 @@ extension on TranslationsEn {
 			'music.downloadPauseAll' => 'Pause all',
 			'music.downloadResumeAll' => 'Resume all',
 			'music.downloadClearFinished' => 'Clear finished',
+			_ => null,
+		} ?? switch (path) {
 			'music.downloadProgress' => 'Download progress',
 			'music.downloadRetry' => 'Retry',
 			'music.downloadRemove' => 'Remove the row',
@@ -6795,6 +6752,31 @@ extension on TranslationsEn {
 			'player.line' => 'Line',
 			'player.fullscreen' => 'Fullscreen',
 			'player.danmaku' => 'Danmaku',
+			'player.play' => 'Play',
+			'player.pause' => 'Pause',
+			'player.mute' => 'Mute',
+			'player.unmute' => 'Unmute',
+			'player.volume' => 'Volume',
+			'player.screenshot' => 'Screenshot',
+			'player.screenshotSaved' => ({required Object name}) => 'Saved ${name}',
+			'player.screenshotFailed' => 'That frame could not be captured',
+			'player.sleep' => 'Sleep timer',
+			'player.sleepDone' => 'The sleep timer ended; playback is paused',
+			'player.sleepOff' => 'Stop the timer',
+			'player.statsToggle' => 'Statistics',
+			'player.cast' => 'Cast',
+			'player.audioOnlyMode' => 'Audio mode',
+			'player.moreSettings' => 'Settings',
+			'player.restoreVideo' => 'Restore video',
+			'player.windowFullscreenOn' => 'Window fullscreen',
+			'player.windowFullscreenOff' => 'Leave window fullscreen',
+			'player.pipOn' => 'Picture-in-picture',
+			'player.pipOff' => 'Leave picture-in-picture',
+			'player.lineNumber' => ({required Object n}) => 'Line ${n}',
+			'player.speed' => 'Speed',
+			'player.progress' => 'Playback progress',
+			'player.playFromStart' => 'From the start',
+			'player.fullscreenOff' => 'Leave fullscreen',
 			'popular.allPlatforms' => 'All platforms',
 			'popular.allPlatformsHint' => 'Tap one to switch to it right away; hide and reorder platforms under Platform display.',
 			'popular.page' => ({required int page, required int total}) => 'Page ${page} of ${total}',
@@ -6874,6 +6856,8 @@ extension on TranslationsEn {
 			'recorder.stopAll' => 'Stop every recording',
 			'recorder.stopAllTitle' => 'Stop every recording?',
 			'recorder.stopAllBody' => ({required int count}) => '${count} room(s) now recording end and save; segments already written stay and post-processing runs as usual.',
+			_ => null,
+		} ?? switch (path) {
 			'recorder.stopAllDone' => ({required int count}) => 'Stopped ${count} recording(s)',
 			'recorder.stopAllPartial' => ({required int count, required Object error}) => 'Stopped ${count}; one failed: ${error}',
 			'recorder.merge' => 'Merge into this folder',
@@ -6882,8 +6866,6 @@ extension on TranslationsEn {
 			'recorder.mergeDesc' => ({required int count}) => '${count} finished recording(s) live in another folder and can be merged here',
 			'recorder.mergeRunning' => ({required Object done, required Object total, required Object name}) => 'Merging ${done}/${total}: ${name}',
 			'recorder.mergeDone' => ({required int count}) => 'Merged ${count} recording(s)',
-			_ => null,
-		} ?? switch (path) {
 			'recorder.mergePartial' => ({required int moved, required int failed}) => 'Merged ${moved}; ${failed} did not finish',
 			'recorder.caCustomTitle' => 'Custom CA bundle',
 			'recorder.caCustomDesc' => 'Not set: recordings trust the bundled Mozilla store. Picking your own bundle (PEM text) trusts a corporate root or a self-signed chain without switching verification off.',
@@ -7084,23 +7066,13 @@ extension on TranslationsEn {
 			'room.unfollowConfirm' => ({required Object name}) => 'Unfollow ${name}\'s room?',
 			'room.reloadRoom' => 'Reopen the room',
 			'room.quality' => 'Quality',
-			'room.lineLabel' => 'Line',
 			'room.chatColumnWidth' => 'Chat column width',
-			'room.moreSettings' => 'Settings',
-			'room.line' => ({required Object n}) => 'Line ${n}',
-			'room.play' => 'Play',
-			'room.pause' => 'Pause',
 			'room.noChat' => 'No chat yet',
 			'room.chatConnecting' => 'Connecting to chat…',
 			'room.chatClosed' => 'The chat connection closed',
 			'room.chatUnsupported' => 'This room has no live chat',
 			'room.chatFailedTitle' => 'Chat did not connect',
 			'room.system' => 'System',
-			'room.mute' => 'Mute',
-			'room.unmute' => 'Unmute',
-			'room.volume' => 'Volume',
-			'room.sleep' => 'Sleep timer',
-			'room.sleepOff' => 'Stop the timer',
 			'room.sleepRemaining' => ({required Object time}) => 'Timer set · ${time} left',
 			'room.sendHint' => 'Say something',
 			'room.send' => 'Send',
@@ -7112,11 +7084,6 @@ extension on TranslationsEn {
 			'room.lockControls' => 'Lock the controls',
 			'room.unlockControls' => 'Unlock the controls',
 			'room.chatTitle' => 'Chat',
-			'room.windowFullscreenOn' => 'Window fullscreen',
-			'room.windowFullscreenOff' => 'Leave window fullscreen',
-			'room.pipOn' => 'Picture-in-picture',
-			'room.pipOff' => 'Leave picture-in-picture',
-			'room.cast' => 'Cast',
 			'room.castTitle' => 'Cast to a device',
 			'room.castSearching' => 'Looking for devices nearby',
 			'room.castSearchingHint' => 'Make sure the TV and this computer share the local network.',
@@ -7125,9 +7092,6 @@ extension on TranslationsEn {
 			'room.castStop' => 'Stop casting',
 			'room.castStarted' => 'Casting started',
 			'room.castFailed' => 'The cast failed; the device may not reach this line',
-			'room.sleepDone' => 'The sleep timer ended; playback is paused',
-			'room.audioOnlyMode' => 'Audio mode',
-			'room.restoreVideo' => 'Restore video',
 			'room.backToRoom' => 'Back to room',
 			'room.openingRoom' => 'Opening the room',
 			'room.playbackFailed' => 'Playback failed',
@@ -7236,7 +7200,6 @@ extension on TranslationsEn {
 			'room.expandChat' => 'Expand chat',
 			'room.theaterOn' => 'Theater mode',
 			'room.theaterOff' => 'Exit theater mode',
-			'room.statsToggle' => 'Statistics',
 			'room.statsPicture' => 'Picture',
 			'room.statsBitrate' => 'Bitrate',
 			'room.statsBuffer' => 'Buffer',
@@ -7245,9 +7208,6 @@ extension on TranslationsEn {
 			'room.statsRenderer' => 'Renderer',
 			'room.statsProcess' => 'Process',
 			'room.statsBackend' => 'Engine',
-			'room.screenshot' => 'Screenshot',
-			'room.screenshotSaved' => ({required Object name}) => 'Saved ${name}',
-			'room.screenshotFailed' => 'That frame could not be captured',
 			'room.shortcutsHelp' => 'Keyboard shortcuts',
 			'room.shortcutsHint' => 'Keys available on this screen',
 			'room.shortcutPlayPause' => 'Play or pause',
@@ -7293,7 +7253,6 @@ extension on TranslationsEn {
 			'room.replayEmpty' => 'No replays here yet',
 			'room.replayFailed' => 'Couldn\'t load the replays',
 			'room.replayQuality' => 'Quality',
-			'room.replayRate' => 'Speed',
 			'room.replayParts' => 'Parts',
 			'room.shortcutChatColumn' => 'Fold/unfold the chat column',
 			'room.danmakuChip' => 'Danmaku',
@@ -7396,8 +7355,6 @@ extension on TranslationsEn {
 			'search.noteWeiboShort' => 'Session id or live link only',
 			'search.noteYoutube' => 'YouTube: keywords find live channels only; a channel link, @handle or video link finds an offline channel too.',
 			'search.noteYoutubeShort' => 'Keywords find live channels only',
-			_ => null,
-		} ?? switch (path) {
 			'search.scopeTagAnchors' => 'Anchors',
 			'search.scopeTagWeb' => 'Web',
 			'search.scopeTagsHint' => '“Anchors”: the platform searches streamers. “Web”: the platform\'s web search page can be opened.',
@@ -7413,6 +7370,8 @@ extension on TranslationsEn {
 			'settings.navPlaybackPreferences' => 'Playback preferences',
 			'settings.navSystem' => 'System',
 			'settings.navDataCache' => 'Data & cache',
+			_ => null,
+		} ?? switch (path) {
 			'settings.navAppearance' => 'Appearance',
 			'settings.navPlayback' => 'Playback',
 			'settings.navSites' => 'Sites',
@@ -7910,8 +7869,6 @@ extension on TranslationsEn {
 			'settings.vodInterfaceDescription' => 'What the video page shows: the details block switch.',
 			'settings.vodPlaybackDescription' => 'The opening rate, what a finished part leads to, and the details under the picture.',
 			'settings.groupMusic' => 'Music',
-			_ => null,
-		} ?? switch (path) {
 			'settings.navMusic' => 'Music',
 			'settings.musicSettingsDescription' => 'Playback, lyrics, desktop lyrics, download, sources, hotkeys and sync.',
 			'settings.navMusicPlay' => 'Playback',
@@ -7927,6 +7884,8 @@ extension on TranslationsEn {
 			'settings.navMusicSync' => 'Sync',
 			'settings.navMusicEq' => 'Sound effects',
 			'settings.musicHotkeysDescription' => 'Shortcuts for play, volume and favourites.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.musicSyncDescription' => 'List sync with a lx-music desktop server.',
 			'settings.musicEqDescription' => 'The master switch, presets, the ten-band equalizer and its preamp.',
 			'settings.musicDesktopLyricDescription' => 'The floating lyric\'s switch, lock, font, colour and alignment.',
@@ -8424,8 +8383,6 @@ extension on TranslationsEn {
 			'settings.audienceOnline' => 'Live viewers',
 			'settings.audiencePopularity' => 'Popularity',
 			'settings.audienceTotal' => 'Total viewers',
-			_ => null,
-		} ?? switch (path) {
 			'settings.audienceDisplayGroup' => 'Card display and ranking mode',
 			'settings.audienceRealOnlineGroup' => 'Concurrent viewers',
 			'settings.audienceRealOnline' => 'Prefer concurrent viewers',
@@ -8441,6 +8398,8 @@ extension on TranslationsEn {
 			'settings.backgroundLibraryApplied' => 'Applied as the background',
 			'settings.wallpaperSourceOfficial' => 'Official',
 			'settings.wallpaperSourceWallhaven' => 'Wallhaven',
+			_ => null,
+		} ?? switch (path) {
 			'settings.wallpaperSourceBing' => 'Bing',
 			'settings.wallpaperSourceDeepin' => 'deepin',
 			'settings.wallpaperSourceVideo' => 'Live wallpapers',
@@ -8938,8 +8897,6 @@ extension on TranslationsEn {
 			'toolbox.linkFieldHint' => 'Paste a room link or shared text',
 			'toolbox.linkOpen' => 'Open room',
 			'toolbox.linkPaste' => 'Paste',
-			_ => null,
-		} ?? switch (path) {
 			'toolbox.linkClear' => 'Clear',
 			'toolbox.linkClipboardRooms' => 'Detect room links in the clipboard',
 			'toolbox.linkResolvedTitle' => 'Resolved',
@@ -8955,6 +8912,8 @@ extension on TranslationsEn {
 			'toolbox.cacheClear' => 'Clear the cache',
 			'toolbox.cacheClearDesc' => 'Release the memory the image cache holds; favorites and history are untouched.',
 			'toolbox.linkDirect' => 'Get stream link',
+			_ => null,
+		} ?? switch (path) {
 			'toolbox.linkDirectTitle' => 'Stream links',
 			'toolbox.linkDirectQuality' => 'Quality',
 			'toolbox.linkDirectLines' => 'Playback URLs',
@@ -9083,12 +9042,9 @@ extension on TranslationsEn {
 			'vod.favorites' => 'Favourites',
 			'vod.description' => 'Description',
 			'vod.noDescription' => 'This video has no description.',
-			'vod.play' => 'Play',
-			'vod.pause' => 'Pause',
 			'vod.nextPart' => 'Next part',
 			'vod.previousPart' => 'Previous part',
 			'vod.resumedAt' => ({required Object time}) => 'Resumed at ${time}',
-			'vod.playFromStart' => 'From the start',
 			'vod.nextPartIn' => ({required int seconds}) => 'Next part in ${seconds}s',
 			'vod.headRemaining' => ({required Object time}) => 'Opening left: ${time}',
 			'vod.skipHead' => 'Skip opening',
@@ -9111,19 +9067,11 @@ extension on TranslationsEn {
 			'vod.longPressSpeedDesc' => 'The rate a held picture runs at, back to the part\'s own when it lets go.',
 			'vod.seekPreview' => 'Seek preview',
 			'vod.seekPreviewDesc' => 'A paused pointer on the line shows that frame and its time.',
-			'vod.mute' => 'Mute',
-			'vod.unmute' => 'Unmute',
-			'vod.volume' => 'Volume',
-			'vod.quality' => 'Quality',
-			'vod.speed' => 'Speed',
-			'vod.fullscreen' => 'Fullscreen',
-			'vod.exitFullscreen' => 'Exit fullscreen',
 			'vod.pip' => 'Picture in picture',
 			'vod.silentNotice' => 'This rendition has picture only; pick another quality for sound.',
 			'vod.opening' => 'Opening the video…',
 			'vod.loadFailed' => 'The video did not load',
 			'vod.openFailed' => 'The video could not be opened',
-			'vod.progress' => 'Playback progress',
 			'vod.up' => 'Uploader',
 			'vod.openingSpeed' => 'Opening speed',
 			'vod.openingSpeedDesc' => 'Speed a video opens with; the in-player menu only changes this one.',

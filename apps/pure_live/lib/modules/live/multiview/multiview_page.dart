@@ -874,7 +874,7 @@ final class _PaneTile extends StatelessWidget {
     final pane = playback;
     final streamNote = pane == null || pane.stage != MultiviewPaneStage.playing || pane.quality == null
         ? null
-        : [pane.quality!.displayLabel, if (pane.lines.length > 1) t.room.line(n: pane.lineIndex + 1)].join(' · ');
+        : [pane.quality!.displayLabel, if (pane.lines.length > 1) t.player.lineNumber(n: pane.lineIndex + 1)].join(' · ');
     return DsPressable(
       semanticLabel: assigned ? slot.title : t.multiview.pickRoom,
       onPressed: swapping
@@ -1546,13 +1546,13 @@ final class _PaneControls extends StatelessWidget {
     final lineChip = pane.lines.length > 1
         ? _StreamChip(
             icon: DsIcons.route,
-            label: line?.lineLabel ?? t.room.line(n: pane.lineIndex + 1),
-            semanticLabel: t.room.lineLabel,
+            label: line?.lineLabel ?? t.player.lineNumber(n: pane.lineIndex + 1),
+            semanticLabel: t.player.line,
             enabled: !pane.switching,
             items: [
               for (final (index, option) in pane.lines.indexed)
                 DsMenuItem(
-                  label: Text(option.lineLabel ?? t.room.line(n: index + 1)),
+                  label: Text(option.lineLabel ?? t.player.lineNumber(n: index + 1)),
                   checked: index == pane.lineIndex,
                   onPressed: () => onLine(index),
                 ),
@@ -1563,14 +1563,14 @@ final class _PaneControls extends StatelessWidget {
       spacing: DsSpace.s8,
       children: [
         DsTooltip(
-          message: t.room.volume,
+          message: t.player.volume,
           excludeFromSemantics: true,
           child: DsIcon(DsIcons.volume, size: theme.sizes.iconSm, color: colors.textMuted),
         ),
         Expanded(
           child: _PaneVolume(
             value: pane.volume,
-            semanticLabel: t.room.volume,
+            semanticLabel: t.player.volume,
             onChanged: onVolume,
             onCommitted: onVolumeCommit,
           ),

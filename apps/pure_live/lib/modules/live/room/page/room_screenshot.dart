@@ -30,7 +30,7 @@ Future<void> takeRoomScreenshot(BuildContext context, WidgetRef ref, PlayerHandl
   final t = context.t;
   showDsToast(
     context: context,
-    title: file == null ? t.room.screenshotFailed : t.room.screenshotSaved(name: file.uri.pathSegments.last),
+    title: file == null ? t.player.screenshotFailed : t.player.screenshotSaved(name: file.uri.pathSegments.last),
     status: file == null ? DsStatus.danger : DsStatus.success,
   );
 }

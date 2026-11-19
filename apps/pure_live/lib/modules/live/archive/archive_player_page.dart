@@ -583,7 +583,7 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> wit
   /// the room's own toast.
   void _onSleepFire() {
     unawaited(_handle?.pause() ?? Future<void>.value());
-    if (mounted) showDsToast(context: context, title: context.t.room.sleepDone);
+    if (mounted) showDsToast(context: context, title: context.t.player.sleepDone);
   }
 
   /// Keeps the frame the recording is showing in the viewer's screenshot
@@ -597,7 +597,7 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> wit
     final t = context.t;
     showDsToast(
       context: context,
-      title: file == null ? t.room.screenshotFailed : t.room.screenshotSaved(name: file.uri.pathSegments.last),
+      title: file == null ? t.player.screenshotFailed : t.player.screenshotSaved(name: file.uri.pathSegments.last),
       status: file == null ? DsStatus.danger : DsStatus.success,
     );
   }
@@ -1045,7 +1045,7 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> wit
       if (_handle?.canCaptureScreenshot ?? false)
         PlayerBarButton(
           icon: DsIcons.camera,
-          label: t.room.screenshot,
+          label: t.player.screenshot,
           onPressed: () {
             _wake();
             unawaited(_screenshot());
@@ -1109,7 +1109,7 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> wit
           // stands.
           DsMenuItem(
             leading: const DsIcon(DsIcons.timer),
-            label: Text(t.room.sleep),
+            label: Text(t.player.sleep),
             onPressed: () => unawaited(showRoomSleepTimer(context)),
           ),
         ],
@@ -1164,7 +1164,7 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> wit
             child: presentation == PresentationMode.pip
                 ? PlayerBarButton(
                     iconAsset: 'assets/icons/pip-exit.svg',
-                    label: t.room.pipOff,
+                    label: t.player.pipOff,
                     autofocus: true,
                     onPressed: () {
                       _wake();
@@ -1249,7 +1249,7 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> wit
         // reaches play before anything else.
         PlayerBarButton(
           iconAsset: playing ? 'assets/icons/pause.svg' : 'assets/icons/play.svg',
-          label: playing ? t.room.pause : t.room.play,
+          label: playing ? t.player.pause : t.player.play,
           autofocus: tv,
           onPressed: () {
             _wake();
@@ -1259,7 +1259,7 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> wit
         // The bar owns the sound the way the live room's does: the mute
         // button and the slider beside it, the slider speaking past a mute.
         PlayerBarButton(
-          label: _muted ? t.room.unmute : t.room.mute,
+          label: _muted ? t.player.unmute : t.player.mute,
           iconAsset: _muted ? 'assets/icons/volume-muted.svg' : 'assets/icons/volume.svg',
           onPressed: () {
             _wake();
@@ -1274,7 +1274,7 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> wit
               _wake();
               unawaited(_setVolume(value));
             },
-            semanticLabel: t.room.volume,
+            semanticLabel: t.player.volume,
           ),
         ),
         if (!compact) const Spacer(),
@@ -1328,7 +1328,7 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> wit
             ),
           ),
         DsMenuAnchor(
-          semanticLabel: t.room.replayRate,
+          semanticLabel: t.player.speed,
           align: DsAlign.end,
           items: [
             for (final rate in _speedChoices)
@@ -1365,8 +1365,8 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> wit
           PlayerBarButton(
             icon: presentation == PresentationMode.windowFullscreen ? DsIcons.copy : DsIcons.square,
             label: presentation == PresentationMode.windowFullscreen
-                ? t.room.windowFullscreenOff
-                : t.room.windowFullscreenOn,
+                ? t.player.windowFullscreenOff
+                : t.player.windowFullscreenOn,
             selected: presentation == PresentationMode.windowFullscreen,
             onPressed: () {
               _wake();

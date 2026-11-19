@@ -1666,35 +1666,8 @@ class Translations$hongguo$zh_CN {
 	/// zh-CN: '正在打开…'
 	String get opening => '正在打开…';
 
-	/// zh-CN: '播放'
-	String get play => '播放';
-
 	/// zh-CN: '继续观看'
 	String get continueWatching => '继续观看';
-
-	/// zh-CN: '从头播放'
-	String get playFromStart => '从头播放';
-
-	/// zh-CN: '暂停'
-	String get pause => '暂停';
-
-	/// zh-CN: '静音'
-	String get mute => '静音';
-
-	/// zh-CN: '取消静音'
-	String get unmute => '取消静音';
-
-	/// zh-CN: '音量'
-	String get volume => '音量';
-
-	/// zh-CN: '播放进度'
-	String get progress => '播放进度';
-
-	/// zh-CN: '倍速'
-	String get speed => '倍速';
-
-	/// zh-CN: '清晰度'
-	String get quality => '清晰度';
 
 	/// zh-CN: '2.0x 快进中 · 上滑锁定'
 	String get speedHolding => '2.0x 快进中 · 上滑锁定';
@@ -1716,12 +1689,6 @@ class Translations$hongguo$zh_CN {
 
 	/// zh-CN: '下一集'
 	String get nextEpisode => '下一集';
-
-	/// zh-CN: '全屏'
-	String get fullscreen => '全屏';
-
-	/// zh-CN: '退出全屏'
-	String get exitFullscreen => '退出全屏';
 
 	/// zh-CN: '展开'
 	String get expand => '展开';
@@ -2382,12 +2349,6 @@ class Translations$huya$zh_CN {
 
 	/// zh-CN: '首页暂时没有内容。'
 	String get homeEmpty => '首页暂时没有内容。';
-
-	/// zh-CN: '清晰度'
-	String get quality => '清晰度';
-
-	/// zh-CN: '倍速'
-	String get speed => '倍速';
 
 	/// zh-CN: '视频没有加载出来'
 	String get errorTitle => '视频没有加载出来';
@@ -3799,12 +3760,6 @@ class Translations$music$zh_CN {
 	/// zh-CN: '{count}次播放'
 	String playsCount({required Object count}) => '${count}次播放';
 
-	/// zh-CN: '播放'
-	String get play => '播放';
-
-	/// zh-CN: '暂停'
-	String get pause => '暂停';
-
 	/// zh-CN: '下一首'
 	String get next => '下一首';
 
@@ -3873,12 +3828,6 @@ class Translations$music$zh_CN {
 
 	/// zh-CN: '歌词与队列'
 	String get stagePanels => '歌词与队列';
-
-	/// zh-CN: '音量'
-	String get volume => '音量';
-
-	/// zh-CN: '播放进度'
-	String get progress => '播放进度';
 
 	/// zh-CN: '歌词'
 	String get lyrics => '歌词';
@@ -5637,6 +5586,81 @@ class Translations$player$zh_CN {
 
 	/// zh-CN: '弹幕'
 	String get danmaku => '弹幕';
+
+	/// zh-CN: '播放'
+	String get play => '播放';
+
+	/// zh-CN: '暂停'
+	String get pause => '暂停';
+
+	/// zh-CN: '静音'
+	String get mute => '静音';
+
+	/// zh-CN: '取消静音'
+	String get unmute => '取消静音';
+
+	/// zh-CN: '音量'
+	String get volume => '音量';
+
+	/// zh-CN: '截屏'
+	String get screenshot => '截屏';
+
+	/// zh-CN: '已保存 {name}'
+	String screenshotSaved({required Object name}) => '已保存 ${name}';
+
+	/// zh-CN: '这张画面没能截下来'
+	String get screenshotFailed => '这张画面没能截下来';
+
+	/// zh-CN: '定时关闭'
+	String get sleep => '定时关闭';
+
+	/// zh-CN: '睡眠定时已到，播放已暂停'
+	String get sleepDone => '睡眠定时已到，播放已暂停';
+
+	/// zh-CN: '关闭定时'
+	String get sleepOff => '关闭定时';
+
+	/// zh-CN: '统计信息'
+	String get statsToggle => '统计信息';
+
+	/// zh-CN: '投屏'
+	String get cast => '投屏';
+
+	/// zh-CN: '音频模式'
+	String get audioOnlyMode => '音频模式';
+
+	/// zh-CN: '设置'
+	String get moreSettings => '设置';
+
+	/// zh-CN: '恢复视频'
+	String get restoreVideo => '恢复视频';
+
+	/// zh-CN: '窗口全屏'
+	String get windowFullscreenOn => '窗口全屏';
+
+	/// zh-CN: '退出窗口全屏'
+	String get windowFullscreenOff => '退出窗口全屏';
+
+	/// zh-CN: '画中画'
+	String get pipOn => '画中画';
+
+	/// zh-CN: '退出画中画'
+	String get pipOff => '退出画中画';
+
+	/// zh-CN: '线路{n}'
+	String lineNumber({required Object n}) => '线路${n}';
+
+	/// zh-CN: '倍速'
+	String get speed => '倍速';
+
+	/// zh-CN: '播放进度'
+	String get progress => '播放进度';
+
+	/// zh-CN: '从头播放'
+	String get playFromStart => '从头播放';
+
+	/// zh-CN: '退出全屏'
+	String get fullscreenOff => '退出全屏';
 }
 
 // Path: popular
@@ -6526,23 +6550,8 @@ class Translations$room$zh_CN {
 	/// zh-CN: '画质'
 	String get quality => '画质';
 
-	/// zh-CN: '线路'
-	String get lineLabel => '线路';
-
 	/// zh-CN: '聊天列宽度'
 	String get chatColumnWidth => '聊天列宽度';
-
-	/// zh-CN: '设置'
-	String get moreSettings => '设置';
-
-	/// zh-CN: '线路{n}'
-	String line({required Object n}) => '线路${n}';
-
-	/// zh-CN: '播放'
-	String get play => '播放';
-
-	/// zh-CN: '暂停'
-	String get pause => '暂停';
 
 	/// zh-CN: '还没有弹幕'
 	String get noChat => '还没有弹幕';
@@ -6561,21 +6570,6 @@ class Translations$room$zh_CN {
 
 	/// zh-CN: '系统'
 	String get system => '系统';
-
-	/// zh-CN: '静音'
-	String get mute => '静音';
-
-	/// zh-CN: '取消静音'
-	String get unmute => '取消静音';
-
-	/// zh-CN: '音量'
-	String get volume => '音量';
-
-	/// zh-CN: '定时关闭'
-	String get sleep => '定时关闭';
-
-	/// zh-CN: '关闭定时'
-	String get sleepOff => '关闭定时';
 
 	/// zh-CN: '已定时 · 剩余 {time}'
 	String sleepRemaining({required Object time}) => '已定时 · 剩余 ${time}';
@@ -6610,21 +6604,6 @@ class Translations$room$zh_CN {
 	/// zh-CN: '聊天'
 	String get chatTitle => '聊天';
 
-	/// zh-CN: '窗口全屏'
-	String get windowFullscreenOn => '窗口全屏';
-
-	/// zh-CN: '退出窗口全屏'
-	String get windowFullscreenOff => '退出窗口全屏';
-
-	/// zh-CN: '画中画'
-	String get pipOn => '画中画';
-
-	/// zh-CN: '退出画中画'
-	String get pipOff => '退出画中画';
-
-	/// zh-CN: '投屏'
-	String get cast => '投屏';
-
 	/// zh-CN: '投屏到设备'
 	String get castTitle => '投屏到设备';
 
@@ -6648,15 +6627,6 @@ class Translations$room$zh_CN {
 
 	/// zh-CN: '投屏失败，设备可能无法访问这条线路'
 	String get castFailed => '投屏失败，设备可能无法访问这条线路';
-
-	/// zh-CN: '睡眠定时已到，播放已暂停'
-	String get sleepDone => '睡眠定时已到，播放已暂停';
-
-	/// zh-CN: '音频模式'
-	String get audioOnlyMode => '音频模式';
-
-	/// zh-CN: '恢复视频'
-	String get restoreVideo => '恢复视频';
 
 	/// zh-CN: '返回直播间'
 	String get backToRoom => '返回直播间';
@@ -6982,9 +6952,6 @@ class Translations$room$zh_CN {
 	/// zh-CN: '退出剧院模式'
 	String get theaterOff => '退出剧院模式';
 
-	/// zh-CN: '统计信息'
-	String get statsToggle => '统计信息';
-
 	/// zh-CN: '画面'
 	String get statsPicture => '画面';
 
@@ -7008,15 +6975,6 @@ class Translations$room$zh_CN {
 
 	/// zh-CN: '内核'
 	String get statsBackend => '内核';
-
-	/// zh-CN: '截屏'
-	String get screenshot => '截屏';
-
-	/// zh-CN: '已保存 {name}'
-	String screenshotSaved({required Object name}) => '已保存 ${name}';
-
-	/// zh-CN: '这张画面没能截下来'
-	String get screenshotFailed => '这张画面没能截下来';
 
 	/// zh-CN: '快捷键'
 	String get shortcutsHelp => '快捷键';
@@ -7152,9 +7110,6 @@ class Translations$room$zh_CN {
 
 	/// zh-CN: '画质'
 	String get replayQuality => '画质';
-
-	/// zh-CN: '倍速'
-	String get replayRate => '倍速';
 
 	/// zh-CN: '分段'
 	String get replayParts => '分段';
@@ -12553,12 +12508,6 @@ class Translations$vod$zh_CN {
 	/// zh-CN: '这个视频没有简介。'
 	String get noDescription => '这个视频没有简介。';
 
-	/// zh-CN: '播放'
-	String get play => '播放';
-
-	/// zh-CN: '暂停'
-	String get pause => '暂停';
-
 	/// zh-CN: '下一P'
 	String get nextPart => '下一P';
 
@@ -12567,9 +12516,6 @@ class Translations$vod$zh_CN {
 
 	/// zh-CN: '已为你续播到 {time}'
 	String resumedAt({required Object time}) => '已为你续播到 ${time}';
-
-	/// zh-CN: '从头播放'
-	String get playFromStart => '从头播放';
 
 	/// zh-CN: '{seconds: int} 秒后播放下一 P'
 	String nextPartIn({required int seconds}) => '${seconds} 秒后播放下一 P';
@@ -12637,27 +12583,6 @@ class Translations$vod$zh_CN {
 	/// zh-CN: '指针停在进度条上时，显示那一帧的画面和它的时间。'
 	String get seekPreviewDesc => '指针停在进度条上时，显示那一帧的画面和它的时间。';
 
-	/// zh-CN: '静音'
-	String get mute => '静音';
-
-	/// zh-CN: '取消静音'
-	String get unmute => '取消静音';
-
-	/// zh-CN: '音量'
-	String get volume => '音量';
-
-	/// zh-CN: '清晰度'
-	String get quality => '清晰度';
-
-	/// zh-CN: '倍速'
-	String get speed => '倍速';
-
-	/// zh-CN: '全屏'
-	String get fullscreen => '全屏';
-
-	/// zh-CN: '退出全屏'
-	String get exitFullscreen => '退出全屏';
-
 	/// zh-CN: '小窗播放'
 	String get pip => '小窗播放';
 
@@ -12672,9 +12597,6 @@ class Translations$vod$zh_CN {
 
 	/// zh-CN: '视频打开失败'
 	String get openFailed => '视频打开失败';
-
-	/// zh-CN: '播放进度'
-	String get progress => '播放进度';
 
 	/// zh-CN: 'UP主'
 	String get up => 'UP主';
@@ -14509,16 +14431,7 @@ extension on Translations {
 			'hongguo.todayTag' => '今日',
 			'hongguo.loadFailed' => '剧集没有加载出来',
 			'hongguo.opening' => '正在打开…',
-			'hongguo.play' => '播放',
 			'hongguo.continueWatching' => '继续观看',
-			'hongguo.playFromStart' => '从头播放',
-			'hongguo.pause' => '暂停',
-			'hongguo.mute' => '静音',
-			'hongguo.unmute' => '取消静音',
-			'hongguo.volume' => '音量',
-			'hongguo.progress' => '播放进度',
-			'hongguo.speed' => '倍速',
-			'hongguo.quality' => '清晰度',
 			'hongguo.speedHolding' => '2.0x 快进中 · 上滑锁定',
 			'hongguo.speedLocked' => '已锁定 2.0x · 长按下滑解除',
 			'hongguo.speedLockedToast' => '已锁定 2.0 倍速',
@@ -14526,8 +14439,6 @@ extension on Translations {
 			'hongguo.firstEpisode' => '已经是第一集',
 			'hongguo.lastEpisode' => '已经是最后一集',
 			'hongguo.nextEpisode' => '下一集',
-			'hongguo.fullscreen' => '全屏',
-			'hongguo.exitFullscreen' => '退出全屏',
 			'hongguo.expand' => '展开',
 			'hongguo.collapse' => '收起',
 			'hongguo.boardAll' => '综合榜',
@@ -14745,8 +14656,6 @@ extension on Translations {
 			'huya.backToBrowse' => '返回浏览',
 			'huya.rankUpdated' => ({required String time}) => '更新于 ${time}',
 			'huya.homeEmpty' => '首页暂时没有内容。',
-			'huya.quality' => '清晰度',
-			'huya.speed' => '倍速',
 			'huya.errorTitle' => '视频没有加载出来',
 			'huya.noResultsDescription' => '换个关键词再试试。',
 			'huya.views' => '播放',
@@ -14875,8 +14784,6 @@ extension on Translations {
 			'iptv.autoSyncDesc' => '冷启动时在后台静默更新。',
 			'iptv.browseChannelNumber' => '换台时显示频道号',
 			'iptv.browseChannelNumberDesc' => '在频道名旁边一起显示它的号码。',
-			_ => null,
-		} ?? switch (path) {
 			'iptv.browseReverse' => '换台反转',
 			'iptv.browseReverseDesc' => '让上键向下走、下键向上走。',
 			'iptv.browseClock' => '显示时间',
@@ -14890,6 +14797,8 @@ extension on Translations {
 			'iptv.recentWatched' => ({required Object time}) => '上次观看 ${time}',
 			'iptv.recentRemove' => '从最近观看中移除',
 			'iptv.recentClear' => '清空最近观看',
+			_ => null,
+		} ?? switch (path) {
 			'iptv.recentClearTitle' => '清空最近观看？',
 			'iptv.recentClearDesc' => '只删除本机的观看记录，收藏和频道本身不受影响。',
 			'iptv.recentEmptyTitle' => '还没有看过的频道',
@@ -15210,8 +15119,6 @@ extension on Translations {
 			'music.searchFailed' => '搜索失败',
 			'music.songsCount' => ({required Object count}) => '${count} 首',
 			'music.playsCount' => ({required Object count}) => '${count}次播放',
-			'music.play' => '播放',
-			'music.pause' => '暂停',
 			'music.next' => '下一首',
 			'music.previous' => '上一首',
 			'music.modeList' => '顺序播放',
@@ -15235,8 +15142,6 @@ extension on Translations {
 			'music.queueUnplayable' => '无法播放',
 			'music.nowPlaying' => '正在播放',
 			'music.stagePanels' => '歌词与队列',
-			'music.volume' => '音量',
-			'music.progress' => '播放进度',
 			'music.lyrics' => '歌词',
 			'music.lyricsEmpty' => '这首歌还没有歌词。',
 			'music.lyricLoadFailed' => '歌词加载失败',
@@ -15389,8 +15294,6 @@ extension on Translations {
 			'music.downloadIncludeRomanizationDesc' => '下载的歌词文件与内嵌歌词一并写入音译。',
 			'music.downloadWriteLyric' => '保存歌词文件',
 			'music.downloadWriteLyricDesc' => '在音频文件旁写一个同名 .lrc。',
-			_ => null,
-		} ?? switch (path) {
 			'music.downloadSkipExisting' => '跳过已存在文件',
 			'music.downloadSkipExistingDesc' => '目标文件已存在时不再下载。',
 			'music.downloadGroupByList' => '按歌单分文件夹',
@@ -15408,6 +15311,8 @@ extension on Translations {
 			'music.downloadPauseAll' => '全部暂停',
 			'music.downloadResumeAll' => '全部继续',
 			'music.downloadClearFinished' => '清除已完成',
+			_ => null,
+		} ?? switch (path) {
 			'music.downloadProgress' => '下载进度',
 			'music.downloadRetry' => '重试',
 			'music.downloadRemove' => '移除记录',
@@ -15816,6 +15721,31 @@ extension on Translations {
 			'player.line' => '线路',
 			'player.fullscreen' => '全屏',
 			'player.danmaku' => '弹幕',
+			'player.play' => '播放',
+			'player.pause' => '暂停',
+			'player.mute' => '静音',
+			'player.unmute' => '取消静音',
+			'player.volume' => '音量',
+			'player.screenshot' => '截屏',
+			'player.screenshotSaved' => ({required Object name}) => '已保存 ${name}',
+			'player.screenshotFailed' => '这张画面没能截下来',
+			'player.sleep' => '定时关闭',
+			'player.sleepDone' => '睡眠定时已到，播放已暂停',
+			'player.sleepOff' => '关闭定时',
+			'player.statsToggle' => '统计信息',
+			'player.cast' => '投屏',
+			'player.audioOnlyMode' => '音频模式',
+			'player.moreSettings' => '设置',
+			'player.restoreVideo' => '恢复视频',
+			'player.windowFullscreenOn' => '窗口全屏',
+			'player.windowFullscreenOff' => '退出窗口全屏',
+			'player.pipOn' => '画中画',
+			'player.pipOff' => '退出画中画',
+			'player.lineNumber' => ({required Object n}) => '线路${n}',
+			'player.speed' => '倍速',
+			'player.progress' => '播放进度',
+			'player.playFromStart' => '从头播放',
+			'player.fullscreenOff' => '退出全屏',
 			'popular.allPlatforms' => '全部平台',
 			'popular.allPlatformsHint' => '点一个直接切过去；在「平台显示」里隐藏和排序。',
 			'popular.page' => ({required int page, required int total}) => '第 ${page} 页，共 ${total} 页',
@@ -15895,6 +15825,8 @@ extension on Translations {
 			'recorder.stopRecording' => '停止录制',
 			'recorder.stopAll' => '停止全部录制',
 			'recorder.stopAllTitle' => '停止全部录制？',
+			_ => null,
+		} ?? switch (path) {
 			'recorder.stopAllBody' => ({required int count}) => '${count} 个正在录制的房间将结束保存；已写入的分段保留，收尾照常进行。',
 			'recorder.stopAllDone' => ({required int count}) => '已停止 ${count} 个录制',
 			'recorder.stopAllPartial' => ({required int count, required Object error}) => '已停止 ${count} 个，另有失败：${error}',
@@ -15903,8 +15835,6 @@ extension on Translations {
 			'recorder.mergeBody' => ({required int count}) => '${count} 个录像在其他目录。同一个磁盘内只做改名；跨磁盘先逐文件复制并核对字节数，核对通过才删除源目录。任务记录跟着改到新位置，正在录制与处理中的不受影响。',
 			'recorder.mergeDesc' => ({required int count}) => '另有 ${count} 个已完成的录像在其他目录，可并入当前目录',
 			'recorder.mergeRunning' => ({required Object done, required Object total, required Object name}) => '正在并入 ${done}/${total}：${name}',
-			_ => null,
-		} ?? switch (path) {
 			'recorder.mergeDone' => ({required int count}) => '已并入 ${count} 个录像',
 			'recorder.mergePartial' => ({required int moved, required int failed}) => '已并入 ${moved} 个，${failed} 个未完成',
 			'recorder.caCustomTitle' => '自定义 CA 证书',
@@ -16105,23 +16035,13 @@ extension on Translations {
 			'room.unfollowConfirm' => ({required Object name}) => '不再关注 ${name} 的直播间？',
 			'room.reloadRoom' => '重新打开房间',
 			'room.quality' => '画质',
-			'room.lineLabel' => '线路',
 			'room.chatColumnWidth' => '聊天列宽度',
-			'room.moreSettings' => '设置',
-			'room.line' => ({required Object n}) => '线路${n}',
-			'room.play' => '播放',
-			'room.pause' => '暂停',
 			'room.noChat' => '还没有弹幕',
 			'room.chatConnecting' => '正在连接聊天…',
 			'room.chatClosed' => '聊天连接已断开',
 			'room.chatUnsupported' => '这个房间没有实时聊天',
 			'room.chatFailedTitle' => '聊天没连上',
 			'room.system' => '系统',
-			'room.mute' => '静音',
-			'room.unmute' => '取消静音',
-			'room.volume' => '音量',
-			'room.sleep' => '定时关闭',
-			'room.sleepOff' => '关闭定时',
 			'room.sleepRemaining' => ({required Object time}) => '已定时 · 剩余 ${time}',
 			'room.sendHint' => '发个弹幕见证当下',
 			'room.send' => '发送',
@@ -16133,11 +16053,6 @@ extension on Translations {
 			'room.lockControls' => '锁定控件',
 			'room.unlockControls' => '解锁控件',
 			'room.chatTitle' => '聊天',
-			'room.windowFullscreenOn' => '窗口全屏',
-			'room.windowFullscreenOff' => '退出窗口全屏',
-			'room.pipOn' => '画中画',
-			'room.pipOff' => '退出画中画',
-			'room.cast' => '投屏',
 			'room.castTitle' => '投屏到设备',
 			'room.castSearching' => '正在搜索附近的设备',
 			'room.castSearchingHint' => '请确认电视与电脑在同一局域网。',
@@ -16146,9 +16061,6 @@ extension on Translations {
 			'room.castStop' => '停止投屏',
 			'room.castStarted' => '已开始投屏',
 			'room.castFailed' => '投屏失败，设备可能无法访问这条线路',
-			'room.sleepDone' => '睡眠定时已到，播放已暂停',
-			'room.audioOnlyMode' => '音频模式',
-			'room.restoreVideo' => '恢复视频',
 			'room.backToRoom' => '返回直播间',
 			'room.openingRoom' => '正在打开房间',
 			'room.playbackFailed' => '播放失败',
@@ -16257,7 +16169,6 @@ extension on Translations {
 			'room.expandChat' => '展开聊天',
 			'room.theaterOn' => '剧院模式',
 			'room.theaterOff' => '退出剧院模式',
-			'room.statsToggle' => '统计信息',
 			'room.statsPicture' => '画面',
 			'room.statsBitrate' => '码率',
 			'room.statsBuffer' => '缓冲',
@@ -16266,9 +16177,6 @@ extension on Translations {
 			'room.statsRenderer' => '渲染',
 			'room.statsProcess' => '进程',
 			'room.statsBackend' => '内核',
-			'room.screenshot' => '截屏',
-			'room.screenshotSaved' => ({required Object name}) => '已保存 ${name}',
-			'room.screenshotFailed' => '这张画面没能截下来',
 			'room.shortcutsHelp' => '快捷键',
 			'room.shortcutsHint' => '当前画面可用的按键',
 			'room.shortcutPlayPause' => '播放 / 暂停',
@@ -16314,7 +16222,6 @@ extension on Translations {
 			'room.replayEmpty' => '还没有回放',
 			'room.replayFailed' => '回放加载失败',
 			'room.replayQuality' => '画质',
-			'room.replayRate' => '倍速',
 			'room.replayParts' => '分段',
 			'room.shortcutChatColumn' => '收起/展开聊天栏',
 			'room.danmakuChip' => '弹幕',
@@ -16417,8 +16324,6 @@ extension on Translations {
 			'search.noteWeiboShort' => '只能用场次号或直播链接精确查找',
 			'search.noteYoutube' => 'YouTube：关键词只能搜到正在直播的频道；粘贴频道链接、@名称或视频链接可查到未开播的频道。',
 			'search.noteYoutubeShort' => '关键词只能搜到正在直播的频道',
-			_ => null,
-		} ?? switch (path) {
 			'search.scopeTagAnchors' => '主播',
 			'search.scopeTagWeb' => '网页',
 			'search.scopeTagsHint' => '“主播”：能搜主播；“网页”：能打开平台的网页搜索。',
@@ -16434,6 +16339,8 @@ extension on Translations {
 			'settings.navPlaybackPreferences' => '播放偏好',
 			'settings.navSystem' => '系统',
 			'settings.navDataCache' => '数据与缓存',
+			_ => null,
+		} ?? switch (path) {
 			'settings.navAppearance' => '外观',
 			'settings.navPlayback' => '播放',
 			'settings.navSites' => '站点',
@@ -16931,8 +16838,6 @@ extension on Translations {
 			'settings.vodInterfaceDescription' => '视频页显示哪些内容：详情区的开关。',
 			'settings.vodPlaybackDescription' => '默认倍速、一集播完后的动作，以及播放器下方显示的详情。',
 			'settings.groupMusic' => '音乐',
-			_ => null,
-		} ?? switch (path) {
 			'settings.navMusic' => '音乐',
 			'settings.musicSettingsDescription' => '播放、歌词、桌面歌词、下载、音源、快捷键与同步。',
 			'settings.navMusicPlay' => '播放',
@@ -16948,6 +16853,8 @@ extension on Translations {
 			'settings.navMusicSync' => '同步',
 			'settings.navMusicEq' => '音效',
 			'settings.musicHotkeysDescription' => '播放、音量与收藏的快捷键。',
+			_ => null,
+		} ?? switch (path) {
 			'settings.musicSyncDescription' => '与 lx-music 桌面端服务端同步歌单。',
 			'settings.musicEqDescription' => '音效总开关、内置预设、十段均衡器与预放增益。',
 			'settings.musicDesktopLyricDescription' => '悬浮歌词的开关、锁定、字号、颜色与对齐。',
@@ -17445,8 +17352,6 @@ extension on Translations {
 			'settings.audienceOnline' => '在线观众',
 			'settings.audiencePopularity' => '热度',
 			'settings.audienceTotal' => '累计观看',
-			_ => null,
-		} ?? switch (path) {
 			'settings.audienceDisplayGroup' => '卡片显示与排行方式',
 			'settings.audienceRealOnlineGroup' => '真实在线人数',
 			'settings.audienceRealOnline' => '真实在线人数优先',
@@ -17462,6 +17367,8 @@ extension on Translations {
 			'settings.backgroundLibraryApplied' => '已应用为背景',
 			'settings.wallpaperSourceOfficial' => '官方壁纸',
 			'settings.wallpaperSourceWallhaven' => 'Wallhaven',
+			_ => null,
+		} ?? switch (path) {
 			'settings.wallpaperSourceBing' => '必应壁纸',
 			'settings.wallpaperSourceDeepin' => 'deepin',
 			'settings.wallpaperSourceVideo' => '动态壁纸',
@@ -17959,8 +17866,6 @@ extension on Translations {
 			'toolbox.linkFieldHint' => '粘贴直播间链接或分享文字',
 			'toolbox.linkOpen' => '打开直播间',
 			'toolbox.linkPaste' => '粘贴',
-			_ => null,
-		} ?? switch (path) {
 			'toolbox.linkClear' => '清空',
 			'toolbox.linkClipboardRooms' => '识别剪贴板直播间链接',
 			'toolbox.linkResolvedTitle' => '解析结果',
@@ -17976,6 +17881,8 @@ extension on Translations {
 			'toolbox.cacheClear' => '清理缓存',
 			'toolbox.cacheClearDesc' => '释放图片缓存占用的内存，不影响收藏与历史。',
 			'toolbox.linkDirect' => '获取直链',
+			_ => null,
+		} ?? switch (path) {
 			'toolbox.linkDirectTitle' => '直链地址',
 			'toolbox.linkDirectQuality' => '画质',
 			'toolbox.linkDirectLines' => '播放地址',
@@ -18104,12 +18011,9 @@ extension on Translations {
 			'vod.favorites' => '收藏',
 			'vod.description' => '简介',
 			'vod.noDescription' => '这个视频没有简介。',
-			'vod.play' => '播放',
-			'vod.pause' => '暂停',
 			'vod.nextPart' => '下一P',
 			'vod.previousPart' => '上一P',
 			'vod.resumedAt' => ({required Object time}) => '已为你续播到 ${time}',
-			'vod.playFromStart' => '从头播放',
 			'vod.nextPartIn' => ({required int seconds}) => '${seconds} 秒后播放下一 P',
 			'vod.headRemaining' => ({required Object time}) => '片头还剩 ${time}',
 			'vod.skipHead' => '跳过片头',
@@ -18132,19 +18036,11 @@ extension on Translations {
 			'vod.longPressSpeedDesc' => '按住画面时用的倍速，松手回到原来的速度。',
 			'vod.seekPreview' => '进度条预览',
 			'vod.seekPreviewDesc' => '指针停在进度条上时，显示那一帧的画面和它的时间。',
-			'vod.mute' => '静音',
-			'vod.unmute' => '取消静音',
-			'vod.volume' => '音量',
-			'vod.quality' => '清晰度',
-			'vod.speed' => '倍速',
-			'vod.fullscreen' => '全屏',
-			'vod.exitFullscreen' => '退出全屏',
 			'vod.pip' => '小窗播放',
 			'vod.silentNotice' => '这个清晰度只有画面，没有声音；换一个清晰度试试。',
 			'vod.opening' => '正在打开视频…',
 			'vod.loadFailed' => '视频信息加载失败',
 			'vod.openFailed' => '视频打开失败',
-			'vod.progress' => '播放进度',
 			'vod.up' => 'UP主',
 			'vod.openingSpeed' => '默认倍速',
 			'vod.openingSpeedDesc' => '打开视频时的倍速；播放器菜单只改当前视频。',

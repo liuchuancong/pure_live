@@ -352,7 +352,7 @@ final class _FloatingVideoViewState extends ConsumerState<FloatingVideoView> {
                             if (handle != null)
                               MediaBarButton(
                                 iconAsset: playing ? 'assets/icons/pause.svg' : 'assets/icons/play.svg',
-                                label: playing ? t.room.pause : t.room.play,
+                                label: playing ? t.player.pause : t.player.play,
                                 onPressed: () => unawaited(playing ? handle.pause() : handle.play()),
                                 tooltip: false,
                               ),

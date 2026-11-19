@@ -511,8 +511,8 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
   /// which thing it tunes; without this it never says what it is set to.
   String _qualityMenuLabel(Translations t) {
     final label = _openedLabel;
-    if (label == null || label.isEmpty) return t.vod.quality;
-    return '${t.vod.quality} · $label';
+    if (label == null || label.isEmpty) return t.player.quality;
+    return '${t.player.quality} · $label';
   }
 
   /// The pointer's vocabulary over the picture, and the episode steps it
@@ -958,7 +958,7 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
     final t = context.t;
     showDsToast(
       context: context,
-      title: file == null ? t.room.screenshotFailed : t.room.screenshotSaved(name: file.uri.pathSegments.last),
+      title: file == null ? t.player.screenshotFailed : t.player.screenshotSaved(name: file.uri.pathSegments.last),
       status: file == null ? DsStatus.danger : DsStatus.success,
     );
   }
@@ -1091,7 +1091,7 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
     if (_handle?.canCaptureScreenshot ?? false)
       PlayerBarButton(
         icon: DsIcons.camera,
-        label: t.room.screenshot,
+        label: t.player.screenshot,
         onPressed: () {
           _wake();
           unawaited(_screenshot());
@@ -1483,7 +1483,7 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
                   child: DsButton.icon(
                     variant: DsButtonVariant.ghost,
                     size: DsSize.sm,
-                    semanticLabel: t.vod.exitFullscreen,
+                    semanticLabel: t.player.fullscreenOff,
                     onPressed: _toggleFullscreen,
                     icon: const DsIcon(DsIcons.minimize2),
                   ),
@@ -1664,7 +1664,7 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
                               child: VodSeekBar(
                                 position: position,
                                 duration: duration,
-                                semanticLabel: t.vod.progress,
+                                semanticLabel: t.player.progress,
                                 buffered: _transport?.buffer.ranges ?? const [],
                                 coverUrl: ref.read(vodSeasonDetailProvider(widget.seasonId)).value?.coverUrl,
                                 showPreview: ref.watch(vodPlaybackSettingsProvider).seekPreview,
@@ -1718,7 +1718,7 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
                             DsButton.icon(
                               variant: DsButtonVariant.ghost,
                               size: DsSize.sm,
-                              semanticLabel: playing ? t.vod.pause : t.vod.play,
+                              semanticLabel: playing ? t.player.pause : t.player.play,
                               onPressed: handle == null ? null : _togglePlay,
                               icon: DsIcon(playing ? DsIcons.pause : DsIcons.play),
                             ),
@@ -1759,7 +1759,7 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
                               DsButton.icon(
                                 variant: DsButtonVariant.ghost,
                                 size: DsSize.sm,
-                                semanticLabel: t.vod.fullscreen,
+                                semanticLabel: t.player.fullscreen,
                                 onPressed: handle == null ? null : _toggleFullscreen,
                                 icon: const DsIcon(DsIcons.maximize2),
                               ),

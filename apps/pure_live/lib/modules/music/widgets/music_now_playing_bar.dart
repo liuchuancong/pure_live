@@ -186,7 +186,7 @@ final class MusicNowPlayingBarState extends ConsumerState<MusicNowPlayingBar> {
                   DsButton.icon(
                     variant: DsButtonVariant.ghost,
                     size: DsSize.sm,
-                    semanticLabel: state.muted ? t.room.unmute : t.room.mute,
+                    semanticLabel: state.muted ? t.player.unmute : t.player.mute,
                     onPressed: () => unawaited(controller.setMuted(muted: !state.muted)),
                     icon: DsIcon(state.muted ? DsIcons.volumeOff : DsIcons.volume),
                   ),
@@ -197,7 +197,7 @@ final class MusicNowPlayingBarState extends ConsumerState<MusicNowPlayingBar> {
                         width: 96,
                         child: DsSlider(
                           value: state.muted ? 0 : state.volume,
-                          semanticLabel: t.music.volume,
+                          semanticLabel: t.player.volume,
                           onChanged: (value) => unawaited(controller.setVolume(value)),
                         ),
                       ),
@@ -290,7 +290,7 @@ final class MusicNowPlayingBarState extends ConsumerState<MusicNowPlayingBar> {
                   DsButton.icon(
                     variant: DsButtonVariant.primary,
                     size: DsSize.sm,
-                    semanticLabel: state.playing ? t.music.pause : t.music.play,
+                    semanticLabel: state.playing ? t.player.pause : t.player.play,
                     onPressed: () => unawaited(controller.toggle()),
                     icon: DsIcon(state.playing ? DsIcons.pause : DsIcons.play),
                   ),
@@ -349,7 +349,7 @@ final class MusicNowPlayingBarState extends ConsumerState<MusicNowPlayingBar> {
                   ),
                   DsMenuItem(
                     leading: DsIcon(state.muted ? DsIcons.volumeOff : DsIcons.volume),
-                    label: Text(state.muted ? t.room.unmute : t.room.mute),
+                    label: Text(state.muted ? t.player.unmute : t.player.mute),
                     onPressed: () => unawaited(controller.setMuted(muted: !state.muted)),
                   ),
                   DsMenuItem(
@@ -421,7 +421,7 @@ final class _BarProgress extends ConsumerWidget {
       builder: (context, constraints) => Semantics(
         // The hairline is the mini bar's only seek: a reader walks it as an
         // adjustable, a nudge a second either way.
-        label: t.music.progress,
+        label: t.player.progress,
         onIncrease: total <= 0
             ? null
             : () => unawaited(controller.seek(Duration(milliseconds: (progress * total).round() + 1000))),

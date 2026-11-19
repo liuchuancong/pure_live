@@ -1289,7 +1289,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
   /// room's own toast.
   void _onSleepFire() {
     unawaited(_handle?.pause() ?? Future<void>.value());
-    if (mounted) showDsToast(context: context, title: context.t.room.sleepDone);
+    if (mounted) showDsToast(context: context, title: context.t.player.sleepDone);
   }
 
   /// Keeps the frame the part is showing in the viewer's screenshot folder, and
@@ -1302,7 +1302,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
     final t = context.t;
     showDsToast(
       context: context,
-      title: file == null ? t.room.screenshotFailed : t.room.screenshotSaved(name: file.uri.pathSegments.last),
+      title: file == null ? t.player.screenshotFailed : t.player.screenshotSaved(name: file.uri.pathSegments.last),
       status: file == null ? DsStatus.danger : DsStatus.success,
     );
   }
@@ -2096,7 +2096,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
         VodPictureNotice(
           icon: DsIcons.history,
           text: t.vod.resumedAt(time: vodDurationText(Duration(seconds: seconds.round()))),
-          actionLabel: t.vod.playFromStart,
+          actionLabel: t.player.playFromStart,
           onAction: () => unawaited(_playFromStart()),
         ),
       if (head != null && head > 0 && position < head)
@@ -2141,7 +2141,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
       if (_handle?.canCaptureScreenshot ?? false)
         PlayerBarButton(
           icon: DsIcons.camera,
-          label: t.room.screenshot,
+          label: t.player.screenshot,
           onPressed: () {
             _wake();
             unawaited(_screenshot());
@@ -2150,7 +2150,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
       if (_play != null)
         PlayerBarButton(
           icon: DsIcons.cast,
-          label: t.room.cast,
+          label: t.player.cast,
           onPressed: () {
             _wake();
             unawaited(_cast());
@@ -2247,7 +2247,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
             child: presentation == PresentationMode.pip
                 ? PlayerBarButton(
                     iconAsset: 'assets/icons/pip-exit.svg',
-                    label: t.room.pipOff,
+                    label: t.player.pipOff,
                     autofocus: true,
                     onPressed: () {
                       _wake();
@@ -2256,7 +2256,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                   )
                 : PlayerBarButton(
                     icon: DsIcons.minimize2,
-                    label: t.vod.exitFullscreen,
+                    label: t.player.fullscreenOff,
                     autofocus: true,
                     onPressed: () => unawaited(_toggleFullscreen()),
                   ),
@@ -2349,7 +2349,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
       ),
       DsMenuItem(
         leading: const DsIcon(DsIcons.activity),
-        label: Text(t.room.statsToggle),
+        label: Text(t.player.statsToggle),
         checked: ref.watch(playerStatsVisibleProvider),
         checkRole: DsMenuCheckRole.checkbox,
         onPressed: handle == null
@@ -2361,7 +2361,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
       ),
       DsMenuItem(
         leading: DsIcon(_audioOnly ? DsIcons.headphones : DsIcons.music2),
-        label: Text(t.room.audioOnlyMode),
+        label: Text(t.player.audioOnlyMode),
         checked: _audioOnly,
         checkRole: DsMenuCheckRole.checkbox,
         onPressed: handle == null
@@ -2436,7 +2436,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
       // the room's reads, and its fire pauses the part where it stands.
       DsMenuItem(
         leading: const DsIcon(DsIcons.timer),
-        label: Text(t.room.sleep),
+        label: Text(t.player.sleep),
         onPressed: () => unawaited(showRoomSleepTimer(context)),
       ),
     ];
@@ -2519,7 +2519,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                 child: VodSeekBar(
                   position: position,
                   duration: duration,
-                  semanticLabel: t.vod.progress,
+                  semanticLabel: t.player.progress,
                   buffered: _transport?.buffer.ranges ?? const [],
                   chapters: _extra.chapters,
                   preview: _extra.preview,
@@ -2551,7 +2551,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                 children: [
                   PlayerBarButton(
                     iconAsset: playing ? 'assets/icons/pause.svg' : 'assets/icons/play.svg',
-                    label: playing ? t.vod.pause : t.vod.play,
+                    label: playing ? t.player.pause : t.player.play,
                     focusNode: _playFocus,
                     onPressed: handle == null
                         ? null
@@ -2568,7 +2568,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                   if (_hasNextPart) _vodPartStepChip(t, compact: compact, forward: true),
                   PlayerBarButton(
                     iconAsset: _effectivelyMuted ? 'assets/icons/volume-muted.svg' : 'assets/icons/volume.svg',
-                    label: _effectivelyMuted ? t.vod.unmute : t.vod.mute,
+                    label: _effectivelyMuted ? t.player.unmute : t.player.mute,
                     onPressed: handle == null
                         ? null
                         : () {
@@ -2588,7 +2588,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                               _wake();
                               unawaited(_setVolume(value));
                             },
-                      semanticLabel: t.vod.volume,
+                      semanticLabel: t.player.volume,
                     ),
                   ),
                   // Only the fitted bar has spare width to split its clusters
@@ -2598,8 +2598,8 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                     _vodPickerButton(
                       panel: _VodPanel.quality,
                       icon: DsIcons.gauge,
-                      label: _openedLabel ?? t.vod.quality,
-                      semanticLabel: t.vod.quality,
+                      label: _openedLabel ?? t.player.quality,
+                      semanticLabel: t.player.quality,
                       compact: compact,
                     ),
                   // The parts live under the picture, where the page draws them,
@@ -2620,7 +2620,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                     panel: _VodPanel.speed,
                     icon: DsIcons.timer,
                     label: VodSpeedChoice.nearest(_speed).label,
-                    semanticLabel: t.vod.speed,
+                    semanticLabel: t.player.speed,
                     compact: compact,
                   ),
                   // The words the station wrote for this part. The door opens
@@ -2666,8 +2666,8 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                     PlayerBarButton(
                       icon: presentation == PresentationMode.windowFullscreen ? DsIcons.copy : DsIcons.square,
                       label: presentation == PresentationMode.windowFullscreen
-                          ? t.room.windowFullscreenOff
-                          : t.room.windowFullscreenOn,
+                          ? t.player.windowFullscreenOff
+                          : t.player.windowFullscreenOn,
                       selected: presentation == PresentationMode.windowFullscreen,
                       onPressed: handle == null
                           ? null
@@ -2679,7 +2679,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                   if (presentation != PresentationMode.pip)
                     PlayerBarButton(
                       icon: presentation == PresentationMode.fullscreen ? DsIcons.minimize : DsIcons.maximize,
-                      label: presentation == PresentationMode.fullscreen ? t.vod.exitFullscreen : t.vod.fullscreen,
+                      label: presentation == PresentationMode.fullscreen ? t.player.fullscreenOff : t.player.fullscreen,
                       onPressed: handle == null
                           ? null
                           : () {
@@ -2820,7 +2820,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
       case _VodPanel.quality:
         final qualities = _play?.qualities ?? const <VodQuality>[];
         return PlayerOverlayPanel(
-          title: t.vod.quality,
+          title: t.player.quality,
           width: _panelWidth(panel),
           children: [
             for (final quality in qualities)
@@ -2859,7 +2859,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
         );
       case _VodPanel.speed:
         return PlayerOverlayPanel(
-          title: t.vod.speed,
+          title: t.player.speed,
           width: _panelWidth(panel),
           children: [
             for (final choice in VodSpeedChoice.values)

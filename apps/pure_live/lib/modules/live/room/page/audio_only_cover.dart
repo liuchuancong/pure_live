@@ -71,7 +71,7 @@ final class AudioOnlyCover extends StatelessWidget {
                     ),
                     if (name.isNotEmpty) ...[const SizedBox(height: DsSpace.s8), _Badge(text: name)],
                     SizedBox(height: compact ? DsSpace.s8 : DsSpace.s16),
-                    _Badge(icon: DsIcons.headphones, text: t.room.audioOnlyMode),
+                    _Badge(icon: DsIcons.headphones, text: t.player.audioOnlyMode),
                   ],
                 ),
               ),

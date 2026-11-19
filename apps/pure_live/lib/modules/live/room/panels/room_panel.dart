@@ -68,7 +68,7 @@ bool isRoomPanelRoute(Route<Object?> route) => route.settings.name?.startsWith('
 Widget roomPanelSheet(BuildContext sheetContext, RoomPanelKind kind) => switch (kind) {
   RoomPanelKind.details => AppPanel(title: Text(sheetContext.t.room.details), child: const RoomDetailsPanel()),
   RoomPanelKind.sleepTimer => AppPanel(
-    title: Text(sheetContext.t.room.sleep),
+    title: Text(sheetContext.t.player.sleep),
     child: Consumer(
       builder: (context, ref, _) {
         final timer = ref.watch(sleepTimerProvider);
@@ -92,7 +92,7 @@ Widget roomPanelSheet(BuildContext sheetContext, RoomPanelKind kind) => switch (
                   children: [
                     if (timer.minutes != null)
                       DsListRow(
-                        title: Text(sheetContext.t.room.sleepOff),
+                        title: Text(sheetContext.t.player.sleepOff),
                         onPressed: () => _pickSleepMinutes(context, ref, null),
                       ),
                     for (final minutes in kAsmrSleepMinuteChoices)
