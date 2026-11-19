@@ -269,9 +269,7 @@ final class _CommentsPanelState extends ConsumerState<_CommentsPanel> {
                   ),
                 )
               : comments.isEmpty
-              ? Center(
-                  child: Text(t.music.commentsEmpty, style: theme.typography.body.copyWith(color: colors.textMuted)),
-                )
+              ? Center(child: DsEmptyState(title: Text(t.music.commentsEmpty)))
               : ListView.builder(
                   itemCount: comments.length + (hasTail ? 1 : 0),
                   itemBuilder: (context, index) {

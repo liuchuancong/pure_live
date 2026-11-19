@@ -1221,11 +1221,10 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get uiBlurredBackdrop => 'Blurred backdrop';
 	@override String get uiBlurredBackdropDesc => 'Paint the player page over the playing song\'s cover, blown up and blurred';
 	@override String get playerMode => 'Default player mode';
-	@override String get playerModeDesc => 'How the player page opens: the cover card, the turntable, or the words alone. The player page switches it any time.';
+	@override String get playerModeDesc => 'How the player page opens: the cover card, or the words alone. The player page switches it any time.';
 	@override String get playerModeSwitch => 'Player mode';
 	@override String get playerModeStandard => 'Standard';
 	@override String get playerModeCover => 'Cover';
-	@override String get playerModeVinyl => 'Vinyl';
 	@override String get playerModeLyrics => 'Lyrics';
 	@override String get uiSpectrum => 'Playback spectrum';
 	@override String get uiSpectrumDesc => 'The live spectrum on the player page\'s stage';
@@ -5953,11 +5952,10 @@ extension on TranslationsEn {
 			'music.uiBlurredBackdrop' => 'Blurred backdrop',
 			'music.uiBlurredBackdropDesc' => 'Paint the player page over the playing song\'s cover, blown up and blurred',
 			'music.playerMode' => 'Default player mode',
-			'music.playerModeDesc' => 'How the player page opens: the cover card, the turntable, or the words alone. The player page switches it any time.',
+			'music.playerModeDesc' => 'How the player page opens: the cover card, or the words alone. The player page switches it any time.',
 			'music.playerModeSwitch' => 'Player mode',
 			'music.playerModeStandard' => 'Standard',
 			'music.playerModeCover' => 'Cover',
-			'music.playerModeVinyl' => 'Vinyl',
 			'music.playerModeLyrics' => 'Lyrics',
 			'music.uiSpectrum' => 'Playback spectrum',
 			'music.uiSpectrumDesc' => 'The live spectrum on the player page\'s stage',
@@ -6286,9 +6284,9 @@ extension on TranslationsEn {
 			'music.lyricRomanization' => 'Show romanization',
 			'music.lyricRomanizationDesc' => 'Show the romanization when the lyric has one.',
 			'music.lyricSwapSecondary' => 'Translation/romanization order',
+			'music.lyricSwapSecondaryDesc' => 'Swap translation and romanization under a lyric line.',
 			_ => null,
 		} ?? switch (path) {
-			'music.lyricSwapSecondaryDesc' => 'Swap translation and romanization under a lyric line.',
 			'music.lyricTraditionalize' => 'Traditional Chinese',
 			'music.lyricTraditionalizeDesc' => 'Rewrite lyric text into traditional Chinese.',
 			'music.lyricWordTimed' => 'Word-by-word lyrics',
@@ -6800,9 +6798,9 @@ extension on TranslationsEn {
 			'recorder.caCustomPickFailed' => 'The certificate file could not be read',
 			'recorder.caCustomClear' => 'Use bundled',
 			'recorder.caCustomCleared' => 'Recording uses the bundled root store again',
+			'recorder.startNowBusyOther' => 'Another window is recording this room',
 			_ => null,
 		} ?? switch (path) {
-			'recorder.startNowBusyOther' => 'Another window is recording this room',
 			'recorder.startNowCaFailed' => 'The custom CA bundle cannot be read — pick it again or switch to the bundled store',
 			'recorder.stateSaved' => 'Saved',
 			'recorder.menuMore' => 'More actions',
@@ -7314,9 +7312,9 @@ extension on TranslationsEn {
 			'settings.groupData' => 'Data',
 			'settings.groupAbout' => 'About',
 			'settings.groupIptv' => 'IPTV',
+			'settings.groupVod' => 'Bilibili video',
 			_ => null,
 		} ?? switch (path) {
-			'settings.groupVod' => 'Bilibili video',
 			'settings.generalDescription' => 'Browsing, window and startup pages.',
 			'settings.appearanceDescription' => 'Theme, typography and colours.',
 			'settings.personalizationDescription' => 'Theme, appearance, background and navigation.',
@@ -7828,9 +7826,9 @@ extension on TranslationsEn {
 			'settings.iptvGroupsDescription' => 'Chooses which groups appear in the channel lists and the zapping.',
 			'settings.navDanmaku' => 'Danmaku',
 			'settings.navMiniDanmaku' => 'Mini-window danmaku',
+			'settings.navKernel' => 'Player engine',
 			_ => null,
 		} ?? switch (path) {
-			'settings.navKernel' => 'Player engine',
 			'settings.navRecording' => 'Recording',
 			'settings.videoDescription' => 'Quality, audio and how the picture fits.',
 			'settings.danmakuDescription' => 'Danmaku visibility, style and shields.',
@@ -8342,9 +8340,9 @@ extension on TranslationsEn {
 			'settings.wallpaperCategoryFinalFantasy' => 'Final Fantasy',
 			'settings.tagManagement' => 'Tag management',
 			'settings.tagManagementDesc' => 'Customize and manage the tags rooms are filtered by',
+			'settings.tagAdd' => 'Add tag',
 			_ => null,
 		} ?? switch (path) {
-			'settings.tagAdd' => 'Add tag',
 			'settings.tagEdit' => 'Edit tag',
 			'settings.tagPin' => 'Move to top',
 			'settings.tagSaveAction' => 'Save',
@@ -8856,9 +8854,9 @@ extension on TranslationsEn {
 			'toolbox.nodeAnswer' => ({required int count}) => '${count} rooms returned',
 			'toolbox.nodeSourceRecommended' => 'Recommended endpoint',
 			'toolbox.nodeSourceHot' => 'Hot-list endpoint',
+			'toolbox.nodeSummary' => ({required Object ok, required Object tested, required Object total}) => '${ok} / ${tested} reachable · ${total} platforms',
 			_ => null,
 		} ?? switch (path) {
-			'toolbox.nodeSummary' => ({required Object ok, required Object tested, required Object total}) => '${ok} / ${tested} reachable · ${total} platforms',
 			'toolbox.nodeUntestedSummary' => ({required Object total}) => 'Not tested yet · ${total} platforms',
 			'toolbox.logsSection' => 'Logs & diagnostics',
 			'toolbox.logsExport' => 'Copy log',

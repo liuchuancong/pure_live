@@ -709,13 +709,7 @@ final class MusicSourcesPane extends ConsumerWidget {
         ),
         if (sources.isEmpty)
           DsListSection(
-            children: [
-              DsListRow(
-                leading: const DsIcon(DsIcons.fileMusic),
-                title: Text(t.music.sourcesEmpty),
-                description: Text(t.music.sourcesEmptyDesc),
-              ),
-            ],
+            children: [DsEmptyState(title: Text(t.music.sourcesEmpty), description: Text(t.music.sourcesEmptyDesc))],
           )
         else
           DsListSection(

@@ -286,13 +286,7 @@ final class MusicLyricsPanelState extends ConsumerState<MusicLyricsPanel> {
                       )
                     : const Center(child: DsSpinner())
               : document.isEmpty
-              ? Center(
-                  child: Text(
-                    t.music.lyricsEmpty,
-                    textAlign: TextAlign.center,
-                    style: theme.typography.body.copyWith(color: colors.textMuted),
-                  ),
-                )
+              ? Center(child: DsEmptyState(title: Text(t.music.lyricsEmpty)))
               : Stack(
                   children: [
                     // The column fades out at both edges, so lines walk

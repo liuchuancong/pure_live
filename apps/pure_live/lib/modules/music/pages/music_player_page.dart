@@ -3,7 +3,6 @@ import 'dart:ui' show ImageFilter;
 
 import 'package:desen_ui/desen_ui.dart';
 import 'package:file_picker/file_picker.dart' show FilePicker, FileType;
-import 'package:flutter/material.dart' show Colors;
 import 'package:flutter/services.dart' show LogicalKeyboardKey;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -281,7 +280,6 @@ final class _StageState extends ConsumerState<_Stage> {
                     ? 280
                     : 216)
                 .toDouble();
-        final disc = playerMode == MusicPlayerMode.vinyl && constraints.maxWidth >= 640;
         final words = playerMode == MusicPlayerMode.lyrics;
         // The song sits at the stage's middle when the window affords it and
         // scrolls when it does not — a tall window that pins the cover to the
@@ -309,42 +307,17 @@ final class _StageState extends ConsumerState<_Stage> {
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 320),
                         curve: Curves.easeOutCubic,
-                        width: disc ? size * 1.32 : size,
+                        width: size,
                         height: size,
-                        child: disc
-                            ? Stack(
-                                alignment: AlignmentDirectional.centerStart,
-                                clipBehavior: Clip.none,
-                                children: [
-                                  // The record is the stage in this mode — the
-                                  // sleeve gives way to the disc, its own cover
-                                  // pressed into the label — and the arm rests on
-                                  // it, the reference's turntable.
-                                  PositionedDirectional(
-                                    start: 0,
-                                    top: 0,
-                                    child: _VinylDisc(size: size * 0.92, track: track, playing: playing),
-                                  ),
-                                  PositionedDirectional(
-                                    start: size * 0.62,
-                                    top: -size * 0.02,
-                                    child: _Tonearm(size: size, playing: playing),
-                                  ),
-                                ],
-                              )
-                            : DecoratedBox(
-                                decoration: DsBoxDecoration(
-                                  borderRadius: BorderRadius.circular(theme.radii.overlay),
-                                  shadows: [
-                                    DsShadow(
-                                      color: colors.overlay,
-                                      blur: DsSpace.s40,
-                                      offset: const Offset(0, DsSpace.s16),
-                                    ),
-                                  ],
-                                ),
-                                child: _Artwork(track: track, size: size),
-                              ),
+                        child: DecoratedBox(
+                          decoration: DsBoxDecoration(
+                            borderRadius: BorderRadius.circular(theme.radii.overlay),
+                            shadows: [
+                              DsShadow(color: colors.overlay, blur: DsSpace.s40, offset: const Offset(0, DsSpace.s16)),
+                            ],
+                          ),
+                          child: _Artwork(track: track, size: size),
+                        ),
                       ),
                     ),
                   Column(
@@ -396,12 +369,9 @@ final class _StageState extends ConsumerState<_Stage> {
                         ),
                     ],
                   ),
-                  // The stage's three shapes as a segmented control: the sleeve,
-                  // the record and the words chosen where they are seen — the
-                  // reference's three player modes. It sets this run's choice;
-                  // the settings row stays the default. A narrow stage still
-                  // falls back to the sleeve for the record, and the control
-                  // says so.
+                  // The stage's two shapes as a segmented control: the sleeve
+                  // and the words, chosen where they are seen. It sets this
+                  // run's choice; the settings row stays the default.
                   Center(
                     child: DsSegmentedControl<MusicPlayerMode>(
                       value: playerMode,
@@ -412,11 +382,6 @@ final class _StageState extends ConsumerState<_Stage> {
                           value: MusicPlayerMode.standard,
                           icon: const DsIcon(DsIcons.image, size: 16),
                           label: Text(t.music.playerModeCover),
-                        ),
-                        DsSegment(
-                          value: MusicPlayerMode.vinyl,
-                          icon: const DsIcon(DsIcons.disc, size: 16),
-                          label: Text(t.music.playerModeVinyl),
                         ),
                         DsSegment(
                           value: MusicPlayerMode.lyrics,
@@ -472,238 +437,10 @@ final class _Artwork extends StatelessWidget {
   }
 }
 
-/// The record that is the stage in vinyl mode: a dark disc with groove
-/// rings, the song's own cover pressed in as its label and a centre hole.
-/// It turns slowly while the song plays and stops where it was left when the
-/// song pauses, as the reference's turntable does.
-final class _VinylDisc extends StatefulWidget {
-  const _VinylDisc({required this.size, required this.track, required this.playing});
-
-  /// The disc's diameter.
-  final double size;
-
-  /// The song on air; its cover is the label.
-  final audio.MusicTrack track;
-
-  /// Whether the record should be turning.
-  final bool playing;
-
-  @override
-  State<_VinylDisc> createState() => _VinylDiscState();
-}
-
-final class _VinylDiscState extends State<_VinylDisc> with SingleTickerProviderStateMixin {
-  /// One turn, slow enough to read as a record rather than a spinner.
-  late final AnimationController _spin = AnimationController(vsync: this, duration: const Duration(seconds: 24));
-
-  @override
-  void initState() {
-    super.initState();
-    if (widget.playing) _spin.repeat();
-  }
-
-  @override
-  void didUpdateWidget(_VinylDisc oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.playing && !_spin.isAnimating) {
-      _spin.repeat();
-    } else if (!widget.playing && _spin.isAnimating) {
-      _spin.stop();
-    }
-  }
-
-  @override
-  void dispose() {
-    _spin.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = DsTheme.colorsOf(context);
-    final size = widget.size;
-    final label = size * 0.42;
-    final cover = widget.track.coverUri;
-    return SizedBox(
-      width: size,
-      height: size,
-      child: RotationTransition(
-        turns: _spin,
-        // The pressing itself: a near-black disc whose grooves tighten
-        // towards the label under one soft sheen — a flat coloured circle
-        // never read as a record.
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            boxShadow: [BoxShadow(color: colors.overlay, blurRadius: DsSpace.s24, offset: const Offset(0, DsSpace.s8))],
-          ),
-          child: CustomPaint(
-            painter: _VinylPainter(colors: colors),
-            child: Center(
-              child: ClipOval(
-                child: SizedBox(
-                  width: label,
-                  height: label,
-                  child: cover == null
-                      ? ColoredBox(
-                          color: colors.surface,
-                          child: Center(
-                            child: DsIcon(DsIcons.music, size: label * 0.5, color: colors.textSubtle),
-                          ),
-                        )
-                      : DsImage(
-                          image: cachedImage(cover.toString(), policy: ImageCachePolicies.albumCover),
-                          width: label,
-                          height: label,
-                          semanticLabel: widget.track.title,
-                        ),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// The pressing's own ink: the disc body, its groove rings, the sheen that
-/// breaks them up, and the well the cover label sits in.
-final class _VinylPainter extends CustomPainter {
-  const _VinylPainter({required this.colors});
-
-  final DsColors colors;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-    final radius = size.width / 2;
-    canvas.drawCircle(center, radius, Paint()..color = const Color(0xFF151515));
-    // Grooves tighten towards the label, the way a real pressing reads.
-    final groove = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1;
-    for (var ring = 0; ring < 14; ring++) {
-      final t = ring / 13;
-      groove.color = Colors.white.withValues(alpha: ring.isEven ? 0.05 : 0.02);
-      canvas.drawCircle(center, radius * (0.47 + 0.44 * t), groove);
-    }
-    // One soft light across the upper half keeps the black from flattening.
-    canvas
-      ..drawCircle(
-        center,
-        radius,
-        Paint()
-          ..shader = SweepGradient(
-            colors: [
-              Colors.white.withValues(alpha: 0.11),
-              Colors.white.withValues(alpha: 0),
-              Colors.white.withValues(alpha: 0),
-              Colors.white.withValues(alpha: 0.05),
-              Colors.white.withValues(alpha: 0.11),
-            ],
-            transform: const GradientRotation(-2.2),
-          ).createShader(Rect.fromCircle(center: center, radius: radius)),
-      )
-      ..drawCircle(
-        center,
-        radius - 0.5,
-        Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1
-          ..color = Colors.black.withValues(alpha: 0.65),
-      )
-      ..drawCircle(center, radius * 0.46, Paint()..color = Colors.black.withValues(alpha: 0.5));
-  }
-
-  @override
-  bool shouldRepaint(_VinylPainter oldDelegate) => oldDelegate.colors != colors;
-}
-
-/// The tonearm resting on the record: a pivot at the top, the arm reaching
-/// down onto the disc and the cartridge at its end. Playing swings the arm
-/// onto the record; a pause lifts it a breath off the grooves.
-final class _Tonearm extends StatelessWidget {
-  const _Tonearm({required this.size, this.playing = true});
-
-  /// The disc's side; the arm is drawn in proportion to it.
-  final double size;
-
-  /// Whether the record is turning — the needle down or lifted.
-  final bool playing;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = DsTheme.colorsOf(context);
-    return SizedBox(
-      width: size * 0.5,
-      height: size * 0.78,
-      child: TweenAnimationBuilder<double>(
-        tween: Tween(end: playing ? 1.0 : 0.0),
-        duration: const Duration(milliseconds: 650),
-        curve: Curves.easeOutCubic,
-        builder: (context, progress, _) => CustomPaint(
-          painter: _TonearmPainter(colors: colors, progress: progress),
-        ),
-      ),
-    );
-  }
-}
-
-final class _TonearmPainter extends CustomPainter {
-  const _TonearmPainter({required this.colors, this.progress = 1.0});
-
-  final DsColors colors;
-
-  /// 1 = needle resting on the grooves, 0 = arm lifted off.
-  final double progress;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final pivot = Offset(size.width * 0.74, size.height * 0.10);
-    // The lift: the whole arm swings a breath back from the record.
-    canvas
-      ..save()
-      ..translate(pivot.dx, pivot.dy)
-      ..rotate((1 - progress) * -0.14)
-      ..translate(-pivot.dx, -pivot.dy);
-    final needle = Offset(size.width * 0.30, size.height * 0.80);
-    final arm = Paint()
-      ..color = colors.textMuted
-      ..strokeWidth = 4
-      ..strokeCap = StrokeCap.round;
-    // A slight elbow, so the arm reads as a mechanism rather than a stick.
-    final elbow = Offset(size.width * 0.66, size.height * 0.52);
-    canvas
-      ..drawLine(pivot, elbow, arm)
-      ..drawLine(elbow, needle, arm);
-    // The cartridge: a short bar across the needle's end.
-    final cartridge = Paint()
-      ..color = colors.text
-      ..strokeWidth = 6
-      ..strokeCap = StrokeCap.round;
-    canvas.drawLine(needle, needle.translate(size.width * 0.10, -size.height * 0.06), cartridge);
-    // The pivot base, ring and cap.
-    final base = Paint()..color = colors.control;
-    final ring = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.5
-      ..color = colors.border;
-    final cap = Paint()..color = colors.textSubtle;
-    canvas
-      ..drawCircle(pivot, 13, base)
-      ..drawCircle(pivot, 13, ring)
-      ..drawCircle(pivot, 5, cap)
-      ..restore();
-  }
-
-  @override
-  bool shouldRepaint(_TonearmPainter oldDelegate) => oldDelegate.colors != colors || oldDelegate.progress != progress;
-}
-
-/// The player's more menu: the reference's runtime verbs — the effect centre,
-/// the output device, rate, sleep timer, lyric delay and secondary tracks,
-/// desktop lyrics, download and playlists.
+/// The player's more menu: the song's own verbs at the top — download, the
+/// playlist, the comments — then three doors, the effect centre, the sleep
+/// timer and the engine's own choices (rate, pitch, output), the lyrics'
+/// sources and reading, and the queue's clear.
 final class _PlayerMenu extends ConsumerStatefulWidget {
   const _PlayerMenu();
 
@@ -870,6 +607,9 @@ final class _PlayerMenuState extends ConsumerState<_PlayerMenu> {
     return DsMenuAnchor(
       semanticLabel: t.music.moreActions,
       items: [
+        // The song's own verbs lead: they name the one track the stage is
+        // showing, so they stand at the menu's top instead of behind a
+        // group's door.
         if (track != null) ...[
           DsMenuItem(
             leading: const DsIcon(DsIcons.download),
@@ -887,49 +627,8 @@ final class _PlayerMenuState extends ConsumerState<_PlayerMenu> {
               label: Text(t.music.comments),
               onPressed: () => unawaited(_showComments(track)),
             ),
-          DsMenuItem(
-            leading: const DsIcon(DsIcons.fileText),
-            label: Text(t.music.exportLyric),
-            onPressed: () => unawaited(_exportLyric(track)),
-          ),
-          DsMenuItem(
-            leading: const DsIcon(DsIcons.fileMusic),
-            label: Text(t.music.associateLyric),
-            onPressed: () => unawaited(_associateLyric(track)),
-          ),
-          DsMenuItem(
-            leading: const DsIcon(DsIcons.search),
-            label: Text(t.music.lyricSearch),
-            onPressed: () => unawaited(_searchLyric(track)),
-          ),
-          if (hasLyricOverride)
-            DsMenuItem(
-              leading: const DsIcon(DsIcons.x),
-              label: Text(t.music.lyricOverrideRemove),
-              onPressed: () => unawaited(controller.clearLyricOverride(track)),
-            ),
           const DsMenuDivider(),
         ],
-        DsMenuItem.submenu(
-          leading: const DsIcon(DsIcons.timer),
-          label: Text('${t.music.playbackRate} · ${playerRateLabel(currentRate)}'),
-          submenu: [
-            for (final rate in _rates)
-              DsMenuItem(
-                label: Text(playerRateLabel(rate)),
-                checked: (currentRate - rate).abs() < 0.001,
-                onPressed: () => unawaited(controller.setRate(rate)),
-              ),
-            const DsMenuDivider(),
-            DsMenuItem(
-              label: Text(t.music.preservesPitch),
-              checked: playback.preservesPitch,
-              onPressed: () => unawaited(
-                ref.read(musicPlaybackSettingsProvider.notifier).setPreservesPitch(value: !playback.preservesPitch),
-              ),
-            ),
-          ],
-        ),
         // The effect centre as its own screen above the player, the same
         // page the mini bar opens.
         DsMenuItem(
@@ -938,7 +637,7 @@ final class _PlayerMenuState extends ConsumerState<_PlayerMenu> {
           onPressed: () => unawaited(context.push(RouteNames.musicEffects)),
         ),
         DsMenuItem.submenu(
-          leading: const DsIcon(DsIcons.clock),
+          leading: const DsIcon(DsIcons.timer),
           label: Text(
             pauseAfter
                 ? '${t.music.sleepTimer} · ${t.music.sleepAfterCurrent}'
@@ -964,109 +663,166 @@ final class _PlayerMenuState extends ConsumerState<_PlayerMenu> {
             ),
           ],
         ),
-        // Where the sound goes, when the engine has more than one place to
-        // send it — the same device list the bar's speaker and the settings
-        // row offer.
-        if (devices.length > 1)
-          DsMenuItem.submenu(
-            leading: const DsIcon(DsIcons.speaker),
-            label: Text(t.music.audioOutput),
-            submenu: [
-              for (final device in devices)
+        // The engine's own choices — how fast, whether the pitch follows,
+        // where the sound lands — behind one door.
+        DsMenuItem.submenu(
+          leading: const DsIcon(DsIcons.play),
+          label: Text(t.settings.navPlayback),
+          submenu: [
+            DsMenuItem.submenu(
+              label: Text('${t.music.playbackRate} · ${playerRateLabel(currentRate)}'),
+              submenu: [
+                for (final rate in _rates)
+                  DsMenuItem(
+                    label: Text(playerRateLabel(rate)),
+                    checked: (currentRate - rate).abs() < 0.001,
+                    onPressed: () => unawaited(controller.setRate(rate)),
+                  ),
+                const DsMenuDivider(),
                 DsMenuItem(
-                  label: Text(device.description.isEmpty ? device.name : device.description),
-                  checked: device.selected,
-                  onPressed: () => unawaited(_selectAudioDevice(device.name)),
+                  label: Text(t.music.preservesPitch),
+                  checked: playback.preservesPitch,
+                  onPressed: () => unawaited(
+                    ref.read(musicPlaybackSettingsProvider.notifier).setPreservesPitch(value: !playback.preservesPitch),
+                  ),
                 ),
+              ],
+            ),
+            // Where the sound goes, when the engine has more than one place
+            // to send it — the same device list the bar's speaker and the
+            // settings row offer.
+            if (devices.length > 1)
+              DsMenuItem.submenu(
+                leading: const DsIcon(DsIcons.speaker),
+                label: Text(t.music.audioOutput),
+                submenu: [
+                  for (final device in devices)
+                    DsMenuItem(
+                      label: Text(device.description.isEmpty ? device.name : device.description),
+                      checked: device.selected,
+                      onPressed: () => unawaited(_selectAudioDevice(device.name)),
+                    ),
+                ],
+              ),
+          ],
+        ),
+        // The lyrics' own door: the words' sources and their reading —
+        // offset, size, alignment, the secondary lines, the desktop window.
+        DsMenuItem.submenu(
+          leading: const DsIcon(DsIcons.captions),
+          label: Text(t.music.lyrics),
+          submenu: [
+            if (track != null) ...[
+              DsMenuItem(
+                leading: const DsIcon(DsIcons.fileText),
+                label: Text(t.music.exportLyric),
+                onPressed: () => unawaited(_exportLyric(track)),
+              ),
+              DsMenuItem(
+                leading: const DsIcon(DsIcons.fileMusic),
+                label: Text(t.music.associateLyric),
+                onPressed: () => unawaited(_associateLyric(track)),
+              ),
+              DsMenuItem(
+                leading: const DsIcon(DsIcons.search),
+                label: Text(t.music.lyricSearch),
+                onPressed: () => unawaited(_searchLyric(track)),
+              ),
+              if (hasLyricOverride)
+                DsMenuItem(
+                  leading: const DsIcon(DsIcons.x),
+                  label: Text(t.music.lyricOverrideRemove),
+                  onPressed: () => unawaited(controller.clearLyricOverride(track)),
+                ),
+              const DsMenuDivider(),
             ],
-          ),
-        DsMenuItem.submenu(
-          leading: const DsIcon(DsIcons.hourglass),
-          label: Text('${t.music.lyricOffset} · ${_offsetLabel(t, lyrics.lyricOffsetMs)}'),
-          submenu: [
-            for (final offset in _offsets)
-              DsMenuItem(
-                label: Text(_offsetLabel(t, offset)),
-                checked: offset == lyrics.lyricOffsetMs,
-                onPressed: () => unawaited(controller.setLyricOffset(Duration(milliseconds: offset))),
-              ),
+            DsMenuItem.submenu(
+              label: Text('${t.music.lyricOffset} · ${_offsetLabel(t, lyrics.lyricOffsetMs)}'),
+              submenu: [
+                for (final offset in _offsets)
+                  DsMenuItem(
+                    label: Text(_offsetLabel(t, offset)),
+                    checked: offset == lyrics.lyricOffsetMs,
+                    onPressed: () => unawaited(controller.setLyricOffset(Duration(milliseconds: offset))),
+                  ),
+                const DsMenuDivider(),
+                DsMenuItem(label: const Text('- 100ms'), onPressed: () => unawaited(_nudgeOffset(-100))),
+                DsMenuItem(label: const Text('+ 100ms'), onPressed: () => unawaited(_nudgeOffset(100))),
+                DsMenuItem(label: const Text('- 10ms'), onPressed: () => unawaited(_nudgeOffset(-10))),
+                DsMenuItem(label: const Text('+ 10ms'), onPressed: () => unawaited(_nudgeOffset(10))),
+              ],
+            ),
+            DsMenuItem.submenu(
+              label: Text('${t.music.lyricFontScale} · ${lyrics.lyricFontScale}%'),
+              submenu: [
+                DsMenuItem(
+                  label: Text(t.music.lyricFontSmaller),
+                  onPressed: lyrics.lyricFontScale <= 100 ? null : () => unawaited(_setFontScale(-10)),
+                ),
+                DsMenuItem(
+                  label: Text(t.music.lyricFontLarger),
+                  onPressed: lyrics.lyricFontScale >= 200 ? null : () => unawaited(_setFontScale(10)),
+                ),
+                DsMenuItem(label: Text(t.music.lyricFontReset), onPressed: () => unawaited(_setFontScale(null))),
+              ],
+            ),
+            DsMenuItem.submenu(
+              label: Text('${t.music.lyricAlignment} · ${lyrics.lyricAlignment.label(t)}'),
+              submenu: [
+                for (final alignment in MusicLyricAlignment.values)
+                  DsMenuItem(
+                    label: Text(alignment.label(t)),
+                    checked: lyrics.lyricAlignment == alignment,
+                    onPressed: () =>
+                        unawaited(ref.read(musicLyricsSettingsProvider.notifier).setLyricAlignment(alignment)),
+                  ),
+              ],
+            ),
             const DsMenuDivider(),
-            DsMenuItem(label: const Text('- 100ms'), onPressed: () => unawaited(_nudgeOffset(-100))),
-            DsMenuItem(label: const Text('+ 100ms'), onPressed: () => unawaited(_nudgeOffset(100))),
-            DsMenuItem(label: const Text('- 10ms'), onPressed: () => unawaited(_nudgeOffset(-10))),
-            DsMenuItem(label: const Text('+ 10ms'), onPressed: () => unawaited(_nudgeOffset(10))),
-          ],
-        ),
-        DsMenuItem.submenu(
-          leading: const DsIcon(DsIcons.fontSize),
-          label: Text('${t.music.lyricFontScale} · ${lyrics.lyricFontScale}%'),
-          submenu: [
             DsMenuItem(
-              label: Text(t.music.lyricFontSmaller),
-              onPressed: lyrics.lyricFontScale <= 100 ? null : () => unawaited(_setFontScale(-10)),
+              leading: const DsIcon(DsIcons.captions),
+              label: Text(t.music.lyricTranslation),
+              checked: lyrics.showTranslation,
+              checkRole: DsMenuCheckRole.checkbox,
+              onPressed: () => unawaited(
+                ref.read(musicLyricsSettingsProvider.notifier).setShowTranslation(value: !lyrics.showTranslation),
+              ),
             ),
             DsMenuItem(
-              label: Text(t.music.lyricFontLarger),
-              onPressed: lyrics.lyricFontScale >= 200 ? null : () => unawaited(_setFontScale(10)),
+              leading: const DsIcon(DsIcons.captions),
+              label: Text(t.music.lyricRomanization),
+              checked: lyrics.showRomanization,
+              checkRole: DsMenuCheckRole.checkbox,
+              onPressed: () => unawaited(
+                ref.read(musicLyricsSettingsProvider.notifier).setShowRomanization(value: !lyrics.showRomanization),
+              ),
             ),
-            DsMenuItem(label: Text(t.music.lyricFontReset), onPressed: () => unawaited(_setFontScale(null))),
-          ],
-        ),
-        DsMenuItem.submenu(
-          leading: const DsIcon(DsIcons.alignLeft),
-          label: Text('${t.music.lyricAlignment} · ${lyrics.lyricAlignment.label(t)}'),
-          submenu: [
-            for (final alignment in MusicLyricAlignment.values)
+            DsMenuItem(
+              leading: const DsIcon(DsIcons.arrowUpDown),
+              label: Text(t.music.lyricSwapSecondary),
+              checked: lyrics.swapLyricSecondary,
+              checkRole: DsMenuCheckRole.checkbox,
+              onPressed: () => unawaited(
+                ref.read(musicLyricsSettingsProvider.notifier).setSwapLyricSecondary(value: !lyrics.swapLyricSecondary),
+              ),
+            ),
+            DsMenuItem(
+              leading: const DsIcon(DsIcons.monitor),
+              label: Text(t.music.desktopLyrics),
+              checked: desktop.desktopLyrics,
+              checkRole: DsMenuCheckRole.checkbox,
+              onPressed: () => unawaited(_toggleDesktopLyrics()),
+            ),
+            if (desktop.desktopLyrics)
               DsMenuItem(
-                label: Text(alignment.label(t)),
-                checked: lyrics.lyricAlignment == alignment,
-                onPressed: () => unawaited(ref.read(musicLyricsSettingsProvider.notifier).setLyricAlignment(alignment)),
+                leading: const DsIcon(DsIcons.lock),
+                label: Text(t.music.desktopLyricLock),
+                checked: desktop.desktopLyricLocked,
+                checkRole: DsMenuCheckRole.checkbox,
+                onPressed: () => unawaited(controller.setDesktopLyricLocked(locked: !desktop.desktopLyricLocked)),
               ),
           ],
         ),
-        const DsMenuDivider(),
-        DsMenuItem(
-          leading: const DsIcon(DsIcons.captions),
-          label: Text(t.music.lyricTranslation),
-          checked: lyrics.showTranslation,
-          checkRole: DsMenuCheckRole.checkbox,
-          onPressed: () => unawaited(
-            ref.read(musicLyricsSettingsProvider.notifier).setShowTranslation(value: !lyrics.showTranslation),
-          ),
-        ),
-        DsMenuItem(
-          leading: const DsIcon(DsIcons.captions),
-          label: Text(t.music.lyricRomanization),
-          checked: lyrics.showRomanization,
-          checkRole: DsMenuCheckRole.checkbox,
-          onPressed: () => unawaited(
-            ref.read(musicLyricsSettingsProvider.notifier).setShowRomanization(value: !lyrics.showRomanization),
-          ),
-        ),
-        DsMenuItem(
-          leading: const DsIcon(DsIcons.arrowUpDown),
-          label: Text(t.music.lyricSwapSecondary),
-          checked: lyrics.swapLyricSecondary,
-          checkRole: DsMenuCheckRole.checkbox,
-          onPressed: () => unawaited(
-            ref.read(musicLyricsSettingsProvider.notifier).setSwapLyricSecondary(value: !lyrics.swapLyricSecondary),
-          ),
-        ),
-        DsMenuItem(
-          leading: const DsIcon(DsIcons.monitor),
-          label: Text(t.music.desktopLyrics),
-          checked: desktop.desktopLyrics,
-          checkRole: DsMenuCheckRole.checkbox,
-          onPressed: () => unawaited(_toggleDesktopLyrics()),
-        ),
-        if (desktop.desktopLyrics)
-          DsMenuItem(
-            leading: const DsIcon(DsIcons.lock),
-            label: Text(t.music.desktopLyricLock),
-            checked: desktop.desktopLyricLocked,
-            checkRole: DsMenuCheckRole.checkbox,
-            onPressed: () => unawaited(controller.setDesktopLyricLocked(locked: !desktop.desktopLyricLocked)),
-          ),
         if (queueLength > 0) ...[
           const DsMenuDivider(),
           DsMenuItem(

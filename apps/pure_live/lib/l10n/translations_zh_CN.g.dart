@@ -3337,8 +3337,8 @@ class Translations$music$zh_CN {
 	/// zh-CN: '默认播放器模式'
 	String get playerMode => '默认播放器模式';
 
-	/// zh-CN: '播放页打开时舞台的样子：封面卡片、唱盘，或只让歌词占满舞台；播放页里可以随时切换。'
-	String get playerModeDesc => '播放页打开时舞台的样子：封面卡片、唱盘，或只让歌词占满舞台；播放页里可以随时切换。';
+	/// zh-CN: '播放页打开时舞台的样子：封面卡片，或只让歌词占满舞台；播放页里可以随时切换。'
+	String get playerModeDesc => '播放页打开时舞台的样子：封面卡片，或只让歌词占满舞台；播放页里可以随时切换。';
 
 	/// zh-CN: '播放器模式'
 	String get playerModeSwitch => '播放器模式';
@@ -3348,9 +3348,6 @@ class Translations$music$zh_CN {
 
 	/// zh-CN: '封面'
 	String get playerModeCover => '封面';
-
-	/// zh-CN: '黑胶'
-	String get playerModeVinyl => '黑胶';
 
 	/// zh-CN: '歌词'
 	String get playerModeLyrics => '歌词';
@@ -14810,11 +14807,10 @@ extension on Translations {
 			'music.uiBlurredBackdrop' => '播放页模糊背景',
 			'music.uiBlurredBackdropDesc' => '播放详情页以当前歌曲的封面放大模糊作为背景',
 			'music.playerMode' => '默认播放器模式',
-			'music.playerModeDesc' => '播放页打开时舞台的样子：封面卡片、唱盘，或只让歌词占满舞台；播放页里可以随时切换。',
+			'music.playerModeDesc' => '播放页打开时舞台的样子：封面卡片，或只让歌词占满舞台；播放页里可以随时切换。',
 			'music.playerModeSwitch' => '播放器模式',
 			'music.playerModeStandard' => '标准',
 			'music.playerModeCover' => '封面',
-			'music.playerModeVinyl' => '黑胶',
 			'music.playerModeLyrics' => '歌词',
 			'music.uiSpectrum' => '播放频谱',
 			'music.uiSpectrumDesc' => '播放详情页舞台上的实时频谱',
@@ -15143,9 +15139,9 @@ extension on Translations {
 			'music.lyricRomanization' => '显示音译',
 			'music.lyricRomanizationDesc' => '歌词带音译或罗马音时一并显示。',
 			'music.lyricSwapSecondary' => '翻译/音译顺序',
+			'music.lyricSwapSecondaryDesc' => '交换翻译与音译在歌词行中的先后顺序。',
 			_ => null,
 		} ?? switch (path) {
-			'music.lyricSwapSecondaryDesc' => '交换翻译与音译在歌词行中的先后顺序。',
 			'music.lyricTraditionalize' => '简体转繁体',
 			'music.lyricTraditionalizeDesc' => '把歌词文本改写为繁体中文。',
 			'music.lyricWordTimed' => '逐字歌词',
@@ -15657,9 +15653,9 @@ extension on Translations {
 			'recorder.caCustomNotPem' => '这不是 PEM 文本的证书束（应包含 -----BEGIN CERTIFICATE-----）',
 			'recorder.caCustomPickFailed' => '读取证书文件失败',
 			'recorder.caCustomClear' => '恢复内置',
+			'recorder.caCustomCleared' => '已恢复使用内置根证书',
 			_ => null,
 		} ?? switch (path) {
-			'recorder.caCustomCleared' => '已恢复使用内置根证书',
 			'recorder.startNowBusyOther' => '另一个窗口正在录制这个房间',
 			'recorder.startNowCaFailed' => '自定义 CA 证书读不到，先重新选择或恢复内置',
 			'recorder.menuMore' => '更多操作',
@@ -16171,9 +16167,9 @@ extension on Translations {
 			'settings.groupData' => '数据',
 			'settings.groupAbout' => '关于',
 			'settings.groupIptv' => 'IPTV',
+			'settings.groupVod' => 'Bilibili 视频',
 			_ => null,
 		} ?? switch (path) {
-			'settings.groupVod' => 'Bilibili 视频',
 			'settings.generalDescription' => '浏览、窗口与启动设置。',
 			'settings.appearanceDescription' => '主题、字体与配色。',
 			'settings.personalizationDescription' => '主题、外观、背景与导航。',
@@ -16685,9 +16681,9 @@ extension on Translations {
 			'settings.iptvGroupsDescription' => '决定哪些分组出现在频道列表和换台里。',
 			'settings.navDanmaku' => '弹幕',
 			'settings.navMiniDanmaku' => '小窗弹幕',
+			'settings.navKernel' => '播放器内核',
 			_ => null,
 		} ?? switch (path) {
-			'settings.navKernel' => '播放器内核',
 			'settings.navRecording' => '录制',
 			'settings.videoDescription' => '画质、音量与画面比例。',
 			'settings.danmakuDescription' => '弹幕显示、样式与屏蔽。',
@@ -17199,9 +17195,9 @@ extension on Translations {
 			'settings.wallpaperCategoryFinalFantasy' => '最终幻想',
 			'settings.tagManagement' => '标签管理',
 			'settings.tagManagementDesc' => '自定义和管理直播间的过滤标签',
+			'settings.tagAdd' => '添加标签',
 			_ => null,
 		} ?? switch (path) {
-			'settings.tagAdd' => '添加标签',
 			'settings.tagEdit' => '编辑标签',
 			'settings.tagPin' => '移到最前',
 			'settings.tagSaveAction' => '保存',
@@ -17713,9 +17709,9 @@ extension on Translations {
 			'toolbox.nodeAnswer' => ({required int count}) => '返回 ${count} 个房间',
 			'toolbox.nodeSourceRecommended' => '推荐接口',
 			'toolbox.nodeSourceHot' => '热门接口',
+			'toolbox.nodeSummary' => ({required Object ok, required Object tested, required Object total}) => '${ok} / ${tested} 可用 · 共 ${total} 个平台',
 			_ => null,
 		} ?? switch (path) {
-			'toolbox.nodeSummary' => ({required Object ok, required Object tested, required Object total}) => '${ok} / ${tested} 可用 · 共 ${total} 个平台',
 			'toolbox.nodeUntestedSummary' => ({required Object total}) => '尚未测速 · 共 ${total} 个平台',
 			'toolbox.logsSection' => '日志与诊断',
 			'toolbox.logsExport' => '复制日志',

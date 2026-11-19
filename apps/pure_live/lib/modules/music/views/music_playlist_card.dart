@@ -410,9 +410,9 @@ final class MusicCardMenuButton extends StatelessWidget {
         style: const DsButtonStyle(
           height: 28,
           padding: EdgeInsets.zero,
-          background: Color(0x66000000),
-          foreground: Color(0xFFFFFFFF),
-          borderColor: Color(0x26FFFFFF),
+          background: OnVideoColors.dimLight,
+          foreground: OnVideoColors.foreground,
+          borderColor: OnVideoColors.edge,
           borderWidth: 1,
         ),
       ),

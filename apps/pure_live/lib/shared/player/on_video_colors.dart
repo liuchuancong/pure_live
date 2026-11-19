@@ -47,6 +47,9 @@ abstract final class OnVideoColors {
   /// The empty part of a level bar over the picture.
   static const Color track = Color(0x33FFFFFF);
 
+  /// A hair edge on the picture's own ink (a plate's rim).
+  static const Color edge = Color(0x26FFFFFF);
+
   /// The seek layer's held stretches, under the played line.
   static const Color held = Color(0x59FFFFFF);
 

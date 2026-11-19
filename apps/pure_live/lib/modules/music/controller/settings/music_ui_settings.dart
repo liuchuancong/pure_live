@@ -16,14 +16,11 @@ enum MusicUiElement {
   spectrum,
 }
 
-/// What the player's stage draws: the sleeve as it is, the record on a
-/// turntable, or the words alone — the reference's three player modes.
+/// What the player's stage draws: the sleeve as it is, or the words alone —
+/// the reference's two player modes.
 enum MusicPlayerMode {
   /// The square cover card, the default.
   standard,
-
-  /// The record, its cover as the label, with the tonearm.
-  vinyl,
 
   /// The lyrics in the stage's place, for reading along.
   lyrics;
@@ -31,7 +28,6 @@ enum MusicPlayerMode {
   /// The mode's name where a person reads it.
   String label(Translations t) => switch (this) {
     MusicPlayerMode.standard => t.music.playerModeStandard,
-    MusicPlayerMode.vinyl => t.music.playerModeVinyl,
     MusicPlayerMode.lyrics => t.music.playerModeLyrics,
   };
 }
