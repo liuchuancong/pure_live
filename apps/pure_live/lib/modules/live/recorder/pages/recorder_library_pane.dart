@@ -790,19 +790,23 @@ final class _TakeRow extends StatelessWidget {
     final duration = take.duration;
     final anchor = (task?.anchorName ?? '').trim();
     final avatarUrl = (task?.anchorAvatarUrl ?? '').trim();
+    // The stats the transfer used to spend two rows on — who was live,
+    // when, how much disk it took and at what rate — one muted line, the
+    // way the download queues' captions read.
     final caption = [
       platformName(take.platformId),
+      anchor,
       formatRecordingMoment(take.takenAt),
+      if (take.bytes > 0) formatRecordingBytes(take.bytes),
+      if (duration != null) formatRecordingBitrate(take.bytes, duration),
     ].where((part) => part.isNotEmpty).join(' · ');
     final hang = recorderPunctuationHang(name, theme.typography.heading.fontSize ?? 14);
     // The store keeps one row per room, so its media facts belong to the last
     // take only; an older file under the same row must not wear them.
     final ownsTask = task != null && (take.filePath == null || taskOwnsFile(task, take.filePath!));
-    // The length sits on the cover; everything else the file can say about
-    // itself goes in the chip row.
+    // The length sits on the cover; the file's own shape — its container
+    // and its pixels — stays in the chip row.
     final chips = [
-      if (take.bytes > 0) formatRecordingBytes(take.bytes),
-      if (duration != null) formatRecordingBitrate(take.bytes, duration),
       if (take.filePath case final file?) p.extension(file).replaceFirst('.', '').toUpperCase(),
       if (ownsTask && task.videoWidth > 0 && task.videoHeight > 0) '${task.videoWidth}×${task.videoHeight}',
     ].where((part) => part.isNotEmpty).toList();
@@ -812,7 +816,7 @@ final class _TakeRow extends StatelessWidget {
       child: LayoutBuilder(
         builder: (context, constraints) {
           final width = constraints.maxWidth;
-          final (coverWidth, coverHeight) = width >= 560 ? (132.0, 74.0) : (96.0, 54.0);
+          final (coverWidth, coverHeight) = width >= 700 ? (160.0, 90.0) : (96.0, 54.0);
           // Four verbs in two rows of two, the same shape the subscription
           // cards use: what the take does first, what it names second.
           // The play verb stands alone where the window affords it; the rest

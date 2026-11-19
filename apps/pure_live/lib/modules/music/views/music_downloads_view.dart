@@ -26,14 +26,17 @@ import 'package:pure_live/shared/shared.dart'
         DownloadRowActions,
         DownloadRowMenuActions,
         DownloadRowPhase,
+        DownloadStatusGroup,
+        DownloadStatusTab,
+        DownloadStatusTabs,
         DownloadTaskCard,
         LiveWindow,
         downloadEtaText,
         downloadFilePresent,
+        downloadRowGroupOf,
         formatDownloadBytes,
         showDownloadDetails;
 import 'package:pure_live/shared/widgets/app_dialog.dart';
-import 'package:pure_live/shared/widgets/app_panel.dart';
 
 /// A task whose file is on disk and playable.
 bool _playableTask(audio.MusicDownloadTask task) =>
@@ -75,9 +78,8 @@ class MusicDownloadsViewState extends ConsumerState<MusicDownloadsView> {
   /// file the engine wrote.
   String _query = '';
 
-  /// The states ticked in the panel; none ticked reads as every state, so an
-  /// empty set is the queue's own 全部 rather than a hidden filter.
-  final Set<audio.MusicDownloadStatus> _statuses = {};
+  /// The state tab the queue is cut to; all reads as every state.
+  DownloadStatusGroup _statusGroup = DownloadStatusGroup.all;
 
   /// Whether a row must still name a file the disk holds.
   bool _playableOnly = false;
@@ -109,7 +111,8 @@ class MusicDownloadsViewState extends ConsumerState<MusicDownloadsView> {
     final query = _query.trim().toLowerCase();
     return [
       for (final task in tasks)
-        if ((_statuses.isEmpty || _statuses.contains(task.status)) &&
+        if ((_statusGroup == DownloadStatusGroup.all ||
+                downloadRowGroupOf(_musicRowPhase(task.status, missing: _musicFileMissing(task))) == _statusGroup) &&
             (!_playableOnly || !_musicFileMissing(task)) &&
             (query.isEmpty ||
                 (task.request.title ?? '').toLowerCase().contains(query) ||
@@ -199,67 +202,6 @@ class MusicDownloadsViewState extends ConsumerState<MusicDownloadsView> {
     );
   }
 
-  /// The queue's conditions, behind the head's one entry: which states show and
-  /// whether a row must still name a file the disk holds. Nothing else about a
-  /// queue is a condition — where it lands is a setting, and its size is what
-  /// the head already says.
-  Future<void> _openFilter(List<audio.MusicDownloadTask> tasks) async {
-    final t = context.t;
-    final picked = {..._statuses};
-    var playable = _playableOnly;
-    void apply() => setState(() {
-      _statuses
-        ..clear()
-        ..addAll(picked);
-      _playableOnly = playable;
-      _selected.clear();
-    });
-    await showAppPanel<void>(
-      context: context,
-      builder: (panelContext) => AppPanel(
-        title: Text(t.settings.downloadFilterTitle),
-        child: DsListSection(
-          children: [
-            for (final status in audio.MusicDownloadStatus.values)
-              DsListRow(
-                title: Text(_musicStatusLabel(t, status)),
-                detail: Text('${tasks.where((task) => task.status == status).length}'),
-                trailing: DsCheckbox(
-                  value: picked.contains(status),
-                  onChanged: (value) {
-                    if (value == true) {
-                      picked.add(status);
-                    } else {
-                      picked.remove(status);
-                    }
-                    apply();
-                  },
-                ),
-              ),
-            DsListRow(
-              title: Text(t.settings.downloadFilterPlayable),
-              trailing: DsSwitch(
-                value: playable,
-                onChanged: (value) {
-                  playable = value;
-                  apply();
-                },
-              ),
-            ),
-            DsListRow(
-              title: Text(t.settings.downloadFilterReset),
-              onPressed: () {
-                picked.clear();
-                playable = false;
-                apply();
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final t = context.t;
@@ -297,7 +239,18 @@ class MusicDownloadsViewState extends ConsumerState<MusicDownloadsView> {
         .toList();
     final resumable = picked.where((task) => task.isPaused || task.status == audio.MusicDownloadStatus.failed).toList();
     final factsTask = shown.where((task) => task.id == _factsId).firstOrNull ?? (shown.isEmpty ? null : shown.first);
-    final filterActive = _statuses.isNotEmpty || _playableOnly;
+    final filterActive = _statusGroup != DownloadStatusGroup.all || _playableOnly;
+    final counts = <DownloadStatusGroup, int>{
+      for (final group in DownloadStatusGroup.values)
+        group: group == DownloadStatusGroup.all
+            ? tasks.length
+            : tasks
+                  .where(
+                    (task) =>
+                        downloadRowGroupOf(_musicRowPhase(task.status, missing: _musicFileMissing(task))) == group,
+                  )
+                  .length,
+    };
     return LayoutBuilder(
       builder: (context, constraints) {
         final width = constraints.maxWidth;
@@ -327,9 +280,6 @@ class MusicDownloadsViewState extends ConsumerState<MusicDownloadsView> {
                   _query = value;
                   _selected.clear();
                 }),
-                filterLabel: t.settings.downloadFilterLabel,
-                filterActive: filterActive,
-                onFilter: () => unawaited(_openFilter(tasks)),
                 actions: [
                   DownloadQueueAction(
                     label: t.settings.downloadManagerOpenFolder,
@@ -394,6 +344,30 @@ class MusicDownloadsViewState extends ConsumerState<MusicDownloadsView> {
                       destructive: true,
                       onPressed: () => unawaited(_deletePicked(picked)),
                     ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: EdgeInsets.fromLTRB(_inset, 0, _inset, DsSpace.s8),
+              child: Row(
+                spacing: DsSpace.s8,
+                children: [
+                  Expanded(
+                    child: DownloadStatusTabs<DownloadStatusGroup>(
+                      value: _statusGroup,
+                      semanticLabel: t.settings.downloadFilterLabel,
+                      onChanged: (group) => setState(() => _statusGroup = group),
+                      tabs: [
+                        for (final group in DownloadStatusGroup.values)
+                          DownloadStatusTab(group, _statusTabLabel(t, group), counts[group] ?? 0),
+                      ],
+                    ),
+                  ),
+                  DsChip(
+                    label: Text(t.settings.downloadFilterPlayable),
+                    selected: _playableOnly,
+                    onChanged: (on) => setState(() => _playableOnly = on),
+                  ),
                 ],
               ),
             ),
@@ -466,7 +440,7 @@ class MusicDownloadsViewState extends ConsumerState<MusicDownloadsView> {
             size: DsSize.sm,
             leading: const DsIcon(DsIcons.filter, size: 14),
             onPressed: () => setState(() {
-              _statuses.clear();
+              _statusGroup = DownloadStatusGroup.all;
               _playableOnly = false;
             }),
             child: Text(t.settings.downloadFilterReset),
@@ -500,23 +474,19 @@ Widget _musicTaskCard(
   final progress = task.progress;
   final playable = _playableTask(task);
   final status = task.status;
-  final phase = switch (status) {
-    audio.MusicDownloadStatus.running => DownloadRowPhase.running,
-    audio.MusicDownloadStatus.queued => DownloadRowPhase.queued,
-    audio.MusicDownloadStatus.paused => DownloadRowPhase.paused,
-    audio.MusicDownloadStatus.processing => DownloadRowPhase.processing,
-    audio.MusicDownloadStatus.failed => DownloadRowPhase.failed,
-    audio.MusicDownloadStatus.cancelled => DownloadRowPhase.cancelled,
-    audio.MusicDownloadStatus.completed ||
-    audio.MusicDownloadStatus.skipped => missing ? DownloadRowPhase.missing : DownloadRowPhase.done,
-  };
+  final phase = _musicRowPhase(status, missing: missing);
   final moving = status == audio.MusicDownloadStatus.running || status == audio.MusicDownloadStatus.paused;
-  // The badge carries the state; the caption carries the transfer's numbers —
-  // a failed row its error — so one fact is said once.
+  // The caption carries the transfer's numbers — a failed row its error — and
+  // a landed song adds who sang it and off which record, the facts the table's
+  // second line used to say.
+  final facts = _musicFacts(t, task);
   final caption = switch (phase) {
     DownloadRowPhase.failed => task.error ?? t.settings.downloadStatusFailed,
     DownloadRowPhase.missing => t.common.previewFileMissing,
-    DownloadRowPhase.done => task.bytesTotal > 0 ? formatDownloadBytes(task.bytesTotal) : t.settings.downloadStatusDone,
+    DownloadRowPhase.done => [
+      if (task.bytesTotal > 0) formatDownloadBytes(task.bytesTotal) else t.settings.downloadStatusDone,
+      if (facts.isNotEmpty) facts,
+    ].join(' · '),
     _ => [
       if (!task.isTerminal && progress != null) '${(progress * 100).round()}%',
       if (status == audio.MusicDownloadStatus.running && task.bytesPerSecond > 0)
@@ -525,10 +495,6 @@ Widget _musicTaskCard(
     ].join(' · '),
   };
   final title = task.request.title ?? musicFileNameOf(task.outputPath);
-  // The art of the row: the downloaded file's own cover once it is on disk,
-  // the platform's cover before that — the page shows the songs, not their
-  // tasks.
-  final preview = _previewTrack(task, local: playable);
   Future<void> deleteFile() async {
     final confirmed = await showAppConfirm(
       context: context,
@@ -553,14 +519,9 @@ Widget _musicTaskCard(
     title: title,
     phase: phase,
     caption: caption,
-    badgeLabel: status == audio.MusicDownloadStatus.running && progress != null
-        ? '${t.settings.downloadStatusRunning} ${(progress * 100).round()}%'
-        : null,
-    meta: _musicFacts(t, task),
     fraction: progress,
     showProgress: moving && progress != null,
     progressLabel: t.music.downloadProgress,
-    leading: MusicArtwork(track: preview),
     playable: playable,
     actions: DownloadRowActions(
       // A waiting row holds its place in the lane — the queue's resume answers
@@ -622,6 +583,29 @@ DownloadDetails _detailsOf(
     onRemove: onRemove,
   );
 }
+
+/// One song's state as the shared rows draw it: a finished file that wandered
+/// off reads as missing.
+DownloadRowPhase _musicRowPhase(audio.MusicDownloadStatus status, {required bool missing}) => switch (status) {
+  audio.MusicDownloadStatus.running => DownloadRowPhase.running,
+  audio.MusicDownloadStatus.queued => DownloadRowPhase.queued,
+  audio.MusicDownloadStatus.paused => DownloadRowPhase.paused,
+  audio.MusicDownloadStatus.processing => DownloadRowPhase.processing,
+  audio.MusicDownloadStatus.failed => DownloadRowPhase.failed,
+  audio.MusicDownloadStatus.cancelled => DownloadRowPhase.cancelled,
+  audio.MusicDownloadStatus.completed ||
+  audio.MusicDownloadStatus.skipped => missing ? DownloadRowPhase.missing : DownloadRowPhase.done,
+};
+
+/// The state tab's word — the shared status words, with 全部 at its head.
+String _statusTabLabel(Translations t, DownloadStatusGroup group) => switch (group) {
+  DownloadStatusGroup.all => t.settings.downloadFilterAll,
+  DownloadStatusGroup.running => t.settings.downloadStatusRunning,
+  DownloadStatusGroup.queued => t.settings.downloadStatusQueued,
+  DownloadStatusGroup.paused => t.settings.downloadStatusPaused,
+  DownloadStatusGroup.done => t.settings.downloadStatusDone,
+  DownloadStatusGroup.failed => t.settings.downloadStatusFailed,
+};
 
 /// The track a download row previews: the platform's cover and names before
 /// the file exists, the file itself (path, embedded art, tags) once it does —

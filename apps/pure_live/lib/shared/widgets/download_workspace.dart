@@ -65,8 +65,8 @@ final class DownloadQueueAction {
 /// read, so the page hands them in; [actions] that have nothing to act on are
 /// left out by the caller (see [DownloadQueueAction]).
 final class DownloadQueueHeader extends StatelessWidget {
-  /// The head for [summary], searching with [query], filtering through
-  /// [onFilter] and acting through [actions]; [onSettings] hangs the
+  /// The head for [summary], searching with [query] and acting through
+  /// [actions]; [onSettings] hangs the
   /// manager's own settings page off the head's end, the way the recording
   /// centre's head carries its own.
   const DownloadQueueHeader({
@@ -74,9 +74,6 @@ final class DownloadQueueHeader extends StatelessWidget {
     required this.searchHint,
     required this.query,
     required this.onQuery,
-    required this.filterLabel,
-    required this.filterActive,
-    required this.onFilter,
     required this.actions,
     this.settingsLabel,
     this.onSettings,
@@ -104,15 +101,6 @@ final class DownloadQueueHeader extends StatelessWidget {
   /// Takes the typed search to the queue.
   final ValueChanged<String> onQuery;
 
-  /// The word for the filter entry, and for its row in the overflow.
-  final String filterLabel;
-
-  /// Whether a filter other than the search is holding the queue down.
-  final bool filterActive;
-
-  /// Opens the queue's filter panel.
-  final VoidCallback onFilter;
-
   /// The verbs that act on the whole queue.
   final List<DownloadQueueAction> actions;
 
@@ -133,13 +121,6 @@ final class DownloadQueueHeader extends StatelessWidget {
     final search = SizedBox(
       width: compact ? 132 : 220,
       child: DsSearchField(initialValue: query, onChanged: onQuery, placeholder: searchHint, semanticLabel: searchHint),
-    );
-    final filterButton = DsButton.icon(
-      variant: filterActive ? DsButtonVariant.tinted : DsButtonVariant.ghost,
-      size: DsSize.sm,
-      onPressed: onFilter,
-      icon: const DsIcon(DsIcons.filter),
-      semanticLabel: filterLabel,
     );
     // The queue's whole-queue verbs, folded behind one glyph: a strip of
     // five labelled buttons read as a toolbar bolted onto the page, and the
@@ -184,7 +165,6 @@ final class DownloadQueueHeader extends StatelessWidget {
               ),
             ),
             search,
-            filterButton,
             if (onSettings != null)
               DsButton.icon(
                 variant: DsButtonVariant.ghost,
@@ -212,15 +192,6 @@ final class DownloadQueueHeader extends StatelessWidget {
                 children: [
                   DsListSection(
                     children: [
-                      DsListRow(
-                        leading: const DsIcon(DsIcons.filter, size: 16),
-                        title: Text(filterLabel),
-                        trailing: filterActive ? const DsIcon(DsIcons.check, size: 14) : null,
-                        onPressed: () {
-                          Navigator.of(context).pop();
-                          onFilter();
-                        },
-                      ),
                       for (final action in live)
                         DsListRow(
                           leading: DsIcon(action.icon, size: 16),

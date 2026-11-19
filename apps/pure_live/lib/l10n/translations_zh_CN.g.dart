@@ -10162,9 +10162,6 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '筛选'
 	String get downloadFilterLabel => '筛选';
 
-	/// zh-CN: '筛选下载任务'
-	String get downloadFilterTitle => '筛选下载任务';
-
 	/// zh-CN: '只看还能打开的文件'
 	String get downloadFilterPlayable => '只看还能打开的文件';
 
@@ -17072,7 +17069,6 @@ extension on Translations {
 			'settings.downloadFilterEmpty' => '没有符合这个状态的记录',
 			'settings.downloadKindFilter' => '按类型筛选',
 			'settings.downloadFilterLabel' => '筛选',
-			'settings.downloadFilterTitle' => '筛选下载任务',
 			'settings.downloadFilterPlayable' => '只看还能打开的文件',
 			'settings.downloadFilterReset' => '清空筛选',
 			'settings.downloadRecheck' => '重新检查文件',
@@ -17202,9 +17198,9 @@ extension on Translations {
 			'settings.wallpaperCategoryFantasyArt' => '奇幻艺术',
 			'settings.wallpaperCategoryFinalFantasy' => '最终幻想',
 			'settings.tagManagement' => '标签管理',
+			'settings.tagManagementDesc' => '自定义和管理直播间的过滤标签',
 			_ => null,
 		} ?? switch (path) {
-			'settings.tagManagementDesc' => '自定义和管理直播间的过滤标签',
 			'settings.tagAdd' => '添加标签',
 			'settings.tagEdit' => '编辑标签',
 			'settings.tagPin' => '移到最前',
@@ -17716,9 +17712,9 @@ extension on Translations {
 			'toolbox.nodeHint' => '点「测速」检查这个平台。',
 			'toolbox.nodeAnswer' => ({required int count}) => '返回 ${count} 个房间',
 			'toolbox.nodeSourceRecommended' => '推荐接口',
+			'toolbox.nodeSourceHot' => '热门接口',
 			_ => null,
 		} ?? switch (path) {
-			'toolbox.nodeSourceHot' => '热门接口',
 			'toolbox.nodeSummary' => ({required Object ok, required Object tested, required Object total}) => '${ok} / ${tested} 可用 · 共 ${total} 个平台',
 			'toolbox.nodeUntestedSummary' => ({required Object total}) => '尚未测速 · 共 ${total} 个平台',
 			'toolbox.logsSection' => '日志与诊断',

@@ -31,17 +31,19 @@ import 'package:pure_live/shared/shared.dart'
         DownloadRowActions,
         DownloadRowMenuActions,
         DownloadRowPhase,
+        DownloadStatusGroup,
+        DownloadStatusTab,
+        DownloadStatusTabs,
         DownloadTaskCard,
         LiveWindow,
         NavigationItem,
-        avatarInitials,
         cachedImage,
         downloadEtaText,
         downloadFilePresent,
+        downloadRowGroupOf,
         formatDownloadBytes,
         showDownloadDetails;
 import 'package:pure_live/shared/widgets/app_dialog.dart';
-import 'package:pure_live/shared/widgets/app_panel.dart';
 
 /// Whether a finished part's file is still on disk where its row says.
 ///
@@ -144,6 +146,8 @@ Widget _vodTaskCard(BuildContext context, WidgetRef ref, VodDownloadItem task, {
   final preview = task.part.isEmpty ? task.title : '${task.title} · ${task.part}';
   final part = task.part.isEmpty ? 'P${task.index}' : 'P${task.index} ${task.part}';
   final quality = VodQualityChoice.values.where((choice) => choice.qn == task.qn).firstOrNull;
+  final qualityLabel = quality?.label(t);
+  final captionText = qualityLabel == null ? caption : '$caption · $qualityLabel';
   Future<void> deleteFile() async {
     final confirmed = await showAppConfirm(
       context: context,
@@ -167,20 +171,10 @@ Widget _vodTaskCard(BuildContext context, WidgetRef ref, VodDownloadItem task, {
     key: ValueKey(task.id),
     title: inBlock ? part : preview,
     phase: phase,
-    caption: caption,
-    meta: quality?.label(t),
+    caption: captionText,
     fraction: fraction,
     showProgress: moving && (fraction != null || task.received > 0),
     progressLabel: task.fileName,
-    leading: inBlock
-        ? null
-        : DsAvatar(
-            initials: avatarInitials(task.title),
-            image: task.cover.isEmpty ? null : cachedImage(task.cover, policy: ImageCachePolicies.videoCover),
-            size: DsSize.md,
-            toneIndex: DsAvatar.toneFor(task.id),
-            semanticLabel: preview,
-          ),
     playable: task.phase == VodDownloadPhase.done,
     actions: DownloadRowActions(
       onPause: task.phase == VodDownloadPhase.running ? () => unawaited(controller.pause(task.id)) : null,
@@ -381,18 +375,8 @@ String? _etaOf(Translations t, {required int speed, required int total, required
   return t.settings.downloadEta(time: downloadEtaText(Duration(seconds: (total - received) ~/ speed)));
 }
 
-/// The phase's own word, said the same way in a row's badge and in the filter
-/// panel: one phase, one spelling.
-String _vodPhaseLabel(Translations t, VodDownloadPhase phase) => switch (phase) {
-  VodDownloadPhase.queued => t.settings.downloadStatusQueued,
-  VodDownloadPhase.running => t.settings.downloadStatusRunning,
-  VodDownloadPhase.paused => t.settings.downloadStatusPaused,
-  VodDownloadPhase.failed => t.settings.downloadStatusFailed,
-  VodDownloadPhase.done => t.settings.downloadStatusDone,
-};
-
 /// The station's download manager as its own page: the queue as a table with
-/// its search, its filters and its batch verbs, the finished parts opened in
+/// its search, its states and its batch verbs, the finished parts opened in
 /// the app's own preview, and the folder they land in.
 ///
 /// A window too narrow for the table's columns keeps the row cards the station
@@ -412,9 +396,8 @@ final class _VodDownloadsPageState extends ConsumerState<VodDownloadsPage> {
   /// file the queue wrote.
   String _query = '';
 
-  /// The phases ticked in the panel; none ticked reads as every phase, so an
-  /// empty set is the queue's own 全部 rather than a hidden filter.
-  final Set<VodDownloadPhase> _phases = {};
+  /// The state tab the queue is cut to; all reads as every state.
+  DownloadStatusGroup _statusGroup = DownloadStatusGroup.all;
 
   /// Whether a row must still name a file the disk holds.
   bool _playableOnly = false;
@@ -437,7 +420,8 @@ final class _VodDownloadsPageState extends ConsumerState<VodDownloadsPage> {
     final query = _query.trim().toLowerCase();
     return [
       for (final task in tasks)
-        if ((_phases.isEmpty || _phases.contains(task.phase)) &&
+        if ((_statusGroup == DownloadStatusGroup.all ||
+                downloadRowGroupOf(_vodRowPhase(task.phase, missing: _vodFileMissing(task))) == _statusGroup) &&
             (!_playableOnly || (task.phase == VodDownloadPhase.done && downloadFilePresent(task.filePath))) &&
             (query.isEmpty ||
                 task.title.toLowerCase().contains(query) ||
@@ -445,66 +429,6 @@ final class _VodDownloadsPageState extends ConsumerState<VodDownloadsPage> {
                 task.fileName.toLowerCase().contains(query)))
           task,
     ];
-  }
-
-  /// The queue's conditions, behind the head's one entry: which phases show and
-  /// whether a row must still name a file the disk holds. Nothing else about a
-  /// queue is a condition — where it lands is a setting, and its size is what
-  /// the head already says.
-  Future<void> _openFilter(List<VodDownloadItem> tasks) async {
-    final t = context.t;
-    final picked = {..._phases};
-    var playable = _playableOnly;
-    void apply() => setState(() {
-      _phases
-        ..clear()
-        ..addAll(picked);
-      _playableOnly = playable;
-    });
-    await showAppPanel<void>(
-      context: context,
-      builder: (panelContext) => AppPanel(
-        title: Text(t.settings.downloadFilterTitle),
-        child: DsListSection(
-          children: [
-            for (final phase in VodDownloadPhase.values)
-              DsListRow(
-                title: Text(_vodPhaseLabel(t, phase)),
-                detail: Text('${tasks.where((task) => task.phase == phase).length}'),
-                trailing: DsCheckbox(
-                  value: picked.contains(phase),
-                  onChanged: (value) {
-                    if (value == true) {
-                      picked.add(phase);
-                    } else {
-                      picked.remove(phase);
-                    }
-                    apply();
-                  },
-                ),
-              ),
-            DsListRow(
-              title: Text(t.settings.downloadFilterPlayable),
-              trailing: DsSwitch(
-                value: playable,
-                onChanged: (value) {
-                  playable = value;
-                  apply();
-                },
-              ),
-            ),
-            DsListRow(
-              title: Text(t.settings.downloadFilterReset),
-              onPressed: () {
-                picked.clear();
-                playable = false;
-                apply();
-              },
-            ),
-          ],
-        ),
-      ),
-    );
   }
 
   @override
@@ -529,7 +453,17 @@ final class _VodDownloadsPageState extends ConsumerState<VodDownloadsPage> {
     // running row's speed is not asked of every row to be read once.
     final speed = tasks.fold<int>(0, (sum, task) => sum + task.speed);
     final factsTask = shown.where((task) => task.id == _factsId).firstOrNull ?? (shown.isEmpty ? null : shown.first);
-    final filterActive = _phases.isNotEmpty || _playableOnly;
+    final filterActive = _statusGroup != DownloadStatusGroup.all || _playableOnly;
+    final counts = <DownloadStatusGroup, int>{
+      for (final group in DownloadStatusGroup.values)
+        group: group == DownloadStatusGroup.all
+            ? tasks.length
+            : tasks
+                  .where(
+                    (task) => downloadRowGroupOf(_vodRowPhase(task.phase, missing: _vodFileMissing(task))) == group,
+                  )
+                  .length,
+    };
     return LayoutBuilder(
       builder: (context, constraints) {
         final width = constraints.maxWidth;
@@ -554,9 +488,6 @@ final class _VodDownloadsPageState extends ConsumerState<VodDownloadsPage> {
                 searchHint: t.settings.downloadSearchPlaceholder,
                 query: _query,
                 onQuery: (value) => setState(() => _query = value),
-                filterLabel: t.settings.downloadFilterLabel,
-                filterActive: filterActive,
-                onFilter: () => unawaited(_openFilter(tasks)),
                 actions: [
                   DownloadQueueAction(
                     label: t.settings.downloadManagerOpenFolder,
@@ -599,6 +530,30 @@ final class _VodDownloadsPageState extends ConsumerState<VodDownloadsPage> {
                   openSettingsSection(ref, SettingsSection.vodDownload);
                   unawaited(context.push(SettingsSectionRoute(section: SettingsSection.vodDownload.name).location));
                 },
+              ),
+            ),
+            Padding(
+              padding: EdgeInsets.fromLTRB(_inset, 0, _inset, DsSpace.s8),
+              child: Row(
+                spacing: DsSpace.s8,
+                children: [
+                  Expanded(
+                    child: DownloadStatusTabs<DownloadStatusGroup>(
+                      value: _statusGroup,
+                      semanticLabel: t.settings.downloadFilterLabel,
+                      onChanged: (group) => setState(() => _statusGroup = group),
+                      tabs: [
+                        for (final group in DownloadStatusGroup.values)
+                          DownloadStatusTab(group, _statusTabLabel(t, group), counts[group] ?? 0),
+                      ],
+                    ),
+                  ),
+                  DsChip(
+                    label: Text(t.settings.downloadFilterPlayable),
+                    selected: _playableOnly,
+                    onChanged: (on) => setState(() => _playableOnly = on),
+                  ),
+                ],
               ),
             ),
             Expanded(
@@ -663,7 +618,7 @@ final class _VodDownloadsPageState extends ConsumerState<VodDownloadsPage> {
             size: DsSize.sm,
             leading: const DsIcon(DsIcons.filter, size: 14),
             onPressed: () => setState(() {
-              _phases.clear();
+              _statusGroup = DownloadStatusGroup.all;
               _playableOnly = false;
             }),
             child: Text(t.settings.downloadFilterReset),
@@ -679,6 +634,16 @@ final class _VodDownloadsPageState extends ConsumerState<VodDownloadsPage> {
     ),
   );
 }
+
+/// The state tab's word — the shared status words, with 全部 at its head.
+String _statusTabLabel(Translations t, DownloadStatusGroup group) => switch (group) {
+  DownloadStatusGroup.all => t.settings.downloadFilterAll,
+  DownloadStatusGroup.running => t.settings.downloadStatusRunning,
+  DownloadStatusGroup.queued => t.settings.downloadStatusQueued,
+  DownloadStatusGroup.paused => t.settings.downloadStatusPaused,
+  DownloadStatusGroup.done => t.settings.downloadStatusDone,
+  DownloadStatusGroup.failed => t.settings.downloadStatusFailed,
+};
 
 /// The preview page's list for the station's queue: every part that finished,
 /// in the queue's own order. A part whose file was cleaned out of the folder
@@ -799,7 +764,8 @@ final class _VodArchiveHead extends ConsumerWidget {
       title: t.settings.downloadRemove,
       // Which upload, and how many of its parts: the row's own body says 这条
       // 记录, and a block would be answering for ten of them.
-      description: '${group.title} · ${t.settings.downloadTaskCount(count: ids.length, active: _phases().pausable.length)}',
+      description:
+          '${group.title} · ${t.settings.downloadTaskCount(count: ids.length, active: _phases().pausable.length)}',
       confirmLabel: t.settings.downloadRemove,
       cancelLabel: t.common.cancel,
       destructive: true,

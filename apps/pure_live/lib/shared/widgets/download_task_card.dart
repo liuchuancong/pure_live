@@ -298,58 +298,157 @@ final class DownloadTaskCard extends StatelessWidget {
     final t = context.t;
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
-    return DsListRow(
-      leading: leading,
-      title: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
-      description: Column(
+    final captionColor = switch (phase) {
+      DownloadRowPhase.failed || DownloadRowPhase.missing => colors.danger.text,
+      _ => colors.textMuted,
+    };
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: DsSpace.s12, vertical: DsSpace.s8),
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        spacing: DsSpace.s4,
+        spacing: DsSpace.s6,
         children: [
           Row(
             spacing: DsSpace.s8,
             children: [
-              downloadRowBadge(context, phase, label: badgeLabel),
-              if (meta case final metaText?)
-                Expanded(
-                  child: Text(
-                    metaText,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    textAlign: TextAlign.end,
-                    style: theme.typography.caption.copyWith(color: colors.textMuted),
+              Container(
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(color: _phaseSignal(colors), shape: BoxShape.circle),
+              ),
+              Expanded(
+                child: Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.typography.body.copyWith(color: colors.text),
+                ),
+              ),
+              if (actions != null) downloadRowVerb(context, phase, actions!, playable: playable),
+              if (menu != null)
+                DsMenuAnchor(
+                  semanticLabel: t.common.more,
+                  align: DsAlign.end,
+                  builder: (context, controller, child) => DsPressable(
+                    semanticLabel: t.common.more,
+                    onPressed: controller.toggle,
+                    builder: (context, states, _) {
+                      final lit = states.contains(WidgetState.hovered) || states.contains(WidgetState.focused);
+                      return Padding(
+                        padding: const EdgeInsets.all(DsSpace.s4),
+                        child: DsIcon(
+                          DsIcons.ellipsisVertical,
+                          size: theme.sizes.iconSm,
+                          color: lit ? colors.text : colors.textSubtle,
+                        ),
+                      );
+                    },
                   ),
+                  items: downloadRowMenu(context, menu!),
                 ),
             ],
           ),
-          Text(caption, maxLines: 2, overflow: TextOverflow.ellipsis),
-          if (showProgress) DsProgressBar(value: fraction, semanticLabel: progressLabel ?? title),
+          Row(
+            spacing: DsSpace.s8,
+            children: [
+              if (showProgress)
+                Expanded(
+                  child: DsProgressBar(
+                    value: fraction,
+                    semanticLabel: progressLabel ?? title,
+                    style: const DsProgressBarStyle(height: 8),
+                  ),
+                ),
+              Flexible(
+                child: Text(
+                  caption,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: showProgress ? TextAlign.right : TextAlign.left,
+                  style: theme.typography.caption.copyWith(color: captionColor),
+                ),
+              ),
+            ],
+          ),
         ],
       ),
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
+    );
+  }
+
+  /// The row's state dot: the vivid mark the status palette keeps for dots,
+  /// in the color the phase's badge would wear.
+  Color _phaseSignal(DsColors colors) => switch (phase) {
+    DownloadRowPhase.running ||
+    DownloadRowPhase.processing => colors.info.signal,
+    DownloadRowPhase.queued || DownloadRowPhase.cancelled => colors.neutral.signal,
+    DownloadRowPhase.paused => colors.warning.signal,
+    DownloadRowPhase.failed || DownloadRowPhase.missing => colors.danger.signal,
+    DownloadRowPhase.done => colors.success.signal,
+  };
+}
+
+/// One archive block's head, the shape vod's parts and hongguo's episodes
+/// share: the artwork at the head, the block's name, the block's own count
+/// line, and the ⋯ that carries the block's verbs. The verbs themselves stay
+/// with the page — they speak to that page's store — the head only hosts
+/// them.
+final class DownloadGroupHead extends StatelessWidget {
+  /// The head for [title], counting [countLine].
+  const DownloadGroupHead({
+    required this.title,
+    required this.countLine,
+    required this.menuSemanticLabel,
+    required this.menuItems,
+    this.cover,
+    super.key,
+  });
+
+  /// The block's name, one line.
+  final String title;
+
+  /// The block's own reading of how much it holds (分部 · N, 12/60 集).
+  final String countLine;
+
+  /// The block's artwork at the head; null when the block has none.
+  final Widget? cover;
+
+  /// The ⋯'s name, for screen readers.
+  final String menuSemanticLabel;
+
+  /// The block's verbs, built by the page.
+  final List<Widget> menuItems;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(0, DsSpace.s12, 0, DsSpace.s4),
+      child: Row(
+        spacing: DsSpace.s8,
         children: [
-          if (actions != null) downloadRowVerb(context, phase, actions!, playable: playable),
-          if (menu != null)
-            DsMenuAnchor(
-              semanticLabel: t.common.more,
-              align: DsAlign.end,
-              builder: (context, controller, child) => DsPressable(
-                semanticLabel: t.common.more,
-                onPressed: controller.toggle,
-                builder: (context, states, _) {
-                  final lit = states.contains(WidgetState.hovered) || states.contains(WidgetState.focused);
-                  return Padding(
-                    padding: const EdgeInsets.all(DsSpace.s4),
-                    child: DsIcon(
-                      DsIcons.ellipsisVertical,
-                      size: theme.sizes.iconSm,
-                      color: lit ? colors.text : colors.textSubtle,
-                    ),
-                  );
-                },
-              ),
-              items: downloadRowMenu(context, menu!),
+          ?cover,
+          Expanded(
+            child: Text(
+              title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
             ),
+          ),
+          Text(countLine, style: theme.typography.caption.copyWith(color: colors.textMuted)),
+          DsMenuAnchor(
+            semanticLabel: menuSemanticLabel,
+            align: DsAlign.end,
+            items: menuItems,
+            builder: (context, anchor, _) => DsButton.icon(
+              variant: DsButtonVariant.secondary,
+              size: DsSize.sm,
+              semanticLabel: menuSemanticLabel,
+              onPressed: anchor.toggle,
+              icon: const DsIcon(DsIcons.ellipsisVertical, size: 16),
+            ),
+          ),
         ],
       ),
     );

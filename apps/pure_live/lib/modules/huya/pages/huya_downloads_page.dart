@@ -8,16 +8,33 @@ import 'package:pure_live/features/settings/pages/wallpaper_download_manager.dar
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/huya/controller/huya_downloads.dart';
 import 'package:pure_live/modules/huya/pages/huya_downloads_pane.dart'
-    show huyaDetailsOf, huyaFileMissing, huyaTaskCard;
+    show huyaDetailsOf, huyaFileMissing, huyaRowPhaseOf, huyaTaskCard;
 import 'package:pure_live/shared/shared.dart'
-    show DownloadQueueAction, DownloadQueueHeader, LiveWindow, formatDownloadBytes;
+    show
+        DownloadQueueAction,
+        DownloadQueueHeader,
+        DownloadStatusGroup,
+        DownloadStatusTab,
+        DownloadStatusTabs,
+        LiveWindow,
+        downloadRowGroupOf,
+        formatDownloadBytes;
 import 'package:pure_live/shared/widgets/app_dialog.dart' show showAppConfirm;
-import 'package:pure_live/shared/widgets/app_panel.dart' show AppPanel, showAppPanel;
 import 'package:pure_live/shared/widgets/download_workspace.dart' show DownloadDetailsPane;
+
+/// The state tab's word — the shared status words, with 全部 at its head.
+String _statusTabLabel(Translations t, DownloadStatusGroup group) => switch (group) {
+  DownloadStatusGroup.all => t.settings.downloadFilterAll,
+  DownloadStatusGroup.running => t.settings.downloadStatusRunning,
+  DownloadStatusGroup.queued => t.settings.downloadStatusQueued,
+  DownloadStatusGroup.paused => t.settings.downloadStatusPaused,
+  DownloadStatusGroup.done => t.settings.downloadStatusDone,
+  DownloadStatusGroup.failed => t.settings.downloadStatusFailed,
+};
 
 /// 虎牙视频's download queue as its own page — the station's videos on one
 /// surface with the manager's own head: how big the queue is, the search, the
-/// phase filter, the folder's row and the queue verbs, all over the same
+/// states, the folder's row and the queue verbs, all over the same
 /// shared download cards every manager wears. Reached from the rail, where
 /// the other stations keep their download managers.
 final class HuyaDownloadsPage extends ConsumerStatefulWidget {
@@ -30,7 +47,9 @@ final class HuyaDownloadsPage extends ConsumerStatefulWidget {
 
 final class _HuyaDownloadsPageState extends ConsumerState<HuyaDownloadsPage> {
   String _query = '';
-  final Set<HuyaDownloadPhase> _statuses = {};
+
+  /// The state tab the queue is cut to; all reads as every state.
+  DownloadStatusGroup _statusGroup = DownloadStatusGroup.all;
 
   double get _inset => LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
 
@@ -40,37 +59,8 @@ final class _HuyaDownloadsPageState extends ConsumerState<HuyaDownloadsPage> {
       final hit = task.title.toLowerCase().contains(word) || task.fileName.toLowerCase().contains(word);
       if (!hit) return false;
     }
-    if (_statuses.isEmpty) return true;
-    return _statuses.contains(task.phase);
-  }
-
-  Future<void> _openFilter() async {
-    final t = context.t;
-    await showAppPanel<void>(
-      context: context,
-      builder: (context) => AppPanel(
-        title: Text(t.settings.downloadFilterLabel),
-        child: DsListSection(
-          children: [
-            for (final phase in HuyaDownloadPhase.values)
-              DsListRow(
-                title: Text(switch (phase) {
-                  HuyaDownloadPhase.queued => t.settings.downloadStatusQueued,
-                  HuyaDownloadPhase.running => t.settings.downloadStatusRunning,
-                  HuyaDownloadPhase.paused => t.settings.downloadStatusPaused,
-                  HuyaDownloadPhase.failed => t.settings.downloadStatusFailed,
-                  HuyaDownloadPhase.done => t.settings.downloadStatusDone,
-                }),
-                trailing: _statuses.contains(phase) ? const DsIcon(DsIcons.check, size: 14) : null,
-                onPressed: () => setState(() {
-                  _statuses.contains(phase) ? _statuses.remove(phase) : _statuses.add(phase);
-                }),
-              ),
-          ],
-        ),
-      ),
-    );
-    if (mounted) setState(() {});
+    if (_statusGroup == DownloadStatusGroup.all) return true;
+    return downloadRowGroupOf(huyaRowPhaseOf(task.phase, missing: huyaFileMissing(task))) == _statusGroup;
   }
 
   Future<void> _clearFinished(List<HuyaDownloadItem> tasks) async {
@@ -114,6 +104,16 @@ final class _HuyaDownloadsPageState extends ConsumerState<HuyaDownloadsPage> {
     final withFacts = width >= LiveWindow.downloadWorkspace;
     final factsTask =
         shown.where((task) => task.videoId == _factsId).firstOrNull ?? (shown.isEmpty ? null : shown.first);
+    final counts = <DownloadStatusGroup, int>{
+      for (final group in DownloadStatusGroup.values)
+        group: group == DownloadStatusGroup.all
+            ? tasks.length
+            : tasks
+                  .where(
+                    (task) => downloadRowGroupOf(huyaRowPhaseOf(task.phase, missing: huyaFileMissing(task))) == group,
+                  )
+                  .length,
+    };
     final queue = shown.isEmpty
         ? Expanded(
             child: Center(
@@ -122,14 +122,21 @@ final class _HuyaDownloadsPageState extends ConsumerState<HuyaDownloadsPage> {
                 title: Text(tasks.isEmpty ? t.settings.downloadQueueEmpty : t.settings.downloadFilterEmpty),
                 description: Text(tasks.isEmpty ? t.huya.downloadQueueEmptyDesc : t.settings.downloadFilterEmpty),
                 actions: [
-                  if (_statuses.isNotEmpty)
+                  if (_statusGroup != DownloadStatusGroup.all)
                     DsButton(
                       variant: DsButtonVariant.secondary,
                       size: DsSize.sm,
                       leading: const DsIcon(DsIcons.filter, size: 14),
-                      onPressed: () => setState(_statuses.clear),
+                      onPressed: () => setState(() => _statusGroup = DownloadStatusGroup.all),
                       child: Text(t.settings.downloadFilterReset),
                     ),
+                  DsButton(
+                    variant: DsButtonVariant.secondary,
+                    size: DsSize.sm,
+                    leading: const DsIcon(DsIcons.folderOpen, size: 14),
+                    onPressed: () => unawaited(openDownloadedPath(context, directory)),
+                    child: Text(t.settings.downloadManagerOpenFolder),
+                  ),
                 ],
               ),
             ),
@@ -168,15 +175,38 @@ final class _HuyaDownloadsPageState extends ConsumerState<HuyaDownloadsPage> {
               searchHint: t.settings.downloadSearchPlaceholder,
               query: _query,
               onQuery: (value) => setState(() => _query = value),
-              filterLabel: t.settings.downloadFilterLabel,
-              filterActive: _statuses.isNotEmpty,
-              onFilter: () => unawaited(_openFilter()),
               actions: [
                 DownloadQueueAction(
                   label: t.settings.downloadManagerOpenFolder,
                   icon: DsIcons.folderOpen,
                   onPressed: () => unawaited(openDownloadedPath(context, directory)),
                 ),
+                if (tasks.any((task) => task.phase == HuyaDownloadPhase.running))
+                  DownloadQueueAction(
+                    label: t.settings.downloadPauseAll,
+                    icon: DsIcons.pause,
+                    onPressed: () {
+                      final notifier = ref.read(huyaDownloadsProvider.notifier);
+                      for (final task in tasks.where((task) => task.phase == HuyaDownloadPhase.running)) {
+                        unawaited(notifier.pause(task.videoId));
+                      }
+                    },
+                  ),
+                if (tasks.any(
+                  (task) => task.phase == HuyaDownloadPhase.paused || task.phase == HuyaDownloadPhase.failed,
+                ))
+                  DownloadQueueAction(
+                    label: t.settings.downloadResumeAll,
+                    icon: DsIcons.play,
+                    onPressed: () {
+                      final notifier = ref.read(huyaDownloadsProvider.notifier);
+                      for (final task in tasks.where(
+                        (task) => task.phase == HuyaDownloadPhase.paused || task.phase == HuyaDownloadPhase.failed,
+                      )) {
+                        unawaited(notifier.resume(task.videoId));
+                      }
+                    },
+                  ),
                 if (finishedCount > 0)
                   DownloadQueueAction(
                     label: t.settings.downloadClearFinished,
@@ -184,6 +214,25 @@ final class _HuyaDownloadsPageState extends ConsumerState<HuyaDownloadsPage> {
                     destructive: true,
                     onPressed: () => unawaited(_clearFinished(tasks)),
                   ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: EdgeInsets.fromLTRB(_inset, 0, _inset, DsSpace.s8),
+            child: Row(
+              spacing: DsSpace.s8,
+              children: [
+                Expanded(
+                  child: DownloadStatusTabs<DownloadStatusGroup>(
+                    value: _statusGroup,
+                    semanticLabel: t.settings.downloadFilterLabel,
+                    onChanged: (group) => setState(() => _statusGroup = group),
+                    tabs: [
+                      for (final group in DownloadStatusGroup.values)
+                        DownloadStatusTab(group, _statusTabLabel(t, group), counts[group] ?? 0),
+                    ],
+                  ),
+                ),
               ],
             ),
           ),

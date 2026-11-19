@@ -32,15 +32,18 @@ import 'package:pure_live/shared/shared.dart'
         DownloadRowActions,
         DownloadRowMenuActions,
         DownloadRowPhase,
+        DownloadStatusGroup,
+        DownloadStatusTab,
+        DownloadStatusTabs,
         DownloadTaskCard,
         LiveWindow,
         NavigationItem,
         downloadEtaText,
         downloadFilePresent,
+        downloadRowGroupOf,
         formatDownloadBytes,
         showDownloadDetails;
 import 'package:pure_live/shared/widgets/app_dialog.dart';
-import 'package:pure_live/shared/widgets/app_panel.dart';
 
 /// Whether a finished episode's file is still on disk where its row says.
 ///
@@ -104,14 +107,24 @@ String _hongguoEpisodeLabel(Translations t, HongguoDownloadItem task) {
   return task.part.isEmpty || task.part == label ? label : '$label · ${task.part}';
 }
 
-/// The phase's own word, said the same way in a row's badge and in the filter
-/// panel: one phase, one spelling.
-String _hongguoPhaseLabel(Translations t, HongguoDownloadPhase phase) => switch (phase) {
-  HongguoDownloadPhase.queued => t.settings.downloadStatusQueued,
-  HongguoDownloadPhase.running => t.settings.downloadPercentUnknown,
-  HongguoDownloadPhase.paused => t.settings.downloadStatusPaused,
-  HongguoDownloadPhase.failed => t.settings.downloadStatusFailed,
-  HongguoDownloadPhase.done => t.settings.downloadStatusDone,
+/// One episode's state as the shared rows draw it: a finished file that
+/// wandered off reads as missing.
+DownloadRowPhase _hongguoRowPhase(HongguoDownloadPhase phase, {required bool missing}) => switch (phase) {
+  HongguoDownloadPhase.running => DownloadRowPhase.running,
+  HongguoDownloadPhase.queued => DownloadRowPhase.queued,
+  HongguoDownloadPhase.paused => DownloadRowPhase.paused,
+  HongguoDownloadPhase.failed => DownloadRowPhase.failed,
+  HongguoDownloadPhase.done => missing ? DownloadRowPhase.missing : DownloadRowPhase.done,
+};
+
+/// The state tab's word — the shared status words, with 全部 at its head.
+String _statusTabLabel(Translations t, DownloadStatusGroup group) => switch (group) {
+  DownloadStatusGroup.all => t.settings.downloadFilterAll,
+  DownloadStatusGroup.running => t.settings.downloadStatusRunning,
+  DownloadStatusGroup.queued => t.settings.downloadStatusQueued,
+  DownloadStatusGroup.paused => t.settings.downloadStatusPaused,
+  DownloadStatusGroup.done => t.settings.downloadStatusDone,
+  DownloadStatusGroup.failed => t.settings.downloadStatusFailed,
 };
 
 /// The phases in the order a queue reads: what is moving, what waits for a
@@ -367,7 +380,7 @@ String? _etaOf(Translations t, {required int speed, required int total, required
 }
 
 /// The station's download manager as its own page: the queue as a table with
-/// its search, its filters and its batch verbs, the finished episodes opened in
+/// its search, its states and its batch verbs, the finished episodes opened in
 /// the app's own preview, and the folder they land in.
 ///
 /// A window too narrow for a table's columns keeps the row cards the station
@@ -386,9 +399,8 @@ final class _HongguoDownloadsPageState extends ConsumerState<HongguoDownloadsPag
   /// file the queue wrote.
   String _query = '';
 
-  /// The phases ticked in the panel; none ticked reads as every phase, so an
-  /// empty set is the queue's own 全部 rather than a hidden filter.
-  final Set<HongguoDownloadPhase> _phases = {};
+  /// The state tab the queue is cut to; all reads as every state.
+  DownloadStatusGroup _statusGroup = DownloadStatusGroup.all;
 
   /// Whether a row must still name a file the disk holds.
   bool _playableOnly = false;
@@ -413,7 +425,8 @@ final class _HongguoDownloadsPageState extends ConsumerState<HongguoDownloadsPag
     final query = _query.trim().toLowerCase();
     return [
       for (final task in tasks)
-        if ((_phases.isEmpty || _phases.contains(task.phase)) &&
+        if ((_statusGroup == DownloadStatusGroup.all ||
+                downloadRowGroupOf(_hongguoRowPhase(task.phase, missing: _hongguoFileMissing(task))) == _statusGroup) &&
             (!_playableOnly || (task.phase == HongguoDownloadPhase.done && downloadFilePresent(task.filePath))) &&
             (query.isEmpty ||
                 task.title.toLowerCase().contains(query) ||
@@ -484,67 +497,6 @@ final class _HongguoDownloadsPageState extends ConsumerState<HongguoDownloadsPag
     if (mounted) setState(_selected.clear);
   }
 
-  /// The queue's conditions, behind the head's one entry: which phases show and
-  /// whether a row must still name a file the disk holds. Nothing else about a
-  /// queue is a condition — where it lands is a setting, and its size is what
-  /// the head already says.
-  Future<void> _openFilter(List<HongguoDownloadItem> tasks) async {
-    final t = context.t;
-    final picked = {..._phases};
-    var playable = _playableOnly;
-    void apply() => setState(() {
-      _phases
-        ..clear()
-        ..addAll(picked);
-      _playableOnly = playable;
-      _selected.clear();
-    });
-    await showAppPanel<void>(
-      context: context,
-      builder: (panelContext) => AppPanel(
-        title: Text(t.settings.downloadFilterTitle),
-        child: DsListSection(
-          children: [
-            for (final phase in HongguoDownloadPhase.values)
-              DsListRow(
-                title: Text(_hongguoPhaseLabel(t, phase)),
-                detail: Text('${tasks.where((task) => task.phase == phase).length}'),
-                trailing: DsCheckbox(
-                  value: picked.contains(phase),
-                  onChanged: (value) {
-                    if (value == true) {
-                      picked.add(phase);
-                    } else {
-                      picked.remove(phase);
-                    }
-                    apply();
-                  },
-                ),
-              ),
-            DsListRow(
-              title: Text(t.settings.downloadFilterPlayable),
-              trailing: DsSwitch(
-                value: playable,
-                onChanged: (value) {
-                  playable = value;
-                  apply();
-                },
-              ),
-            ),
-            DsListRow(
-              title: Text(t.settings.downloadFilterReset),
-              onPressed: () {
-                picked.clear();
-                playable = false;
-                apply();
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final t = context.t;
@@ -584,7 +536,18 @@ final class _HongguoDownloadsPageState extends ConsumerState<HongguoDownloadsPag
         .where((task) => task.phase == HongguoDownloadPhase.paused || task.phase == HongguoDownloadPhase.failed)
         .toList();
     final factsTask = shown.where((task) => task.id == _factsId).firstOrNull ?? (shown.isEmpty ? null : shown.first);
-    final filterActive = _phases.isNotEmpty || _playableOnly;
+    final filterActive = _statusGroup != DownloadStatusGroup.all || _playableOnly;
+    final counts = <DownloadStatusGroup, int>{
+      for (final group in DownloadStatusGroup.values)
+        group: group == DownloadStatusGroup.all
+            ? tasks.length
+            : tasks
+                  .where(
+                    (task) =>
+                        downloadRowGroupOf(_hongguoRowPhase(task.phase, missing: _hongguoFileMissing(task))) == group,
+                  )
+                  .length,
+    };
     return LayoutBuilder(
       builder: (context, constraints) {
         final width = constraints.maxWidth;
@@ -616,9 +579,6 @@ final class _HongguoDownloadsPageState extends ConsumerState<HongguoDownloadsPag
                   _query = value;
                   _selected.clear();
                 }),
-                filterLabel: t.settings.downloadFilterLabel,
-                filterActive: filterActive,
-                onFilter: () => unawaited(_openFilter(tasks)),
                 actions: [
                   DownloadQueueAction(
                     label: t.settings.downloadManagerOpenFolder,
@@ -683,6 +643,30 @@ final class _HongguoDownloadsPageState extends ConsumerState<HongguoDownloadsPag
                       destructive: true,
                       onPressed: () => unawaited(_deletePicked(picked)),
                     ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: EdgeInsets.fromLTRB(_inset, 0, _inset, DsSpace.s8),
+              child: Row(
+                spacing: DsSpace.s8,
+                children: [
+                  Expanded(
+                    child: DownloadStatusTabs<DownloadStatusGroup>(
+                      value: _statusGroup,
+                      semanticLabel: t.settings.downloadFilterLabel,
+                      onChanged: (group) => setState(() => _statusGroup = group),
+                      tabs: [
+                        for (final group in DownloadStatusGroup.values)
+                          DownloadStatusTab(group, _statusTabLabel(t, group), counts[group] ?? 0),
+                      ],
+                    ),
+                  ),
+                  DsChip(
+                    label: Text(t.settings.downloadFilterPlayable),
+                    selected: _playableOnly,
+                    onChanged: (on) => setState(() => _playableOnly = on),
+                  ),
                 ],
               ),
             ),
@@ -754,7 +738,7 @@ final class _HongguoDownloadsPageState extends ConsumerState<HongguoDownloadsPag
             size: DsSize.sm,
             leading: const DsIcon(DsIcons.filter, size: 14),
             onPressed: () => setState(() {
-              _phases.clear();
+              _statusGroup = DownloadStatusGroup.all;
               _playableOnly = false;
             }),
             child: Text(t.settings.downloadFilterReset),
@@ -891,7 +875,8 @@ final class _HongguoSeriesHead extends ConsumerWidget {
       title: t.settings.downloadRemove,
       // Which drama, and how many of its tasks: the row's own body says 这条
       // 记录, and a block would be answering for thirty of them.
-      description: '${group.title} · ${t.settings.downloadTaskCount(count: ids.length, active: phases.pausable.length)}',
+      description:
+          '${group.title} · ${t.settings.downloadTaskCount(count: ids.length, active: phases.pausable.length)}',
       confirmLabel: t.settings.downloadRemove,
       cancelLabel: t.common.cancel,
       destructive: true,
@@ -1068,14 +1053,8 @@ Widget _hongguoTaskCard(BuildContext context, WidgetRef ref, HongguoDownloadItem
   final total = task.total;
   final fraction = total > 0 ? (task.received / total).clamp(0.0, 1.0) : null;
   final moving = task.phase == HongguoDownloadPhase.running || task.phase == HongguoDownloadPhase.paused;
-  final caption = _detailsOf(context, task, t).status;
-  final phase = switch (task.phase) {
-    HongguoDownloadPhase.running => DownloadRowPhase.running,
-    HongguoDownloadPhase.queued => DownloadRowPhase.queued,
-    HongguoDownloadPhase.paused => DownloadRowPhase.paused,
-    HongguoDownloadPhase.failed => DownloadRowPhase.failed,
-    HongguoDownloadPhase.done => missing ? DownloadRowPhase.missing : DownloadRowPhase.done,
-  };
+  final caption = '${_detailsOf(context, task, t).status} · ${task.qualityLabel}';
+  final phase = _hongguoRowPhase(task.phase, missing: missing);
   final label = _hongguoEpisodeLabel(t, task);
   Future<void> deleteFile() async {
     final confirmed = await showAppConfirm(
@@ -1101,7 +1080,6 @@ Widget _hongguoTaskCard(BuildContext context, WidgetRef ref, HongguoDownloadItem
     title: label,
     phase: phase,
     caption: caption,
-    meta: task.qualityLabel,
     fraction: fraction,
     showProgress: moving && (fraction != null || task.received > 0),
     progressLabel: task.fileName,

@@ -3544,7 +3544,6 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get downloadFilterEmpty => 'Nothing under this status';
 	@override String get downloadKindFilter => 'Filter by kind';
 	@override String get downloadFilterLabel => 'Filter';
-	@override String get downloadFilterTitle => 'Filter downloads';
 	@override String get downloadFilterPlayable => 'Only files still on disk';
 	@override String get downloadFilterReset => 'Clear filters';
 	@override String get downloadRecheck => 'Re-check files';
@@ -8213,7 +8212,6 @@ extension on TranslationsEn {
 			'settings.downloadFilterEmpty' => 'Nothing under this status',
 			'settings.downloadKindFilter' => 'Filter by kind',
 			'settings.downloadFilterLabel' => 'Filter',
-			'settings.downloadFilterTitle' => 'Filter downloads',
 			'settings.downloadFilterPlayable' => 'Only files still on disk',
 			'settings.downloadFilterReset' => 'Clear filters',
 			'settings.downloadRecheck' => 'Re-check files',
@@ -8343,9 +8341,9 @@ extension on TranslationsEn {
 			'settings.wallpaperCategoryFantasyArt' => 'Fantasy Art',
 			'settings.wallpaperCategoryFinalFantasy' => 'Final Fantasy',
 			'settings.tagManagement' => 'Tag management',
+			'settings.tagManagementDesc' => 'Customize and manage the tags rooms are filtered by',
 			_ => null,
 		} ?? switch (path) {
-			'settings.tagManagementDesc' => 'Customize and manage the tags rooms are filtered by',
 			'settings.tagAdd' => 'Add tag',
 			'settings.tagEdit' => 'Edit tag',
 			'settings.tagPin' => 'Move to top',
@@ -8857,9 +8855,9 @@ extension on TranslationsEn {
 			'toolbox.nodeHint' => 'Run a check to test this platform.',
 			'toolbox.nodeAnswer' => ({required int count}) => '${count} rooms returned',
 			'toolbox.nodeSourceRecommended' => 'Recommended endpoint',
+			'toolbox.nodeSourceHot' => 'Hot-list endpoint',
 			_ => null,
 		} ?? switch (path) {
-			'toolbox.nodeSourceHot' => 'Hot-list endpoint',
 			'toolbox.nodeSummary' => ({required Object ok, required Object tested, required Object total}) => '${ok} / ${tested} reachable · ${total} platforms',
 			'toolbox.nodeUntestedSummary' => ({required Object total}) => 'Not tested yet · ${total} platforms',
 			'toolbox.logsSection' => 'Logs & diagnostics',

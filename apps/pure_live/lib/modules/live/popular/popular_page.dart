@@ -86,10 +86,14 @@ final class _PopularPageState extends ConsumerState<PopularPage> with WidgetsBin
       if (away >= _resumeRefreshAfter) {
         // The lifecycle lands mid-frame at times: the refresh waits for the
         // frame's end, and a torn-down page does not reach the providers.
-        Future.microtask(() {
-          if (!ref.mounted) return;
-          unawaited(ref.read(popularCatalogProvider.notifier).refresh(ref.read(popularSiteProvider)));
-        });
+        unawaited(
+          Future.microtask(() {
+            // The state's own mounted: the microtask lands after the frame, and a
+            // page already gone has nothing left to sync.
+            if (!mounted) return;
+            unawaited(ref.read(popularCatalogProvider.notifier).refresh(ref.read(popularSiteProvider)));
+          }),
+        );
       }
     }
   }

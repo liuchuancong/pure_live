@@ -1,3 +1,5 @@
+import 'dart:async' show unawaited;
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// The favorites page's own refresh, offered to the shell's top bar: the page
@@ -18,7 +20,7 @@ final class FavoritesPageRefresh extends Notifier<void Function()?> {
   /// before any post-frame publish, so a page arriving as one leaves cannot
   /// have its hook cleared by the page that left.
   void Function()? get handler => state;
-  set handler(void Function()? value) => Future.microtask(() => state = value);
+  set handler(void Function()? value) => unawaited(Future.microtask(() => state = value));
 
   /// Runs the page's refresh when there is one.
   void run() => state?.call();

@@ -14,6 +14,7 @@ export 'cover_preview_player.dart';
 export 'detail_hero.dart';
 export 'download_details.dart';
 export 'download_format.dart';
+export 'download_status_tabs.dart';
 export 'download_task_card.dart';
 export 'download_workspace.dart';
 export 'guide_chapter.dart';

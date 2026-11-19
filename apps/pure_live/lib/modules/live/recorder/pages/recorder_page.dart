@@ -1296,16 +1296,10 @@ final class _TaskCard extends ConsumerWidget {
             ),
             child: Text(t.recorder.details),
           );
-          Widget play() => DsButton(
-            variant: DsButtonVariant.secondary,
-            size: DsSize.sm,
-            leading: const DsIcon(DsIcons.playCircle, size: 14),
-            onPressed: onPreview ?? onPlayExternal,
-            child: Text(t.recorder.playRecording),
-          );
           Widget menu() => _TaskMenu(
             task: task,
             hasFile: saved.isNotEmpty,
+            onPlay: onPreview ?? onPlayExternal,
             onOpenRoom: onOpenRoom,
             onStop: onStop,
             onDelete: onDelete,
@@ -1322,19 +1316,15 @@ final class _TaskCard extends ConsumerWidget {
                   overflow: TextOverflow.ellipsis,
                   style: theme.typography.caption.copyWith(color: colors.textSubtle),
                 );
-          // Three verbs and the menu in two rows of two, the phase's own
-          // verb first: what the row does leads, what it shows follows.
-          Widget cell(Widget child) => SizedBox(width: 112, child: child);
-          // The rows shrink to their cells so the block can be held to the
-          // card's right edge on a narrow window; a max-width row would fill
-          // the row and pack the cells at its start instead.
-          final controls = Column(
+          // The state's own verb leads, the details follow, and the rest of
+          // what a recording can do folds behind the menu — the download
+          // rows' three-key grammar, so every manager's rows answer with the
+          // same three shapes. The card's own press stays the play verb
+          // where a take is on disk.
+          final controls = Row(
             mainAxisSize: MainAxisSize.min,
             spacing: DsSpace.s8,
-            children: [
-              Row(mainAxisSize: MainAxisSize.min, spacing: DsSpace.s8, children: [cell(action), cell(details())]),
-              Row(mainAxisSize: MainAxisSize.min, spacing: DsSpace.s8, children: [cell(play()), cell(menu())]),
-            ],
+            children: [action, details(), menu()],
           );
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1450,6 +1440,7 @@ final class _TaskCard extends ConsumerWidget {
                 DsProgressBar(
                   value: task.postProcessingProgress >= 0 ? task.postProcessingProgress.clamp(0.0, 1.0) : null,
                   semanticLabel: t.recorder.stateProcessing,
+                  style: const DsProgressBarStyle(height: 8),
                 ),
               ],
             ],
@@ -1530,6 +1521,7 @@ final class _TaskMenu extends StatelessWidget {
     required this.onOpenRoom,
     required this.onDelete,
     required this.onSchedule,
+    this.onPlay,
     this.onStop,
     this.onCancelProcessing,
     this.onRetryJoin,
@@ -1539,6 +1531,10 @@ final class _TaskMenu extends StatelessWidget {
 
   /// Whether the task has a saved file (so a folder to open).
   final bool hasFile;
+
+  /// Plays the take — the app's preview where it is one of the centre's,
+  /// the system's player otherwise; null when nothing is playable.
+  final VoidCallback? onPlay;
 
   /// Opens the room the task records.
   final VoidCallback onOpenRoom;
@@ -1562,15 +1558,20 @@ final class _TaskMenu extends StatelessWidget {
     return DsMenuAnchor(
       semanticLabel: t.recorder.menuMore,
       align: DsAlign.end,
-      builder: (context, controller, child) => DsButton(
-        variant: DsButtonVariant.secondary,
+      builder: (context, controller, child) => DsButton.icon(
+        variant: DsButtonVariant.ghost,
         size: DsSize.sm,
         semanticLabel: t.recorder.menuMore,
-        leading: const DsIcon(DsIcons.chevronDown, size: 14),
         onPressed: controller.toggle,
-        child: Text(t.common.more),
+        icon: const DsIcon(DsIcons.ellipsisVertical),
       ),
       items: [
+        if (onPlay != null)
+          DsMenuItem(
+            leading: const DsIcon(DsIcons.playCircle),
+            label: Text(t.recorder.playRecording),
+            onPressed: onPlay,
+          ),
         DsMenuItem(
           leading: const DsIcon(DsIcons.externalLink),
           label: Text(t.recorder.openRoom),

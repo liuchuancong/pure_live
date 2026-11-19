@@ -107,15 +107,19 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
     // and a page being torn down is still registered for that moment: the
     // work waits for the frame's end, and a dead page keeps its hands off
     // the providers.
-    Future.microtask(() {
-      if (!ref.mounted) return;
-      if (state == AppLifecycleState.resumed) {
-        _syncTimer();
-        _scheduleResumeRefresh();
-      } else {
-        _cancelResumeRefresh();
-      }
-    });
+    unawaited(
+      Future.microtask(() {
+        // The state's own mounted: the microtask lands after the frame, and a
+        // page already gone has nothing left to sync.
+        if (!mounted) return;
+        if (state == AppLifecycleState.resumed) {
+          _syncTimer();
+          _scheduleResumeRefresh();
+        } else {
+          _cancelResumeRefresh();
+        }
+      }),
+    );
   }
 
   /// Arms the reference's one-shot foreground refresh. It is independent of

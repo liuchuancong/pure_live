@@ -6,6 +6,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pure_live/app/providers/boot/storage_providers.dart' show appPathsProvider;
 import 'package:pure_live/features/settings/pages/wallpaper_download_manager.dart' show openDownloadedPath;
+import 'package:pure_live/features/settings/surface/settings_navigation.dart' show openModuleItem;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/huya/controller/huya_downloads.dart';
 import 'package:pure_live/shared/shared.dart'
@@ -15,16 +16,16 @@ import 'package:pure_live/shared/shared.dart'
         DownloadRowMenuActions,
         DownloadRowPhase,
         DownloadTaskCard,
+        NavigationItem,
         formatDownloadBytes;
 import 'package:pure_live/shared/widgets/download_details.dart' show showDownloadDetails;
 
-/// 虎牙下载 — the station's video download queue under Settings.
+/// 虎牙下载 — the station's downloads under Settings.
 ///
-/// The pane carries the whole queue as the same rows the station's own 下载
-/// 管理 page wears — one shared download card to a video — and the folder the
-/// files land in. The player page's own progress pill reaches the same tasks;
-/// the full manager lives at the station's own rail page, this pane is the
-/// settings' window onto it.
+/// Settings keeps the count, the folder and the way out: the queue itself
+/// lives on the station's own 下载管理 page, where the rows wear their verbs
+/// and the batch acts. The player page's own progress pill reaches the same
+/// tasks; this pane is the door to the manager.
 final class HuyaDownloadsPane extends ConsumerWidget {
   /// The pane shown under Settings.
   const HuyaDownloadsPane({super.key});
@@ -34,29 +35,42 @@ final class HuyaDownloadsPane extends ConsumerWidget {
     final t = context.t;
     final tasks = ref.watch(huyaDownloadsProvider);
     final directory = ref.watch(appPathsProvider).videos.path;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      spacing: DsSpace.s16,
+    final moving = tasks
+        .where((task) => task.phase == HuyaDownloadPhase.running || task.phase == HuyaDownloadPhase.queued)
+        .length;
+    final finishedBytes = tasks.fold<int>(
+      0,
+      (sum, task) => sum + (task.phase == HuyaDownloadPhase.done ? task.total : 0),
+    );
+    // The queue is one row and one tap away, on the station's own 下载管理
+    // page: this pane drew the same videos a second time, with a weaker
+    // summary and no batch verbs, so the same tasks read differently depending
+    // on which door the viewer came through. Settings keeps the choices, the
+    // count and the way out.
+    return DsListSection(
+      header: Text(t.settings.huyaDownloadTitle),
       children: [
-        DsListSection(
-          header: Text(t.settings.huyaDownloadTitle),
-          children: [
-            if (tasks.isEmpty)
-              DsListRow(title: Text(t.settings.downloadQueueEmpty), description: Text(t.huya.downloadQueueEmptyDesc))
-            else
-              for (final task in tasks) huyaTaskCard(context, ref, task, missing: huyaFileMissing(task)),
-          ],
+        DsListRow(
+          leading: const DsIcon(DsIcons.download),
+          title: Text(t.settings.downloadManagerTitle),
+          description: Text(
+            [
+              t.settings.downloadTaskCount(count: tasks.length, active: moving),
+              if (finishedBytes > 0) formatDownloadBytes(finishedBytes),
+              directory,
+            ].join(' · '),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+          showChevron: true,
+          onPressed: () => openModuleItem(context, ref, NavigationItem.huyaDownloads),
         ),
-        DsListSection(
-          children: [
-            DsListRow(
-              leading: const DsIcon(DsIcons.folderOpen),
-              title: Text(t.settings.downloadDirectory),
-              description: Text(directory, maxLines: 2, overflow: TextOverflow.ellipsis),
-              showChevron: true,
-              onPressed: () => unawaited(openDownloadedPath(context, directory)),
-            ),
-          ],
+        DsListRow(
+          leading: const DsIcon(DsIcons.folderOpen),
+          title: Text(t.settings.downloadDirectory),
+          description: Text(directory, maxLines: 2, overflow: TextOverflow.ellipsis),
+          showChevron: true,
+          onPressed: () => unawaited(openDownloadedPath(context, directory)),
         ),
       ],
     );
@@ -68,6 +82,16 @@ final class HuyaDownloadsPane extends ConsumerWidget {
 bool huyaFileMissing(HuyaDownloadItem task) =>
     task.phase == HuyaDownloadPhase.done && !File(task.filePath).existsSync();
 
+/// One video's state as the shared rows draw it: a finished file that wandered
+/// off reads as missing.
+DownloadRowPhase huyaRowPhaseOf(HuyaDownloadPhase phase, {required bool missing}) => switch (phase) {
+  HuyaDownloadPhase.running => DownloadRowPhase.running,
+  HuyaDownloadPhase.queued => DownloadRowPhase.queued,
+  HuyaDownloadPhase.paused => DownloadRowPhase.paused,
+  HuyaDownloadPhase.failed => DownloadRowPhase.failed,
+  HuyaDownloadPhase.done => missing ? DownloadRowPhase.missing : DownloadRowPhase.done,
+};
+
 /// One video's row, as the shared download row draws it — the state as a
 /// badge, the transfer's facts under it, the phase's verb and the menu with
 /// the rest, the same shape every manager's queue wears.
@@ -76,13 +100,7 @@ Widget huyaTaskCard(BuildContext context, WidgetRef ref, HuyaDownloadItem task, 
   final notifier = ref.read(huyaDownloadsProvider.notifier);
   final fraction = task.progress;
   final moving = task.phase == HuyaDownloadPhase.running || task.phase == HuyaDownloadPhase.queued;
-  final phase = switch (task.phase) {
-    HuyaDownloadPhase.running => DownloadRowPhase.running,
-    HuyaDownloadPhase.queued => DownloadRowPhase.queued,
-    HuyaDownloadPhase.paused => DownloadRowPhase.paused,
-    HuyaDownloadPhase.failed => DownloadRowPhase.failed,
-    HuyaDownloadPhase.done => missing ? DownloadRowPhase.missing : DownloadRowPhase.done,
-  };
+  final phase = huyaRowPhaseOf(task.phase, missing: missing);
   // The badge carries the state; the caption carries the transfer's facts —
   // a failed row its error — so one fact is said once.
   final caption = switch (phase) {
@@ -99,20 +117,9 @@ Widget huyaTaskCard(BuildContext context, WidgetRef ref, HuyaDownloadItem task, 
     title: task.title,
     phase: phase,
     caption: caption,
-    badgeLabel: task.phase == HuyaDownloadPhase.running && fraction != null
-        ? t.settings.downloadPercent(percent: '${(fraction * 100).round()}')
-        : null,
     fraction: fraction,
     showProgress: moving && (fraction != null || task.received > 0),
     progressLabel: task.fileName,
-    leading: task.cover.isEmpty
-        ? null
-        : DsAvatar(
-            initials: task.title.characters.take(2).toString(),
-            image: NetworkImage(task.cover),
-            size: DsSize.md,
-            semanticLabel: task.title,
-          ),
     playable: task.phase == HuyaDownloadPhase.done,
     actions: DownloadRowActions(
       onPause: task.phase == HuyaDownloadPhase.running ? () => unawaited(notifier.pause(task.videoId)) : null,
@@ -150,7 +157,9 @@ DownloadDetails huyaDetailsOf(BuildContext context, WidgetRef ref, HuyaDownloadI
     status: switch (task.phase) {
       HuyaDownloadPhase.queued => t.settings.downloadStatusQueued,
       HuyaDownloadPhase.running =>
-        task.progress == null ? t.settings.downloadPercentUnknown : t.settings.downloadPercent(percent: '${(task.progress! * 100).round()}'),
+        task.progress == null
+            ? t.settings.downloadPercentUnknown
+            : t.settings.downloadPercent(percent: '${(task.progress! * 100).round()}'),
       HuyaDownloadPhase.paused => t.settings.downloadStatusPaused,
       HuyaDownloadPhase.failed => task.error == null ? t.settings.downloadStatusFailed : '${task.error}',
       HuyaDownloadPhase.done => missing ? t.common.previewFileMissing : t.settings.downloadStatusDone,
