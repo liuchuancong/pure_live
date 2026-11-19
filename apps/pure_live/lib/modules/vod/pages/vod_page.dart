@@ -196,9 +196,16 @@ final class _VodFeedView extends ConsumerWidget {
     final feed = ref.watch(vodFeedProvider.select((feeds) => feeds[feedKey]));
     final state = feed ?? (videos: const <VodVideo>[], nextPage: 1, hasMore: true, loading: true, error: null);
     final controller = ref.read(vodFeedProvider.notifier);
-    return PagedCardGrid<VodVideo>(
+    // The toolbar's word narrows the feed's loaded videos in place — the
+    // live module's list pages' way; the server's paging is not re-asked.
+    final filter = ref.watch(inlineFilterProvider(NavigationItem.vod));
+    final videos = [
+      for (final video in state.videos)
+        if (inlineFilterKeeps(filter, [video.title, ?video.uploader])) video,
+    ];
+    final grid = PagedCardGrid<VodVideo>(
       scrollController: scrollController,
-      items: state.videos,
+      items: videos,
       layout: ref.watch(browseLayoutProvider),
       // The archive row is a cover beside two text lines: a hair taller
       // than the room row so a two-line title never presses on its edge.
@@ -218,6 +225,16 @@ final class _VodFeedView extends ConsumerWidget {
       emptyTitle: t.common.empty,
       emptyDescription: t.vod.noResultsDescription,
       itemBuilder: (context, video) => VodVideoCard(video: video, onOpen: () => onOpen(video), preview: true),
+    );
+    if (filter == null) return grid;
+    return Column(
+      children: [
+        InlineFilterBar(
+          word: filter,
+          onClear: () => ref.read(inlineFilterProvider(NavigationItem.vod).notifier).clear(),
+        ),
+        Expanded(child: grid),
+      ],
     );
   }
 }

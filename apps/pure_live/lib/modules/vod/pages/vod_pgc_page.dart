@@ -146,10 +146,16 @@ final class _PgcFeedView extends ConsumerWidget {
     // ceiling — the viewer's column pin still raises the count.
     final width = MediaQuery.sizeOf(context).width;
     final content = width - LiveWindow.pageInset(width) * 2;
-    return PagedCardGrid<VodSeason>(
+    // The toolbar's word narrows the shelf's loaded seasons in place.
+    final filter = ref.watch(inlineFilterProvider(NavigationItem.vodPgc));
+    final seasons = [
+      for (final season in feed.seasons)
+        if (inlineFilterKeeps(filter, [season.title, season.subtitle])) season,
+    ];
+    final grid = PagedCardGrid<VodSeason>(
       key: ValueKey(type),
       scrollController: scrollController,
-      items: feed.seasons,
+      items: seasons,
       cardExtent: vodPosterExtentForWidth(content, spacing: browse.crossSpacing, pinned: browse.gridColumns),
       aspectRatio: kVodSeasonTileAspect,
       crossSpacing: browse.crossSpacing,
@@ -165,6 +171,16 @@ final class _PgcFeedView extends ConsumerWidget {
       emptyTitle: t.common.empty,
       emptyDescription: t.vod.pgcEmptyDescription,
       itemBuilder: (context, season) => VodSeasonCard(season: season, onOpen: () => onOpen(season), preview: true),
+    );
+    if (filter == null) return grid;
+    return Column(
+      children: [
+        InlineFilterBar(
+          word: filter,
+          onClear: () => ref.read(inlineFilterProvider(NavigationItem.vodPgc).notifier).clear(),
+        ),
+        Expanded(child: grid),
+      ],
     );
   }
 }

@@ -79,12 +79,7 @@ final class _VodSearchPageState extends ConsumerState<VodSearchPage> {
   @override
   void initState() {
     super.initState();
-    // A word handed from outside (the toolbar): taken once on arrival,
-    // searched as though typed here. The listener catches a word handed
-    // while the page is already showing.
-    ref.listenManual(vodPendingSearchProvider, (_, _) => _takePending());
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _takePending();
       // Re-entering the page shows the last search's results; the field then
       // names the words they answer to, instead of sitting empty under a
       // full screen of answers.
@@ -99,20 +94,12 @@ final class _VodSearchPageState extends ConsumerState<VodSearchPage> {
     // The deep link's word outranks the last visit's: the field reads it and
     // the search answers it, the take-handoff path's own two steps.
     if (widget.initialWord case final word? when word.isNotEmpty) {
-      _search.value = TextEditingValue(text: word, selection: TextSelection.collapsed(offset: word.length));
+      _search.value = TextEditingValue(
+        text: word,
+        selection: TextSelection.collapsed(offset: word.length),
+      );
       _run();
     }
-  }
-
-  /// Runs the handed word: the field reads it, the search answers it.
-  void _takePending() {
-    final word = ref.read(vodPendingSearchProvider.notifier).take();
-    if (word == null || word.isEmpty || !mounted) return;
-    _search.value = TextEditingValue(
-      text: word,
-      selection: TextSelection.collapsed(offset: word.length),
-    );
-    _run();
   }
 
   @override

@@ -4,6 +4,7 @@
   "loadFailed": "视频信息加载失败",
   "close": "关闭",
   "cancel": "取消",
+  "inlineFilterShowing": "只显示含「{word}」的结果",
   "confirm": "确定",
   "minimize": "最小化",
   "maximize": "最大化",

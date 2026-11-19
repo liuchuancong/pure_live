@@ -20,4 +20,5 @@ export 'player/player.dart';
 export 'record/record_display.dart';
 export 'rooms/rooms.dart';
 export 'utils/utils.dart';
+export 'widgets/inline_filter_bar.dart';
 export 'widgets/widgets.dart';

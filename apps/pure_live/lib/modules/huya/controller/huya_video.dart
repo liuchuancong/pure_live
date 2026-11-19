@@ -504,22 +504,6 @@ final class HuyaSearchController extends Notifier<HuyaSearchState> {
 /// The station's search answer.
 final huyaSearchProvider = NotifierProvider<HuyaSearchController, HuyaSearchState>(HuyaSearchController.new);
 
-/// The word the shell's toolbar search handed to the station's page; the
-/// page takes it and shows its answer in place of its own content.
-final class HuyaInlineSearchController extends Notifier<String?> {
-  @override
-  String? build() => null;
-
-  /// Hands [word] to the page on screen.
-  void hand(String word) => state = word.trim();
-
-  /// Returns the page to its own content.
-  void clear() => state = null;
-}
-
-/// The word the station's page should show next.
-final huyaInlineSearchProvider = NotifierProvider<HuyaInlineSearchController, String?>(HuyaInlineSearchController.new);
-
 /// The preference key the viewer's recent huya searches live under.
 const String kHuyaSearchHistoryKey = 'huya.search.history';
 

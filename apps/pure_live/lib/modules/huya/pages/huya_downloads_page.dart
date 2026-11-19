@@ -20,9 +20,12 @@ import 'package:pure_live/shared/shared.dart'
         LiveWindow,
         NavigationItem,
         downloadRowGroupOf,
-        formatDownloadBytes;
+        formatDownloadBytes,
+        inlineFilterKeeps,
+        inlineFilterProvider;
 import 'package:pure_live/shared/widgets/app_dialog.dart' show showAppConfirm;
 import 'package:pure_live/shared/widgets/download_workspace.dart' show DownloadDetailsPane;
+import 'package:pure_live/shared/widgets/inline_filter_bar.dart' show InlineFilterBar;
 
 /// The state tab's word — the shared status words, with 全部 at its head.
 String _statusTabLabel(Translations t, DownloadStatusGroup group) => switch (group) {
@@ -89,7 +92,11 @@ final class _HuyaDownloadsPageState extends ConsumerState<HuyaDownloadsPage> {
     final colors = DsTheme.colorsOf(context);
     final tasks = ref.watch(huyaDownloadsProvider);
     final directory = ref.watch(appPathsProvider).videos.path;
-    final shown = tasks.where(_matches).toList();
+    final inlineWord = ref.watch(inlineFilterProvider(NavigationItem.huyaDownloads));
+    final shown = tasks
+        .where(_matches)
+        .where((task) => inlineFilterKeeps(inlineWord, [task.title, task.fileName]))
+        .toList();
     final moving = tasks
         .where((task) => task.phase == HuyaDownloadPhase.running || task.phase == HuyaDownloadPhase.queued)
         .length;
@@ -166,6 +173,14 @@ final class _HuyaDownloadsPageState extends ConsumerState<HuyaDownloadsPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          if (inlineWord != null)
+            Padding(
+              padding: EdgeInsets.fromLTRB(_inset, 0, _inset, DsSpace.s8),
+              child: InlineFilterBar(
+                word: inlineWord,
+                onClear: () => ref.read(inlineFilterProvider(NavigationItem.huyaDownloads).notifier).clear(),
+              ),
+            ),
           Padding(
             padding: EdgeInsets.fromLTRB(_inset, DsSpace.s12, _inset, DsSpace.s8),
             child: DownloadQueueHeader(

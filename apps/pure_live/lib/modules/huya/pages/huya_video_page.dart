@@ -178,6 +178,15 @@ final class _HomeViewState extends ConsumerState<_HomeView> {
       browse: browse,
       browseController: browseController,
     );
+    // The toolbar's word narrows the loaded videos in place - the live
+    // module's list pages' way; the shelf's own walk is not re-asked. The
+    // three views (推荐, 专区, 排行) share the one grid, so they share the
+    // one slot.
+    final filter = ref.watch(inlineFilterProvider(NavigationItem.huyaHome));
+    final shown = [
+      for (final video in videos)
+        if (inlineFilterKeeps(filter, [video.title, video.uploaderName])) video,
+    ];
 
     final refresh = DsButton.icon(
       variant: DsButtonVariant.secondary,
@@ -202,7 +211,7 @@ final class _HomeViewState extends ConsumerState<_HomeView> {
       refresh,
     ];
     final description = shelf == null
-        ? (videos.isEmpty ? null : t.huya.headVideos(count: videos.length))
+        ? (shown.isEmpty && videos.isNotEmpty ? null : t.huya.headVideos(count: shown.length))
         : '${shelf.title} · ${t.huya.headVideos(count: videos.length)}';
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -228,10 +237,15 @@ final class _HomeViewState extends ConsumerState<_HomeView> {
               ),
             ),
           ),
+        if (filter != null)
+          InlineFilterBar(
+            word: filter,
+            onClear: () => ref.read(inlineFilterProvider(NavigationItem.huyaHome).notifier).clear(),
+          ),
         Expanded(
           child: HuyaVideoGrid(
             scrollController: widget.scrollController,
-            videos: videos,
+            videos: shown,
             loading:
                 state.loading ||
                 (home == null && state.error == null) ||

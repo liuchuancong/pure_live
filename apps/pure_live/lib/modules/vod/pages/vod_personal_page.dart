@@ -258,9 +258,25 @@ final class _VodPersonalPageState extends ConsumerState<VodPersonalPage> {
   /// a tier with nothing in it is not announced, since a head over no rows
   /// explains a list that is not there.
   Widget _historyList(List<VodHistoryEntry> history, double inset) {
-    final sections = _daySections(context.t, history, DateTime.now());
+    // The toolbar's word narrows the loaded records in place.
+    final filter = ref.watch(inlineFilterProvider(NavigationItem.vodPersonal));
+    final shown = [
+      for (final entry in history)
+        if (inlineFilterKeeps(filter, [entry.video.video.title, ?entry.video.video.uploader])) entry,
+    ];
+    final sections = _daySections(context.t, shown, DateTime.now());
     return CustomScrollView(
       slivers: [
+        if (filter != null)
+          SliverPadding(
+            padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s4),
+            sliver: SliverToBoxAdapter(
+              child: InlineFilterBar(
+                word: filter,
+                onClear: () => ref.read(inlineFilterProvider(NavigationItem.vodPersonal).notifier).clear(),
+              ),
+            ),
+          ),
         for (final section in sections) ...[
           SliverPadding(
             padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s4),
@@ -337,6 +353,12 @@ final class _VodPersonalPageState extends ConsumerState<VodPersonalPage> {
         ? ref.watch(vodFollowingSeasonsProvider(_seasonType))
         : null;
     final toView = watchLater?.value ?? const <VodVideo>[];
+    // The toolbar's word narrows the loaded lists in place.
+    final personalFilter = ref.watch(inlineFilterProvider(NavigationItem.vodPersonal));
+    final shownToView = [
+      for (final video in toView)
+        if (inlineFilterKeeps(personalFilter, [video.title, ?video.uploader])) video,
+    ];
     final following = seasons?.value;
     final browse = ref.watch(browseSettingsProvider);
     final layout = ref.watch(browseLayoutProvider);
@@ -413,7 +435,7 @@ final class _VodPersonalPageState extends ConsumerState<VodPersonalPage> {
               ? _SignInState(tab: _tab)
               : switch (_tab) {
                   VodPersonalTab.toView => _RemoteVideoList(
-                    videos: toView,
+                    videos: shownToView,
                     loading: watchLater?.isLoading ?? false,
                     error: watchLater?.error,
                     onOpen: _open,

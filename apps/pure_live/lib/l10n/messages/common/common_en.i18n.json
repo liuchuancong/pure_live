@@ -4,6 +4,7 @@
   "loadFailed": "The video did not load",
   "close": "Close",
   "cancel": "Cancel",
+  "inlineFilterShowing": "Showing only results with \"{word}\"",
   "confirm": "Confirm",
   "minimize": "Minimize",
   "maximize": "Maximize",

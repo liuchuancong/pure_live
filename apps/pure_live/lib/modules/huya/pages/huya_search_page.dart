@@ -37,17 +37,8 @@ final class _HuyaSearchPageState extends ConsumerState<HuyaSearchPage> {
   @override
   void initState() {
     super.initState();
-    // A word handed by the shell's toolbar opens this page already searching.
-    final handed = ref.read(huyaInlineSearchProvider);
-    if (handed != null && handed.isNotEmpty) {
-      _word = handed;
-      _field.text = handed;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) unawaited(ref.read(huyaSearchProvider.notifier).search(handed));
-      });
-    }
-    // The deep link's word outranks the toolbar's.
-    if (widget.initialWord case final word? when word.isNotEmpty && word != handed) {
+    // A deep link's word opens this page already searching.
+    if (widget.initialWord case final word? when word.isNotEmpty) {
       _word = word;
       _field.text = word;
       WidgetsBinding.instance.addPostFrameCallback((_) {

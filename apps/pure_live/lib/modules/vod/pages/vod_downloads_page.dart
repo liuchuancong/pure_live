@@ -42,8 +42,10 @@ import 'package:pure_live/shared/shared.dart'
         downloadFilePresent,
         downloadRowGroupOf,
         formatDownloadBytes,
+        inlineFilterProvider,
         showDownloadDetails;
 import 'package:pure_live/shared/widgets/app_dialog.dart';
+import 'package:pure_live/shared/widgets/inline_filter_bar.dart' show InlineFilterBar;
 
 /// Whether a finished part's file is still on disk where its row says.
 ///
@@ -418,6 +420,10 @@ final class _VodDownloadsPageState extends ConsumerState<VodDownloadsPage> {
   /// the table's own sort is the only thing that reorders a queue.
   List<VodDownloadItem> _visible(List<VodDownloadItem> tasks) {
     final query = _query.trim().toLowerCase();
+    // The toolbar's word narrows the queue in place, beside the page's own
+    // search box.
+    final inlineWord = ref.watch(inlineFilterProvider(NavigationItem.vodDownloads));
+    final inline = inlineWord?.trim().toLowerCase();
     return [
       for (final task in tasks)
         if ((_statusGroup == DownloadStatusGroup.all ||
@@ -426,7 +432,11 @@ final class _VodDownloadsPageState extends ConsumerState<VodDownloadsPage> {
             (query.isEmpty ||
                 task.title.toLowerCase().contains(query) ||
                 task.part.toLowerCase().contains(query) ||
-                task.fileName.toLowerCase().contains(query)))
+                task.fileName.toLowerCase().contains(query)) &&
+            (inline == null ||
+                inline.isEmpty ||
+                task.title.toLowerCase().contains(inline) ||
+                task.fileName.toLowerCase().contains(inline)))
           task,
     ];
   }
@@ -441,6 +451,7 @@ final class _VodDownloadsPageState extends ConsumerState<VodDownloadsPage> {
     // the two settings that decide it.
     final retry = ref.watch(vodDownloadRetryProvider);
     final retryDelay = ref.watch(vodDownloadRetryDelayProvider);
+    final inlineWord = ref.watch(inlineFilterProvider(NavigationItem.vodDownloads));
     final shown = _visible(tasks);
     final moving = tasks
         .where((task) => task.phase == VodDownloadPhase.queued || task.phase == VodDownloadPhase.running)
@@ -477,6 +488,14 @@ final class _VodDownloadsPageState extends ConsumerState<VodDownloadsPage> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            if (inlineWord != null)
+              Padding(
+                padding: EdgeInsets.fromLTRB(_inset, DsSpace.s12, _inset, 0),
+                child: InlineFilterBar(
+                  word: inlineWord,
+                  onClear: () => ref.read(inlineFilterProvider(NavigationItem.vodDownloads).notifier).clear(),
+                ),
+              ),
             Padding(
               padding: EdgeInsets.fromLTRB(_inset, DsSpace.s12, _inset, DsSpace.s8),
               child: DownloadQueueHeader(

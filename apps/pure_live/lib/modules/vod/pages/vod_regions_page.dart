@@ -180,10 +180,16 @@ final class _RegionFeedView extends ConsumerWidget {
     final feed = ref.watch(vodFeedProvider.select((feeds) => feeds[feedKey]));
     final state = feed ?? (videos: const <VodVideo>[], nextPage: 1, hasMore: true, loading: true, error: null);
     final controller = ref.read(vodFeedProvider.notifier);
-    return PagedCardGrid<VodVideo>(
+    // The toolbar's word narrows the region's loaded videos in place.
+    final filter = ref.watch(inlineFilterProvider(NavigationItem.vodRegions));
+    final videos = [
+      for (final video in state.videos)
+        if (inlineFilterKeeps(filter, [video.title, ?video.uploader])) video,
+    ];
+    final grid = PagedCardGrid<VodVideo>(
       key: ValueKey(feedKey),
       scrollController: scrollController,
-      items: state.videos,
+      items: videos,
       layout: ref.watch(browseLayoutProvider),
       listMainAxisExtent: kVodRowExtent,
       listItemBuilder: (context, video) => VodVideoRow(video: video, onOpen: () => onOpen(video)),
@@ -201,6 +207,16 @@ final class _RegionFeedView extends ConsumerWidget {
       emptyTitle: t.common.empty,
       emptyDescription: emptyHint,
       itemBuilder: (context, video) => VodVideoCard(video: video, onOpen: () => onOpen(video), preview: true),
+    );
+    if (filter == null) return grid;
+    return Column(
+      children: [
+        InlineFilterBar(
+          word: filter,
+          onClear: () => ref.read(inlineFilterProvider(NavigationItem.vodRegions).notifier).clear(),
+        ),
+        Expanded(child: grid),
+      ],
     );
   }
 }

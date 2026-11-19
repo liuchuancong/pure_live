@@ -1024,6 +1024,9 @@ class Translations$common$zh_CN {
 	/// zh-CN: '取消'
 	String get cancel => '取消';
 
+	/// zh-CN: '只显示含「{word}」的结果'
+	String inlineFilterShowing({required Object word}) => '只显示含「${word}」的结果';
+
 	/// zh-CN: '确定'
 	String get confirm => '确定';
 
@@ -14095,6 +14098,7 @@ extension on Translations {
 			'common.loadFailed' => '视频信息加载失败',
 			'common.close' => '关闭',
 			'common.cancel' => '取消',
+			'common.inlineFilterShowing' => ({required Object word}) => '只显示含「${word}」的结果',
 			'common.confirm' => '确定',
 			'common.minimize' => '最小化',
 			'common.maximize' => '最大化',
@@ -14153,9 +14157,9 @@ extension on Translations {
 			'common.previewFileMissingDescription' => '它可能被移动、改名或删除了；打开文件夹看看，或回到列表选另一项。',
 			'common.previewEmpty' => '没有可预览的条目',
 			'common.previewEmptyDescription' => '完成的录像与下载会出现在这里。',
-			'common.previewDanmakuOff' => '这条没有弹幕文件',
 			_ => null,
 		} ?? switch (path) {
+			'common.previewDanmakuOff' => '这条没有弹幕文件',
 			'common.previewDanmakuSettings' => '弹幕设置',
 			'common.previewDanmakuVisible' => '显示弹幕',
 			'common.previewDanmakuVisibleDescription' => '在画面上叠加这条录像或下载的弹幕，样式与其它播放页共用。',
@@ -14667,9 +14671,9 @@ extension on Translations {
 			'iptv.lineCount' => ({required Object current, required Object total}) => '线路 ${current}/${total}',
 			'iptv.aspectLabel' => '画面比例',
 			'iptv.aspectAuto' => '默认',
-			'iptv.aspect16x9' => '16:9',
 			_ => null,
 		} ?? switch (path) {
+			'iptv.aspect16x9' => '16:9',
 			'iptv.aspect4x3' => '4:3',
 			'iptv.aspectFill' => '铺满',
 			'iptv.aspectZoom' => '裁剪',
@@ -15181,9 +15185,9 @@ extension on Translations {
 			'music.lyricDisplay' => '歌词显示',
 			'music.lyricTiming' => '时间轴',
 			'music.lyricTranslationDesc' => '歌词带翻译时一并显示。',
-			'music.lyricRomanization' => '显示音译',
 			_ => null,
 		} ?? switch (path) {
+			'music.lyricRomanization' => '显示音译',
 			'music.lyricRomanizationDesc' => '歌词带音译或罗马音时一并显示。',
 			'music.lyricSwapSecondary' => '翻译/音译顺序',
 			'music.lyricSwapSecondaryDesc' => '交换翻译与音译在歌词行中的先后顺序。',
@@ -15695,9 +15699,9 @@ extension on Translations {
 			'recorder.caCustomTitle' => '自定义 CA 证书',
 			'recorder.caCustomDesc' => '未设置：录制使用应用内置的 Mozilla 根证书。选择自己的证书束（PEM 文本）可在不关闭校验的前提下信任企业根或自签链路。',
 			'recorder.caCustomPicked' => ({required Object name}) => '正在使用：${name}',
-			'recorder.caCustomMissing' => ({required Object name}) => '${name} 已不在原位置，录制会失败；请重新选择或清除',
 			_ => null,
 		} ?? switch (path) {
+			'recorder.caCustomMissing' => ({required Object name}) => '${name} 已不在原位置，录制会失败；请重新选择或清除',
 			'recorder.caCustomNotPem' => '这不是 PEM 文本的证书束（应包含 -----BEGIN CERTIFICATE-----）',
 			'recorder.caCustomPickFailed' => '读取证书文件失败',
 			'recorder.caCustomClear' => '恢复内置',
@@ -16209,9 +16213,9 @@ extension on Translations {
 			'settings.navQuality' => '画质',
 			'settings.navAudio' => '音频与音量',
 			'settings.navPicture' => '画面与浮窗',
-			'settings.navFloatingWindow' => '小窗与画中画',
 			_ => null,
 		} ?? switch (path) {
+			'settings.navFloatingWindow' => '小窗与画中画',
 			'settings.groupData' => '数据',
 			'settings.groupAbout' => '关于',
 			'settings.groupIptv' => 'IPTV',
@@ -16723,9 +16727,9 @@ extension on Translations {
 			'settings.hongguoDevice' => '设备',
 			'settings.navIptvBrowse' => '换台与显示',
 			'settings.iptvBrowseDescription' => '频道号、换台方向、时间和当前节目行怎么显示。',
-			'settings.navIptvGroups' => '分组显示',
 			_ => null,
 		} ?? switch (path) {
+			'settings.navIptvGroups' => '分组显示',
 			'settings.iptvGroupsDescription' => '决定哪些分组出现在频道列表和换台里。',
 			'settings.navDanmaku' => '弹幕',
 			'settings.navMiniDanmaku' => '小窗弹幕',
@@ -17237,9 +17241,9 @@ extension on Translations {
 			'settings.wallpaperCategoryArtwork' => '艺术画',
 			'settings.wallpaperCategoryCityscape' => '城市景观',
 			'settings.wallpaperCategoryDigitalArt' => '数字艺术',
-			'settings.wallpaperCategoryFantasyArt' => '奇幻艺术',
 			_ => null,
 		} ?? switch (path) {
+			'settings.wallpaperCategoryFantasyArt' => '奇幻艺术',
 			'settings.wallpaperCategoryFinalFantasy' => '最终幻想',
 			'settings.tagManagement' => '标签管理',
 			'settings.tagManagementDesc' => '自定义和管理直播间的过滤标签',
@@ -17751,9 +17755,9 @@ extension on Translations {
 			'toolbox.nodeReachable' => '正常',
 			'toolbox.nodeFailed' => '失败',
 			'toolbox.nodeNoSites' => '没有可测速的平台',
-			'toolbox.nodeHint' => '点「测速」检查这个平台。',
 			_ => null,
 		} ?? switch (path) {
+			'toolbox.nodeHint' => '点「测速」检查这个平台。',
 			'toolbox.nodeAnswer' => ({required int count}) => '返回 ${count} 个房间',
 			'toolbox.nodeSourceRecommended' => '推荐接口',
 			'toolbox.nodeSourceHot' => '热门接口',

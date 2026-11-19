@@ -2,8 +2,6 @@ import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pure_live/l10n/translations.dart';
-import 'package:pure_live/modules/hongguo/controller/hongguo_feeds.dart';
-import 'package:pure_live/modules/huya/controller/huya_video.dart' show huyaInlineSearchProvider;
 import 'package:pure_live/modules/iptv/controllers/iptv_controller.dart';
 import 'package:pure_live/modules/live/areas/areas.dart';
 import 'package:pure_live/modules/live/favorites/favorites.dart';
@@ -12,7 +10,6 @@ import 'package:pure_live/modules/live/multiview/multiview.dart' show multiviewS
 import 'package:pure_live/modules/live/popular/popular.dart';
 import 'package:pure_live/modules/live/recorder/recorder.dart';
 import 'package:pure_live/modules/music/controller/browse/music_search.dart';
-import 'package:pure_live/modules/vod/controller/vod_controller.dart';
 import 'package:pure_live/shared/shared.dart';
 
 /// The word a page's toolbar search takes: its hint and where the word goes.
@@ -72,28 +69,34 @@ PageInlineSearch? pageInlineSearch(
       if (!searchable.contains(page)) return null;
       return (hint: t.iptv.searchChannels, take: (word) => ref.read(iptvSearchHandoffProvider.notifier).hand(word));
     case AppModule.vod:
-      // The station's own search page answers; it has its own field.
-      if (page == NavigationItem.vodSearch) return null;
-      return (
-        hint: t.vod.searchHint,
-        take: (word) {
-          ref.read(vodPendingSearchProvider.notifier).hand(word);
-          openPage(NavigationItem.vodSearch);
-        },
-      );
+      // The list pages narrow their own loaded content in place; the
+      // search page (with its own field) and the live-room page stand
+      // without a slot.
+      const filterable = {
+        NavigationItem.vod,
+        NavigationItem.vodRegions,
+        NavigationItem.vodPgc,
+        NavigationItem.vodPersonal,
+        NavigationItem.vodDownloads,
+      };
+      if (!filterable.contains(page)) return null;
+      return (hint: t.vod.searchHint, take: (word) => ref.read(inlineFilterProvider(page).notifier).search(word));
     case AppModule.huya:
-      // The station's own search page answers; it has its own field.
-      if (page == NavigationItem.huyaSearch) return null;
+      // The video station's three views share the one grid, so they share
+      // the one slot; the downloads page keeps its own.
+      const videoViews = {NavigationItem.huyaHome, NavigationItem.huyaChannels, NavigationItem.huyaRank};
+      if (page == NavigationItem.huyaDownloads) {
+        return (hint: t.huya.searchHint, take: (word) => ref.read(inlineFilterProvider(page).notifier).search(word));
+      }
+      if (!videoViews.contains(page)) return null;
       return (
         hint: t.huya.searchHint,
-        take: (word) {
-          ref.read(huyaInlineSearchProvider.notifier).hand(word);
-          openPage(NavigationItem.huyaSearch);
-        },
+        take: (word) => ref.read(inlineFilterProvider(NavigationItem.huyaHome).notifier).search(word),
       );
     case AppModule.music:
-      // The library is the module's search: the page takes the word and
-      // moves there itself.
+      // The library is the module's search surface: the word lands in its
+      // own field and is answered there — the view switch is the page's
+      // own, no route, no second field.
       return (
         hint: t.music.searchHint,
         take: (word) {
@@ -102,15 +105,16 @@ PageInlineSearch? pageInlineSearch(
         },
       );
     case AppModule.hongguo:
-      // The station's own search view answers; it has its own field.
-      if (page == NavigationItem.hongguoSearch) return null;
-      return (
-        hint: t.hongguo.searchHint,
-        take: (word) {
-          ref.read(hongguoSearchHandoffProvider.notifier).hand(word);
-          openPage(NavigationItem.hongguoSearch);
-        },
-      );
+      // The shelves narrow their own loaded series in place.
+      const filterable = {
+        NavigationItem.hongguoHome,
+        NavigationItem.hongguoFind,
+        NavigationItem.hongguoRank,
+        NavigationItem.hongguoFavorites,
+        NavigationItem.hongguoHistory,
+      };
+      if (!filterable.contains(page)) return null;
+      return (hint: t.hongguo.searchHint, take: (word) => ref.read(inlineFilterProvider(page).notifier).search(word));
   }
 }
 

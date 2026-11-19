@@ -408,6 +408,7 @@ class _Translations$common$en extends Translations$common$zh_CN {
 	@override String get loadFailed => 'The video did not load';
 	@override String get close => 'Close';
 	@override String get cancel => 'Cancel';
+	@override String inlineFilterShowing({required Object word}) => 'Showing only results with "${word}"';
 	@override String get confirm => 'Confirm';
 	@override String get minimize => 'Minimize';
 	@override String get maximize => 'Maximize';
@@ -5212,6 +5213,7 @@ extension on TranslationsEn {
 			'common.loadFailed' => 'The video did not load',
 			'common.close' => 'Close',
 			'common.cancel' => 'Cancel',
+			'common.inlineFilterShowing' => ({required Object word}) => 'Showing only results with "${word}"',
 			'common.confirm' => 'Confirm',
 			'common.minimize' => 'Minimize',
 			'common.maximize' => 'Maximize',
@@ -5270,9 +5272,9 @@ extension on TranslationsEn {
 			'common.previewFileMissingDescription' => 'It may have been moved, renamed or deleted — open the folder, or pick another entry in the list.',
 			'common.previewEmpty' => 'Nothing to preview',
 			'common.previewEmptyDescription' => 'Finished recordings and downloads appear here.',
-			'common.previewDanmakuOff' => 'This entry has no danmaku file',
 			_ => null,
 		} ?? switch (path) {
+			'common.previewDanmakuOff' => 'This entry has no danmaku file',
 			'common.previewDanmakuSettings' => 'Danmaku settings',
 			'common.previewDanmakuVisible' => 'Show danmaku',
 			'common.previewDanmakuVisibleDescription' => 'Draw this recording\'s or download\'s danmaku over the picture, in the style the other players share.',
@@ -5784,9 +5786,9 @@ extension on TranslationsEn {
 			'iptv.lineCount' => ({required Object current, required Object total}) => 'Line ${current}/${total}',
 			'iptv.aspectLabel' => 'Aspect',
 			'iptv.aspectAuto' => 'Default',
-			'iptv.aspect16x9' => '16:9',
 			_ => null,
 		} ?? switch (path) {
+			'iptv.aspect16x9' => '16:9',
 			'iptv.aspect4x3' => '4:3',
 			'iptv.aspectFill' => 'Fill',
 			'iptv.aspectZoom' => 'Crop',
@@ -6298,9 +6300,9 @@ extension on TranslationsEn {
 			'music.lyricDisplay' => 'Lyric display',
 			'music.lyricTiming' => 'Timing',
 			'music.lyricTranslationDesc' => 'Show the translation when the lyric has one.',
-			'music.lyricRomanization' => 'Show romanization',
 			_ => null,
 		} ?? switch (path) {
+			'music.lyricRomanization' => 'Show romanization',
 			'music.lyricRomanizationDesc' => 'Show the romanization when the lyric has one.',
 			'music.lyricSwapSecondary' => 'Translation/romanization order',
 			'music.lyricSwapSecondaryDesc' => 'Swap translation and romanization under a lyric line.',
@@ -6812,9 +6814,9 @@ extension on TranslationsEn {
 			'recorder.caCustomDesc' => 'Not set: recordings trust the bundled Mozilla store. Picking your own bundle (PEM text) trusts a corporate root or a self-signed chain without switching verification off.',
 			'recorder.caCustomPicked' => ({required Object name}) => 'In use: ${name}',
 			'recorder.caCustomMissing' => ({required Object name}) => '${name} is no longer where the row found it — recordings will fail; pick it again or clear it',
-			'recorder.caCustomNotPem' => 'That is not a PEM certificate bundle (it should contain -----BEGIN CERTIFICATE-----)',
 			_ => null,
 		} ?? switch (path) {
+			'recorder.caCustomNotPem' => 'That is not a PEM certificate bundle (it should contain -----BEGIN CERTIFICATE-----)',
 			'recorder.caCustomPickFailed' => 'The certificate file could not be read',
 			'recorder.caCustomClear' => 'Use bundled',
 			'recorder.caCustomCleared' => 'Recording uses the bundled root store again',
@@ -7326,9 +7328,9 @@ extension on TranslationsEn {
 			'settings.navQuality' => 'Quality',
 			'settings.navAudio' => 'Audio & volume',
 			'settings.navPicture' => 'Picture & floating',
-			'settings.navFloatingWindow' => 'Floating window & PiP',
 			_ => null,
 		} ?? switch (path) {
+			'settings.navFloatingWindow' => 'Floating window & PiP',
 			'settings.groupData' => 'Data',
 			'settings.groupAbout' => 'About',
 			'settings.groupIptv' => 'IPTV',
@@ -7840,9 +7842,9 @@ extension on TranslationsEn {
 			'settings.hongguoDevice' => 'Device',
 			'settings.navIptvBrowse' => 'Zapping and display',
 			'settings.iptvBrowseDescription' => 'How the channel number, the zap direction, the clock and the programme line are shown.',
-			'settings.navIptvGroups' => 'Group visibility',
 			_ => null,
 		} ?? switch (path) {
+			'settings.navIptvGroups' => 'Group visibility',
 			'settings.iptvGroupsDescription' => 'Chooses which groups appear in the channel lists and the zapping.',
 			'settings.navDanmaku' => 'Danmaku',
 			'settings.navMiniDanmaku' => 'Mini-window danmaku',
@@ -8354,9 +8356,9 @@ extension on TranslationsEn {
 			'settings.wallpaperCategoryArtwork' => 'Artwork',
 			'settings.wallpaperCategoryCityscape' => 'Cityscape',
 			'settings.wallpaperCategoryDigitalArt' => 'Digital Art',
-			'settings.wallpaperCategoryFantasyArt' => 'Fantasy Art',
 			_ => null,
 		} ?? switch (path) {
+			'settings.wallpaperCategoryFantasyArt' => 'Fantasy Art',
 			'settings.wallpaperCategoryFinalFantasy' => 'Final Fantasy',
 			'settings.tagManagement' => 'Tag management',
 			'settings.tagManagementDesc' => 'Customize and manage the tags rooms are filtered by',
@@ -8868,9 +8870,9 @@ extension on TranslationsEn {
 			'toolbox.nodeReachable' => 'Reachable',
 			'toolbox.nodeFailed' => 'Failed',
 			'toolbox.nodeNoSites' => 'No platform can be tested',
-			'toolbox.nodeHint' => 'Run a check to test this platform.',
 			_ => null,
 		} ?? switch (path) {
+			'toolbox.nodeHint' => 'Run a check to test this platform.',
 			'toolbox.nodeAnswer' => ({required int count}) => '${count} rooms returned',
 			'toolbox.nodeSourceRecommended' => 'Recommended endpoint',
 			'toolbox.nodeSourceHot' => 'Hot-list endpoint',

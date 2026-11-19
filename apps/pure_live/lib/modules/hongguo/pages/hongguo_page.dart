@@ -18,7 +18,16 @@ import 'package:pure_live/modules/hongguo/widgets/hongguo_card_menu.dart' show H
 import 'package:pure_live/modules/hongguo/widgets/hongguo_phone_sign_in.dart' show HongguoPhoneSignIn;
 import 'package:pure_live/modules/hongguo/widgets/hongguo_widgets.dart';
 import 'package:pure_live/shared/shared.dart'
-    show CardLayout, LiveWindow, NavigationItem, PagedCardGrid, avatarInitials, feedGutter;
+    show
+        CardLayout,
+        InlineFilterBar,
+        LiveWindow,
+        NavigationItem,
+        PagedCardGrid,
+        avatarInitials,
+        feedGutter,
+        inlineFilterKeeps,
+        inlineFilterProvider;
 import 'package:pure_live/shared/widgets/app_dialog.dart';
 import 'package:pure_live/shared/widgets/app_panel.dart';
 
@@ -234,8 +243,14 @@ final class _HomeViewState extends ConsumerState<_HomeView> {
           child: LayoutBuilder(
             builder: (context, constraints) {
               final content = constraints.maxWidth - feedGutter(context).horizontal;
-              return PagedCardGrid<HongguoSeries>(
-                items: home.items,
+              // The toolbar's word narrows the loaded shelf in place.
+              final filter = ref.watch(inlineFilterProvider(NavigationItem.hongguoHome));
+              final shown = [
+                for (final series in home.items)
+                  if (inlineFilterKeeps(filter, [series.title])) series,
+              ];
+              final grid = PagedCardGrid<HongguoSeries>(
+                items: shown,
                 layout: ref.watch(browseLayoutProvider),
                 cardExtent: hongguoPosterExtentForWidth(
                   content,
@@ -278,6 +293,16 @@ final class _HomeViewState extends ConsumerState<_HomeView> {
                 emptyIcon: HongguoView.home.icon,
                 emptyTitle: t.common.empty,
                 emptyDescription: t.hongguo.noResultsDescription,
+              );
+              if (filter == null) return grid;
+              return Column(
+                children: [
+                  InlineFilterBar(
+                    word: filter,
+                    onClear: () => ref.read(inlineFilterProvider(NavigationItem.hongguoHome).notifier).clear(),
+                  ),
+                  Expanded(child: grid),
+                ],
               );
             },
           ),
@@ -423,8 +448,14 @@ final class _FindViewState extends ConsumerState<_FindView> {
           child: LayoutBuilder(
             builder: (context, constraints) {
               final content = constraints.maxWidth - feedGutter(context).horizontal;
-              return PagedCardGrid<HongguoSeries>(
-                items: state.items,
+              // The toolbar's word narrows the loaded shelf in place.
+              final filter = ref.watch(inlineFilterProvider(NavigationItem.hongguoFind));
+              final shown = [
+                for (final series in state.items)
+                  if (inlineFilterKeeps(filter, [series.title])) series,
+              ];
+              final grid = PagedCardGrid<HongguoSeries>(
+                items: shown,
                 layout: ref.watch(browseLayoutProvider),
                 cardExtent: hongguoPosterExtentForWidth(
                   content,
@@ -465,6 +496,16 @@ final class _FindViewState extends ConsumerState<_FindView> {
                 emptyIcon: HongguoView.find.icon,
                 emptyTitle: t.common.empty,
                 emptyDescription: t.hongguo.noResultsDescription,
+              );
+              if (filter == null) return grid;
+              return Column(
+                children: [
+                  InlineFilterBar(
+                    word: filter,
+                    onClear: () => ref.read(inlineFilterProvider(NavigationItem.hongguoFind).notifier).clear(),
+                  ),
+                  Expanded(child: grid),
+                ],
               );
             },
           ),
@@ -665,8 +706,14 @@ final class _RankViewState extends ConsumerState<_RankView> {
           child: LayoutBuilder(
             builder: (context, constraints) {
               final content = constraints.maxWidth - feedGutter(context).horizontal;
-              return PagedCardGrid<HongguoSeries>(
-                items: rows,
+              // The toolbar's word narrows the loaded shelf in place.
+              final filter = ref.watch(inlineFilterProvider(NavigationItem.hongguoRank));
+              final shown = [
+                for (final series in rows)
+                  if (inlineFilterKeeps(filter, [series.title])) series,
+              ];
+              final grid = PagedCardGrid<HongguoSeries>(
+                items: shown,
                 layout: ref.watch(browseLayoutProvider),
                 cardExtent: hongguoPosterExtentForWidth(
                   content,
@@ -710,6 +757,16 @@ final class _RankViewState extends ConsumerState<_RankView> {
                 emptyIcon: HongguoView.rank.icon,
                 emptyTitle: t.common.empty,
                 emptyDescription: _topic.isEmpty ? t.hongguo.noResultsDescription : t.hongguo.rankEmptyTopic,
+              );
+              if (filter == null) return grid;
+              return Column(
+                children: [
+                  InlineFilterBar(
+                    word: filter,
+                    onClear: () => ref.read(inlineFilterProvider(NavigationItem.hongguoRank).notifier).clear(),
+                  ),
+                  Expanded(child: grid),
+                ],
               );
             },
           ),
@@ -988,8 +1045,14 @@ final class _FavoritesViewState extends ConsumerState<_FavoritesView> {
                                 series.copyWith(hot: hongguoFavoriteLine(t, library, series)),
                             ]
                           : [for (final favorite in shelf.items) favorite.series];
-                      return PagedCardGrid<HongguoSeries>(
-                        items: rows,
+                      // The toolbar's word narrows the loaded shelf in place.
+                      final filter = ref.watch(inlineFilterProvider(NavigationItem.hongguoFavorites));
+                      final shown = [
+                        for (final series in rows)
+                          if (inlineFilterKeeps(filter, [series.title])) series,
+                      ];
+                      final grid = PagedCardGrid<HongguoSeries>(
+                        items: shown,
                         // The tick lives on the row's end, so the batch mode draws
                         // the list cut whatever the viewer's wall says.
                         layout: _managing && local ? CardLayout.list : ref.watch(browseLayoutProvider),
@@ -1072,6 +1135,17 @@ final class _FavoritesViewState extends ConsumerState<_FavoritesView> {
                         refreshError: local ? null : shelf.error,
                         emptyIcon: HongguoView.favorites.icon,
                         emptyTitle: local ? t.hongguo.favoritesLocalEmpty : t.hongguo.favoritesAccountEmpty,
+                      );
+                      if (filter == null) return grid;
+                      return Column(
+                        children: [
+                          InlineFilterBar(
+                            word: filter,
+                            onClear: () =>
+                                ref.read(inlineFilterProvider(NavigationItem.hongguoFavorites).notifier).clear(),
+                          ),
+                          Expanded(child: grid),
+                        ],
                       );
                     },
                   ),
@@ -1300,8 +1374,14 @@ final class _HistoryViewState extends ConsumerState<_HistoryView> {
             _ => LayoutBuilder(
               builder: (context, constraints) {
                 final content = constraints.maxWidth - feedGutter(context).horizontal;
-                return PagedCardGrid<HongguoWatchProgress>(
-                  items: rows,
+                // The toolbar's word narrows the loaded shelf in place.
+                final filter = ref.watch(inlineFilterProvider(NavigationItem.hongguoHistory));
+                final shown = [
+                  for (final row in rows)
+                    if (inlineFilterKeeps(filter, [row.title])) row,
+                ];
+                final grid = PagedCardGrid<HongguoWatchProgress>(
+                  items: shown,
                   layout: ref.watch(browseLayoutProvider),
                   cardExtent: hongguoPosterExtentForWidth(
                     content,
@@ -1382,6 +1462,16 @@ final class _HistoryViewState extends ConsumerState<_HistoryView> {
                   onLoadMore: () async {},
                   emptyIcon: HongguoView.history.icon,
                   emptyTitle: _watched == 0 ? t.hongguo.historyLocalEmpty : t.common.empty,
+                );
+                if (filter == null) return grid;
+                return Column(
+                  children: [
+                    InlineFilterBar(
+                      word: filter,
+                      onClear: () => ref.read(inlineFilterProvider(NavigationItem.hongguoHistory).notifier).clear(),
+                    ),
+                    Expanded(child: grid),
+                  ],
                 );
               },
             ),
@@ -1891,12 +1981,16 @@ final class _SearchViewState extends ConsumerState<_SearchView> {
   @override
   void initState() {
     super.initState();
-    // A word handed from outside (the toolbar): taken once on arrival,
-    // searched as though typed here. The listener catches a word handed
-    // while the view is already showing.
-    ref.listenManual(hongguoSearchHandoffProvider, (_, _) => _takeHandoff());
+    // A deep link's word outranks the last visit's: the field reads it and
+    // the search answers it, as though typed here.
+    if (widget.initialSearch case final word? when word.isNotEmpty) {
+      _query.value = TextEditingValue(
+        text: word,
+        selection: TextSelection.collapsed(offset: word.length),
+      );
+      unawaited(ref.read(hongguoSearchProvider.notifier).search(word, genre: _genre));
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _takeHandoff();
       // Re-entering the view shows the last search's results; the field then
       // names the words they answer to, instead of sitting empty under them.
       if (!mounted || _query.text.isNotEmpty) return;
@@ -1907,24 +2001,6 @@ final class _SearchViewState extends ConsumerState<_SearchView> {
         selection: TextSelection.collapsed(offset: query.length),
       );
     });
-  }
-
-  /// Runs the handed word: the field reads it, the search answers it.
-  void _takeHandoff() {
-    // The deep link's word outranks the toolbar's: it reads as the query the
-    // route itself carried.
-    if (widget.initialSearch case final word? when word.isNotEmpty) {
-      _query.value = TextEditingValue(text: word, selection: TextSelection.collapsed(offset: word.length));
-      unawaited(ref.read(hongguoSearchProvider.notifier).search(word, genre: _genre));
-      return;
-    }
-    final word = ref.read(hongguoSearchHandoffProvider.notifier).take();
-    if (word == null || word.isEmpty || !mounted) return;
-    _query.value = TextEditingValue(
-      text: word,
-      selection: TextSelection.collapsed(offset: word.length),
-    );
-    unawaited(ref.read(hongguoSearchProvider.notifier).search(word, genre: _genre));
   }
 
   /// Asks before the whole wall goes: a full clear cannot be undone.
