@@ -48,10 +48,10 @@ final class MusicRecommendView extends ConsumerWidget {
   /// Runs one hot word in the library's search.
   final ValueChanged<String> onSearch;
 
-  /// Opens one of the plaza's playlists in 精选.
+  /// Opens one of the plaza's playlists on the 歌单 page's 在线 tab.
   final ValueChanged<MusicPlaylistInfo> onOpenPlaylist;
 
-  /// Opens 精选, where the whole plaza lives.
+  /// Opens the 歌单 page's 在线 tab, where the whole plaza lives.
   final VoidCallback onOpenFeatured;
 
   /// Opens the charts view on the board's own id.

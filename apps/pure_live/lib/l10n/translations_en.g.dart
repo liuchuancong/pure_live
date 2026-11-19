@@ -1435,7 +1435,6 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get recBoards => 'Charts';
 	@override String get recEmptyTitle => 'Nothing to recommend yet';
 	@override String get recEmptyDescription => 'The source\'s playlists, its charts and the songs you played show up here.';
-	@override String get featuredTitle => 'Featured playlists';
 	@override String get playlistCreate => 'New playlist';
 	@override String get playlistCreateTitle => 'New playlist';
 	@override String get playlistAddLocal => 'Add local songs';
@@ -1915,7 +1914,6 @@ class _Translations$navigation$en extends Translations$navigation$zh_CN {
 	@override String get vodDownloads => 'Downloads';
 	@override String get iptvGuide => 'Guide';
 	@override String get musicRecommend => 'Recommended';
-	@override String get musicFeatured => 'Featured';
 	@override String get musicSonglist => 'Songlists';
 	@override String get musicToplist => 'Charts';
 	@override String get musicLibrary => 'My lists';
@@ -6181,7 +6179,6 @@ extension on TranslationsEn {
 			'music.recBoards' => 'Charts',
 			'music.recEmptyTitle' => 'Nothing to recommend yet',
 			'music.recEmptyDescription' => 'The source\'s playlists, its charts and the songs you played show up here.',
-			'music.featuredTitle' => 'Featured playlists',
 			'music.playlistCreate' => 'New playlist',
 			'music.playlistCreateTitle' => 'New playlist',
 			'music.playlistAddLocal' => 'Add local songs',
@@ -6300,9 +6297,9 @@ extension on TranslationsEn {
 			'music.lyricDisplay' => 'Lyric display',
 			'music.lyricTiming' => 'Timing',
 			'music.lyricTranslationDesc' => 'Show the translation when the lyric has one.',
+			'music.lyricRomanization' => 'Show romanization',
 			_ => null,
 		} ?? switch (path) {
-			'music.lyricRomanization' => 'Show romanization',
 			'music.lyricRomanizationDesc' => 'Show the romanization when the lyric has one.',
 			'music.lyricSwapSecondary' => 'Translation/romanization order',
 			'music.lyricSwapSecondaryDesc' => 'Swap translation and romanization under a lyric line.',
@@ -6654,7 +6651,6 @@ extension on TranslationsEn {
 			'navigation.vodDownloads' => 'Downloads',
 			'navigation.iptvGuide' => 'Guide',
 			'navigation.musicRecommend' => 'Recommended',
-			'navigation.musicFeatured' => 'Featured',
 			'navigation.musicSonglist' => 'Songlists',
 			'navigation.musicToplist' => 'Charts',
 			'navigation.musicLibrary' => 'My lists',
@@ -6814,10 +6810,10 @@ extension on TranslationsEn {
 			'recorder.caCustomDesc' => 'Not set: recordings trust the bundled Mozilla store. Picking your own bundle (PEM text) trusts a corporate root or a self-signed chain without switching verification off.',
 			'recorder.caCustomPicked' => ({required Object name}) => 'In use: ${name}',
 			'recorder.caCustomMissing' => ({required Object name}) => '${name} is no longer where the row found it — recordings will fail; pick it again or clear it',
-			_ => null,
-		} ?? switch (path) {
 			'recorder.caCustomNotPem' => 'That is not a PEM certificate bundle (it should contain -----BEGIN CERTIFICATE-----)',
 			'recorder.caCustomPickFailed' => 'The certificate file could not be read',
+			_ => null,
+		} ?? switch (path) {
 			'recorder.caCustomClear' => 'Use bundled',
 			'recorder.caCustomCleared' => 'Recording uses the bundled root store again',
 			'recorder.startNowBusyOther' => 'Another window is recording this room',
@@ -7328,10 +7324,10 @@ extension on TranslationsEn {
 			'settings.navQuality' => 'Quality',
 			'settings.navAudio' => 'Audio & volume',
 			'settings.navPicture' => 'Picture & floating',
-			_ => null,
-		} ?? switch (path) {
 			'settings.navFloatingWindow' => 'Floating window & PiP',
 			'settings.groupData' => 'Data',
+			_ => null,
+		} ?? switch (path) {
 			'settings.groupAbout' => 'About',
 			'settings.groupIptv' => 'IPTV',
 			'settings.groupVod' => 'Bilibili video',
@@ -7842,10 +7838,10 @@ extension on TranslationsEn {
 			'settings.hongguoDevice' => 'Device',
 			'settings.navIptvBrowse' => 'Zapping and display',
 			'settings.iptvBrowseDescription' => 'How the channel number, the zap direction, the clock and the programme line are shown.',
-			_ => null,
-		} ?? switch (path) {
 			'settings.navIptvGroups' => 'Group visibility',
 			'settings.iptvGroupsDescription' => 'Chooses which groups appear in the channel lists and the zapping.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.navDanmaku' => 'Danmaku',
 			'settings.navMiniDanmaku' => 'Mini-window danmaku',
 			'settings.navKernel' => 'Player engine',
@@ -8356,10 +8352,10 @@ extension on TranslationsEn {
 			'settings.wallpaperCategoryArtwork' => 'Artwork',
 			'settings.wallpaperCategoryCityscape' => 'Cityscape',
 			'settings.wallpaperCategoryDigitalArt' => 'Digital Art',
-			_ => null,
-		} ?? switch (path) {
 			'settings.wallpaperCategoryFantasyArt' => 'Fantasy Art',
 			'settings.wallpaperCategoryFinalFantasy' => 'Final Fantasy',
+			_ => null,
+		} ?? switch (path) {
 			'settings.tagManagement' => 'Tag management',
 			'settings.tagManagementDesc' => 'Customize and manage the tags rooms are filtered by',
 			'settings.tagAdd' => 'Add tag',
@@ -8870,10 +8866,10 @@ extension on TranslationsEn {
 			'toolbox.nodeReachable' => 'Reachable',
 			'toolbox.nodeFailed' => 'Failed',
 			'toolbox.nodeNoSites' => 'No platform can be tested',
-			_ => null,
-		} ?? switch (path) {
 			'toolbox.nodeHint' => 'Run a check to test this platform.',
 			'toolbox.nodeAnswer' => ({required int count}) => '${count} rooms returned',
+			_ => null,
+		} ?? switch (path) {
 			'toolbox.nodeSourceRecommended' => 'Recommended endpoint',
 			'toolbox.nodeSourceHot' => 'Hot-list endpoint',
 			'toolbox.nodeSummary' => ({required Object ok, required Object tested, required Object total}) => '${ok} / ${tested} reachable · ${total} platforms',

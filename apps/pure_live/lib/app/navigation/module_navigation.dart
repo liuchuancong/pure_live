@@ -193,12 +193,7 @@ const Map<AppModule, ModuleNavigation> kModuleNavigation = {
     // site's top bar; 素材库 and 直播 open the station's own web pages in the
     // in-app view, because neither is an anonymously readable listing.
     menu: [
-      [
-        NavigationItem.huyaHome,
-        NavigationItem.huyaChannels,
-        NavigationItem.huyaMaterial,
-        NavigationItem.huyaRank,
-      ],
+      [NavigationItem.huyaHome, NavigationItem.huyaChannels, NavigationItem.huyaMaterial, NavigationItem.huyaRank],
       [NavigationItem.huyaSearch, NavigationItem.huyaDownloads, NavigationItem.logs],
     ],
     landing: NavigationItem.huyaHome,
@@ -217,16 +212,17 @@ const Map<AppModule, ModuleNavigation> kModuleNavigation = {
     ],
   ),
   AppModule.music: ModuleNavigation(
-    // Two blocks above the tools: what the source suggests — 推荐 and 精选 —
-    // and the search beside them, then the lists the viewer works through —
-    // 歌单 / 排行榜 / 我的列表. The module still lands on the search: the
-    // rail's first entry is a page to open, not where the switcher drops you.
+    // Two blocks above the tools: the module's own home — what the source
+    // suggests beside what the viewer has played — with the search beside it,
+    // then the lists the viewer works through — 歌单 / 排行榜 / 我的列表.
+    // The plaza the 精选 entry used to open is the 歌单 page's 在线 tab;
+    // a second entry over the same surface only overlapped the first.
     // Three blocks in a listener's own order: what the source suggests, the
     // library the viewer works through, then the tools. The equaliser is not
     // a menu row: the settings group's 音效 page is its home, and the
     // player's bar and page push it directly as well.
     menu: [
-      [NavigationItem.musicRecommend, NavigationItem.musicFeatured, NavigationItem.music],
+      [NavigationItem.musicRecommend, NavigationItem.music],
       [
         NavigationItem.musicSonglist,
         NavigationItem.musicToplist,
@@ -242,7 +238,7 @@ const Map<AppModule, ModuleNavigation> kModuleNavigation = {
         NavigationItem.logs,
       ],
     ],
-    landing: NavigationItem.music,
+    landing: NavigationItem.musicRecommend,
     // The music module's settings rail: one own heading, as every other module
     // and the live rail have — the second heading this row used to carry
     // (音效与工具) split eight pages by taste, not by kind, and read as a mess.
@@ -332,7 +328,6 @@ final Map<NavigationItem, Widget Function()> kModulePages = {
   NavigationItem.huyaSearch: HuyaSearchPage.new,
   NavigationItem.huyaDownloads: HuyaDownloadsPage.new,
   NavigationItem.musicRecommend: () => const MusicPage(view: MusicView.recommend),
-  NavigationItem.musicFeatured: () => const MusicPage(view: MusicView.featured),
   NavigationItem.music: MusicPage.new,
   NavigationItem.musicSonglist: () => const MusicPage(view: MusicView.songlists),
   NavigationItem.musicToplist: () => const MusicPage(view: MusicView.toplists),

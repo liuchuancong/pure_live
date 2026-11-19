@@ -3979,9 +3979,6 @@ class Translations$music$zh_CN {
 	/// zh-CN: '音源的歌单、榜单和你播过的歌曲会出现在这里。'
 	String get recEmptyDescription => '音源的歌单、榜单和你播过的歌曲会出现在这里。';
 
-	/// zh-CN: '精选歌单'
-	String get featuredTitle => '精选歌单';
-
 	/// zh-CN: '新建歌单'
 	String get playlistCreate => '新建歌单';
 
@@ -5400,9 +5397,6 @@ class Translations$navigation$zh_CN {
 
 	/// zh-CN: '推荐'
 	String get musicRecommend => '推荐';
-
-	/// zh-CN: '精选'
-	String get musicFeatured => '精选';
 
 	/// zh-CN: '歌单'
 	String get musicSonglist => '歌单';
@@ -15066,7 +15060,6 @@ extension on Translations {
 			'music.recBoards' => '榜单',
 			'music.recEmptyTitle' => '还没有可推荐的内容',
 			'music.recEmptyDescription' => '音源的歌单、榜单和你播过的歌曲会出现在这里。',
-			'music.featuredTitle' => '精选歌单',
 			'music.playlistCreate' => '新建歌单',
 			'music.playlistCreateTitle' => '新建歌单',
 			'music.playlistAddLocal' => '添加本地歌曲',
@@ -15185,9 +15178,9 @@ extension on Translations {
 			'music.lyricDisplay' => '歌词显示',
 			'music.lyricTiming' => '时间轴',
 			'music.lyricTranslationDesc' => '歌词带翻译时一并显示。',
+			'music.lyricRomanization' => '显示音译',
 			_ => null,
 		} ?? switch (path) {
-			'music.lyricRomanization' => '显示音译',
 			'music.lyricRomanizationDesc' => '歌词带音译或罗马音时一并显示。',
 			'music.lyricSwapSecondary' => '翻译/音译顺序',
 			'music.lyricSwapSecondaryDesc' => '交换翻译与音译在歌词行中的先后顺序。',
@@ -15539,7 +15532,6 @@ extension on Translations {
 			'navigation.vodDownloads' => '下载管理',
 			'navigation.iptvGuide' => '节目单',
 			'navigation.musicRecommend' => '推荐',
-			'navigation.musicFeatured' => '精选',
 			'navigation.musicSonglist' => '歌单',
 			'navigation.musicToplist' => '排行榜',
 			'navigation.musicLibrary' => '我的列表',
@@ -15699,10 +15691,10 @@ extension on Translations {
 			'recorder.caCustomTitle' => '自定义 CA 证书',
 			'recorder.caCustomDesc' => '未设置：录制使用应用内置的 Mozilla 根证书。选择自己的证书束（PEM 文本）可在不关闭校验的前提下信任企业根或自签链路。',
 			'recorder.caCustomPicked' => ({required Object name}) => '正在使用：${name}',
-			_ => null,
-		} ?? switch (path) {
 			'recorder.caCustomMissing' => ({required Object name}) => '${name} 已不在原位置，录制会失败；请重新选择或清除',
 			'recorder.caCustomNotPem' => '这不是 PEM 文本的证书束（应包含 -----BEGIN CERTIFICATE-----）',
+			_ => null,
+		} ?? switch (path) {
 			'recorder.caCustomPickFailed' => '读取证书文件失败',
 			'recorder.caCustomClear' => '恢复内置',
 			'recorder.caCustomCleared' => '已恢复使用内置根证书',
@@ -16213,10 +16205,10 @@ extension on Translations {
 			'settings.navQuality' => '画质',
 			'settings.navAudio' => '音频与音量',
 			'settings.navPicture' => '画面与浮窗',
-			_ => null,
-		} ?? switch (path) {
 			'settings.navFloatingWindow' => '小窗与画中画',
 			'settings.groupData' => '数据',
+			_ => null,
+		} ?? switch (path) {
 			'settings.groupAbout' => '关于',
 			'settings.groupIptv' => 'IPTV',
 			'settings.groupVod' => 'Bilibili 视频',
@@ -16727,10 +16719,10 @@ extension on Translations {
 			'settings.hongguoDevice' => '设备',
 			'settings.navIptvBrowse' => '换台与显示',
 			'settings.iptvBrowseDescription' => '频道号、换台方向、时间和当前节目行怎么显示。',
-			_ => null,
-		} ?? switch (path) {
 			'settings.navIptvGroups' => '分组显示',
 			'settings.iptvGroupsDescription' => '决定哪些分组出现在频道列表和换台里。',
+			_ => null,
+		} ?? switch (path) {
 			'settings.navDanmaku' => '弹幕',
 			'settings.navMiniDanmaku' => '小窗弹幕',
 			'settings.navKernel' => '播放器内核',
@@ -17241,10 +17233,10 @@ extension on Translations {
 			'settings.wallpaperCategoryArtwork' => '艺术画',
 			'settings.wallpaperCategoryCityscape' => '城市景观',
 			'settings.wallpaperCategoryDigitalArt' => '数字艺术',
-			_ => null,
-		} ?? switch (path) {
 			'settings.wallpaperCategoryFantasyArt' => '奇幻艺术',
 			'settings.wallpaperCategoryFinalFantasy' => '最终幻想',
+			_ => null,
+		} ?? switch (path) {
 			'settings.tagManagement' => '标签管理',
 			'settings.tagManagementDesc' => '自定义和管理直播间的过滤标签',
 			'settings.tagAdd' => '添加标签',
@@ -17755,10 +17747,10 @@ extension on Translations {
 			'toolbox.nodeReachable' => '正常',
 			'toolbox.nodeFailed' => '失败',
 			'toolbox.nodeNoSites' => '没有可测速的平台',
-			_ => null,
-		} ?? switch (path) {
 			'toolbox.nodeHint' => '点「测速」检查这个平台。',
 			'toolbox.nodeAnswer' => ({required int count}) => '返回 ${count} 个房间',
+			_ => null,
+		} ?? switch (path) {
 			'toolbox.nodeSourceRecommended' => '推荐接口',
 			'toolbox.nodeSourceHot' => '热门接口',
 			'toolbox.nodeSummary' => ({required Object ok, required Object tested, required Object total}) => '${ok} / ${tested} 可用 · 共 ${total} 个平台',

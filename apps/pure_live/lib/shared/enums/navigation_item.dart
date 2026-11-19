@@ -111,9 +111,6 @@ enum NavigationItem {
   /// The music module's picks, the reference's 推荐 rail entry.
   musicRecommend(DsIcons.sparkles),
 
-  /// The source's curated playlists, the reference's 精选 rail entry.
-  musicFeatured(DsIcons.compass),
-
   /// The music module's own entry, the reference's 搜索 rail entry.
   music(DsIcons.search),
 
@@ -203,7 +200,6 @@ enum NavigationItem {
     NavigationItem.iptvGuide => t.navigation.iptvGuide,
     NavigationItem.iptvRecent => t.iptv.recentTitle,
     NavigationItem.musicRecommend => t.navigation.musicRecommend,
-    NavigationItem.musicFeatured => t.navigation.musicFeatured,
     NavigationItem.music => t.music.search,
     NavigationItem.musicSonglist => t.navigation.musicSonglist,
     NavigationItem.musicToplist => t.navigation.musicToplist,

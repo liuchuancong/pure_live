@@ -34,11 +34,18 @@ import 'package:pure_live/shared/shared.dart' show LiveWindow, NavigationItem;
 import 'package:pure_live/shared/widgets/app_dialog.dart';
 
 final class MusicPlaylistsView extends ConsumerStatefulWidget {
-  const MusicPlaylistsView({this.initialOnlineOpen, super.key});
+  const MusicPlaylistsView({this.initialOnlineOpen, this.startOnline = false, this.onOpened, super.key});
 
-  /// The online playlist a caller (the library's 歌单 search) asked to
-  /// open; consumed once the view mounts.
+  /// The online playlist a caller (the library's 歌单 search or the 推荐
+  /// page's strip) asked to open; consumed once the view mounts.
   final MusicPlaylistInfo? initialOnlineOpen;
+
+  /// Whether the view lands on the 在线 tab — the plaza — even without an
+  /// open's hand (the 推荐 page's「更多」asks for it).
+  final bool startOnline;
+
+  /// Called as the hand is taken, so a later visit does not re-run it.
+  final VoidCallback? onOpened;
 
   @override
   ConsumerState<MusicPlaylistsView> createState() => MusicPlaylistsViewState();
@@ -74,7 +81,10 @@ final class MusicPlaylistsViewState extends ConsumerState<MusicPlaylistsView> {
     if (open != null) {
       _online = true;
       _onlineOpen = open;
+    } else if (widget.startOnline) {
+      _online = true;
     }
+    if (open != null || widget.startOnline) widget.onOpened?.call();
   }
 
   @override

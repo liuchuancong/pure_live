@@ -9,23 +9,20 @@ import 'package:pure_live/modules/music/controller/sources/online_playlist_model
 import 'package:pure_live/modules/music/controller/sync/music_sync_server.dart' show musicSyncServerProvider;
 import 'package:pure_live/modules/music/views/music_charts_view.dart';
 import 'package:pure_live/modules/music/views/music_downloads_view.dart';
-import 'package:pure_live/modules/music/views/music_featured_view.dart';
 import 'package:pure_live/modules/music/views/music_library_view.dart';
 import 'package:pure_live/modules/music/views/music_local_view.dart';
 import 'package:pure_live/modules/music/views/music_mine_view.dart';
 import 'package:pure_live/modules/music/views/music_recommend_view.dart';
 import 'package:pure_live/modules/music/views/music_songlists_view.dart';
 
-/// The music module's views. The reference's rail — 推荐 / 精选 / 搜索 / 歌单 /
+/// The music module's views. The reference's rail — 推荐 / 搜索 / 歌单 /
 /// 排行榜 / 我的列表 — is what the module's menu lists, and the app's own
 /// surfaces sit beside them: the device's files and the download centre.
+/// The online plaza is the 歌单 page's 在线 tab, not a rail entry of its own.
 enum MusicView {
   /// The module's picks, the reference's 推荐: the source's playlists and
   /// boards beside the songs this app already knows the viewer likes.
   recommend,
-
-  /// The source's curated playlists, the reference's 精选.
-  featured,
 
   /// The library: a search, its history, its songs, and the player that
   /// answers them.
@@ -49,7 +46,6 @@ enum MusicView {
   /// The view's icon, on its empty state.
   DsIconData get icon => switch (this) {
     MusicView.recommend => DsIcons.sparkles,
-    MusicView.featured => DsIcons.compass,
     MusicView.library => DsIcons.discAlbum,
     MusicView.songlists => DsIcons.listMusic,
     MusicView.toplists => DsIcons.chartColumn,
@@ -62,9 +58,9 @@ enum MusicView {
 /// The music module's entry: a real player over the module's source.
 ///
 /// 推荐 gathers what the source suggests and what this app already knows the
-/// viewer likes, 精选 browses the plaza's own playlists, the library searches
-/// and plays, the charts are the source's own boards, 歌单 keeps the viewer's
-/// own lists, 我的列表 keeps the songs this module collected and played,
+/// viewer likes, the library searches and plays, the charts are the source's
+/// own boards, 歌单 keeps the viewer's own lists and browses the plaza's
+/// online ones, 我的列表 keeps the songs this module collected and played,
 /// 本地音乐 plays the device's files, and 下载 keeps the queue.
 final class MusicPage extends ConsumerStatefulWidget {
   /// The music module's entry page, opening on [view].
@@ -85,9 +81,13 @@ final class _MusicPageState extends ConsumerState<MusicPage> {
   /// The view the page is showing.
   late MusicView _view = widget.view;
 
-  /// The online playlist the library's 歌单 search asked to open, handed to
-  /// the songlists view when it next mounts.
+  /// The online playlist the library's 歌单 search or the 推荐 page's strip
+  /// asked to open, handed to the songlists view when it next mounts.
   MusicPlaylistInfo? _openSonglist;
+
+  /// Whether the next songlists mount should land on the 在线 tab — the
+  /// plaza the 推荐 page's「更多」asks for. Cleared as the view takes it.
+  bool _startOnline = false;
 
   /// The library's search field, kept across view switches so a query is not
   /// lost by looking at the charts.
@@ -96,10 +96,6 @@ final class _MusicPageState extends ConsumerState<MusicPage> {
   /// The word the 推荐 page's hot chip asked for, handed to the library when
   /// it next mounts; the library clears it as it takes it.
   String? _pendingSearch;
-
-  /// The playlist the 推荐 page asked to open, handed to 精选 when it next
-  /// mounts; the featured view clears it as it takes it.
-  MusicPlaylistInfo? _openFeatured;
 
   /// The board the charts view has open; null takes the first one.
   String? _catalogId;
@@ -170,19 +166,22 @@ final class _MusicPageState extends ConsumerState<MusicPage> {
                 _pendingSearch = word;
                 _view = MusicView.library;
               }),
+              // The strip's playlist opens on the 歌单 page's 在线 tab — the
+              // plaza's only surface now that the 精选 entry is gone.
               onOpenPlaylist: (info) => setState(() {
-                _openFeatured = info;
-                _view = MusicView.featured;
+                _openSonglist = info;
+                _startOnline = false;
+                _view = MusicView.songlists;
               }),
-              onOpenFeatured: () => setState(() => _view = MusicView.featured),
+              onOpenFeatured: () => setState(() {
+                _openSonglist = null;
+                _startOnline = true;
+                _view = MusicView.songlists;
+              }),
               onOpenBoard: (id) => setState(() {
                 _catalogId = id;
                 _view = MusicView.toplists;
               }),
-            ),
-            MusicView.featured => MusicFeaturedView(
-              initialOnlineOpen: _openFeatured,
-              onOpened: () => _openFeatured = null,
             ),
             MusicView.library => MusicLibraryView(
               search: _search,
@@ -191,9 +190,17 @@ final class _MusicPageState extends ConsumerState<MusicPage> {
               onOpenSonglist: (info) => setState(() {
                 _view = MusicView.songlists;
                 _openSonglist = info;
+                _startOnline = false;
               }),
             ),
-            MusicView.songlists => MusicPlaylistsView(initialOnlineOpen: _openSonglist),
+            MusicView.songlists => MusicPlaylistsView(
+              initialOnlineOpen: _openSonglist,
+              startOnline: _startOnline,
+              onOpened: () {
+                _openSonglist = null;
+                _startOnline = false;
+              },
+            ),
             MusicView.toplists => MusicChartsView(
               catalogId: _catalogId,
               onCatalog: (id) => setState(() => _catalogId = id),
