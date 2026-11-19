@@ -13,6 +13,12 @@ final class IptvNowPlayingController extends Notifier<String?> {
 
   /// Clears the mark — the player went away.
   void clear() => state = null;
+
+  /// Clears the mark only when it still names [channelId]: a player leaving
+  /// while another has already taken the air leaves the newer mark be.
+  void clearIf(String channelId) {
+    if (state == channelId) state = null;
+  }
 }
 
 /// The channel on air in the module's own player.

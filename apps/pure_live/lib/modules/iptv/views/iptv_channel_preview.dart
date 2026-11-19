@@ -178,7 +178,11 @@ final class _IptvChannelPreviewVideoState extends ConsumerState<IptvChannelPrevi
         LiveSourceRequest(
           sources: sources,
           title: channel.entry.name,
-          allowEngineFallback: true,
+          // The preview is a glance, not a hunt: the first address plays
+          // or the glance ends. A full engine sweep behind a resting
+          // pointer raced the main picture for its decoder, and the
+          // switching that followed paid for both.
+          allowEngineFallback: false,
           engineOptions: playerStoredEngineOptions(
             hardwareDecoding: ref.read(playbackSettingsProvider).hardwareDecoding,
             tuning: ref.read(playerTuningProvider),

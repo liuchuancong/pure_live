@@ -377,15 +377,24 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
     _reconnectTimer?.cancel();
     _reconnectStableTimer?.cancel();
     _seekTicker?.cancel();
-    _seekTicker?.cancel();
     _cursorTimer?.cancel();
     _pageFocus.dispose();
     unawaited(_zapChanges?.cancel() ?? Future<void>.value());
     unawaited(_reminders?.cancel() ?? Future<void>.value());
     unawaited(_screenAwake.disable().catchError((Object _) {}));
     // The route unmounts while the tree is being torn down, and riverpod
-    // refuses a provider write there; the on-air mark drops after the frame.
-    Timer.run(_nowPlaying.clear);
+    // refuses a provider write there; the on-air mark drops after the
+    // frame — and only if it still names the channel this page played: an
+    // in-place switch means a newer page's mark must not be wiped by the
+    // one leaving.
+    final leavingChannel = _channel?.id;
+    Timer.run(() {
+      if (leavingChannel != null) {
+        _nowPlaying.clearIf(leavingChannel);
+      } else {
+        _nowPlaying.clear();
+      }
+    });
     final player = _handle?.id;
     if (player != null && _presentationMode != PresentationMode.normal) {
       unawaited(_presentationNotifier.exit(player));
@@ -427,8 +436,10 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
     // whether it plays live or from the guide's catch-up.
     unawaited(ref.read(iptvRecentProvider.notifier).record(channel.id));
     // The programme guide can hand the player a past programme; its replay
-    // address comes from the playlist's own catch-up attributes.
-    final replay = widget.catchupProgramme;
+    // address comes from the playlist's own catch-up attributes. The
+    // hand-off names one programme on one channel — spent once the viewer
+    // steps to another.
+    final replay = _skipInitialCatchup ? null : widget.catchupProgramme;
     if (replay != null) {
       await _playCatchup(replay);
       return;
@@ -521,20 +532,32 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
       _bindGeometry(handle);
     });
     _failures ??= playback.onError.listen(_onPlaybackFailure);
+    final request = LiveSourceRequest(
+      sources: sources,
+      title: replay?.title ?? channel.entry.name,
+      allowEngineFallback: true,
+      engineOptions: _storedEngineOptions(),
+    );
     try {
-      await playback.play(
-        LiveSourceRequest(
-          sources: sources,
-          title: replay?.title ?? channel.entry.name,
-          allowEngineFallback: true,
-          engineOptions: _storedEngineOptions(),
-        ),
-        preferredBackend: ref.read(playerKernelBackendProvider).id,
-      );
+      await playback.play(request, preferredBackend: ref.read(playerKernelBackendProvider).id);
     } on Object catch (failure) {
       // The engine's failure events usually land first through onError; a
       // throw here is the open refusing outright — the page says so instead
-      // of leaving the word to the zone.
+      // of leaving the word to the zone. One refusal has a shape worth a
+      // second ask: the release pool still draining the engine a fast
+      // switch let go, the kernel refusing a fourth engine while two hang
+      // unfinished. A beat later the same sources go out once more.
+      if (mounted && '$failure'.contains('engine_release_pending')) {
+        await Future<void>.delayed(const Duration(milliseconds: 200));
+        if (!mounted) return;
+        try {
+          await playback.play(request, preferredBackend: ref.read(playerKernelBackendProvider).id);
+          return;
+        } on Object catch (retryFailure) {
+          if (mounted) setState(() => _error = '$retryFailure');
+          return;
+        }
+      }
       if (mounted) setState(() => _error = '$failure');
     }
   }
@@ -568,12 +591,17 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
     if (state.playing && !wasPlaying) _onPlaying();
     if (!state.playing && (_cursorHidden || !_barVisible)) _revealPointer();
     if (state.paused) _cancelReconnect();
-    // A replay's seek layer reads the handle once a second; a live channel
-    // has no line to redraw and the clock rests.
-    final needsClock = _catchup != null && state.playing;
+    _syncSeekTicker();
+  }
+
+  /// The replay's seek layer reads the handle once a second while it and the
+  /// bar both stand; a live channel has no line to redraw, and a hidden bar
+  /// lets the clock rest instead of rebuilding the page behind the picture.
+  void _syncSeekTicker() {
+    final needsClock = _catchup != null && _playbackState.playing && _barVisible;
     if (needsClock && _seekTicker == null) {
       _seekTicker = Timer.periodic(const Duration(seconds: 1), (_) {
-        if (mounted) setState(() {});
+        if (mounted && _barVisible) setState(() {});
       });
     } else if (!needsClock && _seekTicker != null) {
       _seekTicker?.cancel();
@@ -639,6 +667,8 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
         _cursorHidden = false;
         _barVisible = true;
       });
+      // The bar came back over a replay: its clock resumes with it.
+      _syncSeekTicker();
     }
     // The station's own seconds name the rest; zero is 常显 — the bar and
     // the cursor stay while the channel plays.
@@ -698,7 +728,8 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
   }
 
   /// Steps through the visible channels in zap order, wrapping at the ends;
-  /// the page is replaced so the old engine is torn down by its own dispose.
+  /// the switch happens in place, the one engine re-aimed at the next
+  /// address.
   void _switchChannel(int delta) {
     final channel = _channel;
     final library = ref.read(iptvLibraryProvider).value;
@@ -713,23 +744,43 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
     _openChannel(order[(from + delta) % order.length]);
   }
 
-  /// Switches the picture to [channel] by replacing this route, so the old
-  /// engine is torn down by its own dispose and the new one starts clean.
+  /// The moment of the last switch: a burst of presses lands one switch a
+  /// quarter-second, the rest dropped — each press used to tear the whole
+  /// page and its engine down, and the release pool filled faster than it
+  /// drained.
+  DateTime? _lastSwitchAt;
+
+  /// Whether the guide's hand-off (a catch-up programme the page was opened
+  /// with) is spent — it names one programme on one channel, and a viewer
+  /// who has stepped elsewhere is not replaying it.
+  bool _skipInitialCatchup = false;
+
+  /// Switches the picture to [channel] in place: the one engine is re-aimed
+  /// at the next address, the way the embedded pane always did it — no route
+  /// replacement, no teardown. The teardown was the switch lag: the kernel's
+  /// release pool filled faster than the engines drained, and the third fast
+  /// press found it refusing a fourth. The route's address follows silently,
+  /// so a deep link stays true; a router that refuses the swap costs
+  /// nothing, the picture being already on the channel.
   void _openChannel(IptvChannel channel) {
     if (!mounted || channel.id == _channel?.id) return;
-    if (widget.embedded) {
-      _switchTo(channel);
-      return;
+    final now = DateTime.now();
+    if (_lastSwitchAt != null && now.difference(_lastSwitchAt!) < const Duration(milliseconds: 250)) return;
+    _lastSwitchAt = now;
+    _switchTo(channel);
+    if (!widget.embedded) {
+      context.replace(RouteNames.iptvPlay.replaceFirst(':channelId', channel.id));
     }
-    context.pushReplacement(RouteNames.iptvPlay.replaceFirst(':channelId', channel.id), extra: channel);
   }
 
   /// Shows [channel] in this very pane: the state's channel swaps and the
-  /// play re-runs on it — the same sequence a route replacement ran, minus
-  /// the route.
+  /// play re-runs on it.
   void _switchTo(IptvChannel channel) {
     if (!mounted || channel.id == _channel?.id) return;
-    setState(() => _channel = channel);
+    setState(() {
+      _channel = channel;
+      _skipInitialCatchup = true;
+    });
     unawaited(_open());
   }
 
