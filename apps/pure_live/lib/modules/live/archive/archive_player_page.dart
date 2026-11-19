@@ -108,6 +108,8 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> wit
   /// floats above, and whether it stands open.
   final GlobalKey _partsAnchor = GlobalKey();
   final GlobalKey _barAnchor = GlobalKey();
+  final GlobalKey _qualityAnchor = GlobalKey();
+  final GlobalKey _speedAnchor = GlobalKey();
   bool _partsOpen = false;
 
   /// The page's own mute, the bar button's state; the slider speaks past it.
@@ -1055,7 +1057,7 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> wit
       // here would be the same verb twice.
       if (pipAvailable && presentation != PresentationMode.pip)
         PlayerBarButton(
-          iconAsset: 'assets/icons/pip.svg',
+          icon: DsIcons.pictureInPicture,
           label: t.player.pipOn,
           onPressed: () {
             _wake();
@@ -1163,7 +1165,7 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> wit
           PlayerGlassPill(
             child: presentation == PresentationMode.pip
                 ? PlayerBarButton(
-                    iconAsset: 'assets/icons/pip-exit.svg',
+                    icon: DsIcons.pictureInPicture2,
                     label: t.player.pipOff,
                     autofocus: true,
                     onPressed: () {
@@ -1248,7 +1250,7 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> wit
         // The bar's first control and a TV's landing focus: the remote
         // reaches play before anything else.
         PlayerBarButton(
-          iconAsset: playing ? 'assets/icons/pause.svg' : 'assets/icons/play.svg',
+          icon: playing ? DsIcons.pause : DsIcons.play,
           label: playing ? t.player.pause : t.player.play,
           autofocus: tv,
           onPressed: () {
@@ -1260,7 +1262,7 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> wit
         // button and the slider beside it, the slider speaking past a mute.
         PlayerBarButton(
           label: _muted ? t.player.unmute : t.player.mute,
-          iconAsset: _muted ? 'assets/icons/volume-muted.svg' : 'assets/icons/volume.svg',
+          icon: _muted ? DsIcons.volumeX : DsIcons.volume2,
           onPressed: () {
             _wake();
             unawaited(_toggleMute());
@@ -1270,6 +1272,14 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> wit
           width: compact ? 72 : 96,
           child: DsSlider(
             value: handle.volume,
+            style: const DsSliderStyle(
+                          height: 24,
+                          trackHeight: 4,
+                          trackColor: OnVideoColors.track,
+                          fillColor: OnVideoColors.foreground,
+                          thumbColor: OnVideoColors.foreground,
+                          thumbSize: 12,
+                        ),
             onChanged: (value) {
               _wake();
               unawaited(_setVolume(value));
@@ -1277,12 +1287,7 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> wit
             semanticLabel: t.player.volume,
           ),
         ),
-        if (!compact) const Spacer(),
-        Text(
-          '${vodDurationText(position)} / ${vodDurationText(total)}',
-          style: DsTheme.of(context).typography.numeric(DsTheme.of(context).typography.caption),
-        ),
-        if (!compact) const Spacer(),
+        const Spacer(),
         if (controller.supportsDanmaku) ...[
           PlayerBarButton(
             iconAsset: controller.danmakuVisible ? 'assets/icons/danmaku-on.svg' : 'assets/icons/danmaku-off.svg',
@@ -1314,13 +1319,13 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> wit
                   onPressed: () => unawaited(controller.selectQuality(quality.id)),
                 ),
             ],
-            builder: (context, menu, _) => PlayerBarButton(
-              // The room's quality picker wears the same gauge: the word
-              // names the current choice, the glyph names the verb.
-              icon: DsIcons.gauge,
-              label:
+            builder: (context, menu, _) => PlayerBarChoice(
+              anchorKey: _qualityAnchor,
+              label: t.room.replayQuality,
+              value:
                   controller.qualities.where((item) => item.id == controller.qualityId).firstOrNull?.label ??
                   t.room.replayQuality,
+              icon: DsIcons.gauge,
               onPressed: () {
                 _wake();
                 menu.toggle();
@@ -1334,9 +1339,11 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> wit
             for (final rate in _speedChoices)
               DsMenuItem(label: Text(playerRateLabel(rate)), onPressed: () => unawaited(controller.setRate(rate))),
           ],
-          builder: (context, menu, _) => PlayerBarButton(
+          builder: (context, menu, _) => PlayerBarChoice(
+            anchorKey: _speedAnchor,
+            label: t.player.speed,
+            value: playerRateLabel(controller.rate),
             icon: DsIcons.timer,
-            label: playerRateLabel(controller.rate),
             onPressed: () {
               _wake();
               menu.toggle();
@@ -1377,6 +1384,7 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> wit
           PlayerBarButton(
             icon: presentation == PresentationMode.fullscreen ? DsIcons.minimize : DsIcons.maximize,
             label: presentation == PresentationMode.fullscreen ? t.room.fullscreenOff : t.room.fullscreenOn,
+            selected: presentation == PresentationMode.fullscreen,
             onPressed: () {
               _wake();
               unawaited(_toggleFullscreen());
@@ -1391,10 +1399,14 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> wit
         spacing: DsSpace.s4,
         mainAxisSize: MainAxisSize.min,
         children: [
-          VodSeekBar(
+          PlayerSeekLayer.replay(
             position: position,
             duration: total,
-            onSeek: (seconds) => unawaited(controller.seek(Duration(milliseconds: (seconds * 1000).round()))),
+            seekBar: VodSeekBar(
+              position: position,
+              duration: total,
+              onSeek: (seconds) => unawaited(controller.seek(Duration(milliseconds: (seconds * 1000).round()))),
+            ),
           ),
           if (compact) SingleChildScrollView(scrollDirection: Axis.horizontal, child: bar) else bar,
         ],

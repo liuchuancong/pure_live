@@ -89,7 +89,7 @@ final class _PresentationCluster extends ConsumerWidget {
             ),
           if (showPip)
             PlayerBarButton(
-              iconAsset: presentation == PresentationMode.pip ? 'assets/icons/pip-exit.svg' : 'assets/icons/pip.svg',
+              icon: presentation == PresentationMode.pip ? DsIcons.pictureInPicture2 : DsIcons.pictureInPicture,
               label: presentation == PresentationMode.pip ? t.player.pipOff : t.player.pipOn,
               selected: presentation == PresentationMode.pip,
               onPressed: () {
@@ -191,7 +191,7 @@ final class _PipTransportBar extends ConsumerWidget {
             children: [
               PlayerGlassPill(
                 child: PlayerBarButton(
-                  iconAsset: muted ? 'assets/icons/volume-muted.svg' : 'assets/icons/volume.svg',
+                  icon: muted ? DsIcons.volumeX : DsIcons.volume2,
                   label: muted ? t.player.unmute : t.player.mute,
                   onPressed: () => unawaited(controller.setMuted(value: !muted)),
                 ),

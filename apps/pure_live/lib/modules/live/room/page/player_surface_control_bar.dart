@@ -100,7 +100,7 @@ final class _ControlBarState extends ConsumerState<_ControlBar> {
           final wide = constraints.maxWidth >= 720;
           final crowded = constraints.maxWidth < 320;
           final play = PlayerBarButton(
-            iconAsset: playing ? 'assets/icons/pause.svg' : 'assets/icons/play.svg',
+            icon: playing ? DsIcons.pause : DsIcons.play,
             label: playing ? t.player.pause : t.player.play,
             autofocus: widget.autofocusPlay,
             onPressed: () {
@@ -126,7 +126,7 @@ final class _ControlBarState extends ConsumerState<_ControlBar> {
           final muted = room.muted;
           final muteButton = !pip && player != null
               ? PlayerBarButton(
-                  iconAsset: muted ? 'assets/icons/volume-muted.svg' : 'assets/icons/volume.svg',
+                  icon: muted ? DsIcons.volumeX : DsIcons.volume2,
                   label: muted ? t.player.unmute : t.player.mute,
                   onPressed: () {
                     widget.onWake();
@@ -136,10 +136,18 @@ final class _ControlBarState extends ConsumerState<_ControlBar> {
               : null;
           final volumeSlider = !pip && player != null && wide
               ? SizedBox(
-                  width: 72,
+                  width: 96,
                   child: DsSlider(
                     value: (room.volume * 100).clamp(0.0, 100.0),
                     max: 100,
+                    style: const DsSliderStyle(
+                      height: 24,
+                      trackHeight: 4,
+                      trackColor: OnVideoColors.track,
+                      fillColor: OnVideoColors.foreground,
+                      thumbColor: OnVideoColors.foreground,
+                      thumbSize: 12,
+                    ),
                     onChanged: (value) {
                       widget.onWake();
                       unawaited(controller.setVolume(value / 100));
@@ -191,6 +199,16 @@ final class _ControlBarState extends ConsumerState<_ControlBar> {
                   },
                 )
               : null;
+          final pipButton = !pip && player != null && presentationController.pipAvailable
+              ? PlayerBarButton(
+                  icon: DsIcons.pictureInPicture2,
+                  label: t.player.pipOn,
+                  onPressed: () {
+                    widget.onWake();
+                    unawaited(toggleRoomPip(context, ref));
+                  },
+                )
+              : null;
           return Row(
             spacing: tv ? DsSpace.s8 : DsSpace.s4,
             children: [
@@ -209,6 +227,7 @@ final class _ControlBarState extends ConsumerState<_ControlBar> {
               else
                 const Spacer(),
               if (!crowded) const _BarDivider(),
+              ?pipButton,
               ?windowButton,
               ?fullscreenButton,
             ],

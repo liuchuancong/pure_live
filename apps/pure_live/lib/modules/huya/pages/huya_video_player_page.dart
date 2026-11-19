@@ -62,6 +62,8 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
   PlayerHandle? _handle;
   PlayerKernel? _kernel;
   HuyaVideoPlaybackController? _controller;
+  final GlobalKey _qualityAnchor = GlobalKey();
+  final GlobalKey _speedAnchor = GlobalKey();
   bool _disposed = false;
   bool _startFailed = false;
 
@@ -976,7 +978,7 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
           null => t.settings.downloadPercentUnknown,
         }, style: DsTheme.of(context).typography.small.copyWith(color: OnVideoColors.foreground));
         trailing = PlayerBarButton(
-          iconAsset: 'assets/icons/pause.svg',
+          icon: DsIcons.pause,
           label: t.player.downloadPause,
           onPressed: () => unawaited(ref.read(huyaDownloadsProvider.notifier).pause(widget.id)),
         );
@@ -986,7 +988,7 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
           style: DsTheme.of(context).typography.small.copyWith(color: OnVideoColors.foreground),
         );
         trailing = PlayerBarButton(
-          iconAsset: 'assets/icons/play.svg',
+          icon: DsIcons.play,
           label: t.settings.downloadResume,
           onPressed: () => unawaited(ref.read(huyaDownloadsProvider.notifier).resume(widget.id)),
         );
@@ -1060,7 +1062,7 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
       // here would be the same verb twice.
       if (pipAvailable && presentation != PresentationMode.pip)
         PlayerBarButton(
-          iconAsset: 'assets/icons/pip.svg',
+          icon: DsIcons.pictureInPicture,
           label: t.player.pipOn,
           onPressed: () {
             _wake();
@@ -1143,7 +1145,7 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
           PlayerGlassPill(
             child: presentation == PresentationMode.pip
                 ? PlayerBarButton(
-                    iconAsset: 'assets/icons/pip-exit.svg',
+                    icon: DsIcons.pictureInPicture2,
                     label: t.player.pipOff,
                     autofocus: true,
                     onPressed: () {
@@ -1226,7 +1228,7 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
       spacing: tv ? DsSpace.s8 : DsSpace.s4,
       children: [
         PlayerBarButton(
-          iconAsset: playing ? 'assets/icons/pause.svg' : 'assets/icons/play.svg',
+          icon: playing ? DsIcons.pause : DsIcons.play,
           label: playing ? t.player.pause : t.player.play,
           onPressed: () {
             _wake();
@@ -1237,7 +1239,7 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
         // button and the slider beside it, the slider speaking past a mute.
         PlayerBarButton(
           label: _muted ? t.player.unmute : t.player.mute,
-          iconAsset: _muted ? 'assets/icons/volume-muted.svg' : 'assets/icons/volume.svg',
+          icon: _muted ? DsIcons.volumeX : DsIcons.volume2,
           onPressed: () {
             _wake();
             unawaited(_toggleMute());
@@ -1247,6 +1249,14 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
           width: compact ? 72 : 96,
           child: DsSlider(
             value: handle.volume,
+            style: const DsSliderStyle(
+                          height: 24,
+                          trackHeight: 4,
+                          trackColor: OnVideoColors.track,
+                          fillColor: OnVideoColors.foreground,
+                          thumbColor: OnVideoColors.foreground,
+                          thumbSize: 12,
+                        ),
             onChanged: (value) {
               _wake();
               unawaited(_setVolume(value));
@@ -1254,12 +1264,7 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
             semanticLabel: t.player.volume,
           ),
         ),
-        if (!compact) const Spacer(),
-        Text(
-          '${vodDurationText(position)} / ${vodDurationText(total)}',
-          style: DsTheme.of(context).typography.numeric(DsTheme.of(context).typography.caption),
-        ),
-        if (!compact) const Spacer(),
+        const Spacer(),
         if (controller.qualities.length > 1)
           DsMenuAnchor(
             semanticLabel: t.player.quality,
@@ -1271,13 +1276,13 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
                   onPressed: () => unawaited(controller.selectQuality(quality.id)),
                 ),
             ],
-            builder: (context, menu, _) => PlayerBarButton(
-              // The room's quality picker wears the same gauge: the word
-              // names the current choice, the glyph names the verb.
-              icon: DsIcons.gauge,
-              label:
+            builder: (context, menu, _) => PlayerBarChoice(
+              anchorKey: _qualityAnchor,
+              label: t.player.quality,
+              value:
                   controller.qualities.where((item) => item.id == controller.qualityId).firstOrNull?.label ??
                   t.player.quality,
+              icon: DsIcons.gauge,
               onPressed: () {
                 _wake();
                 menu.toggle();
@@ -1291,9 +1296,11 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
             for (final rate in _speedChoices)
               DsMenuItem(label: Text(playerRateLabel(rate)), onPressed: () => unawaited(controller.setRate(rate))),
           ],
-          builder: (context, menu, _) => PlayerBarButton(
+          builder: (context, menu, _) => PlayerBarChoice(
+            anchorKey: _speedAnchor,
+            label: t.player.speed,
+            value: playerRateLabel(controller.rate),
             icon: DsIcons.timer,
-            label: playerRateLabel(controller.rate),
             onPressed: () {
               _wake();
               menu.toggle();
@@ -1319,6 +1326,7 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
           PlayerBarButton(
             icon: presentation == PresentationMode.fullscreen ? DsIcons.minimize : DsIcons.maximize,
             label: presentation == PresentationMode.fullscreen ? t.room.fullscreenOff : t.room.fullscreenOn,
+            selected: presentation == PresentationMode.fullscreen,
             onPressed: () {
               _wake();
               unawaited(_toggleFullscreen());
@@ -1333,11 +1341,15 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
         mainAxisSize: MainAxisSize.min,
         children: [
           ?_downloadPill(),
-          VodSeekBar(
+          PlayerSeekLayer.replay(
             position: position,
             duration: total,
-            coverUrl: controller.video.cover.isEmpty ? null : controller.video.cover,
-            onSeek: (seconds) => unawaited(controller.seek(Duration(milliseconds: (seconds * 1000).round()))),
+            seekBar: VodSeekBar(
+              position: position,
+              duration: total,
+              coverUrl: controller.video.cover.isEmpty ? null : controller.video.cover,
+              onSeek: (seconds) => unawaited(controller.seek(Duration(milliseconds: (seconds * 1000).round()))),
+            ),
           ),
           if (compact) SingleChildScrollView(scrollDirection: Axis.horizontal, child: bar) else bar,
         ],

@@ -1158,7 +1158,7 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
                       // window's top-left.
                       child: PlayerGlassPill(
                         child: PlayerBarButton(
-                          iconAsset: 'assets/icons/pip-exit.svg',
+                          icon: DsIcons.pictureInPicture2,
                           label: context.t.player.pipOff,
                           onPressed: widget.onLeave,
                         ),

@@ -414,7 +414,6 @@ final class _TopToolCluster extends ConsumerWidget {
           required String label,
           required VoidCallback? onPressed,
           DsIconData? icon,
-          String? iconAsset,
           bool alert = false,
         }) {
           final corners = theme.radii.controlCorners(null, side);
@@ -426,13 +425,6 @@ final class _TopToolCluster extends ConsumerWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: theme.typography.caption.copyWith(color: ink, fontWeight: FontWeight.w600),
-            );
-          } else if (iconAsset != null) {
-            child = SvgPicture.asset(
-              iconAsset,
-              width: 16,
-              height: 16,
-              colorFilter: ColorFilter.mode(ink, BlendMode.srcIn),
             );
           } else {
             child = DsIcon(

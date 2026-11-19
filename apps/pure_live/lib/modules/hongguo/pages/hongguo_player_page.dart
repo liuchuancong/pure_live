@@ -56,6 +56,8 @@ import 'package:pure_live/modules/hongguo/widgets/hongguo_episode_shelf.dart'
         hongguoEpisodeRangeLabel,
         kHongguoEpisodeGroup;
 import 'package:pure_live/modules/hongguo/widgets/hongguo_widgets.dart' show hongguoDurationText;
+import 'package:pure_live/modules/live/room/page/chat_splitter.dart' show ChatSplitter;
+import 'package:pure_live/modules/vod/widgets/vod_widgets.dart' show VodFoldedText, VodRailDoor;
 import 'package:pure_live/shared/shared.dart';
 
 /// The catalogues the picture bar hangs over.
@@ -1576,26 +1578,66 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
         ],
       ),
     );
+    final railMax = (MediaQuery.sizeOf(context).width - _railStageFloor).clamp(_railMin, _railMax);
+    final railWidth = _railWidth.clamp(_railMin, railMax);
     return Row(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Expanded(
-          child: SingleChildScrollView(
-            padding: EdgeInsetsDirectional.fromSTEB(inset, DsSpace.s16, DsSpace.s16, DsSpace.s24),
+          child: Stack(
+            children: [
+              SingleChildScrollView(
+                padding: EdgeInsetsDirectional.fromSTEB(inset, DsSpace.s16, DsSpace.s16, DsSpace.s24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  spacing: DsSpace.s20,
+                  children: [player, head, comments],
+                ),
+              ),
+              if (!_railOpen) VodRailDoor(label: t.hongguo.episodes, onOpen: () => setState(() => _railOpen = true)),
+            ],
+          ),
+        ),
+        if (_railOpen) ...[
+          ChatSplitter(
+            width: railWidth,
+            minWidth: _railMin,
+            maxWidth: railMax,
+            onResize: (value) => setState(() => _railWidth = value),
+            onResizeEnd: (value) => setState(() => _railWidth = value),
+            onReset: () => setState(() => _railWidth = _railDefaultWidth),
+            label: t.hongguo.episodes,
+          ),
+          SizedBox(
+            width: railWidth,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
-              spacing: DsSpace.s20,
-              children: [player, head, comments],
+              children: [
+                Padding(
+                  padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s8, DsSpace.s8, DsSpace.s8, 0),
+                  child: Row(
+                    children: [
+                      const Spacer(),
+                      DsButton.icon(
+                        variant: DsButtonVariant.ghost,
+                        size: DsSize.sm,
+                        onPressed: () => setState(() => _railOpen = false),
+                        icon: const DsIcon(DsIcons.panelRightClose),
+                        semanticLabel: t.common.previewCollapseList,
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(DsSpace.s12, 0, DsSpace.s20, DsSpace.s24),
+                    child: shelf,
+                  ),
+                ),
+              ],
             ),
           ),
-        ),
-        SizedBox(
-          width: 340,
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(0, DsSpace.s16, DsSpace.s20, DsSpace.s24),
-            child: shelf,
-          ),
-        ),
+        ],
       ],
     );
   }
@@ -1614,9 +1656,17 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
     );
   }
 
-  /// Whether the watch head's blurb stands unfolded. Two lines are the
-  /// shelf's read; the rest waits for the viewer's ask.
-  bool _introExpanded = false;
+  /// The wide window's episode rail: open or folded to its door, and the
+  /// width the seam's drag left it at — the season page's rail, pointed at
+  /// the shelf.
+  bool _railOpen = true;
+  double _railWidth = _railDefaultWidth;
+  static const double _railMin = 280;
+  static const double _railMax = 520;
+  static const double _railDefaultWidth = 340;
+
+  /// The least width the stage keeps beside the rail.
+  static const double _railStageFloor = 420;
 
   /// What is playing, under the stage on the stacked layout: the series'
   /// name, the episode and the figures it carries, and the verbs inline — the
@@ -1703,42 +1753,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
             ),
           ],
         ),
-        if (meta.intro.isNotEmpty)
-          LayoutBuilder(
-            builder: (context, constraints) {
-              // Two lines until the viewer asks for the rest, the video
-              // page's own fold — the words measured so the verb only shows
-              // when they really run past.
-              final style = theme.typography.body.copyWith(color: colors.textMuted);
-              final painter = TextPainter(
-                text: TextSpan(text: meta.intro, style: style),
-                maxLines: 2,
-                textDirection: Directionality.of(context),
-                textScaler: MediaQuery.textScalerOf(context),
-              )..layout(maxWidth: constraints.maxWidth);
-              final overflows = painter.didExceedMaxLines;
-              painter.dispose();
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                spacing: DsSpace.s4,
-                children: [
-                  Text(
-                    meta.intro,
-                    maxLines: _introExpanded ? null : 2,
-                    overflow: _introExpanded ? null : TextOverflow.ellipsis,
-                    style: style,
-                  ),
-                  if (overflows)
-                    DsButton(
-                      variant: DsButtonVariant.ghost,
-                      size: DsSize.sm,
-                      onPressed: () => setState(() => _introExpanded = !_introExpanded),
-                      child: Text(_introExpanded ? t.hongguo.collapse : t.hongguo.expand),
-                    ),
-                ],
-              );
-            },
-          ),
+        if (meta.intro.isNotEmpty) VodFoldedText(text: meta.intro, maxLines: 2),
       ],
     );
   }
@@ -2269,7 +2284,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
           PlayerGlassPill(
             child: inPip
                 ? PlayerBarButton(
-                    iconAsset: 'assets/icons/pip-exit.svg',
+                    icon: DsIcons.pictureInPicture2,
                     label: t.player.pipOff,
                     autofocus: true,
                     onPressed: () {
@@ -2491,7 +2506,6 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
   /// more menu instead.
   Widget _controlBar(BuildContext context, {required bool immersive}) {
     final t = context.t;
-    final theme = DsTheme.of(context);
     final handle = _handle;
     final transport = _transport;
     final playing = transport?.isPlaying ?? false;
@@ -2499,7 +2513,6 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
     final position = _dragSeconds != null
         ? Duration(milliseconds: (_dragSeconds! * 1000).round())
         : transport?.position ?? Duration.zero;
-    final timeStyle = theme.typography.numeric(theme.typography.caption.copyWith(color: OnVideoColors.foreground));
     final speedLabel = playerRateLabel(_speed);
     final next = _nextEpisode();
     return PlayerControlBar(
@@ -2515,46 +2528,24 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
           // the pickers come back once the bar can pay for them.
           final wide = constraints.maxWidth >= 480;
           final labels = constraints.maxWidth >= 640;
-          Widget clock(Duration value) => Text(hongguoDurationText(value), style: timeStyle);
-          final seek = DsSlider(
-            value: duration.inMilliseconds <= 0
-                ? 0
-                : position.inMilliseconds.clamp(0, duration.inMilliseconds).toDouble(),
-            max: duration.inMilliseconds <= 0 ? 1 : duration.inMilliseconds.toDouble(),
-            onChanged: duration.inMilliseconds <= 0 ? null : (value) => setState(() => _dragSeconds = value / 1000),
-            onChangeEnd: duration.inMilliseconds <= 0
-                ? null
-                : (value) {
-                    final seconds = value / 1000;
-                    setState(() => _dragSeconds = null);
-                    unawaited(_seekTo(seconds));
-                  },
-            semanticLabel: t.player.progress,
-          );
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             spacing: DsSpace.s4,
             children: [
-              // Wide, the seek line runs alone and the clock rides the row
-              // below; narrow, the clock splits to the line's ends — the
-              // phone player's own layout — and the row below loses nothing
-              // it cannot spare.
-              if (wide)
-                seek
-              else
-                Row(
-                  spacing: DsSpace.s8,
-                  children: [
-                    clock(position),
-                    Expanded(child: seek),
-                    clock(duration),
-                  ],
-                ),
+              // The bar's first layer: the clocks at the line's ends at every
+              // width — the archive bars' layer, this station's seek riding
+              // it, the drag speaking the same two callbacks it always did.
+              PlayerSeekLayer.replay(
+                position: position,
+                duration: duration,
+                onSeek: (seconds) => unawaited(_seekTo(seconds)),
+                onScrub: (seconds) => setState(() => _dragSeconds = seconds),
+              ),
               Row(
                 spacing: PlayerBarTier.tvOf(context) ? DsSpace.s8 : DsSpace.s4,
                 children: [
                   PlayerBarButton(
-                    iconAsset: playing ? 'assets/icons/pause.svg' : 'assets/icons/play.svg',
+                    icon: playing ? DsIcons.pause : DsIcons.play,
                     label: playing ? t.player.pause : t.player.play,
                     focusNode: _playFocus,
                     onPressed: handle == null
@@ -2574,14 +2565,10 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
                       label: t.hongguo.nextEpisode,
                       onPressed: handle == null ? null : () => unawaited(_openEpisode(next)),
                     ),
-                  if (wide)
-                    // Where the episode is, and how long it runs — the bar's
-                    // own reading of the seek line.
-                    Text('${hongguoDurationText(position)} / ${hongguoDurationText(duration)}', style: timeStyle),
                   // Mute stays one thumb away at every width; the slider
                   // beside it waits for a bar that can pay for it.
                   PlayerBarButton(
-                    iconAsset: _effectivelyMuted ? 'assets/icons/volume-muted.svg' : 'assets/icons/volume.svg',
+                    icon: _effectivelyMuted ? DsIcons.volumeX : DsIcons.volume2,
                     label: _effectivelyMuted ? t.player.unmute : t.player.mute,
                     onPressed: handle == null
                         ? null
@@ -2595,6 +2582,14 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
                       width: 72,
                       child: DsSlider(
                         value: _effectivelyMuted ? 0 : _volume,
+                        style: const DsSliderStyle(
+                          height: 24,
+                          trackHeight: 4,
+                          trackColor: OnVideoColors.track,
+                          fillColor: OnVideoColors.foreground,
+                          thumbColor: OnVideoColors.foreground,
+                          thumbSize: 12,
+                        ),
                         onChanged: handle == null ? null : (value) => unawaited(_setVolume(value)),
                         semanticLabel: t.player.volume,
                       ),
