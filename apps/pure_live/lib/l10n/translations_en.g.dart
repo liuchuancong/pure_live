@@ -1903,7 +1903,6 @@ class _Translations$navigation$en extends Translations$navigation$zh_CN {
 	@override String get toolbox => 'Toolbox';
 	@override String get record => 'Recording';
 	@override String get downloadsCenter => 'Download centre';
-	@override String get continueWatching => 'Continue watching';
 	@override String get settings => 'Settings';
 	@override String get appearance => 'Appearance';
 	@override String get proxy => 'Network proxy';
@@ -6639,7 +6638,6 @@ extension on TranslationsEn {
 			'navigation.toolbox' => 'Toolbox',
 			'navigation.record' => 'Recording',
 			'navigation.downloadsCenter' => 'Download centre',
-			'navigation.continueWatching' => 'Continue watching',
 			'navigation.settings' => 'Settings',
 			'navigation.appearance' => 'Appearance',
 			'navigation.proxy' => 'Network proxy',
@@ -6811,9 +6809,9 @@ extension on TranslationsEn {
 			'recorder.caCustomNotPem' => 'That is not a PEM certificate bundle (it should contain -----BEGIN CERTIFICATE-----)',
 			'recorder.caCustomPickFailed' => 'The certificate file could not be read',
 			'recorder.caCustomClear' => 'Use bundled',
+			'recorder.caCustomCleared' => 'Recording uses the bundled root store again',
 			_ => null,
 		} ?? switch (path) {
-			'recorder.caCustomCleared' => 'Recording uses the bundled root store again',
 			'recorder.startNowBusyOther' => 'Another window is recording this room',
 			'recorder.startNowCaFailed' => 'The custom CA bundle cannot be read — pick it again or switch to the bundled store',
 			'recorder.stateSaved' => 'Saved',
@@ -7325,9 +7323,9 @@ extension on TranslationsEn {
 			'settings.navFloatingWindow' => 'Floating window & PiP',
 			'settings.groupData' => 'Data',
 			'settings.groupAbout' => 'About',
+			'settings.groupIptv' => 'IPTV',
 			_ => null,
 		} ?? switch (path) {
-			'settings.groupIptv' => 'IPTV',
 			'settings.groupVod' => 'Bilibili video',
 			'settings.generalDescription' => 'Browsing, window and startup pages.',
 			'settings.appearanceDescription' => 'Theme, typography and colours.',
@@ -7839,9 +7837,9 @@ extension on TranslationsEn {
 			'settings.navIptvGroups' => 'Group visibility',
 			'settings.iptvGroupsDescription' => 'Chooses which groups appear in the channel lists and the zapping.',
 			'settings.navDanmaku' => 'Danmaku',
+			'settings.navMiniDanmaku' => 'Mini-window danmaku',
 			_ => null,
 		} ?? switch (path) {
-			'settings.navMiniDanmaku' => 'Mini-window danmaku',
 			'settings.navKernel' => 'Player engine',
 			'settings.navRecording' => 'Recording',
 			'settings.videoDescription' => 'Quality, audio and how the picture fits.',
@@ -8353,9 +8351,9 @@ extension on TranslationsEn {
 			'settings.wallpaperCategoryFantasyArt' => 'Fantasy Art',
 			'settings.wallpaperCategoryFinalFantasy' => 'Final Fantasy',
 			'settings.tagManagement' => 'Tag management',
+			'settings.tagManagementDesc' => 'Customize and manage the tags rooms are filtered by',
 			_ => null,
 		} ?? switch (path) {
-			'settings.tagManagementDesc' => 'Customize and manage the tags rooms are filtered by',
 			'settings.tagAdd' => 'Add tag',
 			'settings.tagEdit' => 'Edit tag',
 			'settings.tagPin' => 'Move to top',
@@ -8867,9 +8865,9 @@ extension on TranslationsEn {
 			'toolbox.nodeHint' => 'Run a check to test this platform.',
 			'toolbox.nodeAnswer' => ({required int count}) => '${count} rooms returned',
 			'toolbox.nodeSourceRecommended' => 'Recommended endpoint',
+			'toolbox.nodeSourceHot' => 'Hot-list endpoint',
 			_ => null,
 		} ?? switch (path) {
-			'toolbox.nodeSourceHot' => 'Hot-list endpoint',
 			'toolbox.nodeSummary' => ({required Object ok, required Object tested, required Object total}) => '${ok} / ${tested} reachable · ${total} platforms',
 			'toolbox.nodeUntestedSummary' => ({required Object total}) => 'Not tested yet · ${total} platforms',
 			'toolbox.logsSection' => 'Logs & diagnostics',

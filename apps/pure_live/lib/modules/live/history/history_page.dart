@@ -356,7 +356,7 @@ final class _HistoryPageState extends ConsumerState<HistoryPage> {
       child: RoomCard(
         room: room,
         listRow: listRow,
-        cornerNote: liveWatchClock(watchedAt),
+        cornerNote: _watchClock(watchedAt),
         onOpen: open,
         onRemove: remove,
         removeLabel: t.history.remove,
@@ -938,6 +938,15 @@ final class _FilterPanelState extends State<_FilterPanel> {
 
 /// The moment a record was watched, as a clock on today's records and a
 /// short date otherwise.
+String _watchClock(DateTime time) {
+  final local = time.toLocal();
+  final now = DateTime.now();
+  String two(int value) => value.toString().padLeft(2, '0');
+  final clock = '${two(local.hour)}:${two(local.minute)}';
+  final sameDay = local.year == now.year && local.month == now.month && local.day == now.day;
+  return sameDay ? clock : '${two(local.month)}-${two(local.day)}';
+}
+
 /// A word handed to the history page's filter from outside (the toolbar's
 /// field): the page takes it once — into the filter in force — and clears
 /// it, so a back-and-forth never replays it.
