@@ -756,6 +756,79 @@ void main() {
     expect(lines.first.end, const Duration(milliseconds: 2500));
     expect(lines.last.start, const Duration(seconds: 5));
   });
+
+  test('the write verbs post the csrf pair to their endpoints', () async {
+    final http = _FakeHttp({
+      '/x/web-interface/archive/like': {'code': 0},
+      '/x/relation/modify': {'code': 0},
+      '/pgc/web/follow/add': {'code': 0},
+      '/pgc/web/follow/del': {'code': 0},
+    });
+    final client = BilibiliVodClient(http, cookie: 'SESSDATA=abc; bili_jct=token456; DedeUserID=7');
+    expect(client.canWrite, isTrue);
+
+    await client.setLike(aid: 42, like: true);
+    await client.setFollowing(mid: 99, follow: true);
+    await client.setSeasonFollow(seasonId: 7, follow: true);
+    await client.setSeasonFollow(seasonId: 7, follow: false);
+
+    expect(http.asked.map((uri) => uri.path), [
+      '/x/web-interface/archive/like',
+      '/x/relation/modify',
+      '/pgc/web/follow/add',
+      '/pgc/web/follow/del',
+    ]);
+    expect(http.bodies[0], contains('aid=42'));
+    expect(http.bodies[0], contains('like=1'));
+    expect(http.bodies[1], contains('fid=99'));
+    expect(http.bodies[1], contains('act=1'));
+    // The re_src lesson: the endpoint answers code 0 but drops the mutation
+    // without it.
+    expect(http.bodies[1], contains('re_src=11'));
+    expect(http.bodies[2], contains('season_id=7'));
+    expect(http.bodies[3], contains('season_id=7'));
+    for (final body in http.bodies.take(4)) {
+      expect(body, contains('csrf=token456'));
+      expect(body, contains('csrf_token=token456'));
+    }
+  });
+
+  test('a cookie without the csrf token keeps the verbs inert', () async {
+    final http = _FakeHttp(const {});
+    final client = BilibiliVodClient(http, cookie: 'SESSDATA=abc');
+    expect(client.canWrite, isFalse);
+    await expectLater(client.setLike(aid: 1, like: true), throwsA(isA<VodFailure>()));
+    expect(http.asked, isEmpty);
+    expect(BilibiliVodClient(http).canWrite, isFalse);
+  });
+
+  test('the liked and following reads answer the signed-in verdict', () async {
+    final http = _FakeHttp({
+      '/x/web-interface/archive/has/like': {
+        'code': 0,
+        'data': [1],
+      },
+      '/x/relation': {
+        'code': 0,
+        'data': {'attribute': 2},
+      },
+    });
+    final client = BilibiliVodClient(http, cookie: 'SESSDATA=abc; bili_jct=t');
+    expect(await client.hasLiked(aid: 5), isTrue);
+    expect(await client.isFollowing(mid: 6), isTrue);
+    expect(http.asked.last.queryParameters['mid'], '6');
+    // A guest reads a plain no, and no request goes out.
+    final guest = BilibiliVodClient(http);
+    expect(await guest.hasLiked(aid: 5), isFalse);
+    expect(await guest.isFollowing(mid: 6), isFalse);
+    expect(http.asked, hasLength(2));
+  });
+
+  test('a business error in a write comes back as VodFailure', () async {
+    final http = _FakeHttp({'/x/web-interface/archive/like': {'code': -101, 'message': '账号未登录'}});
+    final client = BilibiliVodClient(http, cookie: 'SESSDATA=a; bili_jct=t');
+    await expectLater(client.setLike(aid: 1, like: true), throwsA(isA<VodFailure>()));
+  });
 }
 
 /// The nav answer a signed request signs with.
@@ -777,11 +850,13 @@ final class _FakeHttp implements LiveHttp {
   final Map<String, Object?> answers;
   final List<Uri> asked = [];
   final List<Map<String, String>> askedHeaders = [];
+  final List<String?> bodies = [];
 
   @override
   Future<LiveResponse> send(LiveRequest request) async {
     asked.add(request.url);
     askedHeaders.add(request.headers);
+    bodies.add(request.body);
     final answer = answers[request.url.path];
     if (answer == null) {
       return LiveResponse(statusCode: 404, headers: const {}, bodyBytes: Uint8List(0));

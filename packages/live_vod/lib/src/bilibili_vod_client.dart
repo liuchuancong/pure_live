@@ -1508,6 +1508,91 @@ final class BilibiliVodClient {
     backupUrls: _urlListOf(row['backupUrl'] ?? row['backup_url']),
   );
 
+  // ---- The signed-in viewer's verdicts (the write surface) ----
+
+  /// Whether the carried cookie carries the write credential (`bili_jct`):
+  /// the csrf token every state-changing endpoint requires. A pasted cookie
+  /// line without it leaves these verbs inert, and the UI keeps its read-only
+  /// shape — the access-key session (the app scan sign-in) is a different
+  /// credential model these web endpoints do not take.
+  bool get canWrite => _csrf.isNotEmpty;
+
+  /// The csrf token the write endpoints require; it lives in the cookie.
+  String get _csrf => RegExp('bili_jct=([^;]+)').firstMatch(cookie)?.group(1) ?? '';
+
+  /// POSTs [fields] (+ the csrf pair) url-encoded — the shape every
+  /// state-changing web endpoint takes — and reads the shared verdict, whose
+  /// business-error and risk-control checks a write wants exactly as a read
+  /// does.
+  Future<void> _postForm(String path, Map<String, String> fields) async {
+    if (_csrf.isEmpty) {
+      throw const VodFailure('the write needs a signed-in cookie with bili_jct');
+    }
+    final response = await http.send(
+      LiveRequest.form(
+        Uri.https('api.bilibili.com', path),
+        fields: {...fields, 'csrf': _csrf, 'csrf_token': _csrf},
+        headers: _headers,
+      ),
+    );
+    _body(response);
+  }
+
+  /// Likes (or un-likes) an archive (`x/web-interface/archive/like`).
+  Future<void> setLike({required int aid, required bool like}) async {
+    await _postForm('/x/web-interface/archive/like', {'aid': '$aid', 'like': like ? '1' : '2'});
+  }
+
+  /// Whether the signed-in viewer has liked an archive
+  /// (`x/web-interface/archive/has/like`); a guest is a plain no.
+  Future<bool> hasLiked({required int aid}) async {
+    if (cookie.isEmpty) return false;
+    final response = await http.send(
+      LiveRequest.custom(
+        method: 'GET',
+        url: Uri.https('api.bilibili.com', '/x/web-interface/archive/has/like', {'aid': '$aid'}),
+        headers: _headers,
+      ),
+    );
+    final data = _body(response)['data'];
+    return data is List && data.isNotEmpty && data.first.toString() == '1';
+  }
+
+  /// Follows (or unfollows) a viewer (`x/relation/modify`).
+  ///
+  /// The full web parameter set — fid, act, re_src (11, from a user space) —
+  /// plus the csrf pair `_postForm` appends. Omitting `re_src` made the
+  /// endpoint answer code 0 while dropping the mutation, so the follow never
+  /// stuck and the optimistic flip lied about it; the reference client that
+  /// learned this the hard way carries the lesson, and this parameter set is
+  /// it.
+  Future<void> setFollowing({required int mid, required bool follow}) async {
+    await _postForm('/x/relation/modify', {'fid': '$mid', 'act': follow ? '1' : '2', 're_src': '11'});
+  }
+
+  /// Whether the signed-in viewer follows a viewer (`x/relation`; the
+  /// attribute 1 follow, 2 follower, 3 mutual set the reference client
+  /// reads as following). Any failure answers false — the chip then offers a
+  /// plain follow, which the API will correctly refuse.
+  Future<bool> isFollowing({required int mid}) async {
+    if (cookie.isEmpty) return false;
+    final response = await http.send(
+      LiveRequest.custom(
+        method: 'GET',
+        url: Uri.https('api.bilibili.com', '/x/relation', {'mid': '$mid'}),
+        headers: _headers,
+      ),
+    );
+    final data = _body(response)['data'];
+    final attribute = data is Map ? _intOf(data['attribute']) ?? 0 : 0;
+    return attribute == 1 || attribute == 2 || attribute == 3;
+  }
+
+  /// Follows (or unfollows) a cinema season (`pgc/web/follow/add`).
+  Future<void> setSeasonFollow({required int seasonId, required bool follow}) async {
+    await _postForm(follow ? '/pgc/web/follow/add' : '/pgc/web/follow/del', {'season_id': '$seasonId'});
+  }
+
   List<String> _urlListOf(Object? value) => [
     if (value is List)
       for (final entry in value)
