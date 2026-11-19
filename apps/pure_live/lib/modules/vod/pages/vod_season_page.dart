@@ -35,9 +35,11 @@ import 'package:pure_live/modules/vod/widgets/vod_player_chrome.dart'
 import 'package:pure_live/modules/vod/widgets/vod_widgets.dart' show VodFoldedText, VodRailDoor, vodDurationText;
 import 'package:pure_live/shared/player/on_video_colors.dart';
 import 'package:pure_live/shared/player/playback_layout.dart' show kPlaybackWideBreakpoint;
+import 'package:pure_live/shared/player/player_bar_choice.dart' show PlayerBarChoice;
 import 'package:pure_live/shared/player/player_bar_tier.dart' show PlayerBarButton, PlayerBarTier;
 import 'package:pure_live/shared/player/player_control_bar.dart' show PlayerControlBar;
 import 'package:pure_live/shared/player/player_overlay.dart' show PlayerGlassPill;
+import 'package:pure_live/shared/player/player_seek_layer.dart' show PlayerSeekLayer;
 import 'package:pure_live/shared/shared.dart'
     show
         AudienceFormat,
@@ -90,6 +92,9 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
   /// checks what is on the screen rather than what was asked for.
   int _openedQn = _defaultQn;
   String? _openedLabel;
+
+  /// The quality picker's box; the bar's panel language hangs from it.
+  final GlobalKey _qualityAnchor = GlobalKey();
 
   /// The pointer's answers: the chip a gesture left on the picture, the sound
   /// and the rate a drag or a hold is setting, and the bar's own patience. The
@@ -637,6 +642,17 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
     } on Object {
       // A refused volume is not a playback failure.
     }
+  }
+
+  Future<void> _toggleMute() async {
+    final handle = _handle;
+    if (handle == null) return;
+    try {
+      await handle.setMute(muted: !handle.muted);
+    } on Object {
+      // A refused mute is not a playback failure.
+    }
+    if (mounted) setState(() {});
   }
 
   Future<void> _setSpeed(double rate) async {
@@ -1603,7 +1619,7 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
                   // shade, one inset, and the archive's own buttons inside
                   // it, so the two detail pages answer alike.
                   child: PlayerControlBar(
-                    padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s8, DsSpace.s24, DsSpace.s8, DsSpace.s4),
+                    padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s12, 0, DsSpace.s12, DsSpace.s8),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       spacing: DsSpace.s4,
@@ -1650,48 +1666,26 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
                               ),
                             ],
                           ),
-                        Row(
-                          spacing: DsSpace.s8,
-                          children: [
-                            SizedBox(
-                              width: 54,
-                              child: Text(
-                                vodDurationText(position),
-                                textAlign: TextAlign.center,
-                                style: theme.typography.numeric(
-                                  theme.typography.caption.copyWith(color: OnVideoColors.foreground),
-                                ),
-                              ),
-                            ),
-                            Expanded(
-                              // The same three claims the archive's line makes:
-                              // watched, held, and — under the pointer — where
-                              // the episode would go.
-                              child: VodSeekBar(
-                                position: position,
-                                duration: duration,
-                                semanticLabel: t.player.progress,
-                                buffered: _transport?.buffer.ranges ?? const [],
-                                coverUrl: ref.read(vodSeasonDetailProvider(widget.seasonId)).value?.coverUrl,
-                                showPreview: ref.watch(vodPlaybackSettingsProvider).seekPreview,
-                                onScrub: (seconds) => setState(() => _dragSeconds = seconds),
-                                onSeek: (seconds) {
-                                  setState(() => _dragSeconds = null);
-                                  unawaited(_seekTo(seconds));
-                                },
-                              ),
-                            ),
-                            SizedBox(
-                              width: 54,
-                              child: Text(
-                                vodDurationText(duration),
-                                textAlign: TextAlign.center,
-                                style: theme.typography.numeric(
-                                  theme.typography.caption.copyWith(color: OnVideoColors.foreground),
-                                ),
-                              ),
-                            ),
-                          ],
+                        // The clocks and the line come from the shared layer
+                        // now; the season's own seek line — the preview, the
+                        // cover thumb — rides the slot the layer leaves for it.
+                        PlayerSeekLayer.replay(
+                          position: position,
+                          duration: duration,
+                          buffered: _transport?.buffer.ranges ?? const [],
+                          seekBar: VodSeekBar(
+                            position: position,
+                            duration: duration,
+                            semanticLabel: t.player.progress,
+                            buffered: _transport?.buffer.ranges ?? const [],
+                            coverUrl: ref.read(vodSeasonDetailProvider(widget.seasonId)).value?.coverUrl,
+                            showPreview: ref.watch(vodPlaybackSettingsProvider).seekPreview,
+                            onScrub: (seconds) => setState(() => _dragSeconds = seconds),
+                            onSeek: (seconds) {
+                              setState(() => _dragSeconds = null);
+                              unawaited(_seekTo(seconds));
+                            },
+                          ),
                         ),
                         // The bar's spacing and its buttons are the shared
                         // player's, so the season answers like the archive:
@@ -1722,7 +1716,7 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
                                 },
                               ),
                             PlayerBarButton(
-                              iconAsset: playing ? 'assets/icons/pause.svg' : 'assets/icons/play.svg',
+                              icon: playing ? DsIcons.pause : DsIcons.play,
                               label: playing ? t.player.pause : t.player.play,
                               onPressed: handle == null
                                   ? null
@@ -1731,12 +1725,49 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
                                       unawaited(_togglePlay());
                                     },
                             ),
+                            // The volume the archive bar carries and this one
+                            // never grew: the pair, then the slider, exactly
+                            // where the archive keeps them.
+                            PlayerBarButton(
+                              icon: (handle?.muted ?? false) ? DsIcons.volumeX : DsIcons.volume2,
+                              label: (handle?.muted ?? false) ? t.player.unmute : t.player.mute,
+                              onPressed: handle == null
+                                  ? null
+                                  : () {
+                                      _wake();
+                                      unawaited(_toggleMute());
+                                    },
+                            ),
+                            SizedBox(
+                              width: 96,
+                              child: DsSlider(
+                                value: ((handle?.volume ?? _volume) * 100).clamp(0.0, 100.0),
+                                max: 100,
+                                style: const DsSliderStyle(
+                                  height: 24,
+                                  trackHeight: 4,
+                                  trackColor: OnVideoColors.track,
+                                  fillColor: OnVideoColors.foreground,
+                                  thumbColor: OnVideoColors.foreground,
+                                  thumbSize: 12,
+                                ),
+                                onChanged: handle == null
+                                    ? null
+                                    : (value) {
+                                        _wake();
+                                        unawaited(_setVolume(value / 100));
+                                      },
+                                semanticLabel: t.player.volume,
+                              ),
+                            ),
                             if (qualities.isNotEmpty)
                               DsMenuAnchor(
                                 semanticLabel: _qualityMenuLabel(t),
-                                builder: (context, controller, child) => PlayerBarButton(
-                                  icon: DsIcons.settings2,
+                                builder: (context, controller, child) => PlayerBarChoice(
+                                  anchorKey: _qualityAnchor,
                                   label: _qualityMenuLabel(t),
+                                  value: _qualityMenuLabel(t),
+                                  icon: DsIcons.settings2,
                                   onPressed: controller.open,
                                 ),
                                 items: [
@@ -1765,10 +1796,18 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
                                       unawaited(_startDownload());
                                     },
                             ),
+                            PlayerBarButton(
+                              icon: DsIcons.camera,
+                              label: t.player.screenshot,
+                              onPressed: handle == null ? null : () => unawaited(_screenshot()),
+                            ),
                             if (!immersive)
                               PlayerBarButton(
-                                icon: DsIcons.maximize2,
-                                label: t.player.fullscreen,
+                                icon: _presentationMode == PresentationMode.fullscreen ? DsIcons.minimize : DsIcons.maximize,
+                                label: _presentationMode == PresentationMode.fullscreen
+                                    ? t.player.fullscreenOff
+                                    : t.player.fullscreen,
+                                selected: _presentationMode == PresentationMode.fullscreen,
                                 onPressed: handle == null
                                     ? null
                                     : () {

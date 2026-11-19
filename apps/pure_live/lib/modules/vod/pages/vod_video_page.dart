@@ -45,7 +45,7 @@ import 'package:pure_live/modules/vod/widgets/vod_picture_gestures.dart' show Vo
 import 'package:pure_live/modules/vod/widgets/vod_player_chrome.dart'
     show VodGestureKind, VodGestureTip, VodPictureNotice, VodSeekBar, VodSubtitleLayer;
 import 'package:pure_live/modules/vod/widgets/vod_widgets.dart'
-    show VodFoldedText, VodRailDoor, VodVideoRow, vodDateText, vodDurationText;
+    show VodFoldedText, VodRailDoor, VodStatPill, VodVideoRow, vodDateText, vodDurationText;
 import 'package:pure_live/shared/shared.dart';
 
 /// One Bilibili archive's page: the player over media_core, the archive's
@@ -2559,7 +2559,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                 spacing: PlayerBarTier.tvOf(context) ? DsSpace.s8 : DsSpace.s4,
                 children: [
                   PlayerBarButton(
-                    iconAsset: playing ? 'assets/icons/pause.svg' : 'assets/icons/play.svg',
+                    icon: playing ? DsIcons.pause : DsIcons.play,
                     label: playing ? t.player.pause : t.player.play,
                     focusNode: _playFocus,
                     onPressed: handle == null
@@ -2576,7 +2576,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                   if (_hasPreviousPart) _vodPartStepChip(t, compact: compact, forward: false),
                   if (_hasNextPart) _vodPartStepChip(t, compact: compact, forward: true),
                   PlayerBarButton(
-                    iconAsset: _effectivelyMuted ? 'assets/icons/volume-muted.svg' : 'assets/icons/volume.svg',
+                    icon: _effectivelyMuted ? DsIcons.volumeX : DsIcons.volume2,
                     label: _effectivelyMuted ? t.player.unmute : t.player.mute,
                     onPressed: handle == null
                         ? null
@@ -3110,25 +3110,38 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
             // and one Wrap mixed them into a single unordered strip.
             // The season page's three voices: the thing a viewer keeps, the
             // thing a viewer takes, the thing a viewer passes on.
+            // One row of capsules where there used to be two rows of
+            // dialects: the counts wear the capsule shape, the verbs are
+            // the presses, and the saved video's answer is the accent's
+            // tint. 点赞 and the coin have no write on this station's
+            // surface, so they speak as facts; 收藏, 分享 and the download
+            // keep their verbs — the download at the row's far end, where
+            // a viewer's eye lands last.
             Wrap(
               spacing: DsSpace.s8,
               runSpacing: DsSpace.s8,
               crossAxisAlignment: WrapCrossAlignment.center,
               children: [
-                // The verb under the picture for the states the picture's own
-                // chrome is away in: paused or ended, this disc is the one
-                // play on the page.
-                if (_part != null && _play != null && !(_transport?.isPlaying ?? false))
-                  HeroPlayDisc(onPressed: () => unawaited(_togglePlay()), semanticLabel: t.vod.continueWatching),
-                DsButton(
-                  variant: saved ? DsButtonVariant.primary : DsButtonVariant.secondary,
-                  size: DsSize.sm,
+                if (detail.likeCount case final count?)
+                  VodStatPill(icon: DsIcons.thumbsUp, label: t.vod.likes, value: AudienceFormat.format(count)),
+                if (detail.coinCount case final count?)
+                  VodStatPill(icon: DsIcons.coins, label: t.vod.coins, value: AudienceFormat.format(count)),
+                if (detail.favoriteCount case final count?)
+                  VodStatPill(icon: DsIcons.star, label: t.vod.favorites, value: AudienceFormat.format(count)),
+                VodStatPill(
+                  icon: DsIcons.heart,
+                  label: saved ? t.vod.savedVideo : t.vod.saveVideo,
+                  value: saved ? t.vod.savedVideo : t.vod.saveVideo,
+                  active: saved,
                   onPressed: () => unawaited(_toggleFavourite()),
-                  leading: DsIcon(DsIcons.heart, size: 14, color: saved ? null : colors.textMuted),
-                  child: Text(saved ? t.vod.savedVideo : t.vod.saveVideo),
                 ),
-                // The bar's download without opening the bar: the reference's
-                // own action row names it, and the address is resolved on press.
+                VodStatPill(
+                  icon: DsIcons.share,
+                  label: t.vod.share,
+                  value: t.vod.share,
+                  onPressed: () => unawaited(_share()),
+                ),
+                const Spacer(),
                 DsButton(
                   variant: DsButtonVariant.secondary,
                   size: DsSize.sm,
@@ -3136,29 +3149,8 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                   leading: const DsIcon(DsIcons.download, size: 14),
                   child: Text(t.player.download),
                 ),
-                DsButton.icon(
-                  variant: DsButtonVariant.ghost,
-                  size: DsSize.sm,
-                  onPressed: () => unawaited(_share()),
-                  icon: const DsIcon(DsIcons.share, size: 16),
-                  semanticLabel: t.vod.share,
-                ),
               ],
             ),
-            if (detail.likeCount != null || detail.coinCount != null || detail.favoriteCount != null)
-              Wrap(
-                spacing: DsSpace.s16,
-                runSpacing: DsSpace.s8,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                children: [
-                  if (detail.likeCount case final count?)
-                    _VodStat(icon: DsIcons.thumbsUp, value: count, label: t.vod.likes),
-                  if (detail.coinCount case final count?)
-                    _VodStat(icon: DsIcons.coins, value: count, label: t.vod.coins),
-                  if (detail.favoriteCount case final count?)
-                    _VodStat(icon: DsIcons.star, value: count, label: t.vod.favorites),
-                ],
-              ),
             if (showDetails && uploader.isNotEmpty)
               // The row is the uploader's own door: the space page keeps
               // their archive list, and the detail's mid is its address. A
@@ -3254,42 +3246,6 @@ final class _PictureBox extends StatelessWidget {
 
 /// One count in the archive's action row: the station's own reading — a
 /// glyph and its number in flat ink, no capsule behind them.
-final class _VodStat extends StatelessWidget {
-  const _VodStat({required this.icon, required this.value, required this.label});
-
-  final DsIconData icon;
-  final int value;
-
-  /// The count's name, spoken to the reader rather than printed.
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = DsTheme.colorsOf(context);
-    final theme = DsTheme.of(context);
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      spacing: DsSpace.s4,
-      children: [
-        DsIcon(icon, size: theme.sizes.iconSm, color: colors.textMuted),
-        Semantics(
-          label: '$label ${AudienceFormat.format(value)}',
-          child: Text(
-            AudienceFormat.format(value),
-            style: theme.typography.numeric(
-              theme.typography.caption.copyWith(color: colors.textMuted, fontWeight: FontWeight.w600),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-/// The parts the archive splits into, as the playlist the reference's own
-/// video page draws: one scrollable list — 「P1 标题」 per row, the playing
-/// row highlighted and kept in view — instead of a paged strip of chips. The
-/// recommendations read below the list, in the same rail.
 final class _PartsSection extends StatefulWidget {
   const _PartsSection({required this.parts, required this.current, required this.onOpen});
 
@@ -3308,7 +3264,7 @@ final class _PartsSection extends StatefulWidget {
 final class _PartsSectionState extends State<_PartsSection> {
   /// One row's height, and the list's ceiling: a course running to hundreds
   /// of parts scrolls inside the panel rather than stretching the rail.
-  static const double _rowHeight = 34;
+  static const double _rowHeight = 44;
   static const double _listMaxHeight = 420;
 
   final ScrollController _scroll = ScrollController();

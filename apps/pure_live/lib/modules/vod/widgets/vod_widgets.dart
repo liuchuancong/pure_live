@@ -1043,3 +1043,64 @@ final class VodVideoRow extends ConsumerWidget {
     );
   }
 }
+
+
+/// One capsule of the action row under a video: the glyph, the count in its
+/// quiet numeric voice, and — where the page has a verb behind it — the
+/// pressed answer. The three states speak the same shape: a capsule at rest
+/// reads the app surface's muted ink, a hover lights the control's own
+/// ground, and an active choice (a saved video) wears the accent's tint with
+/// the accent's word. A capsule without [onPressed] is a fact, not a button:
+/// it keeps the muted ink and never lights.
+final class VodStatPill extends StatelessWidget {
+  /// Draws the capsule; [value] is the count, already formatted.
+  const VodStatPill({
+    required this.icon,
+    required this.label,
+    required this.value,
+    this.active = false,
+    this.onPressed,
+    super.key,
+  });
+
+  final DsIconData icon;
+  final String label;
+  final String value;
+  final bool active;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
+    final tone = active ? colors.accentText : onPressed == null ? colors.textMuted : colors.text;
+    return DsPressable(
+      semanticLabel: '$label $value',
+      onPressed: onPressed,
+      builder: (context, states, _) {
+        final lit = onPressed != null && states.contains(WidgetState.hovered);
+        return Container(
+          height: 32,
+          padding: const EdgeInsets.symmetric(horizontal: DsSpace.s12),
+          decoration: BoxDecoration(
+            color: active
+                ? colors.accentTint
+                : lit
+                ? colors.control
+                : null,
+            borderRadius: BorderRadius.circular(theme.radii.control(32)),
+            border: active ? null : Border.all(color: colors.borderControl),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            spacing: DsSpace.s4,
+            children: [
+              DsIcon(icon, size: 16, color: tone),
+              Text(value, style: theme.typography.numeric(theme.typography.caption).copyWith(color: tone, fontWeight: FontWeight.w600)),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
