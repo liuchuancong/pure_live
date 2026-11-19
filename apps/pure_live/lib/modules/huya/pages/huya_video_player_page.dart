@@ -65,6 +65,11 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
   HuyaVideoPlaybackController? _controller;
   final GlobalKey _qualityAnchor = GlobalKey();
   final GlobalKey _speedAnchor = GlobalKey();
+  final GlobalKey _barAnchor = GlobalKey();
+
+  /// The bar panel standing now (quality, speed); a tap anywhere else puts
+  /// it away.
+  String? _openPanel;
   bool _disposed = false;
   bool _startFailed = false;
 
@@ -934,6 +939,68 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
                         child: _bar(context),
                       ),
                     ),
+                  // The bar's pickers hang their cards over the picture: a
+                  // tap anywhere else closes whichever one stands.
+                  if (showBar && _openPanel != null)
+                    Positioned.fill(
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () => setState(() => _openPanel = null),
+                        child: const SizedBox.expand(),
+                      ),
+                    ),
+                  if (showBar && _openPanel == 'quality' && controller != null)
+                    Positioned.fill(
+                      child: PlayerPanelHost(
+                        anchorKey: _qualityAnchor,
+                        barKey: _barAnchor,
+                        width: 220,
+                        child: MouseRegion(
+                          onEnter: (_) => _hideTimer?.cancel(),
+                          onExit: (_) => _scheduleHide(),
+                          child: PlayerOverlayPanel(
+                            title: t.player.quality,
+                            children: [
+                              for (final quality in controller.qualities)
+                                PlayerPanelOption(
+                                  label: quality.label,
+                                  selected: quality.id == controller.qualityId,
+                                  onPressed: () {
+                                    setState(() => _openPanel = null);
+                                    unawaited(controller.selectQuality(quality.id));
+                                  },
+                                ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  if (showBar && _openPanel == 'speed' && controller != null)
+                    Positioned.fill(
+                      child: PlayerPanelHost(
+                        anchorKey: _speedAnchor,
+                        barKey: _barAnchor,
+                        width: 220,
+                        child: MouseRegion(
+                          onEnter: (_) => _hideTimer?.cancel(),
+                          onExit: (_) => _scheduleHide(),
+                          child: PlayerOverlayPanel(
+                            title: t.player.speed,
+                            children: [
+                              for (final rate in _speedChoices)
+                                PlayerPanelOption(
+                                  label: playerRateLabel(rate),
+                                  selected: rate == controller.rate,
+                                  onPressed: () {
+                                    setState(() => _openPanel = null);
+                                    unawaited(controller.setRate(rate));
+                                  },
+                                ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
                 ],
               );
             },
@@ -1267,46 +1334,29 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
         ),
         const Spacer(),
         if (controller.qualities.length > 1)
-          DsMenuAnchor(
-            semanticLabel: t.player.quality,
-            align: DsAlign.end,
-            items: [
-              for (final quality in controller.qualities)
-                DsMenuItem(
-                  label: Text(quality.label),
-                  onPressed: () => unawaited(controller.selectQuality(quality.id)),
-                ),
-            ],
-            builder: (context, menu, _) => PlayerBarChoice(
-              anchorKey: _qualityAnchor,
-              label: t.player.quality,
-              value:
-                  controller.qualities.where((item) => item.id == controller.qualityId).firstOrNull?.label ??
-                  t.player.quality,
-              icon: DsIcons.gauge,
-              onPressed: () {
-                _wake();
-                menu.toggle();
-              },
-            ),
-          ),
-        DsMenuAnchor(
-          semanticLabel: t.player.speed,
-          align: DsAlign.end,
-          items: [
-            for (final rate in _speedChoices)
-              DsMenuItem(label: Text(playerRateLabel(rate)), onPressed: () => unawaited(controller.setRate(rate))),
-          ],
-          builder: (context, menu, _) => PlayerBarChoice(
-            anchorKey: _speedAnchor,
-            label: t.player.speed,
-            value: playerRateLabel(controller.rate),
-            icon: DsIcons.timer,
+          PlayerBarChoice(
+            anchorKey: _qualityAnchor,
+            label: t.player.quality,
+            value:
+                controller.qualities.where((item) => item.id == controller.qualityId).firstOrNull?.label ??
+                t.player.quality,
+            icon: DsIcons.gauge,
+            selected: _openPanel == 'quality',
             onPressed: () {
               _wake();
-              menu.toggle();
+              setState(() => _openPanel = _openPanel == 'quality' ? null : 'quality');
             },
           ),
+        PlayerBarChoice(
+          anchorKey: _speedAnchor,
+          label: t.player.speed,
+          value: playerRateLabel(controller.rate),
+          icon: DsIcons.timer,
+          selected: _openPanel == 'speed',
+          onPressed: () {
+            _wake();
+            setState(() => _openPanel = _openPanel == 'speed' ? null : 'speed');
+          },
         ),
         // The window verbs, then the way out of the picture's box — the room
         // bar's pair: the desktop's window-fullscreen first, then the system
@@ -1336,6 +1386,7 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
       ],
     );
     return PlayerControlBar(
+      key: _barAnchor,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         spacing: DsSpace.s4,

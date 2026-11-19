@@ -112,6 +112,10 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> wit
   final GlobalKey _speedAnchor = GlobalKey();
   bool _partsOpen = false;
 
+  /// The bar panel standing now (quality, speed); a tap anywhere else puts
+  /// it away.
+  String? _openPanel;
+
   /// The page's own mute, the bar button's state; the slider speaks past it.
   bool _muted = false;
 
@@ -1027,6 +1031,68 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> wit
                     ),
                   ),
                 ),
+              // The bar's pickers hang their cards over the picture: a tap
+              // anywhere else closes whichever one stands.
+              if (showBar && _openPanel != null)
+                Positioned.fill(
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () => setState(() => _openPanel = null),
+                    child: const SizedBox.expand(),
+                  ),
+                ),
+              if (showBar && _openPanel == 'quality' && controller != null)
+                Positioned.fill(
+                  child: PlayerPanelHost(
+                    anchorKey: _qualityAnchor,
+                    barKey: _barAnchor,
+                    width: 220,
+                    child: MouseRegion(
+                      onEnter: (_) => _hideTimer?.cancel(),
+                      onExit: (_) => _scheduleHide(),
+                      child: PlayerOverlayPanel(
+                        title: context.t.room.replayQuality,
+                        children: [
+                          for (final quality in controller.qualities)
+                            PlayerPanelOption(
+                              label: quality.label,
+                              selected: quality.id == controller.qualityId,
+                              onPressed: () {
+                                setState(() => _openPanel = null);
+                                unawaited(controller.selectQuality(quality.id));
+                              },
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              if (showBar && _openPanel == 'speed' && controller != null)
+                Positioned.fill(
+                  child: PlayerPanelHost(
+                    anchorKey: _speedAnchor,
+                    barKey: _barAnchor,
+                    width: 220,
+                    child: MouseRegion(
+                      onEnter: (_) => _hideTimer?.cancel(),
+                      onExit: (_) => _scheduleHide(),
+                      child: PlayerOverlayPanel(
+                        title: context.t.player.speed,
+                        children: [
+                          for (final rate in _speedChoices)
+                            PlayerPanelOption(
+                              label: playerRateLabel(rate),
+                              selected: rate == controller.rate,
+                              onPressed: () {
+                                setState(() => _openPanel = null);
+                                unawaited(controller.setRate(rate));
+                              },
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
             ],
           );
         },
@@ -1309,46 +1375,29 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> wit
           ),
         ],
         if (controller.qualities.length > 1)
-          DsMenuAnchor(
-            semanticLabel: t.room.replayQuality,
-            align: DsAlign.end,
-            items: [
-              for (final quality in controller.qualities)
-                DsMenuItem(
-                  label: Text(quality.label),
-                  onPressed: () => unawaited(controller.selectQuality(quality.id)),
-                ),
-            ],
-            builder: (context, menu, _) => PlayerBarChoice(
-              anchorKey: _qualityAnchor,
-              label: t.room.replayQuality,
-              value:
-                  controller.qualities.where((item) => item.id == controller.qualityId).firstOrNull?.label ??
-                  t.room.replayQuality,
-              icon: DsIcons.gauge,
-              onPressed: () {
-                _wake();
-                menu.toggle();
-              },
-            ),
-          ),
-        DsMenuAnchor(
-          semanticLabel: t.player.speed,
-          align: DsAlign.end,
-          items: [
-            for (final rate in _speedChoices)
-              DsMenuItem(label: Text(playerRateLabel(rate)), onPressed: () => unawaited(controller.setRate(rate))),
-          ],
-          builder: (context, menu, _) => PlayerBarChoice(
-            anchorKey: _speedAnchor,
-            label: t.player.speed,
-            value: playerRateLabel(controller.rate),
-            icon: DsIcons.timer,
+          PlayerBarChoice(
+            anchorKey: _qualityAnchor,
+            label: t.room.replayQuality,
+            value:
+                controller.qualities.where((item) => item.id == controller.qualityId).firstOrNull?.label ??
+                t.room.replayQuality,
+            icon: DsIcons.gauge,
+            selected: _openPanel == 'quality',
             onPressed: () {
               _wake();
-              menu.toggle();
+              setState(() => _openPanel = _openPanel == 'quality' ? null : 'quality');
             },
           ),
+        PlayerBarChoice(
+          anchorKey: _speedAnchor,
+          label: t.player.speed,
+          value: playerRateLabel(controller.rate),
+          icon: DsIcons.timer,
+          selected: _openPanel == 'speed',
+          onPressed: () {
+            _wake();
+            setState(() => _openPanel = _openPanel == 'speed' ? null : 'speed');
+          },
         ),
         // The immersive surface has no parts row under the picture — the
         // catalogue on the bar is the only way to another part there.
