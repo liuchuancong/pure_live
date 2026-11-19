@@ -224,3 +224,16 @@ class HistoryController extends Notifier<HistoryState> {
 
 /// The history page's state.
 final historyProvider = NotifierProvider<HistoryController, HistoryState>(HistoryController.new);
+
+
+/// The clock a watched room wears in its corner: HH:mm today, MM-DD before
+/// that — the one line the history page and the home's continue-watching
+/// shelf carry about a record's moment.
+String liveWatchClock(DateTime time) {
+  final local = time.toLocal();
+  final now = DateTime.now();
+  String two(int value) => value.toString().padLeft(2, '0');
+  final clock = '${two(local.hour)}:${two(local.minute)}';
+  final sameDay = local.year == now.year && local.month == now.month && local.day == now.day;
+  return sameDay ? clock : '${two(local.month)}-${two(local.day)}';
+}

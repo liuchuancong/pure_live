@@ -5365,6 +5365,9 @@ class Translations$navigation$zh_CN {
 	/// zh-CN: '下载中心'
 	String get downloadsCenter => '下载中心';
 
+	/// zh-CN: '继续观看'
+	String get continueWatching => '继续观看';
+
 	/// zh-CN: '设置'
 	String get settings => '设置';
 
@@ -15485,6 +15488,7 @@ extension on Translations {
 			'navigation.toolbox' => '工具箱',
 			'navigation.record' => '录制中心',
 			'navigation.downloadsCenter' => '下载中心',
+			'navigation.continueWatching' => '继续观看',
 			'navigation.settings' => '设置',
 			'navigation.appearance' => '外观',
 			'navigation.proxy' => '网络代理',
@@ -15656,9 +15660,9 @@ extension on Translations {
 			'recorder.caCustomMissing' => ({required Object name}) => '${name} 已不在原位置，录制会失败；请重新选择或清除',
 			'recorder.caCustomNotPem' => '这不是 PEM 文本的证书束（应包含 -----BEGIN CERTIFICATE-----）',
 			'recorder.caCustomPickFailed' => '读取证书文件失败',
-			'recorder.caCustomClear' => '恢复内置',
 			_ => null,
 		} ?? switch (path) {
+			'recorder.caCustomClear' => '恢复内置',
 			'recorder.caCustomCleared' => '已恢复使用内置根证书',
 			'recorder.startNowBusyOther' => '另一个窗口正在录制这个房间',
 			'recorder.startNowCaFailed' => '自定义 CA 证书读不到，先重新选择或恢复内置',
@@ -16170,9 +16174,9 @@ extension on Translations {
 			'settings.navFloatingWindow' => '小窗与画中画',
 			'settings.groupData' => '数据',
 			'settings.groupAbout' => '关于',
-			'settings.groupIptv' => 'IPTV',
 			_ => null,
 		} ?? switch (path) {
+			'settings.groupIptv' => 'IPTV',
 			'settings.groupVod' => 'Bilibili 视频',
 			'settings.generalDescription' => '浏览、窗口与启动设置。',
 			'settings.appearanceDescription' => '主题、字体与配色。',
@@ -16684,9 +16688,9 @@ extension on Translations {
 			'settings.navIptvGroups' => '分组显示',
 			'settings.iptvGroupsDescription' => '决定哪些分组出现在频道列表和换台里。',
 			'settings.navDanmaku' => '弹幕',
-			'settings.navMiniDanmaku' => '小窗弹幕',
 			_ => null,
 		} ?? switch (path) {
+			'settings.navMiniDanmaku' => '小窗弹幕',
 			'settings.navKernel' => '播放器内核',
 			'settings.navRecording' => '录制',
 			'settings.videoDescription' => '画质、音量与画面比例。',
@@ -17198,9 +17202,9 @@ extension on Translations {
 			'settings.wallpaperCategoryFantasyArt' => '奇幻艺术',
 			'settings.wallpaperCategoryFinalFantasy' => '最终幻想',
 			'settings.tagManagement' => '标签管理',
-			'settings.tagManagementDesc' => '自定义和管理直播间的过滤标签',
 			_ => null,
 		} ?? switch (path) {
+			'settings.tagManagementDesc' => '自定义和管理直播间的过滤标签',
 			'settings.tagAdd' => '添加标签',
 			'settings.tagEdit' => '编辑标签',
 			'settings.tagPin' => '移到最前',
@@ -17712,9 +17716,9 @@ extension on Translations {
 			'toolbox.nodeHint' => '点「测速」检查这个平台。',
 			'toolbox.nodeAnswer' => ({required int count}) => '返回 ${count} 个房间',
 			'toolbox.nodeSourceRecommended' => '推荐接口',
-			'toolbox.nodeSourceHot' => '热门接口',
 			_ => null,
 		} ?? switch (path) {
+			'toolbox.nodeSourceHot' => '热门接口',
 			'toolbox.nodeSummary' => ({required Object ok, required Object tested, required Object total}) => '${ok} / ${tested} 可用 · 共 ${total} 个平台',
 			'toolbox.nodeUntestedSummary' => ({required Object total}) => '尚未测速 · 共 ${total} 个平台',
 			'toolbox.logsSection' => '日志与诊断',

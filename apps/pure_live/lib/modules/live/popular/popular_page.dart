@@ -10,9 +10,12 @@ import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/layouts/page_layout_scope.dart';
+import 'package:pure_live/modules/live/favorites/data/follow_repository.dart' show followsProvider;
+import 'package:pure_live/modules/live/history/history_repository.dart' show historyProvider, liveWatchClock;
 import 'package:pure_live/modules/live/popular/popular_controller.dart';
 import 'package:pure_live/modules/live/popular/room_card.dart' show RoomCard;
 import 'package:pure_live/modules/live/popular/room_card_menu.dart';
+import 'package:pure_live/modules/live/popular/room_shelf.dart' show RoomShelf;
 import 'package:pure_live/modules/live/search/search.dart';
 import 'package:pure_live/shared/shared.dart';
 
@@ -159,6 +162,17 @@ final class _PopularPageState extends ConsumerState<PopularPage> with WidgetsBin
       );
     }
 
+    // The home answers the returning viewer's two questions before the
+    // discovery feed: the followed rooms live right now, and the rooms
+    // watched most recently — each one rail, each silent when it has
+    // nothing to say, so the feed is never squeezed by an empty shelf.
+    final liveFollows = [
+      for (final room in ref.watch(followsProvider).rooms)
+        if (room.broadcast.isLiveNow) room,
+    ];
+    final watched = ref.watch(historyProvider).records;
+    final watchNotes = {for (final (room, at) in watched) room.ref.identityKey: liveWatchClock(at)};
+
     void choosePlatform(String id) {
       ref.read(popularSiteProvider.notifier).selected = id;
       unawaited(ref.read(popularCatalogProvider.notifier).open(id));
@@ -210,6 +224,43 @@ final class _PopularPageState extends ConsumerState<PopularPage> with WidgetsBin
             },
           ),
         ),
+        if (liveFollows.isNotEmpty) ...[
+          Padding(
+            padding: EdgeInsets.fromLTRB(inset, DsSpace.s4, inset, DsSpace.s8),
+            child: SectionHeader(
+              title: t.favorites.statusLive,
+              count: liveFollows.length,
+              trailing: [
+                DsButton(
+                  variant: DsButtonVariant.ghost,
+                  size: DsSize.sm,
+                  onPressed: () => unawaited(context.push(const FavoritesRoute().location)),
+                  trailing: const DsIcon(DsIcons.chevronRight, size: 14),
+                  child: Text(t.vod.liveFollowViewAll),
+                ),
+              ],
+            ),
+          ),
+          RoomShelf(rooms: liveFollows.take(12).toList()),
+        ],
+        if (watched.isNotEmpty) ...[
+          Padding(
+            padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s8),
+            child: SectionHeader(
+              title: t.navigation.continueWatching,
+              trailing: [
+                DsButton(
+                  variant: DsButtonVariant.ghost,
+                  size: DsSize.sm,
+                  onPressed: () => unawaited(context.push(const HistoryRoute().location)),
+                  trailing: const DsIcon(DsIcons.chevronRight, size: 14),
+                  child: Text(t.vod.liveFollowViewAll),
+                ),
+              ],
+            ),
+          ),
+          RoomShelf(rooms: [for (final (room, _) in watched.take(12)) room], noteOf: (room) => watchNotes[room.ref.identityKey]),
+        ],
         Expanded(
           child: _PlatformFeed(key: ValueKey(platform), platform: platform, scrollController: _scrollOf(platform)),
         ),

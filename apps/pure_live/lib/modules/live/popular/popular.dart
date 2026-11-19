@@ -8,3 +8,4 @@ export 'popular_page.dart';
 export 'popular_top_bar_actions.dart';
 export 'room_card.dart';
 export 'room_card_menu.dart';
+export 'room_shelf.dart';
