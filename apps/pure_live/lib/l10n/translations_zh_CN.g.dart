@@ -12445,6 +12445,36 @@ class Translations$vod$zh_CN {
 	/// zh-CN: '收藏'
 	String get favorites => '收藏';
 
+	/// zh-CN: '点赞'
+	String get likeNow => '点赞';
+
+	/// zh-CN: '已点赞'
+	String get liked => '已点赞';
+
+	/// zh-CN: '点赞失败'
+	String get likeFailed => '点赞失败';
+
+	/// zh-CN: '关注'
+	String get followUp => '关注';
+
+	/// zh-CN: '已关注'
+	String get followedUp => '已关注';
+
+	/// zh-CN: '关注失败'
+	String get followFailed => '关注失败';
+
+	/// zh-CN: '追番'
+	String get seasonFollow => '追番';
+
+	/// zh-CN: '追番成功'
+	String get seasonFollowOn => '追番成功';
+
+	/// zh-CN: '已取消追番'
+	String get seasonFollowOff => '已取消追番';
+
+	/// zh-CN: '追番操作失败'
+	String get seasonFollowFailed => '追番操作失败';
+
 	/// zh-CN: '简介'
 	String get description => '简介';
 
@@ -17825,6 +17855,16 @@ extension on Translations {
 			'vod.likes' => '点赞',
 			'vod.coins' => '投币',
 			'vod.favorites' => '收藏',
+			'vod.likeNow' => '点赞',
+			'vod.liked' => '已点赞',
+			'vod.likeFailed' => '点赞失败',
+			'vod.followUp' => '关注',
+			'vod.followedUp' => '已关注',
+			'vod.followFailed' => '关注失败',
+			'vod.seasonFollow' => '追番',
+			'vod.seasonFollowOn' => '追番成功',
+			'vod.seasonFollowOff' => '已取消追番',
+			'vod.seasonFollowFailed' => '追番操作失败',
 			'vod.description' => '简介',
 			'vod.noDescription' => '这个视频没有简介。',
 			'vod.nextPart' => '下一P',

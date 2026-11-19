@@ -37,7 +37,8 @@ import 'package:pure_live/modules/vod/controller/vod_downloads.dart';
 import 'package:pure_live/modules/vod/controller/vod_library.dart';
 import 'package:pure_live/modules/vod/controller/vod_playback_settings.dart';
 import 'package:pure_live/modules/vod/controller/vod_settings.dart' show vodQualityProvider;
-import 'package:pure_live/modules/vod/controller/vod_social.dart' show VodCommentsController, vodCommentsProvider;
+import 'package:pure_live/modules/vod/controller/vod_social.dart'
+    show VodCommentsController, vodCommentsProvider, vodFollowUpProvider, vodLikeProvider, vodWriteReadyProvider;
 import 'package:pure_live/modules/vod/widgets/vod_jump_dialog.dart' show showVodJumpDialog;
 import 'package:pure_live/modules/vod/widgets/vod_media_source.dart'
     show vodDashSourceOf, vodDashVideoOf, vodQualityLabel;
@@ -1452,6 +1453,33 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
       title: added ? context.t.vod.saveAdded : context.t.vod.saveRemoved,
       status: DsStatus.success,
     );
+  }
+
+  /// Flips the viewer's like on the archive on the picture; a refusal puts
+  /// the pill back and says so.
+  Future<void> _toggleLike() async {
+    final detail = _detail;
+    final aid = detail?.aid ?? 0;
+    if (aid <= 0) return;
+    try {
+      await ref.read(vodLikeProvider(aid).notifier).toggle();
+    } on Object {
+      if (!mounted) return;
+      showDsToast(context: context, title: context.t.vod.likeFailed, status: DsStatus.danger);
+    }
+  }
+
+  /// Flips the viewer's follow of the uploader; a refusal puts the chip
+  /// back and says so.
+  Future<void> _toggleFollowUp() async {
+    final mid = _detail?.uploaderMid ?? 0;
+    if (mid <= 0) return;
+    try {
+      await ref.read(vodFollowUpProvider(mid).notifier).toggle();
+    } on Object {
+      if (!mounted) return;
+      showDsToast(context: context, title: context.t.vod.followFailed, status: DsStatus.danger);
+    }
   }
 
   ({int cid, double seconds})? _readProgress() => _historyNotifier.resumePoint(widget.bvid);
@@ -3060,6 +3088,13 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
     // what a viewer hides to keep the page on the parts and the rail.
     final showDetails = ref.watch(vodPlaybackSettingsProvider).showDetails;
     final saved = savedOf(detail.bvid);
+    // The write verbs the cookie can speak: the like's verdict, the
+    // uploader's. A guest reads null and keeps the read-only shapes.
+    final writable = ref.watch(vodWriteReadyProvider);
+    final liked = writable && detail.aid > 0 ? ref.watch(vodLikeProvider(detail.aid)) : null;
+    final followed = writable && (detail.uploaderMid ?? 0) > 0
+        ? ref.watch(vodFollowUpProvider(detail.uploaderMid!))
+        : null;
     final uploaded = detail.publishedAt;
     final plays = detail.playCount;
     final danmaku = detail.danmakuCount;
@@ -3113,17 +3148,24 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
             // One row of capsules where there used to be two rows of
             // dialects: the counts wear the capsule shape, the verbs are
             // the presses, and the saved video's answer is the accent's
-            // tint. 点赞 and the coin have no write on this station's
-            // surface, so they speak as facts; 收藏, 分享 and the download
-            // keep their verbs — the download at the row's far end, where
-            // a viewer's eye lands last.
+            // tint. 点赞 answers when the cookie can speak it, and reads
+            // as a fact the rest of the time; the coin costs its spender,
+            // so it stays a fact; 收藏 remains the local shelf's verb;
+            // 分享 and the download keep theirs — the download at the
+            // row's far end, where a viewer's eye lands last.
             Wrap(
               spacing: DsSpace.s8,
               runSpacing: DsSpace.s8,
               crossAxisAlignment: WrapCrossAlignment.center,
               children: [
                 if (detail.likeCount case final count?)
-                  VodStatPill(icon: DsIcons.thumbsUp, label: t.vod.likes, value: AudienceFormat.format(count)),
+                  VodStatPill(
+                    icon: DsIcons.thumbsUp,
+                    label: t.vod.likes,
+                    value: AudienceFormat.format(count),
+                    active: writable && liked == true,
+                    onPressed: writable && detail.aid > 0 ? () => unawaited(_toggleLike()) : null,
+                  ),
                 if (detail.coinCount case final count?)
                   VodStatPill(icon: DsIcons.coins, label: t.vod.coins, value: AudienceFormat.format(count)),
                 if (detail.favoriteCount case final count?)
@@ -3154,44 +3196,69 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
             if (showDetails && uploader.isNotEmpty)
               // The row is the uploader's own door: the space page keeps
               // their archive list, and the detail's mid is its address. A
-              // source that names no mid leaves the row a name only.
-              DsPressable(
-                semanticLabel: uploader,
-                onPressed: (detail.uploaderMid ?? 0) <= 0
-                    ? null
-                    : () => unawaited(context.push('/vod/u/${detail.uploaderMid}')),
-                builder: (context, states, _) {
-                  final lit = states.contains(WidgetState.hovered);
-                  return Row(
-                    spacing: DsSpace.s8,
-                    children: [
-                      DsAvatar(
-                        initials: avatarInitials(uploader),
-                        image: avatar == null || avatar.isEmpty
-                            ? null
-                            : cachedImage(avatar, policy: ImageCachePolicies.avatar),
-                        size: DsSize.md,
-                        toneIndex: DsAvatar.toneFor(uploader),
-                        semanticLabel: uploader,
-                      ),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          spacing: DsSpace.s3,
+              // source that names no mid leaves the row a name only. The
+              // follow chip rides at the row's end when the cookie can
+              // speak it — the app's one follow button's shape.
+              Row(
+                spacing: DsSpace.s8,
+                children: [
+                  Expanded(
+                    child: DsPressable(
+                      semanticLabel: uploader,
+                      onPressed: (detail.uploaderMid ?? 0) <= 0
+                          ? null
+                          : () => unawaited(context.push('/vod/u/${detail.uploaderMid}')),
+                      builder: (context, states, _) {
+                        final lit = states.contains(WidgetState.hovered);
+                        return Row(
+                          spacing: DsSpace.s8,
                           children: [
-                            Text(
-                              uploader,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: theme.typography.bodyStrong.copyWith(color: lit ? colors.accentText : colors.text),
+                            DsAvatar(
+                              initials: avatarInitials(uploader),
+                              image: avatar == null || avatar.isEmpty
+                                  ? null
+                                  : cachedImage(avatar, policy: ImageCachePolicies.avatar),
+                              size: DsSize.md,
+                              toneIndex: DsAvatar.toneFor(uploader),
+                              semanticLabel: uploader,
                             ),
-                            Text(t.vod.up, style: theme.typography.caption.copyWith(color: colors.textMuted)),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                spacing: DsSpace.s3,
+                                children: [
+                                  Text(
+                                    uploader,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: theme.typography.bodyStrong.copyWith(
+                                      color: lit ? colors.accentText : colors.text,
+                                    ),
+                                  ),
+                                  Text(t.vod.up, style: theme.typography.caption.copyWith(color: colors.textMuted)),
+                                ],
+                              ),
+                            ),
                           ],
-                        ),
-                      ),
-                    ],
-                  );
-                },
+                        );
+                      },
+                    ),
+                  ),
+                  if (writable && (detail.uploaderMid ?? 0) > 0 && followed == true)
+                    DsButton(
+                      variant: DsButtonVariant.secondary,
+                      size: DsSize.sm,
+                      onPressed: () => unawaited(_toggleFollowUp()),
+                      child: Text(t.vod.followedUp),
+                    )
+                  else if (writable && (detail.uploaderMid ?? 0) > 0)
+                    DsButton(
+                      variant: DsButtonVariant.primary,
+                      size: DsSize.sm,
+                      onPressed: () => unawaited(_toggleFollowUp()),
+                      child: Text(t.vod.followUp),
+                    ),
+                ],
               ),
             const DsDivider(),
             if (showParts && detail.parts.length > 1)

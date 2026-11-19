@@ -26,6 +26,7 @@ import 'package:pure_live/modules/vod/controller/vod_pgc.dart';
 import 'package:pure_live/modules/vod/controller/vod_playback_settings.dart'
     show VodApiType, VodFinishAction, VodSpeedChoice, vodPlaybackSettingsProvider;
 import 'package:pure_live/modules/vod/controller/vod_settings.dart' show vodQualityProvider;
+import 'package:pure_live/modules/vod/controller/vod_social.dart' show vodWriteReadyProvider;
 import 'package:pure_live/modules/vod/widgets/vod_jump_dialog.dart' show showVodJumpDialog;
 import 'package:pure_live/modules/vod/widgets/vod_media_source.dart'
     show vodDashSourceOf, vodDashVideoOf, vodQualityLabel;
@@ -1296,6 +1297,8 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
           canDownload: (episode?.cid ?? 0) > 0,
           onDownload: () => unawaited(_startDownload()),
           onShare: () => unawaited(_share()),
+          canWrite: ref.watch(vodWriteReadyProvider),
+          onSetFollow: (follow) => unawaited(_setSeasonFollow(follow)),
         ),
         const DsDivider(),
       ],
@@ -1404,6 +1407,25 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
 
   /// Puts a picture on: the episode already on the player resumes, and before
   /// one has opened, the season's first does — the head's 立即播放 verb.
+  /// Flips the season's follow: the write lands, the detail reads again,
+  /// and the toast says which way it went.
+  Future<void> _setSeasonFollow(bool follow) async {
+    final t = context.t;
+    try {
+      await ref.read(vodClientProvider).setSeasonFollow(seasonId: widget.seasonId, follow: follow);
+      if (!mounted) return;
+      ref.invalidate(vodSeasonDetailProvider(widget.seasonId));
+      showDsToast(
+        context: context,
+        title: follow ? t.vod.seasonFollowOn : t.vod.seasonFollowOff,
+        status: DsStatus.success,
+      );
+    } on Object {
+      if (!mounted) return;
+      showDsToast(context: context, title: t.vod.seasonFollowFailed, status: DsStatus.danger);
+    }
+  }
+
   void _playNow() {
     final handle = _handle;
     if (handle != null) {
@@ -1795,7 +1817,9 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
                             ),
                             if (!immersive)
                               PlayerBarButton(
-                                icon: _presentationMode == PresentationMode.fullscreen ? DsIcons.minimize : DsIcons.maximize,
+                                icon: _presentationMode == PresentationMode.fullscreen
+                                    ? DsIcons.minimize
+                                    : DsIcons.maximize,
                                 label: _presentationMode == PresentationMode.fullscreen
                                     ? t.player.fullscreenOff
                                     : t.player.fullscreen,
@@ -1848,9 +1872,7 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
                             setState(() => _openPanel = null);
                             final current = _episode;
                             if (current != null) {
-                              unawaited(
-                                _openEpisode(current, qn: quality.qn, resumeFrom: _transport?.position),
-                              );
+                              unawaited(_openEpisode(current, qn: quality.qn, resumeFrom: _transport?.position));
                             }
                           },
                         ),
@@ -1880,6 +1902,8 @@ final class _SeasonHead extends StatelessWidget {
     required this.canDownload,
     required this.onDownload,
     required this.onShare,
+    required this.canWrite,
+    required this.onSetFollow,
   });
 
   /// The season shown.
@@ -1909,6 +1933,13 @@ final class _SeasonHead extends StatelessWidget {
 
   /// Shares the season's web address.
   final VoidCallback onShare;
+
+  /// Whether the cookie can speak the follow write; a guest keeps the
+  /// badge instead of the button.
+  final bool canWrite;
+
+  /// Flips the season's follow; null leaves the button inert.
+  final ValueChanged<bool>? onSetFollow;
 
   @override
   Widget build(BuildContext context) {
@@ -2025,7 +2056,7 @@ final class _SeasonHead extends StatelessWidget {
                           style: theme.typography.title.copyWith(fontWeight: FontWeight.w600, color: colors.text),
                         ),
                       ),
-                      if (season.followed) DsBadge(label: Text(t.vod.following), dot: false),
+                      if (!canWrite && season.followed) DsBadge(label: Text(t.vod.following), dot: false),
                     ],
                   ),
                   if (chips.isNotEmpty)
@@ -2071,6 +2102,16 @@ final class _SeasonHead extends StatelessWidget {
                       // The head's anchor: the play disc carries the verb's
                       // weight the music module's records do.
                       HeroPlayDisc(onPressed: canPlay ? onPlay : null, semanticLabel: t.vod.playNow),
+                      // The follow verb, where the head's keep-verbs stand:
+                      // 追番 asks, 已追 answers — the badge's word, now the
+                      // button's own state.
+                      if (canWrite)
+                        DsButton(
+                          variant: season.followed ? DsButtonVariant.secondary : DsButtonVariant.primary,
+                          size: DsSize.sm,
+                          onPressed: onSetFollow == null ? null : () => onSetFollow!(!season.followed),
+                          child: Text(season.followed ? t.vod.following : t.vod.seasonFollow),
+                        ),
                       DsButton(
                         variant: DsButtonVariant.secondary,
                         size: DsSize.sm,

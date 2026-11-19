@@ -1,5 +1,7 @@
+import 'dart:async' show unawaited;
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_riverpod/misc.dart' show FutureProviderFamily;
+import 'package:flutter_riverpod/misc.dart' show FutureProviderFamily, NotifierProviderFamily;
 import 'package:live_sites/live_sites.dart' show SiteIds;
 import 'package:live_vod/live_vod.dart';
 
@@ -239,3 +241,113 @@ final class VodCommentsController extends Notifier<Map<int, VodCommentsState>> {
 final vodCommentsProvider = NotifierProvider<VodCommentsController, Map<int, VodCommentsState>>(
   VodCommentsController.new,
 );
+
+// ---- The signed-in viewer's verdicts (the write surface) ----
+
+/// Whether the bilibili cookie can speak the write endpoints: the pasted
+/// credential carries the csrf token (`bili_jct`). The access-key session —
+/// the app scan sign-in — is a different credential model these web
+/// endpoints do not take, and the pages keep their read-only shape for it.
+final vodWriteReadyProvider = Provider<bool>((ref) => ref.watch(vodClientProvider).canWrite);
+
+/// One archive's like verdict: whether the signed-in viewer's like stands.
+/// A guest reads null — the action row keeps its read-only shape — and the
+/// verdict is read as one viewer, the credential changing starting it over.
+final class VodLikeController extends Notifier<bool?> {
+  VodLikeController(this.aid);
+
+  /// The archive the verdict speaks of.
+  final int aid;
+
+  int _generation = 0;
+
+  @override
+  bool? build() {
+    ref.watch(accountsProvider.select((accounts) => accounts.credentials[SiteIds.bilibili]?.userId));
+    final client = ref.read(vodClientProvider);
+    if (!client.canWrite) return null;
+    unawaited(_read(client, ++_generation));
+    return null;
+  }
+
+  Future<void> _read(BilibiliVodClient client, int generation) async {
+    try {
+      final liked = await client.hasLiked(aid: aid);
+      // A flip that landed while the read was under way owns the state.
+      if (!ref.mounted || state != null || generation != _generation) return;
+      state = liked;
+    } on Object {
+      // The read failing leaves the pill a fact, not a failure.
+    }
+  }
+
+  /// Flips the viewer's like: the flip lands at once, and the endpoint's
+  /// refusal puts it back and rethrows for the page's toast.
+  Future<void> toggle() async {
+    _generation++;
+    final next = !(state ?? false);
+    state = next;
+    try {
+      await ref.read(vodClientProvider).setLike(aid: aid, like: next);
+    } on Object {
+      if (!ref.mounted) return;
+      state = !next;
+      rethrow;
+    }
+  }
+}
+
+/// One archive's like verdict.
+final NotifierProviderFamily<VodLikeController, bool?, int> vodLikeProvider =
+    NotifierProvider.family<VodLikeController, bool?, int>(VodLikeController.new);
+
+/// One uploader's follow verdict: whether the signed-in viewer follows them.
+/// A guest reads null — the uploader row keeps its door without the chip.
+final class VodFollowUpController extends Notifier<bool?> {
+  VodFollowUpController(this.mid);
+
+  /// The uploader the verdict speaks of.
+  final int mid;
+
+  int _generation = 0;
+
+  @override
+  bool? build() {
+    ref.watch(accountsProvider.select((accounts) => accounts.credentials[SiteIds.bilibili]?.userId));
+    final client = ref.read(vodClientProvider);
+    if (!client.canWrite) return null;
+    unawaited(_read(client, ++_generation));
+    return null;
+  }
+
+  Future<void> _read(BilibiliVodClient client, int generation) async {
+    try {
+      final followed = await client.isFollowing(mid: mid);
+      if (!ref.mounted) return;
+      state = followed;
+    } on Object {
+      // The read failing leaves the chip without a verdict, not broken.
+      if (!ref.mounted) return;
+      state = null;
+    }
+  }
+
+  /// Flips the viewer's follow: the flip lands at once, and the endpoint's
+  /// refusal puts it back and rethrows for the page's toast.
+  Future<void> toggle() async {
+    _generation++;
+    final next = !(state ?? false);
+    state = next;
+    try {
+      await ref.read(vodClientProvider).setFollowing(mid: mid, follow: next);
+    } on Object {
+      if (!ref.mounted) return;
+      state = !next;
+      rethrow;
+    }
+  }
+}
+
+/// One uploader's follow verdict.
+final NotifierProviderFamily<VodFollowUpController, bool?, int> vodFollowUpProvider =
+    NotifierProvider.family<VodFollowUpController, bool?, int>(VodFollowUpController.new);
