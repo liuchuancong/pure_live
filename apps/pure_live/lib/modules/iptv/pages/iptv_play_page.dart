@@ -143,6 +143,20 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
   StreamSubscription<GeometryState>? _geometry;
   PlayerHandle? _handle;
   PlayerCoreState _playbackState = PlayerCoreState.idle;
+
+  /// The replay's one-second clock: a seek layer that reads the handle's own
+  /// position needs a tick to redraw on, and no stream exists to subscribe.
+  Timer? _seekTicker;
+
+  /// The panel the bar holds open (`line`, `aspect`, `more`), one at a time.
+  String? _openPanel;
+
+  /// The bar's own box, and the boxes its three pickers hang from.
+  final GlobalKey _barAnchor = GlobalKey();
+  final GlobalKey _lineAnchor = GlobalKey();
+  final GlobalKey _aspectAnchor = GlobalKey();
+  final GlobalKey _moreAnchor = GlobalKey();
+
   IptvChannel? _channel;
   String? _error;
 
@@ -362,6 +376,8 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
     _volumeHudTimer?.cancel();
     _reconnectTimer?.cancel();
     _reconnectStableTimer?.cancel();
+    _seekTicker?.cancel();
+    _seekTicker?.cancel();
     _cursorTimer?.cancel();
     _pageFocus.dispose();
     unawaited(_zapChanges?.cancel() ?? Future<void>.value());
@@ -552,6 +568,17 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
     if (state.playing && !wasPlaying) _onPlaying();
     if (!state.playing && (_cursorHidden || !_barVisible)) _revealPointer();
     if (state.paused) _cancelReconnect();
+    // A replay's seek layer reads the handle once a second; a live channel
+    // has no line to redraw and the clock rests.
+    final needsClock = _catchup != null && state.playing;
+    if (needsClock && _seekTicker == null) {
+      _seekTicker = Timer.periodic(const Duration(seconds: 1), (_) {
+        if (mounted) setState(() {});
+      });
+    } else if (!needsClock && _seekTicker != null) {
+      _seekTicker?.cancel();
+      _seekTicker = null;
+    }
   }
 
   /// The channel is on air again: forget the pending attempt and start the
@@ -1321,9 +1348,6 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
     final library = ref.watch(iptvLibraryProvider).value;
     final browse = ref.watch(iptvBrowseSettingsProvider);
     final slot = channel == null ? null : library?.programmeSlot(channel);
-    // What the channel is on with now — the head's second line and the info
-    // strip ride the overlays beside the picture.
-    final programme = slot?.current;
     final canStep = channel != null && library != null && _zapSequenceOf(library, browse.reverseChannels).length > 1;
     final replay = _catchup;
     // The line under the title: a status pill (on air, upcoming, replaying)
@@ -1396,15 +1420,15 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
               ),
           ],
           builder: (context, controller, _) =>
-              _IconButton(semanticLabel: t.common.more, icon: DsIcons.ellipsisVertical, onPressed: controller.toggle),
+              PlayerBarButton(label: t.common.more, icon: DsIcons.ellipsisVertical, onPressed: controller.toggle),
         )
       else ...[
         for (final verb in navVerbs)
-          _IconButton(semanticLabel: verb.label, icon: verb.icon, selected: verb.selected, onPressed: verb.onPressed),
+          PlayerBarButton(label: verb.label, icon: verb.icon, selected: verb.selected, onPressed: verb.onPressed),
         if (demoVerbs.isNotEmpty) ...[
           const _ClusterDivider(),
           for (final verb in demoVerbs)
-            _IconButton(semanticLabel: verb.label, icon: verb.icon, selected: verb.selected, onPressed: verb.onPressed),
+            PlayerBarButton(label: verb.label, icon: verb.icon, selected: verb.selected, onPressed: verb.onPressed),
         ],
       ],
     ];
@@ -1548,631 +1572,748 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
                   if (presentation == PresentationMode.windowFullscreen)
                     _IptvWindowCaption(title: channel?.entry.name ?? t.common.appTitle, onBack: leave),
                   Expanded(
-                    child: SafeArea(
-                      // The room's arrangement, the picture first: the channel fills
-                      // the page edge to edge, the head hangs over its top edge and
-                      // the transport over its bottom, both on the shades the player
-                      // bars hang on, both folding away while the channel plays — a
-                      // move or a tap brings them back. The zapper draws over the lot
-                      // while it is open: choosing a channel outranks the chrome.
-                      child: Stack(
-                        fit: StackFit.expand,
-                        children: [
-                          Positioned.fill(
-                            child: LayoutBuilder(
-                              builder: (context, constraints) {
-                                // The picture's shape: the stream's own ratio by
-                                // default, or the fixed frame / stretch / crop the bar's
-                                // menu picked. The keyed view keeps the engine's surface
-                                // whichever box it is told to fill.
-                                final fit = switch (_aspect) {
-                                  IptvAspectMode.automatic => ref.watch(playbackSettingsProvider).fit.boxFit,
-                                  IptvAspectMode.ratio16x9 ||
-                                  IptvAspectMode.ratio4x3 ||
-                                  IptvAspectMode.fill => BoxFit.fill,
-                                  IptvAspectMode.zoom => BoxFit.cover,
-                                };
-                                Widget video() => MediaPlayerView(key: _playerKey, handle: handle!, fit: fit);
-                                return Stack(
-                                  fit: StackFit.expand,
-                                  children: [
-                                    if (handle != null)
-                                      Listener(
-                                        onPointerSignal: (signal) {
-                                          if (signal is PointerScrollEvent) _wheelVolume(signal.scrollDelta.dy);
-                                        },
-                                        child: GestureDetector(
-                                          behavior: HitTestBehavior.opaque,
-                                          onTap: _showInfo,
-                                          // A double click is the fullscreen toggle,
-                                          // the reference's click on the picture; the
-                                          // tap alone keeps naming the channel's info.
-                                          onDoubleTap: _togglePictureFullscreen,
-                                          // A vertical drag is the volume, the room's
-                                          // rule.
-                                          onVerticalDragStart: (_) => _beginVolumeDrag(),
-                                          onVerticalDragUpdate: (move) => _dragVolumeBy(move.delta.dy),
-                                          child: switch (_aspect) {
-                                            IptvAspectMode.ratio16x9 => Center(
-                                              child: AspectRatio(aspectRatio: 16 / 9, child: video()),
-                                            ),
-                                            IptvAspectMode.ratio4x3 => Center(
-                                              child: AspectRatio(aspectRatio: 4 / 3, child: video()),
-                                            ),
-                                            _ => video(),
+                    child: PlayerBarTier(
+                      tv: tv,
+                      child: SafeArea(
+                        // The room's arrangement, the picture first: the channel fills
+                        // the page edge to edge, the head hangs over its top edge and
+                        // the transport over its bottom, both on the shades the player
+                        // bars hang on, both folding away while the channel plays — a
+                        // move or a tap brings them back. The zapper draws over the lot
+                        // while it is open: choosing a channel outranks the chrome.
+                        child: Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            Positioned.fill(
+                              child: LayoutBuilder(
+                                builder: (context, constraints) {
+                                  // The picture's shape: the stream's own ratio by
+                                  // default, or the fixed frame / stretch / crop the bar's
+                                  // menu picked. The keyed view keeps the engine's surface
+                                  // whichever box it is told to fill.
+                                  final fit = switch (_aspect) {
+                                    IptvAspectMode.automatic => ref.watch(playbackSettingsProvider).fit.boxFit,
+                                    IptvAspectMode.ratio16x9 ||
+                                    IptvAspectMode.ratio4x3 ||
+                                    IptvAspectMode.fill => BoxFit.fill,
+                                    IptvAspectMode.zoom => BoxFit.cover,
+                                  };
+                                  Widget video() => MediaPlayerView(key: _playerKey, handle: handle!, fit: fit);
+                                  return Stack(
+                                    fit: StackFit.expand,
+                                    children: [
+                                      if (handle != null)
+                                        Listener(
+                                          onPointerSignal: (signal) {
+                                            if (signal is PointerScrollEvent) _wheelVolume(signal.scrollDelta.dy);
                                           },
+                                          child: GestureDetector(
+                                            behavior: HitTestBehavior.opaque,
+                                            onTap: _showInfo,
+                                            // A double click is the fullscreen toggle,
+                                            // the reference's click on the picture; the
+                                            // tap alone keeps naming the channel's info.
+                                            onDoubleTap: _togglePictureFullscreen,
+                                            // A vertical drag is the volume, the room's
+                                            // rule.
+                                            onVerticalDragStart: (_) => _beginVolumeDrag(),
+                                            onVerticalDragUpdate: (move) => _dragVolumeBy(move.delta.dy),
+                                            child: switch (_aspect) {
+                                              IptvAspectMode.ratio16x9 => Center(
+                                                child: AspectRatio(aspectRatio: 16 / 9, child: video()),
+                                              ),
+                                              IptvAspectMode.ratio4x3 => Center(
+                                                child: AspectRatio(aspectRatio: 4 / 3, child: video()),
+                                              ),
+                                              _ => video(),
+                                            },
+                                          ),
+                                        )
+                                      else
+                                        const Center(child: DsSpinner(style: DsSpinnerStyle(size: 28))),
+                                      // 音频模式 puts a quiet card over the station: the
+                                      // sound keeps running, the picture is deliberately
+                                      // gone, and the channel's name says what is playing.
+                                      if (_audioOnly && handle != null)
+                                        Positioned.fill(
+                                          child: ColoredBox(
+                                            color: OnVideoColors.ground,
+                                            child: Center(
+                                              child: Column(
+                                                mainAxisSize: MainAxisSize.min,
+                                                spacing: DsSpace.s8,
+                                                children: [
+                                                  const DsIcon(
+                                                    DsIcons.headphones,
+                                                    size: 32,
+                                                    color: OnVideoColors.inkSubtle,
+                                                  ),
+                                                  Text(
+                                                    channel?.entry.name ?? '',
+                                                    textAlign: TextAlign.center,
+                                                    maxLines: 2,
+                                                    overflow: TextOverflow.ellipsis,
+                                                    style: theme.typography.title.copyWith(
+                                                      color: OnVideoColors.foreground,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
                                         ),
-                                      )
-                                    else
-                                      const Center(child: DsSpinner(style: DsSpinnerStyle(size: 28))),
-                                    // 音频模式 puts a quiet card over the station: the
-                                    // sound keeps running, the picture is deliberately
-                                    // gone, and the channel's name says what is playing.
-                                    if (_audioOnly && handle != null)
-                                      Positioned.fill(
-                                        child: ColoredBox(
-                                          color: OnVideoColors.ground,
+                                      // The stream's own numbers, on the room's session
+                                      // switch: a viewer who turned them on to read a live
+                                      // bitrate gets them on a channel too.
+                                      if (handle case final player? when ref.watch(playerStatsVisibleProvider))
+                                        Positioned.fill(
+                                          child: IgnorePointer(child: PlayerStatsOverlay(handle: player)),
+                                        ),
+                                      // The capture's own mark while the chrome is away:
+                                      // a breathing red point, the minutes it has run,
+                                      // and the tap that ends it — at the picture's left
+                                      // corner, the room's quiet-hours rule (the right
+                                      // corner belongs to the stats panel). The cluster
+                                      // carries the take while it is up.
+                                      if (recordingStart != null && handle != null && !_barVisible)
+                                        PositionedDirectional(
+                                          top: DsSpace.s12,
+                                          start: DsSpace.s12,
+                                          child: RecordingIndicator(
+                                            startedAt: recordingStart,
+                                            label: t.room.stopRecording,
+                                            onStop: () => unawaited(_recordWithToast()),
+                                          ),
+                                        ),
+                                      if (_volumeHud case final value?)
+                                        PositionedDirectional(
+                                          end: DsSpace.s20,
+                                          top: 0,
+                                          bottom: 0,
+                                          child: PlayerVolumeHud(value: value),
+                                        ),
+                                      // A scheduled reconnect waits here instead of the
+                                      // error card: the drop is being worked on, and the
+                                      // count says which attempt is coming.
+                                      if (_reconnectTimer != null)
+                                        ColoredBox(
+                                          color: OnVideoColors.scrim,
                                           child: Center(
                                             child: Column(
                                               mainAxisSize: MainAxisSize.min,
-                                              spacing: DsSpace.s8,
+                                              spacing: DsSpace.s12,
                                               children: [
-                                                const DsIcon(
-                                                  DsIcons.headphones,
-                                                  size: 32,
-                                                  color: OnVideoColors.inkSubtle,
-                                                ),
+                                                const DsSpinner(style: DsSpinnerStyle(size: 28)),
                                                 Text(
-                                                  channel?.entry.name ?? '',
-                                                  textAlign: TextAlign.center,
-                                                  maxLines: 2,
-                                                  overflow: TextOverflow.ellipsis,
-                                                  style: theme.typography.title.copyWith(
+                                                  t.iptv.reconnectAttempt(
+                                                    attempt: _reconnectAttempts,
+                                                    total: _kReconnectMaxAttempts,
+                                                  ),
+                                                  style: theme.typography.body.copyWith(
                                                     color: OnVideoColors.foreground,
                                                   ),
                                                 ),
                                               ],
                                             ),
                                           ),
-                                        ),
-                                      ),
-                                    // The stream's own numbers, on the room's session
-                                    // switch: a viewer who turned them on to read a live
-                                    // bitrate gets them on a channel too.
-                                    if (handle case final player? when ref.watch(playerStatsVisibleProvider))
-                                      Positioned.fill(
-                                        child: IgnorePointer(child: PlayerStatsOverlay(handle: player)),
-                                      ),
-                                    // The capture's own mark while the chrome is away:
-                                    // a breathing red point, the minutes it has run,
-                                    // and the tap that ends it — at the picture's left
-                                    // corner, the room's quiet-hours rule (the right
-                                    // corner belongs to the stats panel). The cluster
-                                    // carries the take while it is up.
-                                    if (recordingStart != null && handle != null && !_barVisible)
-                                      PositionedDirectional(
-                                        top: DsSpace.s12,
-                                        start: DsSpace.s12,
-                                        child: RecordingIndicator(
-                                          startedAt: recordingStart,
-                                          label: t.room.stopRecording,
-                                          onStop: () => unawaited(_recordWithToast()),
-                                        ),
-                                      ),
-                                    if (_volumeHud case final value?)
-                                      PositionedDirectional(
-                                        end: DsSpace.s20,
-                                        top: 0,
-                                        bottom: 0,
-                                        child: PlayerVolumeHud(value: value),
-                                      ),
-                                    // A scheduled reconnect waits here instead of the
-                                    // error card: the drop is being worked on, and the
-                                    // count says which attempt is coming.
-                                    if (_reconnectTimer != null)
-                                      ColoredBox(
-                                        color: OnVideoColors.scrim,
-                                        child: Center(
-                                          child: Column(
-                                            mainAxisSize: MainAxisSize.min,
-                                            spacing: DsSpace.s12,
-                                            children: [
-                                              const DsSpinner(style: DsSpinnerStyle(size: 28)),
-                                              Text(
-                                                t.iptv.reconnectAttempt(
-                                                  attempt: _reconnectAttempts,
-                                                  total: _kReconnectMaxAttempts,
+                                        )
+                                      else if (_error != null)
+                                        ColoredBox(
+                                          color: OnVideoColors.scrim,
+                                          child: Center(
+                                            child: Column(
+                                              mainAxisSize: MainAxisSize.min,
+                                              spacing: DsSpace.s12,
+                                              children: [
+                                                Text(
+                                                  t.iptv.playerOpenFailed,
+                                                  style: theme.typography.title.copyWith(
+                                                    color: OnVideoColors.foreground,
+                                                  ),
                                                 ),
-                                                style: theme.typography.body.copyWith(color: OnVideoColors.foreground),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      )
-                                    else if (_error != null)
-                                      ColoredBox(
-                                        color: OnVideoColors.scrim,
-                                        child: Center(
-                                          child: Column(
-                                            mainAxisSize: MainAxisSize.min,
-                                            spacing: DsSpace.s12,
-                                            children: [
-                                              Text(
-                                                t.iptv.playerOpenFailed,
-                                                style: theme.typography.title.copyWith(color: OnVideoColors.foreground),
-                                              ),
-                                              Text(
-                                                _error!,
-                                                textAlign: TextAlign.center,
-                                                style: theme.typography.caption.copyWith(color: OnVideoColors.inkMuted),
-                                              ),
-                                              DsButton(
-                                                onPressed: () => unawaited(_retry()),
-                                                child: Text(t.common.retry),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                  ],
-                                );
-                              },
-                            ),
-                          ),
-                          // The bottom layers on the picture's own edge: the info
-                          // strip — the channel, what is on and the line it plays
-                          // from, for a few seconds — riding above the transport bar.
-                          // The bar keeps the room bar's shade and its tiers, and it
-                          // rides the pointer-idle rule: a still hand during playback
-                          // takes it away and the picture keeps its whole size, a move
-                          // brings it back. A pointer resting on either layer is using
-                          // it — the idle timer holds while it stands there.
-                          PositionedDirectional(
-                            start: 0,
-                            end: 0,
-                            bottom: 0,
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                if (fullscreen && _infoVisible && channel != null && _error == null)
-                                  IgnorePointer(
-                                    child: _InfoBar(
-                                      programme: browse.showProgrammeLine ? programme : null,
-                                      progress: browse.showProgrammeLine ? slot?.progress : null,
-                                      line: _urls.length > 1
-                                          ? t.iptv.lineCount(current: _lineIndex + 1, total: _urls.length)
-                                          : null,
-                                    ),
-                                  ),
-                                if (_barVisible)
-                                  MouseRegion(
-                                    onEnter: (_) => _cursorTimer?.cancel(),
-                                    onExit: (_) => _revealPointer(),
-                                    child: Container(
-                                      // The room bar's own shade under the buttons, and the
-                                      // room bar's own tiers: the transport and its volume
-                                      // on the left, the picture's menus beside it, the
-                                      // capture and window verbs at the end - hair dividers
-                                      // between the clusters, and the low-frequency cluster
-                                      // folded away before the strip turns crowded.
-                                      padding: EdgeInsets.fromLTRB(
-                                        PlayerBarTier.tvOf(context) ? DsSpace.s16 : DsSpace.s12,
-                                        PlayerBarTier.tvOf(context) ? DsSpace.s12 : DsSpace.s8,
-                                        PlayerBarTier.tvOf(context) ? DsSpace.s16 : DsSpace.s12,
-                                        PlayerBarTier.tvOf(context) ? DsSpace.s12 : DsSpace.s8,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        gradient: OnVideoColors.shade(
-                                          edge: VerticalDirection.down,
-                                          strong: OnVideoColors.scrimDeep,
-                                        ),
-                                      ),
-                                      child: LayoutBuilder(
-                                        builder: (context, constraints) {
-                                          final tv = PlayerBarTier.tvOf(context);
-                                          final wide = constraints.maxWidth >= 720;
-                                          // The narrowest phones: the channel door and
-                                          // the two pickers fold behind one ⋯, the way
-                                          // the header folds its own verbs — the
-                                          // transport and the way out stay in reach.
-                                          final tight = constraints.maxWidth < 360;
-                                          return Row(
-                                            spacing: tv ? DsSpace.s8 : DsSpace.s4,
-                                            children: [
-                                              // 换台 leads the bar: walking the
-                                              // channel list is the one verb
-                                              // watching television cannot lose,
-                                              // so it sits ahead of the transport,
-                                              // where the hand lands first — the
-                                              // same step walk the Up and Down
-                                              // keys run.
-                                              if (canStep) ...[
-                                                PlayerBarButton(
-                                                  label: t.iptv.previousChannel,
-                                                  icon: DsIcons.chevronUp,
-                                                  onPressed: () => _switchChannel(-1),
+                                                Text(
+                                                  _error!,
+                                                  textAlign: TextAlign.center,
+                                                  style: theme.typography.caption.copyWith(
+                                                    color: OnVideoColors.inkMuted,
+                                                  ),
                                                 ),
-                                                PlayerBarButton(
-                                                  label: t.iptv.nextChannel,
-                                                  icon: DsIcons.chevronDown,
-                                                  onPressed: () => _switchChannel(1),
+                                                DsButton(
+                                                  onPressed: () => unawaited(_retry()),
+                                                  child: Text(t.common.retry),
                                                 ),
-                                                const _ClusterDivider(height: 16),
                                               ],
-                                              PlayerBarButton(
-                                                label: playing ? t.player.pause : t.player.play,
-                                                iconAsset: playing ? 'assets/icons/pause.svg' : 'assets/icons/play.svg',
-                                                onPressed: () =>
-                                                    unawaited(_playback?.togglePlayPause() ?? Future<void>.value()),
-                                              ),
-                                              PlayerBarButton(
-                                                label: muted ? t.player.unmute : t.player.mute,
-                                                iconAsset: muted
-                                                    ? 'assets/icons/volume-muted.svg'
-                                                    : 'assets/icons/volume.svg',
-                                                onPressed: handle == null ? null : () => unawaited(_toggleMute()),
-                                              ),
-                                              if (wide)
-                                                SizedBox(
-                                                  width: 72,
-                                                  child: DsSlider(
-                                                    value: ((handle?.volume ?? _volume) * 100).clamp(0.0, 100.0),
-                                                    max: 100,
-                                                    onChanged: handle == null
-                                                        ? null
-                                                        : (value) => unawaited(_setVolume(value / 100)),
-                                                    semanticLabel: t.player.volume,
-                                                  ),
-                                                ),
-                                              const _ClusterDivider(height: 16),
-                                              // The channel door, at the hand's
-                                              // own end of the bar: the list the
-                                              // arrows walk, opened in full when
-                                              // a name is the thing to find.
-                                              if (channel != null && !tight)
-                                                PlayerBarButton(
-                                                  label: t.iptv.zapperOpen,
-                                                  icon: DsIcons.layoutGrid,
-                                                  selected: _zapperOpen,
-                                                  onPressed: _openZapper,
-                                                ),
-                                              if (_urls.length > 1 && !tight)
-                                                DsMenuAnchor(
-                                                  semanticLabel: t.player.line,
-                                                  items: [
-                                                    for (final (index, _) in _urls.indexed)
-                                                      DsMenuItem(
-                                                        checked: index == _lineIndex,
-                                                        label: Text(t.player.lineNumber(n: '${index + 1}')),
-                                                        onPressed: () => unawaited(_selectLine(index)),
-                                                      ),
-                                                  ],
-                                                  builder: (context, controller, _) => PlayerBarButton(
-                                                    label: t.player.line,
-                                                    icon: DsIcons.route,
-                                                    onPressed: controller.toggle,
-                                                  ),
-                                                ),
-                                              if (!tight)
-                                                DsMenuAnchor(
-                                                  semanticLabel: t.iptv.aspectLabel,
-                                                  items: [
-                                                    for (final mode in IptvAspectMode.values)
-                                                      DsMenuItem(
-                                                        checked: mode == _aspect,
-                                                        label: Text(iptvAspectLabel(t, mode)),
-                                                        onPressed: () => setState(() {
-                                                          _aspect = mode;
-                                                          IptvPlayPage.lastAspect = mode;
-                                                        }),
-                                                      ),
-                                                  ],
-                                                  builder: (context, controller, _) => PlayerBarButton(
-                                                    label: t.iptv.aspectLabel,
-                                                    icon: DsIcons.aspectRatio,
-                                                    onPressed: controller.toggle,
-                                                  ),
-                                                ),
-                                              if (tight)
-                                                DsMenuAnchor(
-                                                  semanticLabel: t.common.more,
-                                                  items: [
-                                                    if (channel != null)
-                                                      DsMenuItem(
-                                                        leading: const DsIcon(DsIcons.layoutGrid, size: 15),
-                                                        checked: _zapperOpen,
-                                                        label: Text(t.iptv.zapperOpen),
-                                                        onPressed: _openZapper,
-                                                      ),
-                                                    for (final (index, _) in _urls.indexed)
-                                                      DsMenuItem(
-                                                        checked: index == _lineIndex,
-                                                        label: Text(t.player.lineNumber(n: '${index + 1}')),
-                                                        onPressed: () => unawaited(_selectLine(index)),
-                                                      ),
-                                                    for (final mode in IptvAspectMode.values)
-                                                      DsMenuItem(
-                                                        checked: mode == _aspect,
-                                                        label: Text(iptvAspectLabel(t, mode)),
-                                                        onPressed: () => setState(() {
-                                                          _aspect = mode;
-                                                          IptvPlayPage.lastAspect = mode;
-                                                        }),
-                                                      ),
-                                                  ],
-                                                  builder: (context, controller, _) => PlayerBarButton(
-                                                    label: t.common.more,
-                                                    icon: DsIcons.ellipsis,
-                                                    onPressed: controller.toggle,
-                                                  ),
-                                                ),
-                                              const Spacer(),
-                                              // The two ways out of the picture's box,
-                                              // where the room bar keeps them: the
-                                              // window's own full-bleed on the desktops
-                                              // first, then the system fullscreen the
-                                              // phone turns for. Both read as buttons in
-                                              // the strip — a corner glyph nobody reads
-                                              // as a door is how the verbs went missing.
-                                              if (_desktop)
-                                                PlayerBarButton(
-                                                  label: windowFullscreen
-                                                      ? t.player.windowFullscreenOff
-                                                      : t.player.windowFullscreenOn,
-                                                  icon: windowFullscreen ? DsIcons.copy : DsIcons.square,
-                                                  selected: windowFullscreen,
-                                                  onPressed: handle == null
-                                                      ? null
-                                                      : () => unawaited(_toggleWindowFullscreen()),
-                                                ),
-                                              PlayerBarButton(
-                                                label: fullscreen ? t.room.fullscreenOff : t.room.fullscreenOn,
-                                                icon: fullscreen ? DsIcons.minimize : DsIcons.maximize,
-                                                onPressed: handle == null
-                                                    ? null
-                                                    : () => unawaited(
-                                                        fullscreen
-                                                            ? ref
-                                                                  .read(roomPresentationProvider.notifier)
-                                                                  .exit(handle.id)
-                                                            : ref
-                                                                  .read(roomPresentationProvider.notifier)
-                                                                  .toggleFullscreen(handle.id),
-                                                      ),
-                                              ),
-                                            ],
-                                          );
-                                        },
-                                      ),
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          ),
-                          // The head, in the room's arrangement: identity in a glass
-                          // capsule at the picture's top-left (the way back on the
-                          // route page, the channel's name over its programme line,
-                          // the heart), the session verbs in a glass cluster at its
-                          // top-right — 录制, 截图, 画中画 and the window's fullscreen
-                          // hang there as chips, where the room hangs its own, and
-                          // the channel doors fold into the ⋯ menu. Both fold with
-                          // the transport bar and wake with it. The TV keeps the
-                          // full-width band: a remote walks one row.
-                          if (_barVisible && !tv) ...[
-                            PositionedDirectional(
-                              top: DsSpace.s12,
-                              start: DsSpace.s12,
-                              child: MouseRegion(
-                                onEnter: (_) => _cursorTimer?.cancel(),
-                                onExit: (_) => _revealPointer(),
-                                child: _IptvCapsule(
-                                  channel: channel,
-                                  subtitle: subtitle,
-                                  showNumber: browse.showChannelNumber,
-                                  favourite: _favouriteNow,
-                                  onBack: widget.embedded ? null : () => context.pop(),
-                                  onOpenZapper: _openZapper,
-                                  onToggleFavourite: channel == null
-                                      ? null
-                                      : () => unawaited(_toggleFavourite(channel)),
-                                ),
-                              ),
-                            ),
-                            PositionedDirectional(
-                              top: DsSpace.s12,
-                              end: DsSpace.s12,
-                              child: MouseRegion(
-                                onEnter: (_) => _cursorTimer?.cancel(),
-                                onExit: (_) => _revealPointer(),
-                                child: _IptvCluster(
-                                  narrow: headerNarrow,
-                                  menuVerbs: [?guideVerb, ...demoVerbs],
-                                  recording: recording,
-                                  recordingStartedAt: recordingStart,
-                                  canScreenshot: handle?.canCaptureScreenshot ?? false,
-                                  pipAvailable: handle != null && presentationController.pipAvailable,
-                                  inPip: presentation == PresentationMode.pip,
-                                  canWindowFullscreen: _desktop && presentation != PresentationMode.pip,
-                                  windowFullscreen: presentation == PresentationMode.windowFullscreen,
-                                  statsOn: ref.watch(playerStatsVisibleProvider),
-                                  audioOnly: _audioOnly,
-                                  onBackToLive: replay == null ? null : () => unawaited(_open()),
-                                  onRecord: channel == null ? null : () => unawaited(_recordWithToast()),
-                                  onScreenshot: handle == null ? null : () => unawaited(_screenshot()),
-                                  onPip: handle == null ? null : () => unawaited(_togglePip(handle)),
-                                  onWindowFullscreen: handle == null
-                                      ? null
-                                      : () => unawaited(_toggleWindowFullscreen()),
-                                  onMiniWindow: _miniWindowReady ? () => unawaited(_enterMiniWindow()) : null,
-                                  onStats: () => ref.read(playerStatsVisibleProvider.notifier).toggle(),
-                                  onAudioOnly: handle == null ? null : () => unawaited(_toggleAudioOnly()),
-                                  onWake: () => _cursorTimer?.cancel(),
-                                ),
-                              ),
-                            ),
-                          ],
-                          // The TV keeps the full-width band over the picture's top
-                          // edge, the room's own TV strip: the way back, the channel's
-                          // name and its programme, the heart, the zap pair and the
-                          // verbs, on the shade the room's strip hangs.
-                          if (tv && _barVisible && !widget.embedded)
-                            PositionedDirectional(
-                              start: 0,
-                              end: 0,
-                              top: 0,
-                              child: MouseRegion(
-                                onEnter: (_) => _cursorTimer?.cancel(),
-                                onExit: (_) => _revealPointer(),
-                                child: Container(
-                                  padding: const EdgeInsets.fromLTRB(
-                                    DsSpace.s16,
-                                    DsSpace.s12,
-                                    DsSpace.s16,
-                                    DsSpace.s12,
-                                  ),
-                                  decoration: BoxDecoration(gradient: OnVideoColors.shade(edge: VerticalDirection.up)),
-                                  child: Row(
-                                    spacing: DsSpace.s8,
-                                    children: [
-                                      _IconButton(
-                                        semanticLabel: t.common.back,
-                                        icon: DsIcons.chevronLeft,
-                                        onPressed: () => context.pop(),
-                                      ),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          spacing: DsSpace.s3,
-                                          children: [
-                                            Text(
-                                              channel == null
-                                                  ? t.iptv.playerOpening
-                                                  : [
-                                                      if (browse.showChannelNumber && channel.number != null)
-                                                        '${channel.number}',
-                                                      channel.entry.name,
-                                                    ].join(' · '),
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                              style: theme.typography.title.copyWith(color: OnVideoColors.foreground),
                                             ),
-                                            if (subtitle case final sub?)
-                                              Row(
-                                                spacing: DsSpace.s6,
-                                                children: [
-                                                  _HeaderStatusBadge(label: sub.badge, accent: sub.accent),
-                                                  Flexible(
-                                                    child: Text(
-                                                      sub.text,
-                                                      maxLines: 1,
-                                                      overflow: TextOverflow.ellipsis,
-                                                      style: theme.typography.caption.copyWith(
-                                                        color: OnVideoColors.inkMuted,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                          ],
-                                        ),
-                                      ),
-                                      // The reference's corner clock, on the viewer's
-                                      // switch: the page's minute tick already redraws
-                                      // it.
-                                      if (browse.showClock)
-                                        Text(
-                                          iptvClockLabel(DateTime.now()),
-                                          style: theme.typography.numeric(
-                                            theme.typography.caption.copyWith(color: OnVideoColors.inkSubtle),
                                           ),
                                         ),
-                                      if (channel != null)
-                                        _IconButton(
-                                          semanticLabel: _favouriteNow
-                                              ? t.iptv.unfavouriteAction
-                                              : t.iptv.favouriteAction,
-                                          icon: DsIcons.heart,
-                                          selected: _favouriteNow,
-                                          onPressed: () => unawaited(_toggleFavourite(channel)),
-                                        ),
-                                      if (channel != null && canStep) ...[
-                                        _IconButton(
-                                          semanticLabel: t.iptv.previousChannel,
-                                          icon: DsIcons.chevronUp,
-                                          onPressed: () => _switchChannel(-1),
-                                        ),
-                                        _IconButton(
-                                          semanticLabel: t.iptv.nextChannel,
-                                          icon: DsIcons.chevronDown,
-                                          onPressed: () => _switchChannel(1),
-                                        ),
-                                      ],
-                                      if (channel != null)
-                                        _IconButton(
-                                          semanticLabel: recording ? t.room.stopRecording : t.room.record,
-                                          icon: recording ? DsIcons.squareStop : DsIcons.disc,
-                                          selected: recording,
-                                          onPressed: () => unawaited(_recordWithToast()),
-                                        ),
-                                      ...headerActions,
                                     ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                          // The typed channel number, in the middle of the top edge
-                          // where the reference draws it.
-                          if (_digits.isNotEmpty)
-                            PositionedDirectional(
-                              start: 0,
-                              end: 0,
-                              top: DsSpace.s16,
-                              child: Center(
-                                child: _DigitOsd(digits: _digits, channel: _digitPreview),
-                              ),
-                            ),
-                          // The zapper over the lot: choosing a channel outranks the
-                          // chrome, so the panel covers the bars along its edge while
-                          // it is open. Its width reads the stage it stands in — the
-                          // embedded pane's own measure, not the window's — so the
-                          // panel never runs past the pane that hosts it.
-                          if (_zapperOpen && channel != null)
-                            PositionedDirectional(
-                              start: 0,
-                              top: 0,
-                              bottom: 0,
-                              child: LayoutBuilder(
-                                builder: (context, stage) {
-                                  final width = math.min<double>(720, stage.maxWidth * .92);
-                                  return Padding(
-                                    padding: const EdgeInsets.all(DsSpace.s8),
-                                    child: SizedBox(
-                                      width: width - DsSpace.s8 * 2,
-                                      child: IptvZapper(
-                                        channel: channel,
-                                        onPlayChannel: (next) {
-                                          _closeZapper();
-                                          if (next.id == _channel?.id) {
-                                            // The same channel: a replay goes back
-                                            // to the live stream, live stays live.
-                                            if (_catchup != null) unawaited(_open());
-                                            return;
-                                          }
-                                          _openChannel(next);
-                                        },
-                                        onCatchup: (next, programme) async {
-                                          _closeZapper();
-                                          await _replayOn(next, programme);
-                                        },
-                                        onClose: _closeZapper,
-                                      ),
-                                    ),
                                   );
                                 },
                               ),
                             ),
-                        ],
+                            // The bottom layers on the picture's own edge: the info
+                            // strip — the channel, what is on and the line it plays
+                            // from, for a few seconds — riding above the transport bar.
+                            // The bar keeps the room bar's shade and its tiers, and it
+                            // rides the pointer-idle rule: a still hand during playback
+                            // takes it away and the picture keeps its whole size, a move
+                            // brings it back. A pointer resting on either layer is using
+                            // it — the idle timer holds while it stands there.
+                            PositionedDirectional(
+                              start: 0,
+                              end: 0,
+                              bottom: 0,
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  if (_barVisible)
+                                    MouseRegion(
+                                      onEnter: (_) => _cursorTimer?.cancel(),
+                                      onExit: (_) => _revealPointer(),
+                                      child: PlayerControlBar(
+                                        key: _barAnchor,
+                                        padding: const EdgeInsets.fromLTRB(DsSpace.s12, 0, DsSpace.s12, DsSpace.s8),
+                                        child: Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                                          children: [
+                                            // The bar's first layer answers where the
+                                            // picture stands: a replay draws the seek
+                                            // line and its clocks, a live channel wears
+                                            // the red badge — the door back beside it
+                                            // when the picture trails the broadcast.
+                                            if (_catchup != null && handle != null)
+                                              PlayerSeekLayer.replay(
+                                                position: handle.position,
+                                                duration: handle.duration,
+                                                buffered: handle.buffer.ranges,
+                                                onSeek: (seconds) => unawaited(
+                                                  handle.seek(Duration(milliseconds: (seconds * 1000).round())),
+                                                ),
+                                              )
+                                            else
+                                              PlayerSeekLayer.live(
+                                                onBackToLive: replay == null ? null : () => unawaited(_open()),
+                                                backToLiveLabel: t.iptv.backToLive,
+                                              ),
+                                            LayoutBuilder(
+                                              builder: (context, constraints) {
+                                                final wide = constraints.maxWidth >= 720;
+                                                final tight = constraints.maxWidth < 360;
+                                                return Row(
+                                                  spacing: DsSpace.s4,
+                                                  children: [
+                                                    if (canStep) ...[
+                                                      PlayerBarButton(
+                                                        label: t.iptv.previousChannel,
+                                                        icon: DsIcons.chevronUp,
+                                                        onPressed: () => _switchChannel(-1),
+                                                      ),
+                                                      PlayerBarButton(
+                                                        label: t.iptv.nextChannel,
+                                                        icon: DsIcons.chevronDown,
+                                                        onPressed: () => _switchChannel(1),
+                                                      ),
+                                                      const _ClusterDivider(height: 20),
+                                                    ],
+                                                    PlayerBarButton(
+                                                      label: playing ? t.player.pause : t.player.play,
+                                                      icon: playing ? DsIcons.pause : DsIcons.play,
+                                                      onPressed: () => unawaited(
+                                                        _playback?.togglePlayPause() ?? Future<void>.value(),
+                                                      ),
+                                                    ),
+                                                    PlayerBarButton(
+                                                      label: muted ? t.player.unmute : t.player.mute,
+                                                      icon: muted ? DsIcons.volumeX : DsIcons.volume2,
+                                                      onPressed: handle == null ? null : () => unawaited(_toggleMute()),
+                                                    ),
+                                                    if (wide)
+                                                      SizedBox(
+                                                        width: 96,
+                                                        child: DsSlider(
+                                                          value: ((handle?.volume ?? _volume) * 100).clamp(0.0, 100.0),
+                                                          max: 100,
+                                                          style: const DsSliderStyle(
+                                                            height: 24,
+                                                            trackHeight: 4,
+                                                            trackColor: OnVideoColors.track,
+                                                            fillColor: OnVideoColors.foreground,
+                                                            thumbColor: OnVideoColors.foreground,
+                                                            thumbSize: 12,
+                                                          ),
+                                                          onChanged: handle == null
+                                                              ? null
+                                                              : (value) => unawaited(_setVolume(value / 100)),
+                                                          semanticLabel: t.player.volume,
+                                                        ),
+                                                      ),
+                                                    const _ClusterDivider(height: 20),
+                                                    if (channel != null && !tight)
+                                                      PlayerBarButton(
+                                                        label: t.iptv.zapperOpen,
+                                                        icon: DsIcons.layoutGrid,
+                                                        selected: _zapperOpen,
+                                                        onPressed: _openZapper,
+                                                      ),
+                                                    if (_urls.length > 1 && !tight)
+                                                      PlayerBarChoice(
+                                                        anchorKey: _lineAnchor,
+                                                        label: t.player.line,
+                                                        value: t.player.lineNumber(n: '${_lineIndex + 1}'),
+                                                        icon: DsIcons.route,
+                                                        selected: _openPanel == 'line',
+                                                        onPressed: () => setState(
+                                                          () => _openPanel = _openPanel == 'line' ? null : 'line',
+                                                        ),
+                                                      ),
+                                                    if (!tight)
+                                                      PlayerBarChoice(
+                                                        anchorKey: _aspectAnchor,
+                                                        label: t.iptv.aspectLabel,
+                                                        value: iptvAspectLabel(t, _aspect),
+                                                        icon: DsIcons.aspectRatio,
+                                                        selected: _openPanel == 'aspect',
+                                                        onPressed: () => setState(
+                                                          () => _openPanel = _openPanel == 'aspect' ? null : 'aspect',
+                                                        ),
+                                                      ),
+                                                    // The recorder carries its own red
+                                                    // word: a running take breathes in the
+                                                    // corner over the picture, and its chip
+                                                    // here wears the dot.
+                                                    if (channel != null)
+                                                      Stack(
+                                                        clipBehavior: Clip.none,
+                                                        children: [
+                                                          PlayerBarButton(
+                                                            label: recording ? t.room.stopRecording : t.room.record,
+                                                            icon: recording ? DsIcons.squareStop : DsIcons.disc,
+                                                            selected: recording,
+                                                            onPressed: () => unawaited(_recordWithToast()),
+                                                          ),
+                                                          if (recording)
+                                                            PositionedDirectional(
+                                                              top: 5,
+                                                              end: 5,
+                                                              child: Container(
+                                                                width: 7,
+                                                                height: 7,
+                                                                decoration: const BoxDecoration(
+                                                                  color: OnVideoColors.signal,
+                                                                  shape: BoxShape.circle,
+                                                                ),
+                                                              ),
+                                                            ),
+                                                        ],
+                                                      ),
+                                                    const Spacer(),
+                                                    if (handle != null && presentationController.pipAvailable)
+                                                      PlayerBarButton(
+                                                        label: presentation == PresentationMode.pip
+                                                            ? t.player.pipOff
+                                                            : t.player.pipOn,
+                                                        icon: DsIcons.pictureInPicture2,
+                                                        onPressed: () => unawaited(_togglePip(handle)),
+                                                      ),
+                                                    // The one more door, in the bar's own
+                                                    // panel language: the narrow window
+                                                    // folds its pickers into it, and the
+                                                    // low-frequency cluster the old head
+                                                    // carried lives here now.
+                                                    PlayerBarButton(
+                                                      key: _moreAnchor,
+                                                      label: t.common.more,
+                                                      icon: DsIcons.ellipsis,
+                                                      selected: _openPanel == 'more',
+                                                      onPressed: () => setState(
+                                                        () => _openPanel = _openPanel == 'more' ? null : 'more',
+                                                      ),
+                                                    ),
+                                                    if (_desktop)
+                                                      PlayerBarButton(
+                                                        label: windowFullscreen
+                                                            ? t.player.windowFullscreenOff
+                                                            : t.player.windowFullscreenOn,
+                                                        icon: windowFullscreen ? DsIcons.copy : DsIcons.square,
+                                                        selected: windowFullscreen,
+                                                        onPressed: handle == null
+                                                            ? null
+                                                            : () => unawaited(_toggleWindowFullscreen()),
+                                                      ),
+                                                    PlayerBarButton(
+                                                      label: fullscreen ? t.room.fullscreenOff : t.room.fullscreenOn,
+                                                      icon: fullscreen ? DsIcons.minimize : DsIcons.maximize,
+                                                      onPressed: handle == null
+                                                          ? null
+                                                          : () => unawaited(
+                                                              fullscreen
+                                                                  ? ref
+                                                                        .read(roomPresentationProvider.notifier)
+                                                                        .exit(handle.id)
+                                                                  : ref
+                                                                        .read(roomPresentationProvider.notifier)
+                                                                        .toggleFullscreen(handle.id),
+                                                            ),
+                                                    ),
+                                                  ],
+                                                );
+                                              },
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                            // The head is one capsule now: identity at the
+                            // picture's top-left — the way back, the channel's
+                            // name over its programme line, the heart — and
+                            // nothing at its top-right. The session verbs the
+                            // old cluster carried (录制, 画中画, 截图, the mini
+                            // window, the figures, the doors) read from the
+                            // bar's own clusters and its ⋯ panel, where the
+                            // transport already lives. The capsule folds with
+                            // the transport bar and wakes with it. The TV keeps
+                            // the full-width band: a remote walks one row.
+                            if (_barVisible && !tv)
+                              PositionedDirectional(
+                                top: DsSpace.s12,
+                                start: DsSpace.s12,
+                                child: MouseRegion(
+                                  onEnter: (_) => _cursorTimer?.cancel(),
+                                  onExit: (_) => _revealPointer(),
+                                  child: _IptvCapsule(
+                                    channel: channel,
+                                    subtitle: subtitle,
+                                    showNumber: browse.showChannelNumber,
+                                    favourite: _favouriteNow,
+                                    onBack: widget.embedded ? null : () => context.pop(),
+                                    onOpenZapper: _openZapper,
+                                    onToggleFavourite: channel == null
+                                        ? null
+                                        : () => unawaited(_toggleFavourite(channel)),
+                                  ),
+                                ),
+                              ),
+                            // The bar's pickers hang their cards over the picture:
+                            // a tap anywhere else closes whichever one stands.
+                            if (_barVisible && _openPanel != null)
+                              Positioned.fill(
+                                child: GestureDetector(
+                                  behavior: HitTestBehavior.opaque,
+                                  onTap: () => setState(() => _openPanel = null),
+                                  child: const SizedBox.expand(),
+                                ),
+                              ),
+                            if (_barVisible && _openPanel == 'line' && _urls.length > 1)
+                              PlayerPanelHost(
+                                anchorKey: _lineAnchor,
+                                barKey: _barAnchor,
+                                width: 220,
+                                child: PlayerOverlayPanel(
+                                  title: t.player.line,
+                                  children: [
+                                    for (final (index, _) in _urls.indexed)
+                                      PlayerPanelOption(
+                                        label: t.player.lineNumber(n: '${index + 1}'),
+                                        selected: index == _lineIndex,
+                                        onPressed: () {
+                                          setState(() => _openPanel = null);
+                                          unawaited(_selectLine(index));
+                                        },
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            if (_barVisible && _openPanel == 'aspect')
+                              PlayerPanelHost(
+                                anchorKey: _aspectAnchor,
+                                barKey: _barAnchor,
+                                width: 220,
+                                child: PlayerOverlayPanel(
+                                  title: t.iptv.aspectLabel,
+                                  children: [
+                                    for (final mode in IptvAspectMode.values)
+                                      PlayerPanelOption(
+                                        label: iptvAspectLabel(t, mode),
+                                        selected: mode == _aspect,
+                                        onPressed: () {
+                                          setState(() {
+                                            _openPanel = null;
+                                            _aspect = mode;
+                                            IptvPlayPage.lastAspect = mode;
+                                          });
+                                        },
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            if (_barVisible && _openPanel == 'more')
+                              PlayerPanelHost(
+                                anchorKey: _moreAnchor,
+                                barKey: _barAnchor,
+                                width: 260,
+                                child: Builder(
+                                  builder: (context) {
+                                    final tight = MediaQuery.sizeOf(context).width < 360;
+                                    return PlayerOverlayPanel(
+                                      title: t.common.more,
+                                      children: [
+                                        if (tight)
+                                          PlayerPanelOption(
+                                            label: t.iptv.zapperOpen,
+                                            selected: _zapperOpen,
+                                            onPressed: () {
+                                              setState(() => _openPanel = null);
+                                              _openZapper();
+                                            },
+                                          ),
+                                        if (tight)
+                                          for (final (index, _) in _urls.indexed)
+                                            PlayerPanelOption(
+                                              label: t.player.lineNumber(n: '${index + 1}'),
+                                              selected: index == _lineIndex,
+                                              onPressed: () {
+                                                setState(() => _openPanel = null);
+                                                unawaited(_selectLine(index));
+                                              },
+                                            ),
+                                        if (tight)
+                                          for (final mode in IptvAspectMode.values)
+                                            PlayerPanelOption(
+                                              label: iptvAspectLabel(t, mode),
+                                              selected: mode == _aspect,
+                                              onPressed: () {
+                                                setState(() {
+                                                  _openPanel = null;
+                                                  _aspect = mode;
+                                                  IptvPlayPage.lastAspect = mode;
+                                                });
+                                              },
+                                            ),
+                                        if (guideVerb case final guide?)
+                                          PlayerPanelOption(
+                                            label: guide.label,
+                                            selected: guide.selected,
+                                            onPressed: () {
+                                              setState(() => _openPanel = null);
+                                              guide.onPressed();
+                                            },
+                                          ),
+                                        for (final verb in demoVerbs)
+                                          PlayerPanelOption(
+                                            label: verb.label,
+                                            selected: verb.selected,
+                                            onPressed: () {
+                                              setState(() => _openPanel = null);
+                                              verb.onPressed();
+                                            },
+                                          ),
+                                        PlayerPanelOption(
+                                          label: t.player.statsToggle,
+                                          selected: ref.watch(playerStatsVisibleProvider),
+                                          onPressed: () {
+                                            setState(() => _openPanel = null);
+                                            ref.read(playerStatsVisibleProvider.notifier).toggle();
+                                          },
+                                        ),
+                                        if (handle != null)
+                                          PlayerPanelOption(
+                                            label: _audioOnly ? t.player.restoreVideo : t.player.audioOnlyMode,
+                                            selected: _audioOnly,
+                                            onPressed: () {
+                                              setState(() => _openPanel = null);
+                                              unawaited(_toggleAudioOnly());
+                                            },
+                                          ),
+                                        if (_miniWindowReady)
+                                          PlayerPanelOption(
+                                            label: t.common.miniWindow,
+                                            selected: false,
+                                            onPressed: () {
+                                              setState(() => _openPanel = null);
+                                              unawaited(_enterMiniWindow());
+                                            },
+                                          ),
+                                        if (handle?.canCaptureScreenshot ?? false)
+                                          PlayerPanelOption(
+                                            label: t.player.screenshot,
+                                            selected: false,
+                                            onPressed: () {
+                                              setState(() => _openPanel = null);
+                                              unawaited(_screenshot());
+                                            },
+                                          ),
+                                      ],
+                                    );
+                                  },
+                                ),
+                              ),
+                            // The TV keeps the full-width band over the picture's top
+                            // edge, the room's own TV strip: the way back, the channel's
+                            // name and its programme, the heart, the zap pair and the
+                            // verbs, on the shade the room's strip hangs.
+                            if (tv && _barVisible && !widget.embedded)
+                              PositionedDirectional(
+                                start: 0,
+                                end: 0,
+                                top: 0,
+                                child: MouseRegion(
+                                  onEnter: (_) => _cursorTimer?.cancel(),
+                                  onExit: (_) => _revealPointer(),
+                                  child: Container(
+                                    padding: const EdgeInsets.fromLTRB(
+                                      DsSpace.s16,
+                                      DsSpace.s12,
+                                      DsSpace.s16,
+                                      DsSpace.s12,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      gradient: OnVideoColors.shade(edge: VerticalDirection.up),
+                                    ),
+                                    child: Row(
+                                      spacing: DsSpace.s8,
+                                      children: [
+                                        PlayerBarButton(
+                                          label: t.common.back,
+                                          icon: DsIcons.chevronLeft,
+                                          onPressed: () => context.pop(),
+                                        ),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            spacing: DsSpace.s3,
+                                            children: [
+                                              Text(
+                                                channel == null
+                                                    ? t.iptv.playerOpening
+                                                    : [
+                                                        if (browse.showChannelNumber && channel.number != null)
+                                                          '${channel.number}',
+                                                        channel.entry.name,
+                                                      ].join(' · '),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: theme.typography.title.copyWith(color: OnVideoColors.foreground),
+                                              ),
+                                              if (subtitle case final sub?)
+                                                Row(
+                                                  spacing: DsSpace.s6,
+                                                  children: [
+                                                    _HeaderStatusBadge(label: sub.badge, accent: sub.accent),
+                                                    Flexible(
+                                                      child: Text(
+                                                        sub.text,
+                                                        maxLines: 1,
+                                                        overflow: TextOverflow.ellipsis,
+                                                        style: theme.typography.caption.copyWith(
+                                                          color: OnVideoColors.inkMuted,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                            ],
+                                          ),
+                                        ),
+                                        // The reference's corner clock, on the viewer's
+                                        // switch: the page's minute tick already redraws
+                                        // it.
+                                        if (browse.showClock)
+                                          Text(
+                                            iptvClockLabel(DateTime.now()),
+                                            style: theme.typography.numeric(
+                                              theme.typography.caption.copyWith(color: OnVideoColors.inkSubtle),
+                                            ),
+                                          ),
+                                        if (channel != null)
+                                          PlayerBarButton(
+                                            label: _favouriteNow ? t.iptv.unfavouriteAction : t.iptv.favouriteAction,
+                                            icon: DsIcons.heart,
+                                            selected: _favouriteNow,
+                                            onPressed: () => unawaited(_toggleFavourite(channel)),
+                                          ),
+                                        if (channel != null && canStep) ...[
+                                          PlayerBarButton(
+                                            label: t.iptv.previousChannel,
+                                            icon: DsIcons.chevronUp,
+                                            onPressed: () => _switchChannel(-1),
+                                          ),
+                                          PlayerBarButton(
+                                            label: t.iptv.nextChannel,
+                                            icon: DsIcons.chevronDown,
+                                            onPressed: () => _switchChannel(1),
+                                          ),
+                                        ],
+                                        if (channel != null)
+                                          PlayerBarButton(
+                                            label: recording ? t.room.stopRecording : t.room.record,
+                                            icon: recording ? DsIcons.squareStop : DsIcons.disc,
+                                            selected: recording,
+                                            onPressed: () => unawaited(_recordWithToast()),
+                                          ),
+                                        ...headerActions,
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            // The typed channel number, in the middle of the top edge
+                            // where the reference draws it.
+                            if (_digits.isNotEmpty)
+                              PositionedDirectional(
+                                start: 0,
+                                end: 0,
+                                top: DsSpace.s16,
+                                child: Center(
+                                  child: _DigitOsd(digits: _digits, channel: _digitPreview),
+                                ),
+                              ),
+                            // The zapper over the lot: choosing a channel outranks the
+                            // chrome, so the panel covers the bars along its edge while
+                            // it is open. Its width reads the stage it stands in — the
+                            // embedded pane's own measure, not the window's — so the
+                            // panel never runs past the pane that hosts it.
+                            if (_zapperOpen && channel != null)
+                              PositionedDirectional(
+                                start: 0,
+                                top: 0,
+                                bottom: 0,
+                                child: LayoutBuilder(
+                                  builder: (context, stage) {
+                                    final width = math.min<double>(720, stage.maxWidth * .92);
+                                    return Padding(
+                                      padding: const EdgeInsets.all(DsSpace.s8),
+                                      child: SizedBox(
+                                        width: width - DsSpace.s8 * 2,
+                                        child: IptvZapper(
+                                          channel: channel,
+                                          onPlayChannel: (next) {
+                                            _closeZapper();
+                                            if (next.id == _channel?.id) {
+                                              // The same channel: a replay goes back
+                                              // to the live stream, live stays live.
+                                              if (_catchup != null) unawaited(_open());
+                                              return;
+                                            }
+                                            _openChannel(next);
+                                          },
+                                          onCatchup: (next, programme) async {
+                                            _closeZapper();
+                                            await _replayOn(next, programme);
+                                          },
+                                          onClose: _closeZapper,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -2182,42 +2323,6 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
           ),
         ),
       ),
-    );
-  }
-}
-
-/// A small icon-only button on the player bar: the room page's bar pattern
-/// without its menu machinery. It always draws for the picture — every strip
-/// that carries it floats over the frame now, where the app's own ink would
-/// be unreadable.
-final class _IconButton extends StatelessWidget {
-  const _IconButton({
-    required this.semanticLabel,
-    required this.onPressed,
-    this.icon,
-    this.iconAsset,
-    this.selected = false,
-  }) : assert((icon == null) != (iconAsset == null), 'give exactly one glyph source: icon or iconAsset');
-
-  final String semanticLabel;
-  final DsIconData? icon;
-
-  /// A bundled svg glyph drawn instead of [icon].
-  final String? iconAsset;
-  final VoidCallback? onPressed;
-
-  /// Draws the glyph at full strength: a switch that is on.
-  final bool selected;
-
-  @override
-  Widget build(BuildContext context) {
-    return MediaBarButton(
-      icon: icon,
-      iconAsset: iconAsset,
-      label: semanticLabel,
-      onPressed: onPressed,
-      selected: selected,
-      tooltip: false,
     );
   }
 }
@@ -2307,55 +2412,6 @@ final class _DigitOsd extends StatelessWidget {
   }
 }
 
-/// The strip along the picture's bottom edge after an open or a switch: the
-/// channel's number and name, what is on with its clock and progress, and the
-/// line it plays from — the reference's info bar, on the viewer's switches.
-final class _InfoBar extends StatelessWidget {
-  const _InfoBar({required this.programme, required this.progress, this.line});
-
-  final EpgProgramme? programme;
-  final double? progress;
-  final String? line;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = DsTheme.of(context);
-    final clocks = programme == null ? null : '${iptvClockLabel(programme!.start)}–${iptvClockLabel(programme!.stop)}';
-    // Nothing to say draws nothing: the strip is the flash after a switch,
-    // not a permanent resident.
-    if (clocks == null && line == null) return const SizedBox.shrink();
-    return DecoratedBox(
-      decoration: BoxDecoration(gradient: OnVideoColors.shade(edge: VerticalDirection.down)),
-      child: Padding(
-        padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s16, DsSpace.s40, DsSpace.s16, DsSpace.s12),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          spacing: DsSpace.s12,
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                spacing: DsSpace.s4,
-                children: [
-                  if (clocks != null)
-                    Text(
-                      clocks,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.typography.caption.copyWith(color: OnVideoColors.inkMuted),
-                    ),
-                  if (progress case final value?) DsProgressBar(value: value, semanticLabel: programme?.title ?? ''),
-                ],
-              ),
-            ),
-            if (line != null) Text(line!, style: theme.typography.caption.copyWith(color: OnVideoColors.inkMuted)),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 /// The compact window's own strip: the channel, the transport and the two
 /// verbs. The window hides its own caption, so this is the only way back.
 final class _PipStrip extends StatelessWidget {
@@ -2412,18 +2468,18 @@ final class _PipStrip extends StatelessWidget {
               ),
             ),
           ),
-          _IconButton(
-            semanticLabel: playing ? t.player.pause : t.player.play,
-            iconAsset: playing ? 'assets/icons/pause.svg' : 'assets/icons/play.svg',
+          PlayerBarButton(
+            label: playing ? t.player.pause : t.player.play,
+            icon: playing ? DsIcons.pause : DsIcons.play,
             onPressed: onPlayPause,
           ),
-          _IconButton(
-            semanticLabel: muted ? t.player.unmute : t.player.mute,
-            iconAsset: muted ? 'assets/icons/volume-muted.svg' : 'assets/icons/volume.svg',
+          PlayerBarButton(
+            label: muted ? t.player.unmute : t.player.mute,
+            icon: muted ? DsIcons.volumeX : DsIcons.volume2,
             onPressed: onMute,
           ),
-          _IconButton(semanticLabel: t.player.pipOff, icon: DsIcons.expand, onPressed: onRestore),
-          _IconButton(semanticLabel: t.common.close, icon: DsIcons.x, onPressed: onClose),
+          PlayerBarButton(label: t.player.pipOff, icon: DsIcons.expand, onPressed: onRestore),
+          PlayerBarButton(label: t.common.close, icon: DsIcons.x, onPressed: onClose),
         ],
       ),
     );
@@ -2496,8 +2552,7 @@ final class _IptvCapsule extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             spacing: DsSpace.s4,
             children: [
-              if (onBack != null)
-                _IconButton(semanticLabel: t.common.close, icon: DsIcons.chevronLeft, onPressed: onBack),
+              if (onBack != null) PlayerBarButton(label: t.common.back, icon: DsIcons.chevronLeft, onPressed: onBack),
               DsPressable(
                 semanticLabel: t.iptv.zapperOpen,
                 onPressed: onOpenZapper,
@@ -2542,8 +2597,8 @@ final class _IptvCapsule extends StatelessWidget {
                 ),
               ),
               if (onToggleFavourite != null)
-                _IconButton(
-                  semanticLabel: favourite ? t.iptv.unfavouriteAction : t.iptv.favouriteAction,
+                PlayerBarButton(
+                  label: favourite ? t.iptv.unfavouriteAction : t.iptv.favouriteAction,
                   icon: DsIcons.heart,
                   selected: favourite,
                   onPressed: onToggleFavourite,
@@ -2551,162 +2606,6 @@ final class _IptvCapsule extends StatelessWidget {
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-/// The head's verbs half, the room cluster's place: a glass pill at the
-/// picture's top-right carrying the session verbs as chips — 录制 (or the
-/// running take's breathing mark in its place), 截图, 画中画 and the window's
-/// fullscreen, and 回到直播 while a replay is on. What is left is watching
-/// incidentals, not watching itself — the zap pair and the channel list live
-/// in the bar under the picture — so the ⋯ menu folds the low-frequency
-/// doors: the guide, the cast, the sleep timer, the recordings, the
-/// playback figures and the audio-only mode.
-final class _IptvCluster extends StatelessWidget {
-  const _IptvCluster({
-    required this.narrow,
-    required this.menuVerbs,
-    required this.recording,
-    required this.recordingStartedAt,
-    required this.canScreenshot,
-    required this.pipAvailable,
-    required this.inPip,
-    required this.canWindowFullscreen,
-    required this.windowFullscreen,
-    required this.statsOn,
-    required this.audioOnly,
-    required this.onStats,
-    required this.onWake,
-    this.onBackToLive,
-    this.onRecord,
-    this.onScreenshot,
-    this.onPip,
-    this.onWindowFullscreen,
-    this.onMiniWindow,
-    this.onAudioOnly,
-  });
-
-  /// The window's narrow tier: the door chips fold into the ⋯ menu, while
-  /// the capture and the window verbs stay — leaving the picture is the one
-  /// verb a small picture cannot lose.
-  final bool narrow;
-
-  /// The watching doors — the guide, the cast, the sleep timer, the
-  /// recordings — as the same records the head band and the TV strip read,
-  /// so one list decides where a verb stands at every width.
-  final List<({DsIconData icon, String label, VoidCallback onPressed, bool selected})> menuVerbs;
-
-  /// The recording facts live on the store; the chip reads them here.
-  final bool recording;
-  final DateTime? recordingStartedAt;
-  final bool canScreenshot;
-
-  /// The small window's availability and whether it is the mode on now.
-  final bool pipAvailable;
-  final bool inPip;
-
-  /// The desktop window-fullscreen's availability and whether it is on.
-  final bool canWindowFullscreen;
-  final bool windowFullscreen;
-  final bool statsOn;
-  final bool audioOnly;
-
-  /// Resets the chrome's idle timer after a press.
-  final VoidCallback onWake;
-  final VoidCallback? onBackToLive;
-  final VoidCallback? onRecord;
-  final VoidCallback? onScreenshot;
-  final VoidCallback? onPip;
-  final VoidCallback? onWindowFullscreen;
-
-  /// Hands the picture to the floating mini window; null hides the verb
-  /// (no source to hand over, or a window that is not the app's primary —
-  /// the overlay belongs to the primary's navigator alone).
-  final VoidCallback? onMiniWindow;
-  final VoidCallback onStats;
-  final VoidCallback? onAudioOnly;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.t;
-    final theme = DsTheme.of(context);
-    Widget chip({required String label, required DsIconData icon, bool selected = false, VoidCallback? onPressed}) =>
-        _IconButton(
-          semanticLabel: label,
-          icon: icon,
-          selected: selected,
-          onPressed: onPressed == null
-              ? null
-              : () {
-                  onWake();
-                  onPressed();
-                },
-        );
-    return PlayerGlassPill(
-      // The session verbs' glass rounds like the chips it holds, not the
-      // capsule: a slight corner on the cluster's own tier.
-      radius: theme.radii.control(theme.sizes.sm),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        spacing: DsSpace.s4,
-        children: [
-          // A recording breathes in its chip's place while one runs.
-          if (recording)
-            Padding(
-              padding: const EdgeInsetsDirectional.symmetric(horizontal: DsSpace.s4),
-              child: RecordingIndicator(startedAt: recordingStartedAt, label: t.room.stopRecording, onStop: onRecord),
-            )
-          else if (onRecord != null)
-            chip(label: t.room.record, icon: DsIcons.disc, onPressed: onRecord),
-          // The way into or out of the small window; on a narrow cluster it
-          // stays, the room's own rule for the one verb the window cannot
-          // lose.
-          if (pipAvailable)
-            chip(label: inPip ? t.player.pipOff : t.player.pipOn, icon: DsIcons.pictureInPicture2, onPressed: onPip),
-          if (canWindowFullscreen)
-            chip(
-              label: windowFullscreen ? t.player.windowFullscreenOff : t.player.windowFullscreenOn,
-              icon: windowFullscreen ? DsIcons.copy : DsIcons.square,
-              selected: windowFullscreen,
-              onPressed: onWindowFullscreen,
-            ),
-          // The floating mini window hands the picture away like the pip
-          // does, so it stays beside the window verbs instead of folding
-          // into the ⋯.
-          if (onMiniWindow != null) chip(label: t.common.miniWindow, icon: DsIcons.appWindow, onPressed: onMiniWindow),
-          if (!narrow && canScreenshot) chip(label: t.player.screenshot, icon: DsIcons.camera, onPressed: onScreenshot),
-          if (onBackToLive != null) chip(label: t.iptv.backToLive, icon: DsIcons.radio, onPressed: onBackToLive),
-          DsMenuAnchor(
-            semanticLabel: t.common.more,
-            items: [
-              for (final verb in menuVerbs)
-                DsMenuItem(
-                  leading: DsIcon(verb.icon, size: 15),
-                  label: Text(verb.label),
-                  checked: verb.selected ? true : null,
-                  checkRole: DsMenuCheckRole.checkbox,
-                  onPressed: verb.onPressed,
-                ),
-              DsMenuItem(
-                leading: const DsIcon(DsIcons.activity, size: 15),
-                checked: statsOn,
-                label: Text(t.player.statsToggle),
-                onPressed: onStats,
-              ),
-              if (onAudioOnly != null)
-                DsMenuItem(
-                  leading: DsIcon(audioOnly ? DsIcons.video : DsIcons.headphones, size: 15),
-                  checked: audioOnly,
-                  label: Text(audioOnly ? t.player.restoreVideo : t.player.audioOnlyMode),
-                  onPressed: onAudioOnly,
-                ),
-            ],
-            builder: (context, controller, _) =>
-                chip(label: t.common.more, icon: DsIcons.ellipsis, onPressed: controller.toggle),
-          ),
-        ],
       ),
     );
   }

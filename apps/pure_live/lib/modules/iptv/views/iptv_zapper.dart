@@ -15,6 +15,7 @@ import 'package:pure_live/modules/iptv/views/iptv_group_rail.dart' show iptvGrou
 import 'package:pure_live/modules/iptv/views/iptv_guide_panel.dart'
     show IptvProgrammeTimes, catchupAvailabilityOf, iptvStartOfDay, toggleIptvReminder;
 import 'package:pure_live/modules/iptv/views/iptv_panels.dart' show IptvChannelLogo;
+import 'package:pure_live/shared/shared.dart' show OnVideoColors, PlayerBarButton;
 
 /// The height of one row in any of the panel's three columns; the keyboard
 /// scrolls by it, so the columns have to agree on it.
@@ -243,8 +244,8 @@ final class _IptvZapperState extends ConsumerState<IptvZapper> {
         autofocus: true,
         child: DsSurface(
           decoration: DsBoxDecoration(
-            color: colors.overlay,
-            borderRadius: BorderRadius.circular(theme.radii.overlay),
+            color: OnVideoColors.menuPlate,
+            borderRadius: BorderRadius.circular(theme.radii.card),
             shadows: theme.shadows.overlay,
           ),
           child: Padding(
@@ -261,16 +262,10 @@ final class _IptvZapperState extends ConsumerState<IptvZapper> {
                         t.iptv.zapperTitle,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: theme.typography.title.copyWith(color: colors.text),
+                        style: theme.typography.title.copyWith(color: OnVideoColors.foreground),
                       ),
                     ),
-                    DsButton.icon(
-                      variant: DsButtonVariant.ghost,
-                      size: DsSize.sm,
-                      semanticLabel: t.common.close,
-                      onPressed: widget.onClose,
-                      icon: const DsIcon(DsIcons.x),
-                    ),
+                    PlayerBarButton(label: t.common.close, icon: DsIcons.x, onPressed: widget.onClose),
                   ],
                 ),
                 Expanded(
@@ -280,15 +275,15 @@ final class _IptvZapperState extends ConsumerState<IptvZapper> {
                         controller: _groupScroll,
                         itemExtent: _rowHeight,
                         itemCount: groups.length,
-                        itemBuilder: (context, index) => DsListRow(
+                        itemBuilder: (context, index) => _ZapperRow(
+                          height: _rowHeight,
                           title: Text(
                             groupLabel(groups[index]),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: theme.typography.body.copyWith(color: colors.text),
+                            style: theme.typography.body.copyWith(color: OnVideoColors.foreground),
                           ),
                           selected: index == groupIndex,
-                          style: const DsListRowStyle(height: _rowHeight),
                           onPressed: () => _chooseGroup(index),
                         ),
                       );
@@ -308,7 +303,8 @@ final class _IptvZapperState extends ConsumerState<IptvZapper> {
                               itemCount: channels.length,
                               itemBuilder: (context, index) {
                                 final entry = channels[index];
-                                return DsListRow(
+                                return _ZapperRow(
+                                  height: _rowHeight,
                                   leading: IptvChannelLogo(channel: entry, size: DsSize.xs),
                                   title: Text(
                                     // The same switch every other channel row
@@ -320,16 +316,14 @@ final class _IptvZapperState extends ConsumerState<IptvZapper> {
                                     ].join('  '),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
-                                    style: theme.typography.body.copyWith(color: colors.text),
+                                    style: theme.typography.body.copyWith(color: OnVideoColors.foreground),
                                   ),
                                   selected: index == channelIndex,
-                                  style: const DsListRowStyle(height: _rowHeight),
-                                  trailing: DsButton.icon(
-                                    variant: DsButtonVariant.ghost,
-                                    size: DsSize.sm,
-                                    semanticLabel: entry.favorite ? t.iptv.unfavouriteAction : t.iptv.favouriteAction,
+                                  trailing: PlayerBarButton(
+                                    label: entry.favorite ? t.iptv.unfavouriteAction : t.iptv.favouriteAction,
+                                    icon: DsIcons.heart,
+                                    selected: entry.favorite,
                                     onPressed: () => unawaited(_toggleFavourite(entry)),
-                                    icon: DsIcon(DsIcons.heart, color: entry.favorite ? colors.accent : null),
                                   ),
                                   onPressed: () => _chooseChannel(index),
                                 );
@@ -352,7 +346,8 @@ final class _IptvZapperState extends ConsumerState<IptvZapper> {
                                     classifyIptvProgramme(start: programme.start, stop: programme.stop, now: now) ==
                                     IptvProgrammePhase.live;
                                 final subtitle = (programme.subtitle ?? '').trim();
-                                return DsListRow(
+                                return _ZapperRow(
+                                  height: _programmeRowHeight,
                                   // The two clocks live in the guide page's own
                                   // column: this list is the same day's schedule
                                   // that page draws, and the row used to name
@@ -366,7 +361,7 @@ final class _IptvZapperState extends ConsumerState<IptvZapper> {
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: theme.typography.body.copyWith(
-                                      color: live ? colors.text : colors.textMuted,
+                                      color: live ? OnVideoColors.foreground : OnVideoColors.inkMuted,
                                       fontWeight: live ? FontWeight.w600 : null,
                                     ),
                                   ),
@@ -376,16 +371,15 @@ final class _IptvZapperState extends ConsumerState<IptvZapper> {
                                           subtitle,
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
-                                          style: theme.typography.caption.copyWith(color: colors.textSubtle),
+                                          style: theme.typography.caption.copyWith(color: OnVideoColors.inkSubtle),
                                         ),
                                   detail: Text(
                                     actionLabel(programme),
                                     style: theme.typography.caption.copyWith(
-                                      color: live ? colors.accent : colors.textMuted,
+                                      color: live ? colors.accent : OnVideoColors.inkMuted,
                                     ),
                                   ),
                                   selected: index == programmeIndex,
-                                  style: const DsListRowStyle(height: _programmeRowHeight),
                                   onPressed: channel == null ? null : () => unawaited(_act(channel, programme)),
                                 );
                               },
@@ -466,7 +460,7 @@ final class _IptvZapperState extends ConsumerState<IptvZapper> {
                     t.iptv.zapperHint,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: theme.typography.caption.copyWith(color: colors.textSubtle),
+                    style: theme.typography.caption.copyWith(color: OnVideoColors.inkSubtle),
                   ),
               ],
             ),
@@ -675,13 +669,77 @@ final class _Column extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: theme.typography.caption.copyWith(
-              color: active ? colors.accent : colors.textSubtle,
+              color: active ? colors.accent : OnVideoColors.inkSubtle,
               fontWeight: active ? FontWeight.w600 : null,
             ),
           ),
         ),
         Expanded(child: child),
       ],
+    );
+  }
+}
+
+/// One row of the zapper's three columns, drawn in the picture's own ink:
+/// the hover line, the selected fill and the white glyphs the bars use —
+/// the theme's list row carried the app surface's colours onto a panel
+/// that stands over video, and the two never quite agreed.
+final class _ZapperRow extends StatelessWidget {
+  const _ZapperRow({
+    required this.height,
+    required this.title,
+    required this.selected,
+    required this.onPressed,
+    this.leading,
+    this.description,
+    this.detail,
+    this.trailing,
+  });
+
+  final double height;
+  final Widget title;
+  final bool selected;
+  final VoidCallback? onPressed;
+  final Widget? leading;
+  final Widget? description;
+  final Widget? detail;
+  final Widget? trailing;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = DsTheme.of(context);
+    return DsPressable(
+      onPressed: onPressed,
+      builder: (context, states, _) {
+        final lit = states.contains(WidgetState.hovered) || states.contains(WidgetState.focused);
+        return Container(
+          height: height,
+          padding: const EdgeInsets.symmetric(horizontal: DsSpace.s8),
+          decoration: DsBoxDecoration(
+            color: selected
+                ? OnVideoColors.inkPressed
+                : lit
+                ? OnVideoColors.inkHover
+                : null,
+            borderRadius: BorderRadius.circular(theme.radii.control(height)),
+          ),
+          child: Row(
+            spacing: DsSpace.s8,
+            children: [
+              ?leading,
+              Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [title, ?description],
+                ),
+              ),
+              ?detail,
+              ?trailing,
+            ],
+          ),
+        );
+      },
     );
   }
 }

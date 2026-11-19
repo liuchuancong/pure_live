@@ -91,7 +91,7 @@ final class PlayerBarButton extends StatelessWidget {
       selected: selected,
       autofocus: autofocus,
       focusNode: focusNode,
-      size: size ?? (tv ? sizes.lg : null),
+      size: size ?? (tv ? sizes.lg : sizes.md),
       iconSize: iconSize ?? (tv ? sizes.iconLg : null),
       focusRing: tv,
     );
