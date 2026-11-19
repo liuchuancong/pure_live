@@ -1,6 +1,5 @@
 import 'package:flutter/widgets.dart' show Widget;
 
-import 'package:pure_live/app/pages/downloads_center_page.dart';
 import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/modules/hongguo/hongguo.dart';
 import 'package:pure_live/modules/huya/huya.dart';
@@ -126,14 +125,14 @@ const Map<AppModule, ModuleNavigation> kModuleNavigation = {
   // navigation setting orders and hides these, its default being favorites,
   // hot feed and areas — then the tools block the tool-order setting sorts:
   // multi-view, the recording centre, the link parser, the log console,
-  // search and history.
+  // search and history. Each module keeps its own download page; a centre
+  // entry embedding all four only duplicated the four entries.
   AppModule.live: ModuleNavigation(
     menu: [
       [NavigationItem.favorites, NavigationItem.hot, NavigationItem.zones],
       [
         NavigationItem.multiview,
         NavigationItem.record,
-        NavigationItem.downloadsCenter,
         NavigationItem.toolbox,
         NavigationItem.logs,
         NavigationItem.search,
@@ -167,11 +166,12 @@ const Map<AppModule, ModuleNavigation> kModuleNavigation = {
   ),
   AppModule.vod: ModuleNavigation(
     // The station's rail in the house measure — content first, tools under:
-    // 主页 / 分区 / 影视 / 直播, then 搜索 / 个人.
+    // 主页 / 分区 / 影视, then 搜索 / 个人.
     // (The reference lists 搜索 first; every module here puts its surfaces
-    // ahead of its tools.)
+    // ahead of its tools. Live is not an entry: the station's rooms are the
+    // live module's own surface.)
     menu: [
-      [NavigationItem.vod, NavigationItem.vodRegions, NavigationItem.vodPgc, NavigationItem.vodLive],
+      [NavigationItem.vod, NavigationItem.vodRegions, NavigationItem.vodPgc],
       [NavigationItem.vodSearch, NavigationItem.vodPersonal, NavigationItem.vodDownloads, NavigationItem.logs],
     ],
     landing: NavigationItem.vod,
@@ -315,7 +315,6 @@ final Map<NavigationItem, Widget Function()> kModulePages = {
   NavigationItem.iptvGuide: IptvGuidePage.new,
   NavigationItem.iptvRecent: IptvRecentPage.new,
   NavigationItem.vod: VodPage.new,
-  NavigationItem.vodLive: VodLivePage.new,
   NavigationItem.vodPgc: VodPgcPage.new,
   NavigationItem.vodRegions: VodRegionsPage.new,
   NavigationItem.vodSearch: VodSearchPage.new,
@@ -355,10 +354,6 @@ final Map<NavigationItem, Widget Function()> kModulePages = {
   // the module that started it. A module's own takes are the centre's
   // platform filter, not a second page.
   NavigationItem.record: RecorderPage.new,
-  // The download centre beside it: one roof over the four queues the
-  // modules' own download pages keep — the centre embeds those pages, so
-  // the filters and verbs the module built stay the ones it answers.
-  NavigationItem.downloadsCenter: DownloadsCenterPage.new,
   NavigationItem.toolbox: ToolboxPage.new,
   // The log console is every module's tool, not the live rail's alone: the
   // record it reads is the one shared tree.

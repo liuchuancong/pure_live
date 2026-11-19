@@ -5371,9 +5371,6 @@ class Translations$navigation$zh_CN {
 	/// zh-CN: '录制中心'
 	String get record => '录制中心';
 
-	/// zh-CN: '下载中心'
-	String get downloadsCenter => '下载中心';
-
 	/// zh-CN: '设置'
 	String get settings => '设置';
 
@@ -12301,9 +12298,6 @@ class Translations$vod$zh_CN {
 	/// zh-CN: '个人'
 	String get personal => '个人';
 
-	/// zh-CN: '直播'
-	String get live => '直播';
-
 	/// zh-CN: '视频'
 	String get searchKindVideo => '视频';
 
@@ -12330,21 +12324,6 @@ class Translations$vod$zh_CN {
 
 	/// zh-CN: '视频'
 	String get videoCount => '视频';
-
-	/// zh-CN: '我的关注'
-	String get liveFollowTitle => '我的关注';
-
-	/// zh-CN: '推荐分区'
-	String get liveAreasTitle => '推荐分区';
-
-	/// zh-CN: '推荐直播'
-	String get liveRecommendTitle => '推荐直播';
-
-	/// zh-CN: '没有推荐的直播'
-	String get liveEmptyTitle => '没有推荐的直播';
-
-	/// zh-CN: '稍后刷新再看看。'
-	String get liveEmptyDescription => '稍后刷新再看看。';
 
 	/// zh-CN: '刷新'
 	String get refresh => '刷新';
@@ -12819,9 +12798,6 @@ class Translations$vod$zh_CN {
 
 	/// zh-CN: '退出 App 登录'
 	String get appLogout => '退出 App 登录';
-
-	/// zh-CN: '查看全部'
-	String get liveFollowViewAll => '查看全部';
 
 	/// zh-CN: '立即播放'
 	String get playNow => '立即播放';
@@ -15523,7 +15499,6 @@ extension on Translations {
 			'navigation.search' => '搜索直播',
 			'navigation.toolbox' => '工具箱',
 			'navigation.record' => '录制中心',
-			'navigation.downloadsCenter' => '下载中心',
 			'navigation.settings' => '设置',
 			'navigation.appearance' => '外观',
 			'navigation.proxy' => '网络代理',
@@ -15693,9 +15668,9 @@ extension on Translations {
 			'recorder.caCustomPicked' => ({required Object name}) => '正在使用：${name}',
 			'recorder.caCustomMissing' => ({required Object name}) => '${name} 已不在原位置，录制会失败；请重新选择或清除',
 			'recorder.caCustomNotPem' => '这不是 PEM 文本的证书束（应包含 -----BEGIN CERTIFICATE-----）',
+			'recorder.caCustomPickFailed' => '读取证书文件失败',
 			_ => null,
 		} ?? switch (path) {
-			'recorder.caCustomPickFailed' => '读取证书文件失败',
 			'recorder.caCustomClear' => '恢复内置',
 			'recorder.caCustomCleared' => '已恢复使用内置根证书',
 			'recorder.startNowBusyOther' => '另一个窗口正在录制这个房间',
@@ -16207,9 +16182,9 @@ extension on Translations {
 			'settings.navPicture' => '画面与浮窗',
 			'settings.navFloatingWindow' => '小窗与画中画',
 			'settings.groupData' => '数据',
+			'settings.groupAbout' => '关于',
 			_ => null,
 		} ?? switch (path) {
-			'settings.groupAbout' => '关于',
 			'settings.groupIptv' => 'IPTV',
 			'settings.groupVod' => 'Bilibili 视频',
 			'settings.generalDescription' => '浏览、窗口与启动设置。',
@@ -16721,9 +16696,9 @@ extension on Translations {
 			'settings.iptvBrowseDescription' => '频道号、换台方向、时间和当前节目行怎么显示。',
 			'settings.navIptvGroups' => '分组显示',
 			'settings.iptvGroupsDescription' => '决定哪些分组出现在频道列表和换台里。',
+			'settings.navDanmaku' => '弹幕',
 			_ => null,
 		} ?? switch (path) {
-			'settings.navDanmaku' => '弹幕',
 			'settings.navMiniDanmaku' => '小窗弹幕',
 			'settings.navKernel' => '播放器内核',
 			'settings.navRecording' => '录制',
@@ -17235,9 +17210,9 @@ extension on Translations {
 			'settings.wallpaperCategoryDigitalArt' => '数字艺术',
 			'settings.wallpaperCategoryFantasyArt' => '奇幻艺术',
 			'settings.wallpaperCategoryFinalFantasy' => '最终幻想',
+			'settings.tagManagement' => '标签管理',
 			_ => null,
 		} ?? switch (path) {
-			'settings.tagManagement' => '标签管理',
 			'settings.tagManagementDesc' => '自定义和管理直播间的过滤标签',
 			'settings.tagAdd' => '添加标签',
 			'settings.tagEdit' => '编辑标签',
@@ -17749,9 +17724,9 @@ extension on Translations {
 			'toolbox.nodeNoSites' => '没有可测速的平台',
 			'toolbox.nodeHint' => '点「测速」检查这个平台。',
 			'toolbox.nodeAnswer' => ({required int count}) => '返回 ${count} 个房间',
+			'toolbox.nodeSourceRecommended' => '推荐接口',
 			_ => null,
 		} ?? switch (path) {
-			'toolbox.nodeSourceRecommended' => '推荐接口',
 			'toolbox.nodeSourceHot' => '热门接口',
 			'toolbox.nodeSummary' => ({required Object ok, required Object tested, required Object total}) => '${ok} / ${tested} 可用 · 共 ${total} 个平台',
 			'toolbox.nodeUntestedSummary' => ({required Object total}) => '尚未测速 · 共 ${total} 个平台',
@@ -17810,7 +17785,6 @@ extension on Translations {
 			'vod.search' => '搜索',
 			'vod.home' => '主页',
 			'vod.personal' => '个人',
-			'vod.live' => '直播',
 			'vod.searchKindVideo' => '视频',
 			'vod.searchKindBangumi' => '番剧',
 			'vod.searchKindCinema' => '影视',
@@ -17820,11 +17794,6 @@ extension on Translations {
 			'vod.living' => '直播中',
 			'vod.fans' => '粉丝',
 			'vod.videoCount' => '视频',
-			'vod.liveFollowTitle' => '我的关注',
-			'vod.liveAreasTitle' => '推荐分区',
-			'vod.liveRecommendTitle' => '推荐直播',
-			'vod.liveEmptyTitle' => '没有推荐的直播',
-			'vod.liveEmptyDescription' => '稍后刷新再看看。',
 			'vod.refresh' => '刷新',
 			'vod.regionEmptyDescription' => '这个分区暂时没有推荐视频。',
 			'vod.pgcTitle' => '影视',
@@ -17983,7 +17952,6 @@ extension on Translations {
 			'vod.appLoginDone' => 'App 接口已登录',
 			'vod.appLoggedIn' => ({required Object uid}) => '已登录 App 接口（UID ${uid}）',
 			'vod.appLogout' => '退出 App 登录',
-			'vod.liveFollowViewAll' => '查看全部',
 			'vod.playNow' => '立即播放',
 			'vod.share' => '分享',
 			'vod.linkCopied' => '链接已复制',

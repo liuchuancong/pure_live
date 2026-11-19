@@ -1905,7 +1905,6 @@ class _Translations$navigation$en extends Translations$navigation$zh_CN {
 	@override String get search => 'Search Live';
 	@override String get toolbox => 'Toolbox';
 	@override String get record => 'Recording';
-	@override String get downloadsCenter => 'Download centre';
 	@override String get settings => 'Settings';
 	@override String get appearance => 'Appearance';
 	@override String get proxy => 'Network proxy';
@@ -4281,7 +4280,6 @@ class _Translations$vod$en extends Translations$vod$zh_CN {
 	@override String get search => 'Search';
 	@override String get home => 'Home';
 	@override String get personal => 'Personal';
-	@override String get live => 'Live';
 	@override String get searchKindVideo => 'Videos';
 	@override String get searchKindBangumi => 'Anime';
 	@override String get searchKindCinema => 'Films';
@@ -4291,11 +4289,6 @@ class _Translations$vod$en extends Translations$vod$zh_CN {
 	@override String get living => 'Live';
 	@override String get fans => 'Followers';
 	@override String get videoCount => 'Videos';
-	@override String get liveFollowTitle => 'Following';
-	@override String get liveAreasTitle => 'Areas';
-	@override String get liveRecommendTitle => 'Recommended live';
-	@override String get liveEmptyTitle => 'No live rooms recommended';
-	@override String get liveEmptyDescription => 'Refresh in a moment to try again.';
 	@override String get refresh => 'Refresh';
 	@override String get regionEmptyDescription => 'This region has no recommendations right now.';
 	@override String get pgcTitle => 'Cinema';
@@ -4454,7 +4447,6 @@ class _Translations$vod$en extends Translations$vod$zh_CN {
 	@override String get appLoginDone => 'App interface signed in';
 	@override String appLoggedIn({required Object uid}) => 'App interface signed in (UID ${uid})';
 	@override String get appLogout => 'Sign out of the app interface';
-	@override String get liveFollowViewAll => 'View all';
 	@override String get playNow => 'Play now';
 	@override String get share => 'Share';
 	@override String get linkCopied => 'Link copied';
@@ -6642,7 +6634,6 @@ extension on TranslationsEn {
 			'navigation.search' => 'Search Live',
 			'navigation.toolbox' => 'Toolbox',
 			'navigation.record' => 'Recording',
-			'navigation.downloadsCenter' => 'Download centre',
 			'navigation.settings' => 'Settings',
 			'navigation.appearance' => 'Appearance',
 			'navigation.proxy' => 'Network proxy',
@@ -6812,9 +6803,9 @@ extension on TranslationsEn {
 			'recorder.caCustomMissing' => ({required Object name}) => '${name} is no longer where the row found it — recordings will fail; pick it again or clear it',
 			'recorder.caCustomNotPem' => 'That is not a PEM certificate bundle (it should contain -----BEGIN CERTIFICATE-----)',
 			'recorder.caCustomPickFailed' => 'The certificate file could not be read',
+			'recorder.caCustomClear' => 'Use bundled',
 			_ => null,
 		} ?? switch (path) {
-			'recorder.caCustomClear' => 'Use bundled',
 			'recorder.caCustomCleared' => 'Recording uses the bundled root store again',
 			'recorder.startNowBusyOther' => 'Another window is recording this room',
 			'recorder.startNowCaFailed' => 'The custom CA bundle cannot be read — pick it again or switch to the bundled store',
@@ -7326,9 +7317,9 @@ extension on TranslationsEn {
 			'settings.navPicture' => 'Picture & floating',
 			'settings.navFloatingWindow' => 'Floating window & PiP',
 			'settings.groupData' => 'Data',
+			'settings.groupAbout' => 'About',
 			_ => null,
 		} ?? switch (path) {
-			'settings.groupAbout' => 'About',
 			'settings.groupIptv' => 'IPTV',
 			'settings.groupVod' => 'Bilibili video',
 			'settings.generalDescription' => 'Browsing, window and startup pages.',
@@ -7840,9 +7831,9 @@ extension on TranslationsEn {
 			'settings.iptvBrowseDescription' => 'How the channel number, the zap direction, the clock and the programme line are shown.',
 			'settings.navIptvGroups' => 'Group visibility',
 			'settings.iptvGroupsDescription' => 'Chooses which groups appear in the channel lists and the zapping.',
+			'settings.navDanmaku' => 'Danmaku',
 			_ => null,
 		} ?? switch (path) {
-			'settings.navDanmaku' => 'Danmaku',
 			'settings.navMiniDanmaku' => 'Mini-window danmaku',
 			'settings.navKernel' => 'Player engine',
 			'settings.navRecording' => 'Recording',
@@ -8354,9 +8345,9 @@ extension on TranslationsEn {
 			'settings.wallpaperCategoryDigitalArt' => 'Digital Art',
 			'settings.wallpaperCategoryFantasyArt' => 'Fantasy Art',
 			'settings.wallpaperCategoryFinalFantasy' => 'Final Fantasy',
+			'settings.tagManagement' => 'Tag management',
 			_ => null,
 		} ?? switch (path) {
-			'settings.tagManagement' => 'Tag management',
 			'settings.tagManagementDesc' => 'Customize and manage the tags rooms are filtered by',
 			'settings.tagAdd' => 'Add tag',
 			'settings.tagEdit' => 'Edit tag',
@@ -8868,9 +8859,9 @@ extension on TranslationsEn {
 			'toolbox.nodeNoSites' => 'No platform can be tested',
 			'toolbox.nodeHint' => 'Run a check to test this platform.',
 			'toolbox.nodeAnswer' => ({required int count}) => '${count} rooms returned',
+			'toolbox.nodeSourceRecommended' => 'Recommended endpoint',
 			_ => null,
 		} ?? switch (path) {
-			'toolbox.nodeSourceRecommended' => 'Recommended endpoint',
 			'toolbox.nodeSourceHot' => 'Hot-list endpoint',
 			'toolbox.nodeSummary' => ({required Object ok, required Object tested, required Object total}) => '${ok} / ${tested} reachable · ${total} platforms',
 			'toolbox.nodeUntestedSummary' => ({required Object total}) => 'Not tested yet · ${total} platforms',
@@ -8929,7 +8920,6 @@ extension on TranslationsEn {
 			'vod.search' => 'Search',
 			'vod.home' => 'Home',
 			'vod.personal' => 'Personal',
-			'vod.live' => 'Live',
 			'vod.searchKindVideo' => 'Videos',
 			'vod.searchKindBangumi' => 'Anime',
 			'vod.searchKindCinema' => 'Films',
@@ -8939,11 +8929,6 @@ extension on TranslationsEn {
 			'vod.living' => 'Live',
 			'vod.fans' => 'Followers',
 			'vod.videoCount' => 'Videos',
-			'vod.liveFollowTitle' => 'Following',
-			'vod.liveAreasTitle' => 'Areas',
-			'vod.liveRecommendTitle' => 'Recommended live',
-			'vod.liveEmptyTitle' => 'No live rooms recommended',
-			'vod.liveEmptyDescription' => 'Refresh in a moment to try again.',
 			'vod.refresh' => 'Refresh',
 			'vod.regionEmptyDescription' => 'This region has no recommendations right now.',
 			'vod.pgcTitle' => 'Cinema',
@@ -9102,7 +9087,6 @@ extension on TranslationsEn {
 			'vod.appLoginDone' => 'App interface signed in',
 			'vod.appLoggedIn' => ({required Object uid}) => 'App interface signed in (UID ${uid})',
 			'vod.appLogout' => 'Sign out of the app interface',
-			'vod.liveFollowViewAll' => 'View all',
 			'vod.playNow' => 'Play now',
 			'vod.share' => 'Share',
 			'vod.linkCopied' => 'Link copied',

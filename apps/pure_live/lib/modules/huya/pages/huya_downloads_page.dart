@@ -5,7 +5,6 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pure_live/app/providers/boot/storage_providers.dart' show appPathsProvider;
 import 'package:pure_live/features/settings/pages/wallpaper_download_manager.dart' show openDownloadedPath;
-import 'package:pure_live/features/settings/surface/settings_navigation.dart' show openModuleItem;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/huya/controller/huya_downloads.dart';
 import 'package:pure_live/modules/huya/pages/huya_downloads_pane.dart'
@@ -231,11 +230,6 @@ final class _HuyaDownloadsPageState extends ConsumerState<HuyaDownloadsPage> {
                     destructive: true,
                     onPressed: () => unawaited(_clearFinished(tasks)),
                   ),
-                DownloadQueueAction(
-                  label: t.navigation.downloadsCenter,
-                  icon: DsIcons.download,
-                  onPressed: () => openModuleItem(context, ref, NavigationItem.downloadsCenter),
-                ),
               ],
             ),
           ),

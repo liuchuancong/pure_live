@@ -45,9 +45,6 @@ enum NavigationItem {
   /// The recording branch.
   record(DsIcons.disc3),
 
-  /// The download centre branch: the four modules' queues under one roof.
-  downloadsCenter(DsIcons.download),
-
   /// The settings branch.
   settings(DsIcons.settings),
 
@@ -75,10 +72,6 @@ enum NavigationItem {
   /// The video station's personal page, the reference's 个人 rail entry:
   /// 稍后再看, 历史, 收藏 and 追番 behind its tabs.
   vodPersonal(DsIcons.circleUser),
-
-  /// The video station's live page, the reference's 直播 rail entry: the
-  /// followed rooms, the site's areas and its recommended live feed.
-  vodLive(DsIcons.tvMinimal),
 
   /// The video station's download queue, the reference's 下载管理: the
   /// tasks on their lanes and the files they land in.
@@ -179,7 +172,6 @@ enum NavigationItem {
     NavigationItem.toolbox => t.navigation.toolbox,
     NavigationItem.logs => t.toolbox.toolLogsTitle,
     NavigationItem.record => t.navigation.record,
-    NavigationItem.downloadsCenter => t.navigation.downloadsCenter,
     NavigationItem.settings => t.navigation.settings,
     NavigationItem.appearance => t.navigation.appearance,
     NavigationItem.proxy => t.navigation.proxy,
@@ -189,7 +181,6 @@ enum NavigationItem {
     NavigationItem.vodRegions => t.vod.regions,
     NavigationItem.vodSearch => t.vod.search,
     NavigationItem.vodPersonal => t.vod.personal,
-    NavigationItem.vodLive => t.vod.live,
     NavigationItem.vodDownloads => t.navigation.vodDownloads,
     NavigationItem.huyaHome => t.huya.home,
     NavigationItem.huyaChannels => t.huya.channels,

@@ -543,11 +543,6 @@ final class _VodDownloadsPageState extends ConsumerState<VodDownloadsPage> {
                     icon: DsIcons.refresh,
                     onPressed: () => setState(() => _recheck++),
                   ),
-                  DownloadQueueAction(
-                    label: t.navigation.downloadsCenter,
-                    icon: DsIcons.download,
-                    onPressed: () => openModuleItem(context, ref, NavigationItem.downloadsCenter),
-                  ),
                 ],
                 settingsLabel: t.settings.downloadSettings,
                 onSettings: () {
