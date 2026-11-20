@@ -1057,7 +1057,11 @@ final RegExp _qrcWordTag = RegExp(r'\((\d+),(\d+)\)');
 String _qrcRemoveTag(String str) =>
     str.replaceFirst(RegExp(r'^[\S\s]*?LyricContent="'), '').replaceFirst(RegExp(r'"\/>[\S\s]*?$'), '');
 
-String _qrcStamp(int totalMs) => _stamp(totalMs);
+/// The line stamp the decoded QRC/YRC/Migu lines open with, brackets and
+/// all: the player reads these bodies as LRC, whose timestamp matcher only
+/// ever looks inside `[...]` — a bare stamp leaves every line
+/// unsynchronized.
+String _qrcStamp(int totalMs) => '[${_stamp(totalMs)}]';
 
 int _qrcIntervalMs(String interval) {
   var parts = interval.split(RegExp(r':|\.'));

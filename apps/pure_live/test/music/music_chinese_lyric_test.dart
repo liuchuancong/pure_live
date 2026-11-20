@@ -5,7 +5,8 @@ import 'dart:typed_data' show Uint8List;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pure_live/modules/music/controller/sources/chinese_s2t.dart'
     show kChineseSimplifiedTraditional, traditionalize;
-import 'package:pure_live/modules/music/controller/sources/lyric_decoders.dart' show decodeKrc, decodeQrc;
+import 'package:pure_live/modules/music/controller/sources/lyric_decoders.dart'
+    show decodeKrc, decodeQrc, parseQrc, parseYrc;
 
 /// The music sources' pure layer: the simplified-to-traditional rewrite
 /// that passes the untold characters through, the KRC lyric decode's full
@@ -105,6 +106,35 @@ void main() {
       expect(decodeQrc('zz'), isNull); // not hex at all
       // Hex that decrypts to something no zlib stream accepts.
       expect(decodeQrc('00112233445566778899001122334455'), isNull);
+    });
+
+    test('the decoded lines keep the bracketed stamp the lrc reader matches', () {
+      // The payloads arrive decrypted: the line is `[start,dur](start,dur)word`.
+      final decoded = parseQrc('[1000,2000](0,500)词(500,1500)标签', null, null);
+      expect(decoded, isNotNull);
+      // The line opens with a bracketed stamp — the player's lrc reader only
+      // matches `[mm:ss.mmm]`, and the word tags ride in the lx form.
+      expect(decoded!.lyric.startsWith('[00:01.000]'), isTrue, reason: decoded.lyric);
+      expect(decoded.lyric, contains('<0,500>词'));
+      expect(decoded.lyric, isNot(contains('(0,500)')));
+    });
+  });
+
+  group('the YRC decode', () {
+    test('the decoded lines carry the stamp and the lx word tags', () {
+      // Netease's word tag is a three-part `(start,dur,0)`.
+      final decoded = parseYrc('[1000,2000](0,500,0)一(500,1500,0)句', '[00:01.000]一句译文', null);
+      expect(decoded, isNotNull);
+      expect(decoded!.lyric.startsWith('[00:01.000]'), isTrue, reason: decoded.lyric);
+      expect(decoded.lyric, contains('<0,500>一'));
+      expect(decoded.lyric, isNot(contains('(0,500,0)')));
+      expect(decoded.translation, '[00:01.000]一句译文');
+    });
+
+    test('a payload without a readable line answers null', () {
+      expect(parseYrc(null, null, null), isNull);
+      expect(parseYrc('   ', null, null), isNull);
+      expect(parseYrc('no stamps here', null, null), isNull);
     });
   });
 }
