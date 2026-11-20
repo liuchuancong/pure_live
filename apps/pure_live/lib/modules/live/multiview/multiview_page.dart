@@ -220,10 +220,23 @@ final class _MultiviewPageState extends ConsumerState<MultiviewPage> {
     });
   }
 
+  /// The body's width, as the build's own LayoutBuilder measured it — the
+  /// one measure every picking decision shares. The window's width
+  /// disagrees with it by the shell's rail, and a decision made on the
+  /// window while the dock is drawn on the body is a dead zone: a pick
+  /// asked for, a dock never drawn.
+  double _bodyWidth = double.infinity;
+
   /// Whether the picker docks beside the wall: past this width both the
   /// wall and the picking list keep their legs; below it the picker opens
-  /// as a sheet over the wall instead.
-  bool get _docksBesideWall => MediaQuery.sizeOf(context).width >= 760;
+  /// as a sheet over the wall instead. Only consulted outside the layout
+  /// phase — a post-frame callback or a tap — where the measure is current.
+  bool get _docksBesideWall => _bodyWidth >= 760;
+
+  /// The pick the sheet was last asked for, so a rebuild while the sheet
+  /// stands — the wall's playback state changes constantly — does not ask
+  /// again.
+  int? _sheetFor;
 
   @override
   Widget build(BuildContext context) {
@@ -320,14 +333,17 @@ final class _MultiviewPageState extends ConsumerState<MultiviewPage> {
           Expanded(
             child: LayoutBuilder(
               builder: (context, constraints) {
+                // The measure every picking decision shares; the getter
+                // reads it after layout, where it is current.
+                _bodyWidth = constraints.maxWidth;
                 final picking = _pickingSlot;
                 if (picking == null || picking >= slots.length) {
                   return _wall(wall, slots, playback);
                 }
                 // The picker beside the wall needs the room to keep both
-                // legible; a narrower window already picked the sheet shape
-                // (see [_pickForSlot]), so below the split the wall alone
-                // keeps the body and the sheet rides above it.
+                // legible. Below the split the wall alone keeps the body,
+                // and the sheet — asked for once per pick, opened after
+                // the frame, where a route may rise — rides above it.
                 if (constraints.maxWidth >= 760) {
                   return Row(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -343,6 +359,25 @@ final class _MultiviewPageState extends ConsumerState<MultiviewPage> {
                       ),
                     ],
                   );
+                }
+                if (_sheetFor != picking) {
+                  _sheetFor = picking;
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (!mounted || _pickingSlot != picking) {
+                      _sheetFor = null;
+                      return;
+                    }
+                    unawaited(
+                      _openPickerSheet(picking).then((_) {
+                        if (!mounted) return;
+                        // The sheet's dismissal — any dismissal — ends
+                        // the pick: the cell's highlight goes with it,
+                        // whatever way the sheet was closed.
+                        if (_pickingSlot == picking) setState(() => _pickingSlot = null);
+                        if (_sheetFor == picking) _sheetFor = null;
+                      }),
+                    );
+                  });
                 }
                 return _wall(wall, slots, playback);
               },
@@ -639,11 +674,11 @@ final class _MultiviewPageState extends ConsumerState<MultiviewPage> {
       child: side
           ? Column(
               spacing: gap,
-              children: [for (final at in smalls) Expanded(child: _pane(slots, playback, at, compact: true))],
+              children: [for (final at in smalls) Expanded(child: _pane(slots, playback, at))],
             )
           : Row(
               spacing: gap,
-              children: [for (final at in smalls) Expanded(child: _pane(slots, playback, at, compact: true))],
+              children: [for (final at in smalls) Expanded(child: _pane(slots, playback, at))],
             ),
     );
     return side ? Row(spacing: gap, children: [large, rail]) : Column(spacing: gap, children: [large, rail]);
@@ -692,17 +727,14 @@ final class _MultiviewPageState extends ConsumerState<MultiviewPage> {
     MultiviewLayout.strip => wide ? (4, 1) : (1, 4),
   };
 
-  /// One pane of the wall, wired to the page's handlers; [compact] keeps
-  /// the small pane of the 1+3 arrangement to the two buttons that make
-  /// sense at that size (selecting it brings it large, with the rest).
-  Widget _pane(List<_Slot> slots, MultiviewPlaybackState playback, int at, {bool compact = false}) {
+  /// One pane of the wall, wired to the page's handlers.
+  Widget _pane(List<_Slot> slots, MultiviewPlaybackState playback, int at) {
     final slot = slots[at];
     return _PaneTile(
       fit: ref.watch(playbackSettingsProvider).fit.boxFit,
       slot: slot,
       playback: playback.panes[slot.index],
       selected: playback.selected == slot.index,
-      compact: compact,
       swapSource: _swapSource,
       picking: _pickingSlot == slot.index,
       onPick: () => _pickForSlot(slot.index),
@@ -770,31 +802,29 @@ final class _MultiviewPageState extends ConsumerState<MultiviewPage> {
   void _openDockForFirstEmptyCell(MultiviewState wall) {
     if (_dockConsidered) return;
     _dockConsidered = true;
-    if (_pickingSlot != null || !_docksBesideWall) return;
+    if (_pickingSlot != null) return;
     if (wall.slots.every((slot) => slot != null)) return;
     final at = wall.slots.indexOf(null);
     if (at < 0) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) setState(() => _pickingSlot = at);
+      if (!mounted || _pickingSlot != null) return;
+      // The width decides here, after the frame's layout, not at build
+      // time: the frame that first finds the wall ready has never run the
+      // body's LayoutBuilder — the skeleton above it returns early — so
+      // the width at build time is still the unset default, read as wide,
+      // and a narrow window would find a sheet rising on its own.
+      if (!_docksBesideWall) return;
+      setState(() => _pickingSlot = at);
     });
   }
 
   /// Opens the picker for slot [index]: beside the wall on a wide window —
   /// the cell a pick lands in stays visible — and as a sheet over the wall
   /// on a narrow one, where a dock under the wall would take the height
-  /// the pictures need.
+  /// the pictures need. Which of the two is the body's own measure, decided
+  /// where the body is laid out (see the build's LayoutBuilder).
   void _pickForSlot(int index) {
     setState(() => _pickingSlot = index);
-    if (!_docksBesideWall) {
-      // The sheet's dismissal — any dismissal — ends the pick: the cell's
-      // highlight goes with it, whatever way the sheet was closed.
-      unawaited(
-        _openPickerSheet(index).then((_) {
-          if (!mounted) return;
-          if (_pickingSlot == index) setState(() => _pickingSlot = null);
-        }),
-      );
-    }
   }
 
   /// The sheet that picks a room for slot [index] on a narrow window. One
@@ -871,17 +901,17 @@ typedef _Slot = ({int index, String? key, LiveRoom? room, String title, String p
 /// own; the ring appears when it is hovered, owns the sound, or starts a
 /// swap. An empty one is a solid slot: the theme's control surface, a
 /// hairline edge, a circled invite and its number — a place in the grid the
-/// viewer can name, not a dashed hole. A [compact] pane (a small one of the
-/// 1+3 arrangement) keeps only the audible and close buttons — selecting it
-/// brings it large, with the rest. While a swap is pending ([swapSource]),
-/// every pane joins in — the source rings and each tap elsewhere exchanges.
+/// viewer can name, not a dashed hole. A pane narrower than the whole
+/// island keeps only the audible and close buttons — the pane's own
+/// measure decides, whichever arrangement produced it. While a swap is
+/// pending ([swapSource]), every pane joins in — the source rings and
+/// each tap elsewhere exchanges.
 final class _PaneTile extends StatelessWidget {
   const _PaneTile({
     required this.fit,
     required this.slot,
     required this.playback,
     required this.selected,
-    required this.compact,
     required this.swapSource,
     required this.picking,
     required this.onPick,
@@ -906,9 +936,6 @@ final class _PaneTile extends StatelessWidget {
 
   /// Whether this pane owns the sound.
   final bool selected;
-
-  /// Whether the pane is a small one of the 1+3 arrangement.
-  final bool compact;
 
   /// The pane a pending swap starts from, null while none is pending.
   final int? swapSource;
@@ -988,55 +1015,75 @@ final class _PaneTile extends StatelessWidget {
                       _picture(context, colors, theme, lit),
                       // One row holds both floating pieces, so a long
                       // title yields to the island instead of sliding
-                      // under it.
+                      // under it. The island's set answers the pane's own
+                      // measure, taken after this frame's layout: a small
+                      // pane keeps the pair that matters — the sound and
+                      // the way out — and a pressable's minimum tap
+                      // target is what the buttons really measure, wide
+                      // on touch density however thin the icon paints.
                       PositionedDirectional(
                         top: DsSpace.s6,
                         start: DsSpace.s6,
                         end: DsSpace.s6,
-                        child: Row(
-                          spacing: DsSpace.s6,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Flexible(child: _titleTag(theme)),
-                            _PaneIsland(
-                              buttons: [
-                                _PaneIslandButton(
-                                  icon: pane?.audible ?? false ? DsIcons.volume2 : DsIcons.volumeX,
-                                  semanticLabel: t.multiview.setAudible,
-                                  active: pane?.audible ?? false,
-                                  onPressed: onSelect,
-                                ),
-                                // The rest earn their place only on a
-                                // pane large enough to carry them.
-                                if (!compact) ...[
-                                  _PaneIslandButton(
-                                    iconAsset: pane?.paused ?? false
-                                        ? 'assets/icons/play.svg'
-                                        : 'assets/icons/pause.svg',
-                                    semanticLabel: pane?.paused ?? false ? t.multiview.playPane : t.multiview.pausePane,
-                                    onPressed: onPause,
-                                  ),
-                                  _PaneIslandButton(
-                                    icon: DsIcons.arrowLeftRight,
-                                    semanticLabel: t.multiview.swapPane,
-                                    active: isSource,
-                                    onPressed: isSource ? onSwapWith : onSwapStart,
-                                  ),
-                                  _PaneIslandButton(
-                                    icon: DsIcons.externalLink,
-                                    semanticLabel: t.multiview.openRoom,
-                                    onPressed: onOpen,
-                                  ),
-                                ],
-                                _PaneIslandButton(
-                                  icon: DsIcons.x,
-                                  semanticLabel: t.multiview.clearPane,
-                                  dangerHover: true,
-                                  onPressed: onClear,
+                        child: LayoutBuilder(
+                          builder: (context, constraints) {
+                            final tap = DsTheme.sizesOf(context).minTapTarget;
+                            final button = tap > 26 ? tap : 26.0;
+                            const islandChrome = DsSpace.s3 * 2 + 2; // padding over a hairline border
+                            const gaps = DsSpace.s3 * 4;
+                            final islandFull = islandChrome + button * 5 + gaps;
+                            const rowSpacing = DsSpace.s6;
+                            const tagFloor = 56.0; // a tag that cannot name the room is no tag
+                            final wholeSetFits = constraints.maxWidth >= islandFull + rowSpacing + tagFloor;
+                            return Row(
+                              spacing: rowSpacing,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Flexible(child: _titleTag(theme)),
+                                _PaneIsland(
+                                  buttons: [
+                                    _PaneIslandButton(
+                                      icon: pane?.audible ?? false ? DsIcons.volume2 : DsIcons.volumeX,
+                                      semanticLabel: t.multiview.setAudible,
+                                      active: pane?.audible ?? false,
+                                      onPressed: onSelect,
+                                    ),
+                                    // The middle three earn their place
+                                    // only on a pane wide enough to
+                                    // carry them beside a real tag.
+                                    if (wholeSetFits) ...[
+                                      _PaneIslandButton(
+                                        iconAsset: pane?.paused ?? false
+                                            ? 'assets/icons/play.svg'
+                                            : 'assets/icons/pause.svg',
+                                        semanticLabel: pane?.paused ?? false
+                                            ? t.multiview.playPane
+                                            : t.multiview.pausePane,
+                                        onPressed: onPause,
+                                      ),
+                                      _PaneIslandButton(
+                                        icon: DsIcons.arrowLeftRight,
+                                        semanticLabel: t.multiview.swapPane,
+                                        active: isSource,
+                                        onPressed: isSource ? onSwapWith : onSwapStart,
+                                      ),
+                                      _PaneIslandButton(
+                                        icon: DsIcons.externalLink,
+                                        semanticLabel: t.multiview.openRoom,
+                                        onPressed: onOpen,
+                                      ),
+                                    ],
+                                    _PaneIslandButton(
+                                      icon: DsIcons.x,
+                                      semanticLabel: t.multiview.clearPane,
+                                      dangerHover: true,
+                                      onPressed: onClear,
+                                    ),
+                                  ],
                                 ),
                               ],
-                            ),
-                          ],
+                            );
+                          },
                         ),
                       ),
                       if (streamNote case final note?)

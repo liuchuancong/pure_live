@@ -413,7 +413,12 @@ final class LocalJsonStore implements JsonStore {
   Future<void> dispose() async {
     _disposed = true;
     try {
-      await _lastWrite;
+      // The write future may belong to another zone — a boot that handed
+      // the stores over, a test's fake-async zone since closed — and a
+      // direct await schedules this continuation on its zone, where
+      // nothing runs any more. The microtask hop re-anchors the wait in
+      // the caller's zone; the outcome travels back as a plain value.
+      await Future<void>.microtask(() => _lastWrite);
     } on Object {
       // A failed write already reported to its caller; shutdown still closes.
     }

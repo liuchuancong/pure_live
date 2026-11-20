@@ -224,7 +224,22 @@ final class MultiviewController extends Notifier<MultiviewState> {
       for (var index = 0; index < layout.panes; index++)
         if (index < state.slots.length) state.slots[index] else null,
     ];
+    await _save(repository, layout: layout, slots: slots);
+  }
+
+  /// Writes the wall and re-reads it before returning: every mutation
+  /// computes from the mirrored state, and the mirror is refreshed by the
+  /// store's watch stream on its own schedule — two awaited mutations in a
+  /// row would otherwise read a stale mirror and the second write would
+  /// erase the first (a quick pair of picks losing the earlier room).
+  /// The watch stream stays for writers this process cannot see coming.
+  Future<void> _save(
+    MultiviewRepository repository, {
+    required MultiviewLayout layout,
+    required List<String?> slots,
+  }) async {
     await repository.save(layout: layout, slots: slots);
+    _refresh(repository);
   }
 
   /// Puts [room] into slot [index], replacing whoever was there.
@@ -233,7 +248,7 @@ final class MultiviewController extends Notifier<MultiviewState> {
     if (repository == null || index < 0 || index >= state.slots.length) return;
     final slots = [...state.slots];
     slots[index] = room.ref.identityKey;
-    await repository.save(layout: state.layout, slots: slots);
+    await _save(repository, layout: state.layout, slots: slots);
   }
 
   /// Empties slot [index]; a slot never filled is a no-op.
@@ -243,7 +258,7 @@ final class MultiviewController extends Notifier<MultiviewState> {
     if (state.slots[index] == null) return;
     final slots = [...state.slots];
     slots[index] = null;
-    await repository.save(layout: state.layout, slots: slots);
+    await _save(repository, layout: state.layout, slots: slots);
   }
 
   /// Exchanges the rooms of slots [a] and [b]; an empty slot trades its
@@ -257,7 +272,7 @@ final class MultiviewController extends Notifier<MultiviewState> {
     final held = slots[a];
     slots[a] = slots[b];
     slots[b] = held;
-    await repository.save(layout: state.layout, slots: slots);
+    await _save(repository, layout: state.layout, slots: slots);
   }
 }
 
