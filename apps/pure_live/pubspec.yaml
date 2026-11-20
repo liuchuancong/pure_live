@@ -182,6 +182,7 @@ dev_dependencies:
   riverpod_generator: ^4.0.9 # 生成 Riverpod Provider
   slang_build_runner: ^4.19.0
   # 测试与规范
+  dio: ^5.9.0 # 仅测试：存根 HTTP 适配器（transport 桩）
   flutter_test:
     sdk: flutter
   riverpod_lint: ^3.0.0 # Riverpod 代码检查
