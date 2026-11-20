@@ -21,11 +21,19 @@ import 'package:pure_live/shared/widgets/app_dialog.dart';
 /// and the recent list, behind one row of tabs. The wide player keeps them
 /// beside the stage; a phone summons the same panel as a sheet, so the two
 /// layouts share this one widget rather than a copy each.
-/// The panel beside the stage: lyrics and the queue behind one pair of
-/// tabs, so neither pushes the other off the page.
+///
+/// The panels live on one card of the panel's own — the tabs are the card's
+/// head, flush with its edges, and the four tab bodies sit on the card's
+/// fill instead of each carrying a card of their own, which nested a card
+/// in a card and left the tab row floating above both.
 final class MusicStagePanels extends ConsumerStatefulWidget {
-  /// The panel row itself; the host decides where it lives.
-  const MusicStagePanels({super.key});
+  /// The panel card; the host decides where it lives.
+  const MusicStagePanels({this.fill = true, super.key});
+
+  /// Whether the card draws its own fill. The player's side draws it; the
+  /// phone's sheet already hands the panel a surface, and a card of the
+  /// panel's own there would nest fill in fill.
+  final bool fill;
 
   @override
   ConsumerState<MusicStagePanels> createState() => MusicStagePanelsState();
@@ -37,33 +45,41 @@ final class MusicStagePanelsState extends ConsumerState<MusicStagePanels> {
   @override
   Widget build(BuildContext context) {
     final t = context.t;
-    return Column(
+    final colors = DsTheme.colorsOf(context);
+    final theme = DsTheme.of(context);
+    final body = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
-      spacing: DsSpace.s8,
       children: [
-        Center(
-          child: DsTabs<int>(
-            value: _tab,
-            onChanged: (value) => setState(() => _tab = value),
-            style: kMusicFeedTabsStyle,
-            tabs: [
-              DsTab<int>(value: 0, label: Text(t.music.lyrics)),
-              DsTab<int>(value: 1, label: Text(t.music.queueTitle)),
-              DsTab<int>(value: 2, label: Text(t.music.comments)),
-              DsTab<int>(value: 3, label: Text(t.music.mineRecent)),
-            ],
-            semanticLabel: t.music.lyrics,
-          ),
+        DsTabs<int>(
+          value: _tab,
+          onChanged: (value) => setState(() => _tab = value),
+          style: kMusicFeedTabsStyle,
+          tabs: [
+            DsTab<int>(value: 0, label: Text(t.music.lyrics)),
+            DsTab<int>(value: 1, label: Text(t.music.queueTitle)),
+            DsTab<int>(value: 2, label: Text(t.music.comments)),
+            DsTab<int>(value: 3, label: Text(t.music.mineRecent)),
+          ],
+          semanticLabel: t.music.stagePanels,
         ),
         Expanded(
-          child: switch (_tab) {
-            0 => const MusicLyricsPanel(),
-            1 => const MusicQueuePanel(),
-            2 => const _CommentsTab(),
-            _ => const _RecentPanel(),
-          },
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(DsSpace.s12, 0, DsSpace.s12, DsSpace.s12),
+            child: switch (_tab) {
+              0 => const MusicLyricsPanel(transparent: true),
+              1 => const MusicQueuePanel(),
+              2 => const _CommentsTab(),
+              _ => const _RecentPanel(),
+            },
+          ),
         ),
       ],
+    );
+    if (!widget.fill) return body;
+    return DsSurface(
+      decoration: DsBoxDecoration(color: colors.control, borderRadius: BorderRadius.circular(theme.radii.card)),
+      padding: EdgeInsets.zero,
+      child: body,
     );
   }
 }
@@ -96,9 +112,9 @@ final class _RecentPanel extends ConsumerWidget {
     final playingKey = ref.watch(
       musicPlayerProvider.select((state) => (state.track == null ? null : musicTrackKey(state.track!))),
     );
-    return DsSurface(
-      decoration: DsBoxDecoration(color: colors.control, borderRadius: BorderRadius.circular(theme.radii.card)),
-      padding: const EdgeInsets.fromLTRB(DsSpace.s12, DsSpace.s12, DsSpace.s4, DsSpace.s4),
+    // The card fill is the host's — the panel draws its rows on it.
+    return Padding(
+      padding: const EdgeInsets.only(top: DsSpace.s8, right: DsSpace.s8),
       child: recent.isEmpty
           ? Center(
               child: DsEmptyState(icon: const DsIcon(DsIcons.clock), title: Text(t.music.recentEmpty)),

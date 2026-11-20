@@ -236,7 +236,9 @@ void _openStagePanels(BuildContext context) {
         scrollable: false,
         child: SizedBox(
           height: (MediaQuery.sizeOf(context).height * 0.6).clamp(320.0, 560.0),
-          child: const MusicStagePanels(),
+          // The sheet is the surface; a card of the panel's own would nest
+          // fill in fill.
+          child: const MusicStagePanels(fill: false),
         ),
       ),
     ),
@@ -324,12 +326,16 @@ final class _StageState extends ConsumerState<_Stage> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     spacing: DsSpace.s4,
                     children: [
+                      // The song reads at the page's own scale: the title at
+                      // title size, the credit under it in body ink — a
+                      // player page whose words were caption-sized next to a
+                      // full-height stage read as footnotes.
                       Text(
                         track.title,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         textAlign: TextAlign.center,
-                        style: theme.typography.heading.copyWith(color: colors.text),
+                        style: theme.typography.title.copyWith(color: colors.text),
                       ),
                       if (track.artist.isNotEmpty)
                         Center(
@@ -1040,16 +1046,16 @@ final class _PlayButton extends StatelessWidget {
               color: colors.accent,
               boxShadow: [
                 BoxShadow(
-                  color: colors.accent.withValues(alpha: hovered ? 0.45 : 0.28),
-                  blurRadius: 18,
-                  offset: const Offset(0, 6),
+                  color: colors.accent.withValues(alpha: hovered ? 0.32 : 0.18),
+                  blurRadius: 14,
+                  offset: const Offset(0, 5),
                 ),
               ],
             ),
             child: SizedBox(
-              width: 64,
-              height: 64,
-              child: Center(child: DsIcon(playing ? DsIcons.pause : DsIcons.play, size: 30, color: colors.onAccent)),
+              width: 56,
+              height: 56,
+              child: Center(child: DsIcon(playing ? DsIcons.pause : DsIcons.play, size: 26, color: colors.onAccent)),
             ),
           ),
         );

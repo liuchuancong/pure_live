@@ -29,6 +29,11 @@ final class MusicSpectrum extends ConsumerStatefulWidget {
 /// Peak buckets kept per PCM frame: smooth on a wide stage, cheap at 30 Hz.
 const int _waveColumns = 96;
 
+/// The beam count the bars style draws, whatever the engine serves: a fixed
+/// count keeps the beams hairline on a wide window instead of growing into
+/// pills as the stage widens.
+const int _barColumns = 56;
+
 final class _MusicSpectrumState extends ConsumerState<MusicSpectrum> {
   final ValueNotifier<_SpectrumSamples?> _samples = ValueNotifier(null);
 
@@ -127,7 +132,7 @@ final class _MusicSpectrumState extends ConsumerState<MusicSpectrum> {
     _bind(fft: fft, pcm: pcm);
     final colors = DsTheme.colorsOf(context);
     return SizedBox(
-      height: ui.spectrumStyle == MusicSpectrumStyle.circle ? 64 : 32,
+      height: ui.spectrumStyle == MusicSpectrumStyle.circle ? 56 : 24,
       width: double.infinity,
       child: CustomPaint(
         painter: _SpectrumPainter(
@@ -136,7 +141,7 @@ final class _MusicSpectrumState extends ConsumerState<MusicSpectrum> {
           // Full-strength accent across a wide stage reads as a wall; the
           // strip sits beside the seek, so it sings at half strength —
           // the reference's spectrum keeping below the words.
-          color: colors.accent.withValues(alpha: 0.62),
+          color: colors.accent.withValues(alpha: 0.50),
           quietColor: colors.textSubtle,
           quiet: quiet,
         ),
@@ -191,25 +196,54 @@ final class _SpectrumPainter extends CustomPainter {
     }
   }
 
-  /// One bar per band, bottom-aligned, rounded caps.
+  /// One beam per column, bottom-aligned: rounded-rect beams drawn thin, so
+  /// a quiet passage reads as a short spark rather than a pill — the old
+  /// stroke-line caps grew every band a body as wide as the bar itself. The
+  /// engine's bands fold into the fixed column count first, so the beams
+  /// stay hairline on a wide window instead of fattening as it widens.
   void _paintBars(Canvas canvas, Size size, Float32List bands) {
-    final paint = Paint()
-      ..color = color
-      ..strokeCap = StrokeCap.round;
-    final count = bands.length;
-    final gap = size.width / (count * 4);
-    final barWidth = (size.width - gap * (count + 1)) / count;
+    if (bands.isEmpty) return;
+    final columns = _fold(bands, _barColumns);
+    final count = columns.length;
+    final step = size.width / count;
+    final beamWidth = (step * 0.62).clamp(1.5, 4.0);
+    final radius = Radius.circular(beamWidth / 2);
     final available = size.height - _pad * 2;
+    final paint = Paint()..color = color;
     for (var i = 0; i < count; i++) {
-      final height = bands[i].clamp(0.0, 1.0) * available;
-      if (height < 0.5) continue;
-      final left = gap + i * (barWidth + gap) + barWidth / 2;
-      canvas.drawLine(
-        Offset(left, size.height - _pad),
-        Offset(left, size.height - _pad - height),
-        paint..strokeWidth = barWidth,
+      final height = (columns[i].clamp(0.0, 1.0) * available).clamp(2.0, available);
+      final left = i * step + (step - beamWidth) / 2;
+      canvas.drawRRect(
+        // Rounded at the top, square on the baseline: a beam grows from the
+        // rule the quiet state draws.
+        RRect.fromLTRBAndCorners(
+          left,
+          size.height - _pad - height,
+          left + beamWidth,
+          size.height - _pad,
+          topLeft: radius,
+          topRight: radius,
+        ),
+        paint,
       );
     }
+  }
+
+  /// Folds [values] into [columns] beams: each a peak over its slice of the
+  /// source, so a fold keeps the loudest voice in the band it covers.
+  static Float32List _fold(Float32List values, int columns) {
+    if (values.length <= columns) return values;
+    final folded = Float32List(columns);
+    for (var i = 0; i < columns; i++) {
+      final start = i * values.length ~/ columns;
+      final end = math.max(start + 1, (i + 1) * values.length ~/ columns);
+      var peak = 0.0;
+      for (var j = start; j < end && j < values.length; j++) {
+        if (values[j] > peak) peak = values[j];
+      }
+      folded[i] = peak;
+    }
+    return folded;
   }
 
   /// The same bands as spokes growing inward from a ring.

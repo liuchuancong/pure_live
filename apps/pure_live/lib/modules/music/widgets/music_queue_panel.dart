@@ -70,11 +70,8 @@ final class MusicQueuePanelState extends ConsumerState<MusicQueuePanel> {
     final favourites = ref.watch(musicFavouritesProvider);
     final favouriteController = ref.read(musicFavouritesProvider.notifier);
     if (queueLength == 0 || track == null) {
-      return DsSurface(
-        decoration: DsBoxDecoration(color: colors.control, borderRadius: BorderRadius.circular(theme.radii.card)),
-        child: Center(
-          child: DsEmptyState(icon: const DsIcon(DsIcons.listMusic), title: Text(t.music.queueEmpty)),
-        ),
+      return Center(
+        child: DsEmptyState(icon: const DsIcon(DsIcons.listMusic), title: Text(t.music.queueEmpty)),
       );
     }
     final queue = controller.queue;
@@ -182,9 +179,9 @@ final class MusicQueuePanelState extends ConsumerState<MusicQueuePanel> {
       ),
     );
 
-    return DsSurface(
-      decoration: DsBoxDecoration(color: colors.control, borderRadius: BorderRadius.circular(theme.radii.card)),
-      padding: const EdgeInsets.fromLTRB(DsSpace.s12, DsSpace.s12, DsSpace.s4, DsSpace.s4),
+    // The card fill is the host's — the queue draws its rows on it.
+    return Padding(
+      padding: const EdgeInsets.only(top: DsSpace.s8, right: DsSpace.s8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         spacing: DsSpace.s8,
