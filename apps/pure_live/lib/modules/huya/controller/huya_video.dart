@@ -399,13 +399,17 @@ final class HuyaRankController extends Notifier<HuyaRankState> {
     if (state.videos.isEmpty) await _load(1);
   }
 
-  /// Walks onto [boardId], keeping each board's own page walk.
+  /// Walks onto [boardId], keeping each board's own page walk. A page the
+  /// old board still has in flight must not hold this one: its answer is
+  /// dropped by the board guard, so the flag comes off here and the landed
+  /// board asks its own first page.
   Future<void> select(String boardId) async {
     if (state.boardId == boardId) return;
     state = state.copyWith(
       boardId: boardId,
       videos: const <HuyaVideo>[],
       nextPage: 1,
+      loading: false,
       clearUpdatedAt: true,
       clearError: true,
     );
@@ -749,9 +753,11 @@ final class HuyaReplayController extends Notifier<HuyaReplayState> {
   @override
   HuyaReplayState build() => const HuyaReplayState();
 
-  /// Opens [uid]'s replays; another uid starts them over.
+  /// Opens [uid]'s replays; another uid starts them over. A page whose
+  /// first read failed answers the tab's retry ask again — only an answer
+  /// that stands is not asked for twice.
   Future<void> open(String uid) async {
-    if (state.uid == uid && (state.loaded || state.loading)) return;
+    if (state.uid == uid && (state.loading || (state.loaded && state.error == null))) return;
     state = HuyaReplayState(uid: uid, loading: true);
     await _load(uid, 1);
   }
