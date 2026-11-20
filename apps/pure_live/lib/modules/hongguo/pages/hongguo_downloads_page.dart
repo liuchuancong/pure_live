@@ -27,6 +27,7 @@ import 'package:pure_live/shared/shared.dart'
     show
         DownloadDetails,
         DownloadDetailsPane,
+        DownloadGroupHead,
         DownloadQueueAction,
         DownloadQueueHeader,
         DownloadRowActions,
@@ -41,6 +42,7 @@ import 'package:pure_live/shared/shared.dart'
         downloadEtaText,
         downloadFilePresent,
         downloadRowGroupOf,
+        downloadStatusTabLabel,
         formatDownloadBytes,
         showDownloadDetails;
 import 'package:pure_live/shared/widgets/app_dialog.dart';
@@ -118,14 +120,6 @@ DownloadRowPhase _hongguoRowPhase(HongguoDownloadPhase phase, {required bool mis
 };
 
 /// The state tab's word — the shared status words, with 全部 at its head.
-String _statusTabLabel(Translations t, DownloadStatusGroup group) => switch (group) {
-  DownloadStatusGroup.all => t.settings.downloadFilterAll,
-  DownloadStatusGroup.running => t.settings.downloadStatusRunning,
-  DownloadStatusGroup.queued => t.settings.downloadStatusQueued,
-  DownloadStatusGroup.paused => t.settings.downloadStatusPaused,
-  DownloadStatusGroup.done => t.settings.downloadStatusDone,
-  DownloadStatusGroup.failed => t.settings.downloadStatusFailed,
-};
 
 final class HongguoDownloadsPane extends ConsumerStatefulWidget {
   /// The pane shown under Settings → 红果短剧 → 下载.
@@ -546,7 +540,7 @@ final class _HongguoDownloadsPageState extends ConsumerState<HongguoDownloadsPag
                       onChanged: (group) => setState(() => _statusGroup = group),
                       tabs: [
                         for (final group in DownloadStatusGroup.values)
-                          DownloadStatusTab(group, _statusTabLabel(t, group), counts[group] ?? 0),
+                          DownloadStatusTab(group, downloadStatusTabLabel(t, group), counts[group] ?? 0),
                       ],
                     ),
                   ),
@@ -799,13 +793,15 @@ final class _HongguoSeriesHead extends ConsumerWidget {
       (final held, final total) when held < total => t.hongguo.downloadHeldOfTotal(held: held, total: total),
       (final held, final _) => t.hongguo.episodesCount(count: held),
     };
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(0, DsSpace.s12, 0, DsSpace.s4),
-      child: Row(
-        spacing: DsSpace.s8,
-        children: [
-          if (group.cover.isNotEmpty)
-            ClipRRect(
+    // The row is the shared block head; the page keeps the drama's own
+    // reading of how much it holds and the verbs.
+    return DownloadGroupHead(
+      title: group.title,
+      countLine: scale,
+      menuSemanticLabel: group.title,
+      cover: group.cover.isEmpty
+          ? null
+          : ClipRRect(
               borderRadius: BorderRadius.circular(theme.radii.control(28)),
               child: SizedBox(
                 width: 28,
@@ -818,58 +814,27 @@ final class _HongguoSeriesHead extends ConsumerWidget {
                 ),
               ),
             ),
-          Expanded(
-            child: Text(
-              group.title,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
-            ),
+      menuItems: [
+        if (phases.pausable.isNotEmpty)
+          DsMenuItem(
+            leading: const DsIcon(DsIcons.pause),
+            label: Text(t.settings.downloadPause),
+            onPressed: () => unawaited(_apply(ref, phases.pausable, (controller, id) => controller.pause(id))),
           ),
-          // The block's own reach into its drama, decided above: a head that
-          // names only the drama's scale makes two blocks of one drama look
-          // identical.
-          if (scale case final text?) Text(text, style: theme.typography.caption.copyWith(color: colors.textMuted)),
-          // One episode in the block is the row's own business; a verb with a
-          // single object does not need a second place to be pressed, and a
-          // head that greyed out an inapplicable switch would only say so
-          // louder than the row already does.
-          if (group.tasks.length > 1)
-            DsMenuAnchor(
-              semanticLabel: group.title,
-              align: DsAlign.end,
-              items: [
-                if (phases.pausable.isNotEmpty)
-                  DsMenuItem(
-                    leading: const DsIcon(DsIcons.pause),
-                    label: Text(t.settings.downloadPause),
-                    onPressed: () => unawaited(_apply(ref, phases.pausable, (controller, id) => controller.pause(id))),
-                  ),
-                if (phases.resumable.isNotEmpty)
-                  DsMenuItem(
-                    leading: const DsIcon(DsIcons.play),
-                    label: Text(t.settings.downloadResume),
-                    onPressed: () =>
-                        unawaited(_apply(ref, phases.resumable, (controller, id) => controller.resume(id))),
-                  ),
-                if (phases.pausable.isNotEmpty || phases.resumable.isNotEmpty) const DsMenuDivider(),
-                DsMenuItem(
-                  leading: const DsIcon(DsIcons.trash2),
-                  label: Text(t.settings.downloadRemove),
-                  destructive: true,
-                  onPressed: () => unawaited(_removeBlock(context, ref, t)),
-                ),
-              ],
-              builder: (context, anchor, _) => DsButton.icon(
-                variant: DsButtonVariant.secondary,
-                size: DsSize.sm,
-                semanticLabel: group.title,
-                onPressed: anchor.toggle,
-                icon: const DsIcon(DsIcons.ellipsisVertical, size: 16),
-              ),
-            ),
-        ],
-      ),
+        if (phases.resumable.isNotEmpty)
+          DsMenuItem(
+            leading: const DsIcon(DsIcons.play),
+            label: Text(t.settings.downloadResume),
+            onPressed: () => unawaited(_apply(ref, phases.resumable, (controller, id) => controller.resume(id))),
+          ),
+        if (phases.pausable.isNotEmpty || phases.resumable.isNotEmpty) const DsMenuDivider(),
+        DsMenuItem(
+          leading: const DsIcon(DsIcons.trash2),
+          label: Text(t.settings.downloadRemove),
+          destructive: true,
+          onPressed: () => unawaited(_removeBlock(context, ref, t)),
+        ),
+      ],
     );
   }
 }

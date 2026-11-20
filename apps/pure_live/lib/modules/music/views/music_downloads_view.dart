@@ -34,6 +34,7 @@ import 'package:pure_live/shared/shared.dart'
         downloadEtaText,
         downloadFilePresent,
         downloadRowGroupOf,
+        downloadStatusTabLabel,
         formatDownloadBytes,
         showDownloadDetails;
 import 'package:pure_live/shared/widgets/app_dialog.dart';
@@ -255,7 +256,7 @@ class MusicDownloadsViewState extends ConsumerState<MusicDownloadsView> {
                       onChanged: (group) => setState(() => _statusGroup = group),
                       tabs: [
                         for (final group in DownloadStatusGroup.values)
-                          DownloadStatusTab(group, _statusTabLabel(t, group), counts[group] ?? 0),
+                          DownloadStatusTab(group, downloadStatusTabLabel(t, group), counts[group] ?? 0),
                       ],
                     ),
                   ),
@@ -494,14 +495,6 @@ DownloadRowPhase _musicRowPhase(audio.MusicDownloadStatus status, {required bool
 };
 
 /// The state tab's word — the shared status words, with 全部 at its head.
-String _statusTabLabel(Translations t, DownloadStatusGroup group) => switch (group) {
-  DownloadStatusGroup.all => t.settings.downloadFilterAll,
-  DownloadStatusGroup.running => t.settings.downloadStatusRunning,
-  DownloadStatusGroup.queued => t.settings.downloadStatusQueued,
-  DownloadStatusGroup.paused => t.settings.downloadStatusPaused,
-  DownloadStatusGroup.done => t.settings.downloadStatusDone,
-  DownloadStatusGroup.failed => t.settings.downloadStatusFailed,
-};
 
 /// The track a download row previews: the platform's cover and names before
 /// the file exists, the file itself (path, embedded art, tags) once it does —

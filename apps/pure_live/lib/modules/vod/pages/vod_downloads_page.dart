@@ -26,6 +26,7 @@ import 'package:pure_live/shared/shared.dart'
     show
         DownloadDetails,
         DownloadDetailsPane,
+        DownloadGroupHead,
         DownloadQueueAction,
         DownloadQueueHeader,
         DownloadRowActions,
@@ -41,6 +42,7 @@ import 'package:pure_live/shared/shared.dart'
         downloadEtaText,
         downloadFilePresent,
         downloadRowGroupOf,
+        downloadStatusTabLabel,
         formatDownloadBytes,
         inlineFilterProvider,
         showDownloadDetails;
@@ -559,7 +561,7 @@ final class _VodDownloadsPageState extends ConsumerState<VodDownloadsPage> {
                       onChanged: (group) => setState(() => _statusGroup = group),
                       tabs: [
                         for (final group in DownloadStatusGroup.values)
-                          DownloadStatusTab(group, _statusTabLabel(t, group), counts[group] ?? 0),
+                          DownloadStatusTab(group, downloadStatusTabLabel(t, group), counts[group] ?? 0),
                       ],
                     ),
                   ),
@@ -651,14 +653,6 @@ final class _VodDownloadsPageState extends ConsumerState<VodDownloadsPage> {
 }
 
 /// The state tab's word — the shared status words, with 全部 at its head.
-String _statusTabLabel(Translations t, DownloadStatusGroup group) => switch (group) {
-  DownloadStatusGroup.all => t.settings.downloadFilterAll,
-  DownloadStatusGroup.running => t.settings.downloadStatusRunning,
-  DownloadStatusGroup.queued => t.settings.downloadStatusQueued,
-  DownloadStatusGroup.paused => t.settings.downloadStatusPaused,
-  DownloadStatusGroup.done => t.settings.downloadStatusDone,
-  DownloadStatusGroup.failed => t.settings.downloadStatusFailed,
-};
 
 /// The preview page's list for the station's queue: every part that finished,
 /// in the queue's own order. A part whose file was cleaned out of the folder
@@ -797,13 +791,15 @@ final class _VodArchiveHead extends ConsumerWidget {
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
     final phases = _phases();
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(0, DsSpace.s12, 0, DsSpace.s4),
-      child: Row(
-        spacing: DsSpace.s8,
-        children: [
-          if (group.cover.isNotEmpty)
-            ClipRRect(
+    // The row is the shared block head; the page keeps only the verbs and
+    // the archive's own reading of how much it holds.
+    return DownloadGroupHead(
+      title: group.title,
+      countLine: '${t.vod.parts} · ${group.parts}',
+      menuSemanticLabel: group.title,
+      cover: group.cover.isEmpty
+          ? null
+          : ClipRRect(
               borderRadius: BorderRadius.circular(theme.radii.control(28)),
               child: SizedBox(
                 width: 28,
@@ -816,53 +812,27 @@ final class _VodArchiveHead extends ConsumerWidget {
                 ),
               ),
             ),
-          Expanded(
-            child: Text(
-              group.title,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
-            ),
+      menuItems: [
+        if (phases.pausable.isNotEmpty)
+          DsMenuItem(
+            leading: const DsIcon(DsIcons.pause),
+            label: Text(t.settings.downloadPause),
+            onPressed: () => unawaited(_apply(ref, phases.pausable, (controller, id) => controller.pause(id))),
           ),
-          // The shelf's own reading for the same fact, beside the rows it counts.
-          Text('${t.vod.parts} · ${group.parts}', style: theme.typography.caption.copyWith(color: colors.textMuted)),
-          // A head is only built for a block of several parts, so every verb here
-          // already has more than one object; a part standing alone is served by
-          // its own row and gets no second place to be pressed.
-          DsMenuAnchor(
-            semanticLabel: group.title,
-            align: DsAlign.end,
-            items: [
-              if (phases.pausable.isNotEmpty)
-                DsMenuItem(
-                  leading: const DsIcon(DsIcons.pause),
-                  label: Text(t.settings.downloadPause),
-                  onPressed: () => unawaited(_apply(ref, phases.pausable, (controller, id) => controller.pause(id))),
-                ),
-              if (phases.resumable.isNotEmpty)
-                DsMenuItem(
-                  leading: const DsIcon(DsIcons.play),
-                  label: Text(t.settings.downloadResume),
-                  onPressed: () => unawaited(_apply(ref, phases.resumable, (controller, id) => controller.resume(id))),
-                ),
-              if (phases.pausable.isNotEmpty || phases.resumable.isNotEmpty) const DsMenuDivider(),
-              DsMenuItem(
-                leading: const DsIcon(DsIcons.trash2),
-                label: Text(t.settings.downloadRemove),
-                destructive: true,
-                onPressed: () => unawaited(_removeBlock(context, ref, t)),
-              ),
-            ],
-            builder: (context, anchor, _) => DsButton.icon(
-              variant: DsButtonVariant.secondary,
-              size: DsSize.sm,
-              semanticLabel: group.title,
-              onPressed: anchor.toggle,
-              icon: const DsIcon(DsIcons.ellipsisVertical, size: 16),
-            ),
+        if (phases.resumable.isNotEmpty)
+          DsMenuItem(
+            leading: const DsIcon(DsIcons.play),
+            label: Text(t.settings.downloadResume),
+            onPressed: () => unawaited(_apply(ref, phases.resumable, (controller, id) => controller.resume(id))),
           ),
-        ],
-      ),
+        if (phases.pausable.isNotEmpty || phases.resumable.isNotEmpty) const DsMenuDivider(),
+        DsMenuItem(
+          leading: const DsIcon(DsIcons.trash2),
+          label: Text(t.settings.downloadRemove),
+          destructive: true,
+          onPressed: () => unawaited(_removeBlock(context, ref, t)),
+        ),
+      ],
     );
   }
 }

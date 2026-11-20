@@ -1,6 +1,7 @@
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 
+import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/shared/widgets/download_task_card.dart' show DownloadRowPhase;
 
 /// One status segment of the queue: the state's word and the number of
@@ -22,6 +23,17 @@ final class DownloadStatusTab<T> {
 /// The six cuts every queue filters by — all of it, plus the five states a
 /// viewer looks for when they open the manager.
 enum DownloadStatusGroup { all, running, queued, paused, done, failed }
+
+/// The group's word — the shared status words, with 全部 at its head. Every
+/// manager names its tabs through this one read.
+String downloadStatusTabLabel(Translations t, DownloadStatusGroup group) => switch (group) {
+  DownloadStatusGroup.all => t.settings.downloadFilterAll,
+  DownloadStatusGroup.running => t.settings.downloadStatusRunning,
+  DownloadStatusGroup.queued => t.settings.downloadStatusQueued,
+  DownloadStatusGroup.paused => t.settings.downloadStatusPaused,
+  DownloadStatusGroup.done => t.settings.downloadStatusDone,
+  DownloadStatusGroup.failed => t.settings.downloadStatusFailed,
+};
 
 /// The group a row's phase answers to: a task being finished with counts as
 /// running, a finished file gone missing and a task called off count as

@@ -329,16 +329,18 @@ final class _AppShellState extends ConsumerState<AppShell> {
   }
 
   /// The phone's bar carries the module's feeds. A page below them — a tool,
-  /// history, settings — is not a tab.
+  /// history, settings — is not a tab. The order is the rail's own: the
+  /// station's surfaces lead and the search follows — search first read as
+  /// a different app on the same phone as the desktop's rail.
   List<NavigationItem> _bottomTabs() => switch (widget.module) {
     AppModule.live =>
       (widget.homeMenuItems.isEmpty ? kHomeMenuItems : widget.homeMenuItems).take(_kMaxBottomTabs).toList(),
     AppModule.iptv => const [NavigationItem.channels, NavigationItem.iptvRecent, NavigationItem.iptvGuide],
     AppModule.vod => const [
-      NavigationItem.vodSearch,
       NavigationItem.vod,
       NavigationItem.vodRegions,
       NavigationItem.vodPgc,
+      NavigationItem.vodSearch,
     ],
     AppModule.huya => const [
       NavigationItem.huyaHome,
@@ -354,11 +356,11 @@ final class _AppShellState extends ConsumerState<AppShell> {
       NavigationItem.musicLibrary,
     ],
     AppModule.hongguo => const [
-      NavigationItem.hongguoSearch,
       NavigationItem.hongguoHome,
       NavigationItem.hongguoFind,
       NavigationItem.hongguoRank,
       NavigationItem.hongguoFavorites,
+      NavigationItem.hongguoSearch,
     ],
   };
 

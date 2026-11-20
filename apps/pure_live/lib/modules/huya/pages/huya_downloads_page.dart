@@ -19,6 +19,7 @@ import 'package:pure_live/shared/shared.dart'
         LiveWindow,
         NavigationItem,
         downloadRowGroupOf,
+        downloadStatusTabLabel,
         formatDownloadBytes,
         inlineFilterKeeps,
         inlineFilterProvider;
@@ -27,14 +28,6 @@ import 'package:pure_live/shared/widgets/download_workspace.dart' show DownloadD
 import 'package:pure_live/shared/widgets/inline_filter_bar.dart' show InlineFilterBar;
 
 /// The state tab's word — the shared status words, with 全部 at its head.
-String _statusTabLabel(Translations t, DownloadStatusGroup group) => switch (group) {
-  DownloadStatusGroup.all => t.settings.downloadFilterAll,
-  DownloadStatusGroup.running => t.settings.downloadStatusRunning,
-  DownloadStatusGroup.queued => t.settings.downloadStatusQueued,
-  DownloadStatusGroup.paused => t.settings.downloadStatusPaused,
-  DownloadStatusGroup.done => t.settings.downloadStatusDone,
-  DownloadStatusGroup.failed => t.settings.downloadStatusFailed,
-};
 
 /// 虎牙视频's download queue as its own page — the station's videos on one
 /// surface with the manager's own head: how big the queue is, the search, the
@@ -242,7 +235,7 @@ final class _HuyaDownloadsPageState extends ConsumerState<HuyaDownloadsPage> {
                     onChanged: (group) => setState(() => _statusGroup = group),
                     tabs: [
                       for (final group in DownloadStatusGroup.values)
-                        DownloadStatusTab(group, _statusTabLabel(t, group), counts[group] ?? 0),
+                        DownloadStatusTab(group, downloadStatusTabLabel(t, group), counts[group] ?? 0),
                     ],
                   ),
                 ),

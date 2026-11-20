@@ -395,9 +395,9 @@ final class DownloadGroupHead extends StatelessWidget {
   /// The head for [title], counting [countLine].
   const DownloadGroupHead({
     required this.title,
-    required this.countLine,
     required this.menuSemanticLabel,
     required this.menuItems,
+    this.countLine,
     this.cover,
     super.key,
   });
@@ -405,8 +405,9 @@ final class DownloadGroupHead extends StatelessWidget {
   /// The block's name, one line.
   final String title;
 
-  /// The block's own reading of how much it holds (分部 · N, 12/60 集).
-  final String countLine;
+  /// The block's own reading of how much it holds (分部 · N, 12/60 集); null
+  /// when the block has nothing of its own to count.
+  final String? countLine;
 
   /// The block's artwork at the head; null when the block has none.
   final Widget? cover;
@@ -435,7 +436,7 @@ final class DownloadGroupHead extends StatelessWidget {
               style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
             ),
           ),
-          Text(countLine, style: theme.typography.caption.copyWith(color: colors.textMuted)),
+          if (countLine case final line?) Text(line, style: theme.typography.caption.copyWith(color: colors.textMuted)),
           DsMenuAnchor(
             semanticLabel: menuSemanticLabel,
             align: DsAlign.end,
