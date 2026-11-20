@@ -17,7 +17,8 @@ import 'package:live_shell/live_shell.dart'
         WindowHost,
         WindowRole,
         WindowStateStore;
-import 'package:live_shell_desktop/live_shell_desktop.dart' show MultiViewWindowHost, TrayManagerHost;
+import 'package:live_shell_desktop/live_shell_desktop.dart'
+    show MultiViewWindowHost, ScreenRetrieverDisplays, TrayManagerHost;
 import 'package:live_storage/live_storage.dart' show StoragePrefs, StorageStores;
 import 'package:multiview_desktop/multiview_desktop.dart' show MultiViewDesktop;
 import 'package:pure_live/app/logging/app_log.dart' show appLog;
@@ -99,6 +100,11 @@ Future<DesktopShell> startDesktopShell(WidgetRef ref) async {
       if (others) hiddenForPeers = true;
       return others;
     },
+    // The displays a remembered frame is judged against. Without this the
+    // shell's off-screen clamp runs against an empty list and a frame the
+    // window manager parked off-screen — the minimise spot on Windows —
+    // restores as-is: a start with the app "open" and nothing to see.
+    readDisplays: () => const ScreenRetrieverDisplays().read(),
     onMenuAction: (id) async {
       switch (id) {
         case 'newWindow':

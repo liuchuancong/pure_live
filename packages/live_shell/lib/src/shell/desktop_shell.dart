@@ -658,7 +658,19 @@ final class DesktopShell {
     if (store == null || !settings().rememberBounds) {
       return;
     }
-    store.note(await window.geometry());
+    final geometry = await window.geometry();
+    // A frame nobody can grab is not a place worth remembering. Minimising
+    // on Windows parks the window at (-32000,-32000) and fires exactly the
+    // moved and resized events this records from, so unchecked the parking
+    // spot gets stored as the viewer's choice and every later start opens
+    // the window off-screen. Reachability is the displays' question; a
+    // shell wired without any keeps the old behaviour, because an empty
+    // list would reject every frame.
+    final displays = await readDisplays();
+    if (displays.isNotEmpty && !isOnSomeDisplay(geometry, displays)) {
+      return;
+    }
+    store.note(geometry);
   }
 
   void _dragSettled() {
