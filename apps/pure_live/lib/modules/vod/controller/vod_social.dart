@@ -323,7 +323,8 @@ final class VodFollowUpController extends Notifier<bool?> {
   Future<void> _read(BilibiliVodClient client, int generation) async {
     try {
       final followed = await client.isFollowing(mid: mid);
-      if (!ref.mounted) return;
+      // A flip that landed while the read was under way owns the state.
+      if (!ref.mounted || state != null || generation != _generation) return;
       state = followed;
     } on Object {
       // The read failing leaves the chip without a verdict, not broken.
