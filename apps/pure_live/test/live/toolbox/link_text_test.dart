@@ -35,5 +35,28 @@ void main() {
       final urls = LinkText.httpUrls('A https://live.kuaishou.com/u/abc B https://live.douyu.com/9 C');
       expect(urls, ['https://live.kuaishou.com/u/abc', 'https://live.douyu.com/9']);
     });
+
+    test('a www link takes https without a second guess', () {
+      expect(LinkText.httpUrls('看 www.example.com/watch 就行').single, 'https://www.example.com/watch');
+    });
+
+    test('an address is not a link: the @ keeps the domain out', () {
+      expect(LinkText.httpUrls('write me@example.com soon'), isEmpty);
+    });
+
+    test('a host glued to prose punctuation is not guessed', () {
+      // Without a scheme the boundary must be a separator or the end: a bare
+      // domain glued to a Chinese comma reads as a word, not a host.
+      expect(LinkText.httpUrls('直播间 example.com，快来'), isEmpty);
+    });
+
+    test('an undecodable escape is skipped, not thrown on', () {
+      expect(LinkText.httpUrls('https://example.com/%FFroom'), isEmpty);
+    });
+
+    test('the first link answers alone', () {
+      expect(LinkText.firstHttpUrl('先看 https://live.douyu.com/7 再说'), 'https://live.douyu.com/7');
+      expect(LinkText.firstHttpUrl('这里没有链接'), isNull);
+    });
   });
 }

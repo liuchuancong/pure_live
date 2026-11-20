@@ -123,7 +123,9 @@ final class _LogSettingsSectionState extends ConsumerState<LogSettingsSection> {
     // A cap imported from outside the stops still shows as chosen.
     List<int> stops(List<int> base, int current) => ([...base, if (!base.contains(current)) current]..sort());
     final fileMaxMb = (settings.fileMaxBytes / (1024 * 1024)).round();
-    final filesKept = _kFilesKept.contains(settings.filesKept) ? settings.filesKept : 0;
+    // The kept-count reads the same honesty: a count a backup carried in
+    // shows as the count it is, not as "keep none" while the tree keeps it.
+    final filesKept = stops(_kFilesKept, settings.filesKept);
     return DsListSection(
       // The recorded level reads at the header's end: the one fact to know
       // before reading the console.
@@ -201,10 +203,10 @@ final class _LogSettingsSectionState extends ConsumerState<LogSettingsSection> {
             leading: const DsIcon(DsIcons.archive),
             title: t.settings.logFilesKept,
             description: t.settings.logFilesKeptDesc,
-            value: filesKept,
+            value: settings.filesKept,
             options: [
-              DsSelectOption(value: 0, label: t.settings.logFilesKeptUnlimited),
-              for (final kept in _kFilesKept.where((kept) => kept > 0)) DsSelectOption(value: kept, label: '$kept'),
+              for (final kept in filesKept)
+                DsSelectOption(value: kept, label: kept == 0 ? t.settings.logFilesKeptUnlimited : '$kept'),
             ],
             placeholder: t.settings.logFilesKept,
             onChanged: (value) => unawaited(controller.setFilesKept(value)),
