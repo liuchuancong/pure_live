@@ -831,9 +831,6 @@ final class TxMusicSource extends LxPlatformSource
     }
   }
 
-  /// The completions for a partially typed query — smartbox's song items
-  /// rendered `name - singer`, the reference's tx `tipSearch.js`.
-
   /// One page of a song's comments, hot or newest — the reference's tx
   /// `comment.js`: newest rides the legacy h5 form gateway, hot the musicu
   /// `CommentRead` module. QQ's `[em]e…[/em]` codes become characters.
@@ -998,6 +995,8 @@ final class TxMusicSource extends LxPlatformSource
     );
   }
 
+  /// The completions for a partially typed query — smartbox's song items
+  /// rendered `name - singer`, the reference's tx `tipSearch.js`.
   @override
   Future<List<String>> suggestions(String query) async {
     try {
