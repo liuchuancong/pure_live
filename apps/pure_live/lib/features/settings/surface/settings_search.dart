@@ -30,13 +30,16 @@ SettingsSearchHit _hit(SettingsSection section, String title, String keywords) =
 /// the label itself does not (English names, synonyms, the thing being
 /// configured). The search result opens the row's section; the exact-row
 /// jump waits for the panes to expose row keys.
-late Translations _catalogBuiltFor;
-late List<SettingsSearchHit> _catalogCache;
+Translations? _catalogBuiltFor;
+List<SettingsSearchHit>? _catalogCache;
 
 List<SettingsSearchHit> settingsSearchCatalog(Translations t) {
   // One catalogue per Translations instance: a keystroke asks for it
-  // again, a locale switch hands a different instance and rebuilds.
-  if (identical(_catalogBuiltFor, t)) return _catalogCache;
+  // again, a locale switch hands a different instance and rebuilds. The
+  // fields start empty — a `late` read here would throw before the first
+  // catalogue could ever be built.
+  final cached = _catalogCache;
+  if (cached != null && identical(_catalogBuiltFor, t)) return cached;
   final s = t.settings;
   final catalog = [
     _hit(
@@ -100,10 +103,15 @@ List<SettingsSearchHit> settingsSearchCatalog(Translations t) {
       s.dynamicColor,
       'dynamic color monet material you wallpaper system accent 动态取色 壁纸 系统取色 莫奈',
     ),
+    // One row, because the search's results never repeat a destination: the
+    // words that named the old second copy (the menu, popover and toolbar
+    // glass) travel in this row's keywords.
     _hit(
       SettingsSection.background,
       s.backgroundGlass,
-      'glass frosted blur capsule bottom bar transparency liquid glass 界面玻璃 液体玻璃 毛玻璃 玻璃 悬浮 底栏 透明 模糊',
+      'glass frosted blur capsule bottom bar transparency liquid glass menu popover panel dialog toast toolbar tooltip '
+      'bottom nav selection card list room fill 界面玻璃 液体玻璃 毛玻璃 玻璃 悬浮 底栏 透明 模糊 界面 浮层 面板 填充 卡片 列表 房间 '
+      '菜单 弹出层 对话框 提示 工具栏 气泡 文本选择',
     ),
     _hit(SettingsSection.theme, s.corners, 'corner radius round 圆角 直角 胶囊'),
     _hit(SettingsSection.theme, s.contrast, 'contrast border 对比度 边界'),
@@ -142,11 +150,6 @@ List<SettingsSearchHit> settingsSearchCatalog(Translations t) {
     ),
     _hit(SettingsSection.background, s.backgroundMask, 'mask scrim dim wash 蒙层 遮罩 压暗'),
     _hit(SettingsSection.background, s.backgroundOverlayBlur, 'blur frost background 背景 模糊 磨砂'),
-    _hit(
-      SettingsSection.background,
-      s.backgroundGlass,
-      'glass frosted blur menu popover panel dialog toast toolbar tooltip bottom nav selection card list room fill 界面 浮层 玻璃 毛玻璃 面板 填充 模糊 卡片 列表 房间 菜单 弹出层 对话框 提示 工具栏 气泡 底栏 文本选择',
-    ),
     _hit(SettingsSection.background, s.backgroundClear, 'remove background 清除 背景'),
     // Navigation.
     _hit(SettingsSection.nav, s.navNavigation, 'navigation sidebar drawer bottom bar 导航 侧栏 抽屉 底栏'),
@@ -423,7 +426,13 @@ List<SettingsSearchHit> settingsSearchCatalog(Translations t) {
     _hit(SettingsSection.nodes, t.toolbox.toolNetworkTitle, 'platform node probe latency 平台 节点 测速 延迟 网络'),
     _hit(SettingsSection.nodes, t.toolbox.nodeTestAll, 'probe all sweep reachability latency 全部测速 测速 节点 延迟 连通'),
     _hit(SettingsSection.sites, s.showUnplayableTitle, 'unplayable restriction paid locked hidden 不能播放 付费 加锁 隐藏'),
-    _hit(SettingsSection.followTags, s.tagManagement, 'tag tags management group filter follow 标签 分组 筛选 关注 添加 删除 置顶'),
+    // One row: the second curated copy's words (the custom-manage set) ride
+    // here, since the results never repeat a destination.
+    _hit(
+      SettingsSection.followTags,
+      s.tagManagement,
+      'tag tags management group filter follow custom manage 标签 分组 筛选 关注 添加 删除 置顶 自定义',
+    ),
     _hit(SettingsSection.followTags, s.tagAdd, 'add tag new label 添加 标签 新建'),
     _hit(SettingsSection.followTags, s.tagEdit, 'rename tag note edit 编辑 重命名 备注 标签'),
     _hit(
@@ -432,7 +441,6 @@ List<SettingsSearchHit> settingsSearchCatalog(Translations t) {
       'account cookie login third party auth bind 账号 登录 cookie 第三方 授权 认证 绑定',
     ),
     _hit(SettingsSection.accounts, t.account.signOut, 'logout account 退出 登录'),
-    _hit(SettingsSection.followTags, s.tagManagement, 'follow tags custom manage 关注 标签 管理 自定义'),
     // Data. The watch history's cap and clearing left for the history
     // page's own dialog; the follows' clipboard round trip left the page.
     _hit(
@@ -705,21 +713,25 @@ List<SettingsSearchHit> settingsSearchCatalog(Translations t) {
       'romanization in lyric extra line 歌词 包含 音译 罗马音',
     ),
     _hit(SettingsSection.musicDownload, t.music.downloadWriteLyric, 'lrc sidecar file save 歌词 文件 lrc 单独 保存'),
-    // The sync page: the client half, the server half and the open api.
+    // The sync page: the client half, the server half and the open api. The
+    // server and open-api rows whose labels spell alike share one row, since
+    // the results never repeat a destination: the other half's words travel
+    // in that row's keywords.
     _hit(SettingsSection.musicSync, t.music.syncHost, 'server address peer connect 同步 服务端 地址 连接'),
     _hit(SettingsSection.musicSync, t.music.syncHistory, 'previous addresses remembered 历史 地址 记录'),
-    _hit(SettingsSection.musicSync, t.music.syncAuthCode, 'pairing code secret 连接码 配对 授权 密钥'),
+    _hit(SettingsSection.musicSync, t.music.syncAuthCode, 'pairing code secret server 同步服务 连接码 配对 授权 密钥'),
     _hit(SettingsSection.musicSync, t.music.syncMode, 'mode client server off 同步 模式 客户端 关闭'),
     _hit(SettingsSection.musicSync, t.music.syncServerEnable, 'turn the sync service on 同步服务 启用 开关'),
     _hit(SettingsSection.musicSync, t.music.syncServerPort, 'sync listen port tcp 同步 端口 监听'),
-    _hit(SettingsSection.musicSync, t.music.syncServerLan, 'allow local network access 同步 局域网 允许 访问'),
-    _hit(SettingsSection.musicSync, t.music.syncServerAuthCode, 'server pairing code 同步服务 连接码 配对'),
-    _hit(SettingsSection.musicSync, t.music.syncServerAddress, 'address shown for a peer 同步 服务地址 显示'),
+    _hit(SettingsSection.musicSync, t.music.syncServerLan, 'allow local network access api 接口 同步 局域网 允许 访问'),
+    _hit(
+      SettingsSection.musicSync,
+      t.music.syncServerAddress,
+      'address shown for a peer api url endpoint 接口 地址 路径 同步 服务地址 显示',
+    ),
     _hit(SettingsSection.musicSync, t.music.syncServerDevices, 'paired devices authorised list 已认证 设备 配对 列表'),
     _hit(SettingsSection.musicSync, t.music.openApiEnable, 'http api service third party 开放 接口 api 服务 第三方'),
     _hit(SettingsSection.musicSync, t.music.openApiPort, 'api listen port tcp 接口 端口 监听'),
-    _hit(SettingsSection.musicSync, t.music.openApiLan, 'api local network access 接口 局域网 允许 访问'),
-    _hit(SettingsSection.musicSync, t.music.openApiAddress, 'api url endpoint 接口 地址 路径'),
     // The hotkeys page's two switches and its reset.
     _hit(SettingsSection.musicHotkeys, t.music.hkEnable, 'shortcut keys on off 快捷键 启用 开关'),
     _hit(SettingsSection.musicHotkeys, t.music.hkGlobal, 'global system wide background 全局 快捷键 后台'),
@@ -790,7 +802,7 @@ List<SettingsSearchHit> settingsSearchHits(Translations t, String query, Iterabl
   return [
     for (final hit in settingsSearchCatalog(t))
       if (allowed.contains(hit.section) &&
-          (hit.title.toLowerCase().contains(query) || hit.keywords.toLowerCase().contains(query)) &&
+          (hit.lowerTitle.contains(query) || hit.lowerKeywords.contains(query)) &&
           seen.add('${hit.section.name}\u0000${hit.title}'))
         hit,
   ];
