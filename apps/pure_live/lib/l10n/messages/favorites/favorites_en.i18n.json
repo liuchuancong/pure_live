@@ -15,6 +15,7 @@
   "emptyGroupHint": "Try another group or platform, or refresh to fetch their status.",
   "showOffline": "View offline",
   "refreshFailed": "{count: int} rooms could not be refreshed",
+  "followCount": "Following {count: int} channels",
   "statusLiveNow": "Online",
   "statusOfflineNow": "Offline",
   "justStarted": "Just started",

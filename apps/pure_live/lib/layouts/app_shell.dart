@@ -276,13 +276,14 @@ final class _AppShellState extends ConsumerState<AppShell> {
       final NavigationItem item => DsSidebarItem<Object>(
         key: ValueKey(item),
         value: item,
-        leading: DsIcon(item.icon),
+        // The collapsed rail turns a count into a dot - the kit's own
+        // reading of a number in a slot one icon wide. The number is the
+        // point, so the folded rail wears the bubble on the icon instead,
+        // and the count slot stays for the expanded rail's own figures.
+        leading: widget.expanded ? DsIcon(item.icon) : _badgeIcon(item),
         label: Text(item.label(t)),
-        count: widget.badges[item],
-        countSemanticLabel: switch (widget.badges[item]) {
-          final count? => t.hongguo.favoriteAdded(count: count),
-          null => null,
-        },
+        count: widget.expanded ? widget.badges[item] : null,
+        countSemanticLabel: widget.expanded ? _badgeLabel(t, item) : null,
         style: widget.expanded ? null : _collapsedItem,
         focusNode: item == widget.menuValue ? _selectedFocus : null,
         autofocus: item == widget.menuValue,
@@ -356,13 +357,13 @@ final class _AppShellState extends ConsumerState<AppShell> {
     ],
   };
 
-  /// The bar tab's icon, with the destination's badge riding its shoulder —
-  /// the favorites count the rail's row and the drawer carry. The bar's
-  /// slots have no count of their own, so the number wears the kit's
-  /// bubble — inside the icon's own box: the bar and its glass pane clip
-  /// their children, and a bubble pushed past the icon's edge was cut down
-  /// to the sliver that overlapped, reading as a bare dot.
-  Widget _barIcon(NavigationItem item) {
+  /// The icon with the destination's badge riding its shoulder — the
+  /// favorites count where a slot cannot name it: the phone bar's tab and
+  /// the folded rail. The bubble sits inside the icon's own box: the chrome
+  /// around these slots clips its children, and a bubble pushed past the
+  /// icon's edge was cut down to the sliver that overlapped, reading as a
+  /// bare dot.
+  Widget _badgeIcon(NavigationItem item) {
     final count = widget.badges[item];
     if (count == null || count <= 0) return DsIcon(item.icon);
     return SizedBox(
@@ -389,6 +390,14 @@ final class _AppShellState extends ConsumerState<AppShell> {
       ),
     );
   }
+
+  /// What the badge's number counts, for screen readers — the follows' own
+  /// rooms, the shelf's new episodes.
+  String? _badgeLabel(Translations t, NavigationItem item) => switch (widget.badges[item]) {
+    final count? when item == NavigationItem.favorites => t.favorites.followCount(count: count),
+    final count? => t.hongguo.favoriteAdded(count: count),
+    null => null,
+  };
 
   /// One menu block as the drawer shows it: the live home block is the
   /// navigation setting's list, a block made entirely of tools follows the
@@ -507,7 +516,7 @@ final class _AppShellState extends ConsumerState<AppShell> {
           for (final item in tabs)
             DsBottomNavItem<NavigationItem>(
               value: item,
-              icon: _barIcon(item),
+              icon: _badgeIcon(item),
               label: Text(item.label(t)),
               semanticLabel: item.label(t),
             ),

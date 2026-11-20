@@ -1387,6 +1387,9 @@ class Translations$favorites$zh_CN {
 	/// zh-CN: '{count: int} 个直播间刷新失败'
 	String refreshFailed({required int count}) => '${count} 个直播间刷新失败';
 
+	/// zh-CN: '已关注 {count: int} 个直播间'
+	String followCount({required int count}) => '已关注 ${count} 个直播间';
+
 	/// zh-CN: '已开播'
 	String get statusLiveNow => '已开播';
 
@@ -14179,6 +14182,7 @@ extension on Translations {
 			'favorites.emptyGroupHint' => '换个分组或平台，或刷新重新获取状态。',
 			'favorites.showOffline' => '查看未开播',
 			'favorites.refreshFailed' => ({required int count}) => '${count} 个直播间刷新失败',
+			'favorites.followCount' => ({required int count}) => '已关注 ${count} 个直播间',
 			'favorites.statusLiveNow' => '已开播',
 			'favorites.statusOfflineNow' => '未开播',
 			'favorites.justStarted' => '刚刚开播',
@@ -14631,9 +14635,9 @@ extension on Translations {
 			'iptv.zapperHint' => '方向键选择，确认键播放或回看，返回键收起。',
 			'iptv.zapperEmptyGroup' => '这个分组没有频道',
 			'iptv.lineCount' => ({required Object current, required Object total}) => '线路 ${current}/${total}',
-			'iptv.aspectLabel' => '画面比例',
 			_ => null,
 		} ?? switch (path) {
+			'iptv.aspectLabel' => '画面比例',
 			'iptv.aspectAuto' => '默认',
 			'iptv.aspect16x9' => '16:9',
 			'iptv.aspect4x3' => '4:3',
@@ -15145,9 +15149,9 @@ extension on Translations {
 			'music.lyricContent' => '歌词内容',
 			'music.lyricDisplay' => '歌词显示',
 			'music.lyricTiming' => '时间轴',
-			'music.lyricTranslationDesc' => '歌词带翻译时一并显示。',
 			_ => null,
 		} ?? switch (path) {
+			'music.lyricTranslationDesc' => '歌词带翻译时一并显示。',
 			'music.lyricRomanization' => '显示音译',
 			'music.lyricRomanizationDesc' => '歌词带音译或罗马音时一并显示。',
 			'music.lyricSwapSecondary' => '翻译/音译顺序',
@@ -15659,9 +15663,9 @@ extension on Translations {
 			'recorder.caCustomPickFailed' => '读取证书文件失败',
 			'recorder.caCustomClear' => '恢复内置',
 			'recorder.caCustomCleared' => '已恢复使用内置根证书',
-			'recorder.startNowBusyOther' => '另一个窗口正在录制这个房间',
 			_ => null,
 		} ?? switch (path) {
+			'recorder.startNowBusyOther' => '另一个窗口正在录制这个房间',
 			'recorder.startNowCaFailed' => '自定义 CA 证书读不到，先重新选择或恢复内置',
 			'recorder.menuMore' => '更多操作',
 			'recorder.openRoom' => '进入直播间',
@@ -16173,9 +16177,9 @@ extension on Translations {
 			'settings.groupAbout' => '关于',
 			'settings.groupIptv' => 'IPTV',
 			'settings.groupVod' => 'Bilibili 视频',
-			'settings.generalDescription' => '浏览、窗口与启动设置。',
 			_ => null,
 		} ?? switch (path) {
+			'settings.generalDescription' => '浏览、窗口与启动设置。',
 			'settings.appearanceDescription' => '主题、字体与配色。',
 			'settings.personalizationDescription' => '主题、外观、背景与导航。',
 			'settings.liveSettingsDescription' => '直播资源、弹幕与录制。',
@@ -16687,9 +16691,9 @@ extension on Translations {
 			'settings.navDanmaku' => '弹幕',
 			'settings.navMiniDanmaku' => '小窗弹幕',
 			'settings.navKernel' => '播放器内核',
-			'settings.navRecording' => '录制',
 			_ => null,
 		} ?? switch (path) {
+			'settings.navRecording' => '录制',
 			'settings.videoDescription' => '画质、音量与画面比例。',
 			'settings.danmakuDescription' => '弹幕显示、样式与屏蔽。',
 			'settings.miniDanmakuDescription' => '画中画小窗里的弹幕。',
@@ -17201,9 +17205,9 @@ extension on Translations {
 			'settings.tagManagement' => '标签管理',
 			'settings.tagManagementDesc' => '自定义和管理直播间的过滤标签',
 			'settings.tagAdd' => '添加标签',
-			'settings.tagEdit' => '编辑标签',
 			_ => null,
 		} ?? switch (path) {
+			'settings.tagEdit' => '编辑标签',
 			'settings.tagPin' => '移到最前',
 			'settings.tagSaveAction' => '保存',
 			'settings.tagNameLabel' => '标签名称',
@@ -17715,9 +17719,9 @@ extension on Translations {
 			'toolbox.nodeSourceRecommended' => '推荐接口',
 			'toolbox.nodeSourceHot' => '热门接口',
 			'toolbox.nodeSummary' => ({required Object ok, required Object tested, required Object total}) => '${ok} / ${tested} 可用 · 共 ${total} 个平台',
-			'toolbox.nodeUntestedSummary' => ({required Object total}) => '尚未测速 · 共 ${total} 个平台',
 			_ => null,
 		} ?? switch (path) {
+			'toolbox.nodeUntestedSummary' => ({required Object total}) => '尚未测速 · 共 ${total} 个平台',
 			'toolbox.logsSection' => '日志与诊断',
 			'toolbox.logsExport' => '复制日志',
 			'toolbox.logsClear' => '清空日志',

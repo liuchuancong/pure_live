@@ -15,6 +15,7 @@
   "emptyGroupHint": "换个分组或平台，或刷新重新获取状态。",
   "showOffline": "查看未开播",
   "refreshFailed": "{count: int} 个直播间刷新失败",
+  "followCount": "已关注 {count: int} 个直播间",
   "statusLiveNow": "已开播",
   "statusOfflineNow": "未开播",
   "justStarted": "刚刚开播",
