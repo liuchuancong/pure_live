@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show NotifierProviderFamily;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/shared/enums/navigation_item.dart';
+import 'package:pure_live/shared/layout/window_breakpoints.dart' show LiveWindow;
 
 /// The word a page's toolbar search handed to the list on screen: the page
 /// filters its own loaded content by it, the live module's list pages'
@@ -53,8 +54,12 @@ final class InlineFilterBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = context.t;
     final colors = DsTheme.colorsOf(context);
+    // The bar rides the page's own gutter: pages drop it bare into their
+    // columns, and a fixed 16 either sat proud of the inset rows beside it
+    // on a wide window or doubled under a wrapper that inset again.
+    final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
     return Padding(
-      padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s16, 0, DsSpace.s16, DsSpace.s8),
+      padding: EdgeInsetsDirectional.fromSTEB(inset, 0, inset, DsSpace.s8),
       child: Row(
         spacing: DsSpace.s8,
         children: [

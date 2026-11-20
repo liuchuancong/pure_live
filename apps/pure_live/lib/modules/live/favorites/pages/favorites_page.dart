@@ -22,8 +22,7 @@ import 'package:pure_live/shared/shared.dart';
 /// replay, offline, all — each with its count on the shown platform) above
 /// the platform tabs (each with its count in the shown group), a refresh
 /// button over the visible slice with its progress bar, and the followed
-/// rooms as the shared room card — its own tags on the list rows — with the
-/// reference's pager under them once they fill more than one page.
+/// rooms as the shared room card — its own tags on the list rows.
 final class FavoritesPage extends ConsumerStatefulWidget {
   /// The favorites page.
   const FavoritesPage({super.key});
@@ -38,8 +37,6 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
 
   /// Progress of the visible refresh (0..1); null when none is shown.
   double? _progress;
-
-  /// The tag shown, or null for every tag.
 
   /// The grid's position, so a new slice starts at its top.
   final ScrollController _gridScroll = ScrollController();

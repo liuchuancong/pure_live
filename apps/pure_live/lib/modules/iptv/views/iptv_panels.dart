@@ -70,7 +70,7 @@ final class IptvPlaylistMenu extends StatelessWidget {
         DsMenuItem(checked: activeId == null, label: Text(t.iptv.sourceAll), onPressed: () => onSelect(null)),
         for (final source in playlists)
           DsMenuItem(
-            leading: const DsIcon(DsIcons.server, size: 15),
+            leading: const DsIcon(DsIcons.server, size: 16),
             checked: source.id == activeId,
             label: Text(source.name),
             onPressed: () => onSelect(source.id),

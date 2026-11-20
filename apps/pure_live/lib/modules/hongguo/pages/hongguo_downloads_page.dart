@@ -127,9 +127,6 @@ String _statusTabLabel(Translations t, DownloadStatusGroup group) => switch (gro
   DownloadStatusGroup.failed => t.settings.downloadStatusFailed,
 };
 
-/// The phases in the order a queue reads: what is moving, what waits for a
-/// lane, what stopped on purpose, what stopped on its own, what landed.
-
 final class HongguoDownloadsPane extends ConsumerStatefulWidget {
   /// The pane shown under Settings → 红果短剧 → 下载.
   const HongguoDownloadsPane({super.key});
@@ -409,12 +406,6 @@ final class _HongguoDownloadsPageState extends ConsumerState<HongguoDownloadsPag
   /// visible row speak.
   String? _factsId;
 
-  /// Asks the disk again. The queue is a live store rather than a folder read,
-  /// so the one thing a refresh can add here is the stat behind 文件不在了:
-  /// every finished row is asked once more whether its bytes are where the row
-  /// says they are.
-  int _recheck = 0;
-
   /// The rows on screen: searched, cut to the ticked phases, and to the files
   /// still on disk when that is ticked — in the order the store keeps them, so
   /// the table's own sort is the only thing that reorders a queue.
@@ -536,7 +527,9 @@ final class _HongguoDownloadsPageState extends ConsumerState<HongguoDownloadsPag
                   DownloadQueueAction(
                     label: t.settings.downloadRecheck,
                     icon: DsIcons.refresh,
-                    onPressed: () => setState(() => _recheck++),
+                    // The recheck is the rebuild itself: the live store's
+                    // stat is asked once more as the rows re-render.
+                    onPressed: () => setState(() {}),
                   ),
                 ],
               ),
@@ -574,18 +567,24 @@ final class _HongguoDownloadsPageState extends ConsumerState<HongguoDownloadsPag
                   if (withFacts)
                     SizedBox(
                       width: LiveWindow.downloadDetails,
-                      child: DownloadDetailsPane(
-                        details: factsTask == null
-                            ? null
-                            : _detailsOf(
-                                context,
-                                factsTask,
-                                t,
-                                retryLimit: retry,
-                                retryDelay: retryDelay,
-                                retryPending: controller.hasPendingRetry(factsTask.id),
-                                onRemove: () => unawaited(_removeRecord(context, ref, factsTask.id)),
-                              ),
+                      // The twin manager's facts pane keeps a right and
+                      // bottom gutter so the card's shadow has somewhere to
+                      // fall; this one sat flush to the window's edge.
+                      child: Padding(
+                        padding: const EdgeInsetsDirectional.fromSTEB(0, 0, DsSpace.s20, DsSpace.s24),
+                        child: DownloadDetailsPane(
+                          details: factsTask == null
+                              ? null
+                              : _detailsOf(
+                                  context,
+                                  factsTask,
+                                  t,
+                                  retryLimit: retry,
+                                  retryDelay: retryDelay,
+                                  retryPending: controller.hasPendingRetry(factsTask.id),
+                                  onRemove: () => unawaited(_removeRecord(context, ref, factsTask.id)),
+                                ),
+                        ),
                       ),
                     ),
                 ],

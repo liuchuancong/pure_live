@@ -50,10 +50,7 @@ const DsTabsStyle _iptvScopeTabsStyle = DsTabsStyle(
 /// its rows instead of scrolling sideways.
 final class IptvPage extends ConsumerStatefulWidget {
   /// The IPTV module's channels page.
-  const IptvPage({required this.owner, super.key});
-
-  /// The menu entry this page is standing in for.
-  final NavigationItem owner;
+  const IptvPage({super.key});
 
   @override
   ConsumerState<IptvPage> createState() => _IptvPageState();
@@ -242,7 +239,15 @@ final class _ChannelsViewState extends ConsumerState<_ChannelsView> {
   Widget build(BuildContext context) {
     final channels = widget.channels;
     if (!channels.ready) {
-      return const Padding(padding: EdgeInsets.all(DsSpace.s16), child: SkeletonRows());
+      // The waiting face keeps the page's own gutter — a fixed 16 left the
+      // skeleton proud of the loaded rows beside it on a wide window.
+      return Padding(
+        padding: EdgeInsets.symmetric(
+          horizontal: LiveWindow.pageInset(MediaQuery.sizeOf(context).width),
+          vertical: DsSpace.s16,
+        ),
+        child: const SkeletonRows(),
+      );
     }
     if (channels.libraryCount == 0) {
       return const _StartView();
@@ -270,7 +275,7 @@ final class _ChannelsViewState extends ConsumerState<_ChannelsView> {
           child: _ChannelsList(channels: channels, scrollController: _scroll, onOpen: _open),
         );
         return Padding(
-          padding: EdgeInsets.fromLTRB(inset, DsSpace.s8, inset, DsSpace.s16),
+          padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s16),
           // The page's whole chrome is the top-left source row — the
           // playlist and the guide the list reads, with the import and sync
           // verbs folded into their menus.
@@ -441,13 +446,13 @@ final class _IptvSourcePickers extends ConsumerWidget {
           onSelect: (id) => ref.read(iptvChannelsProvider.notifier).selectPlaylist(id),
           extraItems: [
             DsMenuItem(
-              leading: const DsIcon(DsIcons.plus, size: 15),
+              leading: const DsIcon(DsIcons.plus, size: 16),
               label: Text(t.iptv.importPlaylist),
               onPressed: blocked ? null : importPlaylist,
             ),
             if (hasRemote)
               DsMenuItem(
-                leading: const DsIcon(DsIcons.refreshCw, size: 15),
+                leading: const DsIcon(DsIcons.refreshCw, size: 16),
                 label: Text(t.iptv.syncAll),
                 onPressed: canSyncAll ? () => unawaited(syncAllIptvSources(context, ref)) : null,
               ),
@@ -458,14 +463,14 @@ final class _IptvSourcePickers extends ConsumerWidget {
           items: [
             for (final source in epg.sources)
               DsMenuItem(
-                leading: const DsIcon(DsIcons.calendarClock, size: 15),
+                leading: const DsIcon(DsIcons.calendarClock, size: 16),
                 checked: source.id == epg.activeId,
                 label: Text(source.name),
                 onPressed: () => unawaited(ref.read(iptvEpgProvider.notifier).selectGuide(source)),
               ),
             if (epg.sources.isNotEmpty) const DsMenuDivider(),
             DsMenuItem(
-              leading: const DsIcon(DsIcons.plus, size: 15),
+              leading: const DsIcon(DsIcons.plus, size: 16),
               label: Text(t.iptv.importGuide),
               onPressed: blocked ? null : importGuide,
             ),

@@ -93,14 +93,14 @@ final class IptvImportPreviewFooter extends ConsumerWidget {
           DsButton(
             variant: DsButtonVariant.secondary,
             onPressed: controller.backToSource,
-            leading: const DsIcon(DsIcons.plus, size: 15),
+            leading: const DsIcon(DsIcons.plus, size: 16),
             child: Text(t.iptv.resultImportAnother),
           ),
           if (!guide)
             DsButton(
               autofocus: true,
               onPressed: () => onFinish(showChannels: true),
-              leading: const DsIcon(DsIcons.tv, size: 15),
+              leading: const DsIcon(DsIcons.tv, size: 16),
               child: Text(t.iptv.resultOpenChannels),
             )
           else
@@ -114,21 +114,21 @@ final class IptvImportPreviewFooter extends ConsumerWidget {
           DsButton(
             variant: DsButtonVariant.secondary,
             onPressed: controller.backToSource,
-            leading: const DsIcon(DsIcons.chevronLeft, size: 15),
+            leading: const DsIcon(DsIcons.chevronLeft, size: 16),
             child: Text(t.iptv.importBackAction),
           ),
           if (!readable)
             DsButton(
               autofocus: true,
               onPressed: onRetry,
-              leading: const DsIcon(DsIcons.refreshCw, size: 15),
+              leading: const DsIcon(DsIcons.refreshCw, size: 16),
               child: Text(t.iptv.importRetry),
             )
           else
             DsButton(
               autofocus: true,
               onPressed: canWrite ? controller.commit : null,
-              leading: const DsIcon(DsIcons.check, size: 15),
+              leading: const DsIcon(DsIcons.check, size: 16),
               child: Text(
                 guide ? t.iptv.importCommitGuideAction : t.iptv.importCommitAction(count: flow.playlist?.channels ?? 0),
               ),
@@ -642,7 +642,7 @@ final class _Failure extends StatelessWidget {
             if (result.failure == IptvImportFailure.guideFile)
               DsButton(
                 onPressed: onSwitchToGuide,
-                leading: const DsIcon(DsIcons.calendarClock, size: 15),
+                leading: const DsIcon(DsIcons.calendarClock, size: 16),
                 child: Text(t.iptv.importSwitchToGuide),
               ),
             _CopyButton(text: _details(result, result.issues)),

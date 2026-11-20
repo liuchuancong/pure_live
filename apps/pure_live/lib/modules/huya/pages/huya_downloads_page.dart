@@ -173,12 +173,9 @@ final class _HuyaDownloadsPageState extends ConsumerState<HuyaDownloadsPage> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           if (inlineWord != null)
-            Padding(
-              padding: EdgeInsets.fromLTRB(_inset, 0, _inset, DsSpace.s8),
-              child: InlineFilterBar(
-                word: inlineWord,
-                onClear: () => ref.read(inlineFilterProvider(NavigationItem.huyaDownloads).notifier).clear(),
-              ),
+            InlineFilterBar(
+              word: inlineWord,
+              onClear: () => ref.read(inlineFilterProvider(NavigationItem.huyaDownloads).notifier).clear(),
             ),
           Padding(
             padding: EdgeInsets.fromLTRB(_inset, DsSpace.s12, _inset, DsSpace.s8),

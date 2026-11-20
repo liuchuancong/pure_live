@@ -148,7 +148,7 @@ final class _RoomRecordTabState extends ConsumerState<RoomRecordTab> with Single
         openSettingsSection(ref, SettingsSection.recording);
         unawaited(context.push(SettingsSectionRoute(section: SettingsSection.recording.name).location));
       },
-      leading: const DsIcon(DsIcons.settings, size: 15),
+      leading: const DsIcon(DsIcons.settings, size: 16),
       child: Text(t.recorder.settingsOpen),
     );
   }

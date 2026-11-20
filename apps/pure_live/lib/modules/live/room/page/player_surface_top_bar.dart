@@ -410,12 +410,7 @@ final class _TopToolCluster extends ConsumerWidget {
         final small = constraints.maxWidth < 460;
         final side = tv ? theme.sizes.lg : theme.sizes.sm;
 
-        Widget chip({
-          required String label,
-          required VoidCallback? onPressed,
-          DsIconData? icon,
-          bool alert = false,
-        }) {
+        Widget chip({required String label, required VoidCallback? onPressed, DsIconData? icon, bool alert = false}) {
           final corners = theme.radii.controlCorners(null, side);
           final ink = alert ? danger : _onVideo;
           final Widget child;

@@ -27,13 +27,6 @@ enum VodTab {
   /// The site-wide popular list.
   popular;
 
-  /// The tab's icon.
-  DsIconData get icon => switch (this) {
-    VodTab.recommend => DsIcons.sparkles,
-    VodTab.popular => DsIcons.flame,
-    VodTab.dynamics => DsIcons.rss,
-  };
-
   /// The tab's words.
   String label(Translations t) => switch (this) {
     VodTab.recommend => t.vod.tabRecommend,

@@ -142,7 +142,7 @@ final class IptvImportSourcePane extends ConsumerWidget {
                 for (final origin in origins)
                   DsTopNavItem(
                     value: origin,
-                    icon: DsIcon(_originIcon(origin), size: 15),
+                    icon: DsIcon(_originIcon(origin), size: 16),
                     label: Text(_originLabel(origin, t)),
                   ),
               ],
@@ -274,7 +274,7 @@ final class _OriginInputs extends ConsumerWidget {
                 variant: DsButtonVariant.secondary,
                 loading: flow.checkingAccount,
                 onPressed: busy || flow.checkingAccount ? null : inputs.onXtreamCheck,
-                leading: const DsIcon(DsIcons.keyRound, size: 15),
+                leading: const DsIcon(DsIcons.keyRound, size: 16),
                 child: Text(t.iptv.importXtreamCheck),
               ),
               DsButton(

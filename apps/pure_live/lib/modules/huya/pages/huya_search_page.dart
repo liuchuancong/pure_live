@@ -193,7 +193,7 @@ final class _HuyaSearchIdle extends ConsumerWidget {
     final history = ref.watch(huyaSearchHistoryProvider);
     if (history.isEmpty) {
       return Center(
-        child: DsEmptyState(icon: const DsIcon(DsIcons.search), title: Text(t.huya.searchEmpty)),
+        child: DsEmptyState(icon: const DsIcon(DsIcons.search), title: Text(t.huya.searchHistoryEmpty)),
       );
     }
     final theme = DsTheme.of(context);

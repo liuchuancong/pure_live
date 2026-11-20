@@ -14,6 +14,7 @@
   "searchResults": "找到 {count: int} 个与“{word: String}”相关的视频",
   "searchEmpty": "没有找到相关视频",
   "searchHistory": "搜索历史",
+  "searchHistoryEmpty": "暂无搜索记录",
   "searchHistoryClear": "清空",
   "searchHistoryRemove": "删除「{word}」",
   "searchEmptyDescription": "换个关键词再试试。",

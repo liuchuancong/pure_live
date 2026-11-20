@@ -14,8 +14,7 @@ import 'package:pure_live/modules/iptv/controllers/iptv_epg_controller.dart' sho
 import 'package:pure_live/modules/iptv/controllers/iptv_recent.dart' show iptvRecentProvider;
 import 'package:pure_live/modules/iptv/controllers/iptv_sources_controller.dart' show iptvSourcesProvider;
 import 'package:pure_live/modules/iptv/views/iptv_group_rail.dart';
-import 'package:pure_live/modules/iptv/views/iptv_guide_panel.dart'
-    show IptvGuideRow, iptvDayLabel, iptvStartOfDay;
+import 'package:pure_live/modules/iptv/views/iptv_guide_panel.dart' show IptvGuideRow, iptvDayLabel, iptvStartOfDay;
 import 'package:pure_live/modules/iptv/views/iptv_import_dialog.dart' show runIptvGuideImport;
 import 'package:pure_live/modules/iptv/views/iptv_panels.dart' show IptvChannelLogo, IptvIconAction, IptvPlaylistMenu;
 import 'package:pure_live/modules/iptv/views/iptv_reminders_panel.dart' show showIptvReminders;
@@ -310,7 +309,9 @@ final class _IptvGuidePageState extends ConsumerState<IptvGuidePage> {
                 if (LiveWindow.isExpanded(constraints.maxWidth)) {
                   return Row(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
-                    spacing: DsSpace.s16,
+                    // The three-pane gap is the channels page's own s12: the
+                    // module's one three-pane shape, one measure.
+                    spacing: DsSpace.s12,
                     children: [
                       if (rail) IptvGroupsColumn(filter: groups, onSelect: _selectGroup),
                       SizedBox(width: rail ? _kGuidePickerWidthWithRail : _kGuidePickerWidth, child: picker),
@@ -682,7 +683,7 @@ final class _SchedulePanel extends ConsumerWidget {
                           DsButton(
                             variant: DsButtonVariant.secondary,
                             onPressed: () => unawaited(runIptvGuideImport(context)),
-                            leading: const DsIcon(DsIcons.calendarClock, size: 15),
+                            leading: const DsIcon(DsIcons.calendarClock, size: 16),
                             child: Text(t.iptv.importGuide),
                           ),
                         ],
@@ -798,7 +799,7 @@ final class _ScheduleHead extends StatelessWidget {
         DsButton(
           size: DsSize.sm,
           onPressed: onPlay,
-          leading: const DsIcon(DsIcons.play, size: 15),
+          leading: const DsIcon(DsIcons.play, size: 16),
           child: Text(t.iptv.openChannel),
         ),
       ],

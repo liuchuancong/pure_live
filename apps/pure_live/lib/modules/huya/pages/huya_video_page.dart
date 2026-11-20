@@ -420,13 +420,16 @@ final class _ChannelsView extends ConsumerWidget {
         ),
         Padding(
           padding: EdgeInsets.fromLTRB(inset, DsSpace.s4, inset, 0),
-          child: DsTopNav<int>(
-            value: group.setId,
-            items: [for (final item in state.groups) DsTopNavItem(value: item.setId, label: Text(item.title))],
-            onChanged: (setId) {
-              final next = state.groups.where((item) => item.setId == setId).firstOrNull;
-              if (next != null) unawaited(controller.selectGroup(next));
-            },
+          child: SizedBox(
+            height: 44,
+            child: DsTopNav<int>(
+              value: group.setId,
+              items: [for (final item in state.groups) DsTopNavItem(value: item.setId, label: Text(item.title))],
+              onChanged: (setId) {
+                final next = state.groups.where((item) => item.setId == setId).firstOrNull;
+                if (next != null) unawaited(controller.selectGroup(next));
+              },
+            ),
           ),
         ),
         Padding(padding: EdgeInsets.fromLTRB(inset, DsSpace.s8, inset, 0), child: toolbar),
@@ -502,10 +505,13 @@ final class _RankView extends ConsumerWidget {
         ),
         Padding(
           padding: EdgeInsets.fromLTRB(inset, DsSpace.s4, inset, 0),
-          child: DsTopNav<String>(
-            value: state.boardId,
-            items: [for (final board in state.boards) DsTopNavItem(value: board.id, label: Text(board.name))],
-            onChanged: (id) => unawaited(controller.select(id)),
+          child: SizedBox(
+            height: 44,
+            child: DsTopNav<String>(
+              value: state.boardId,
+              items: [for (final board in state.boards) DsTopNavItem(value: board.id, label: Text(board.name))],
+              onChanged: (id) => unawaited(controller.select(id)),
+            ),
           ),
         ),
         Expanded(

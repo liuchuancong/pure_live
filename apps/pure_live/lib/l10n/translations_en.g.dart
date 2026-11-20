@@ -851,6 +851,7 @@ class _Translations$huya$en extends Translations$huya$zh_CN {
 	@override String searchResults({required int count, required String word}) => '${count} videos for “${word}”';
 	@override String get searchEmpty => 'No videos found';
 	@override String get searchHistory => 'Search history';
+	@override String get searchHistoryEmpty => 'No searches yet';
 	@override String get searchHistoryClear => 'Clear';
 	@override String searchHistoryRemove({required Object word}) => 'Remove "${word}"';
 	@override String get searchEmptyDescription => 'Try another word.';
@@ -5608,6 +5609,7 @@ extension on TranslationsEn {
 			'huya.searchResults' => ({required int count, required String word}) => '${count} videos for “${word}”',
 			'huya.searchEmpty' => 'No videos found',
 			'huya.searchHistory' => 'Search history',
+			'huya.searchHistoryEmpty' => 'No searches yet',
 			'huya.searchHistoryClear' => 'Clear',
 			'huya.searchHistoryRemove' => ({required Object word}) => 'Remove "${word}"',
 			'huya.searchEmptyDescription' => 'Try another word.',
@@ -5771,9 +5773,9 @@ extension on TranslationsEn {
 			'iptv.zapperEmptyGroup' => 'No channels in this group',
 			'iptv.lineCount' => ({required Object current, required Object total}) => 'Line ${current}/${total}',
 			'iptv.aspectLabel' => 'Aspect',
-			'iptv.aspectAuto' => 'Default',
 			_ => null,
 		} ?? switch (path) {
+			'iptv.aspectAuto' => 'Default',
 			'iptv.aspect16x9' => '16:9',
 			'iptv.aspect4x3' => '4:3',
 			'iptv.aspectFill' => 'Fill',
@@ -6285,9 +6287,9 @@ extension on TranslationsEn {
 			'music.lyricDisplay' => 'Lyric display',
 			'music.lyricTiming' => 'Timing',
 			'music.lyricTranslationDesc' => 'Show the translation when the lyric has one.',
-			'music.lyricRomanization' => 'Show romanization',
 			_ => null,
 		} ?? switch (path) {
+			'music.lyricRomanization' => 'Show romanization',
 			'music.lyricRomanizationDesc' => 'Show the romanization when the lyric has one.',
 			'music.lyricSwapSecondary' => 'Translation/romanization order',
 			'music.lyricSwapSecondaryDesc' => 'Swap translation and romanization under a lyric line.',
@@ -6799,9 +6801,9 @@ extension on TranslationsEn {
 			'recorder.caCustomCleared' => 'Recording uses the bundled root store again',
 			'recorder.startNowBusyOther' => 'Another window is recording this room',
 			'recorder.startNowCaFailed' => 'The custom CA bundle cannot be read — pick it again or switch to the bundled store',
-			'recorder.stateSaved' => 'Saved',
 			_ => null,
 		} ?? switch (path) {
+			'recorder.stateSaved' => 'Saved',
 			'recorder.menuMore' => 'More actions',
 			'recorder.openRoom' => 'Open live room',
 			'recorder.openFolder' => 'Open folder',
@@ -7313,9 +7315,9 @@ extension on TranslationsEn {
 			'settings.groupIptv' => 'IPTV',
 			'settings.groupVod' => 'Bilibili video',
 			'settings.generalDescription' => 'Browsing, window and startup pages.',
-			'settings.appearanceDescription' => 'Theme, typography and colours.',
 			_ => null,
 		} ?? switch (path) {
+			'settings.appearanceDescription' => 'Theme, typography and colours.',
 			'settings.personalizationDescription' => 'Theme, appearance, background and navigation.',
 			'settings.liveSettingsDescription' => 'Live sources, danmaku and recording.',
 			'settings.liveSourcesDescription' => 'Platforms, accounts and auto refresh.',
@@ -7827,9 +7829,9 @@ extension on TranslationsEn {
 			'settings.navMiniDanmaku' => 'Mini-window danmaku',
 			'settings.navKernel' => 'Player engine',
 			'settings.navRecording' => 'Recording',
-			'settings.videoDescription' => 'Quality, audio and how the picture fits.',
 			_ => null,
 		} ?? switch (path) {
+			'settings.videoDescription' => 'Quality, audio and how the picture fits.',
 			'settings.danmakuDescription' => 'Danmaku visibility, style and shields.',
 			'settings.miniDanmakuDescription' => 'Danmaku in the compact window.',
 			'settings.kernelDescription' => 'Engine, hardware decoding, presets and picture enhancement.',
@@ -8341,9 +8343,9 @@ extension on TranslationsEn {
 			'settings.tagManagementDesc' => 'Customize and manage the tags rooms are filtered by',
 			'settings.tagAdd' => 'Add tag',
 			'settings.tagEdit' => 'Edit tag',
-			'settings.tagPin' => 'Move to top',
 			_ => null,
 		} ?? switch (path) {
+			'settings.tagPin' => 'Move to top',
 			'settings.tagSaveAction' => 'Save',
 			'settings.tagNameLabel' => 'Tag name',
 			'settings.tagNameHint' => 'e.g. "Regulars", "Before sleep"',
@@ -8855,9 +8857,9 @@ extension on TranslationsEn {
 			'toolbox.nodeSourceHot' => 'Hot-list endpoint',
 			'toolbox.nodeSummary' => ({required Object ok, required Object tested, required Object total}) => '${ok} / ${tested} reachable · ${total} platforms',
 			'toolbox.nodeUntestedSummary' => ({required Object total}) => 'Not tested yet · ${total} platforms',
-			'toolbox.logsSection' => 'Logs & diagnostics',
 			_ => null,
 		} ?? switch (path) {
+			'toolbox.logsSection' => 'Logs & diagnostics',
 			'toolbox.logsExport' => 'Copy log',
 			'toolbox.logsClear' => 'Clear logs',
 			'toolbox.logsClearConfirm' => 'Clear the in-memory log?',

@@ -157,7 +157,7 @@ final class _IptvRecentPageState extends ConsumerState<IptvRecentPage> {
                   variant: DsButtonVariant.dangerSoft,
                   size: DsSize.sm,
                   onPressed: () => unawaited(_clear(context, ref)),
-                  leading: const DsIcon(DsIcons.trash2, size: 15),
+                  leading: const DsIcon(DsIcons.trash2, size: 16),
                   child: Text(t.iptv.recentClear),
                 ),
             ],
@@ -165,7 +165,13 @@ final class _IptvRecentPageState extends ConsumerState<IptvRecentPage> {
         ),
         Expanded(
           child: libraryLoading
-              ? const Padding(padding: EdgeInsets.all(DsSpace.s16), child: SkeletonRows(rows: 7))
+              ? Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: LiveWindow.pageInset(MediaQuery.sizeOf(context).width),
+                    vertical: DsSpace.s16,
+                  ),
+                  child: const SkeletonRows(rows: 7),
+                )
               : libraryFailed
               ? Center(
                   child: DsEmptyState(
@@ -278,7 +284,7 @@ final class _IptvRecentPageState extends ConsumerState<IptvRecentPage> {
             ),
       description: programme == null
           ? stamp
-          : Column(crossAxisAlignment: CrossAxisAlignment.start, spacing: 2, children: [programme, stamp]),
+          : Column(crossAxisAlignment: CrossAxisAlignment.start, spacing: DsSpace.s3, children: [programme, stamp]),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         spacing: DsSpace.s3,

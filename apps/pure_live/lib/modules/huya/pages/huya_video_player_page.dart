@@ -1025,7 +1025,12 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
       case HuyaDownloadEnqueue.duplicate:
         showDsToast(context: context, title: t.player.downloadDuplicate);
       case HuyaDownloadEnqueue.failed:
-        showDsToast(context: context, title: t.settings.downloadStatusFailed, description: result.error, status: DsStatus.danger);
+        showDsToast(
+          context: context,
+          title: t.settings.downloadStatusFailed,
+          description: result.error,
+          status: DsStatus.danger,
+        );
     }
   }
 
@@ -1194,17 +1199,13 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
       );
       return Container(
         padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s8, DsSpace.s8, DsSpace.s12, DsSpace.s20),
-        decoration: BoxDecoration(
-          gradient: OnVideoColors.shade(edge: VerticalDirection.up),
-        ),
+        decoration: BoxDecoration(gradient: OnVideoColors.shade(edge: VerticalDirection.up)),
         child: Row(spacing: DsSpace.s8, children: [backPill, titleText, const Spacer(), actionPill, morePill]),
       );
     }
     return Container(
       padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s8, DsSpace.s8, DsSpace.s12, DsSpace.s20),
-      decoration: BoxDecoration(
-        gradient: OnVideoColors.shade(edge: VerticalDirection.up),
-      ),
+      decoration: BoxDecoration(gradient: OnVideoColors.shade(edge: VerticalDirection.up)),
       child: Row(
         spacing: DsSpace.s8,
         children: [
@@ -1318,13 +1319,13 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
           child: DsSlider(
             value: handle.volume,
             style: const DsSliderStyle(
-                          height: 24,
-                          trackHeight: 4,
-                          trackColor: OnVideoColors.track,
-                          fillColor: OnVideoColors.foreground,
-                          thumbColor: OnVideoColors.foreground,
-                          thumbSize: 12,
-                        ),
+              height: 24,
+              trackHeight: 4,
+              trackColor: OnVideoColors.track,
+              fillColor: OnVideoColors.foreground,
+              thumbColor: OnVideoColors.foreground,
+              thumbSize: 12,
+            ),
             onChanged: (value) {
               _wake();
               unawaited(_setVolume(value));

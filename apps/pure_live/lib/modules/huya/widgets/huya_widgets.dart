@@ -81,7 +81,9 @@ final class HuyaLoadPanes extends StatelessWidget {
         ),
       );
     }
-    return const Center(child: DsSpinner());
+    // The waiting face is the grid's own skeleton, the panes' siblings'
+    // way — a bare spinner left the first paint reading as a hang.
+    return const Center(child: SkeletonRows(rows: 6, trailing: false));
   }
 }
 

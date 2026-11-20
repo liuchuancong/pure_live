@@ -409,12 +409,6 @@ final class _VodDownloadsPageState extends ConsumerState<VodDownloadsPage> {
   /// visible row speak.
   String? _factsId;
 
-  /// Asks the disk again. The queue is a live store rather than a folder read,
-  /// so the one thing a refresh can add here is the stat behind 文件不在了:
-  /// every finished row is asked once more whether its bytes are where the row
-  /// says they are.
-  int _recheck = 0;
-
   /// The rows on screen: searched, cut to the ticked phases, and to the files
   /// still on disk when that is ticked — in the order the store keeps them, so
   /// the table's own sort is the only thing that reorders a queue.
@@ -490,7 +484,7 @@ final class _VodDownloadsPageState extends ConsumerState<VodDownloadsPage> {
           children: [
             if (inlineWord != null)
               Padding(
-                padding: EdgeInsets.fromLTRB(_inset, DsSpace.s12, _inset, 0),
+                padding: const EdgeInsets.only(top: DsSpace.s12),
                 child: InlineFilterBar(
                   word: inlineWord,
                   onClear: () => ref.read(inlineFilterProvider(NavigationItem.vodDownloads).notifier).clear(),
@@ -541,7 +535,9 @@ final class _VodDownloadsPageState extends ConsumerState<VodDownloadsPage> {
                   DownloadQueueAction(
                     label: t.settings.downloadRecheck,
                     icon: DsIcons.refresh,
-                    onPressed: () => setState(() => _recheck++),
+                    // The recheck is the rebuild itself: the live store's
+                    // stat is asked once more as the rows re-render.
+                    onPressed: () => setState(() {}),
                   ),
                 ],
                 settingsLabel: t.settings.downloadSettings,

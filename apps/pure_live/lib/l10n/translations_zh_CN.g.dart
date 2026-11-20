@@ -2281,6 +2281,9 @@ class Translations$huya$zh_CN {
 	/// zh-CN: '搜索历史'
 	String get searchHistory => '搜索历史';
 
+	/// zh-CN: '暂无搜索记录'
+	String get searchHistoryEmpty => '暂无搜索记录';
+
 	/// zh-CN: '清空'
 	String get searchHistoryClear => '清空';
 
@@ -14465,6 +14468,7 @@ extension on Translations {
 			'huya.searchResults' => ({required int count, required String word}) => '找到 ${count} 个与“${word}”相关的视频',
 			'huya.searchEmpty' => '没有找到相关视频',
 			'huya.searchHistory' => '搜索历史',
+			'huya.searchHistoryEmpty' => '暂无搜索记录',
 			'huya.searchHistoryClear' => '清空',
 			'huya.searchHistoryRemove' => ({required Object word}) => '删除「${word}」',
 			'huya.searchEmptyDescription' => '换个关键词再试试。',
@@ -14628,9 +14632,9 @@ extension on Translations {
 			'iptv.zapperEmptyGroup' => '这个分组没有频道',
 			'iptv.lineCount' => ({required Object current, required Object total}) => '线路 ${current}/${total}',
 			'iptv.aspectLabel' => '画面比例',
-			'iptv.aspectAuto' => '默认',
 			_ => null,
 		} ?? switch (path) {
+			'iptv.aspectAuto' => '默认',
 			'iptv.aspect16x9' => '16:9',
 			'iptv.aspect4x3' => '4:3',
 			'iptv.aspectFill' => '铺满',
@@ -15142,9 +15146,9 @@ extension on Translations {
 			'music.lyricDisplay' => '歌词显示',
 			'music.lyricTiming' => '时间轴',
 			'music.lyricTranslationDesc' => '歌词带翻译时一并显示。',
-			'music.lyricRomanization' => '显示音译',
 			_ => null,
 		} ?? switch (path) {
+			'music.lyricRomanization' => '显示音译',
 			'music.lyricRomanizationDesc' => '歌词带音译或罗马音时一并显示。',
 			'music.lyricSwapSecondary' => '翻译/音译顺序',
 			'music.lyricSwapSecondaryDesc' => '交换翻译与音译在歌词行中的先后顺序。',
@@ -15656,9 +15660,9 @@ extension on Translations {
 			'recorder.caCustomClear' => '恢复内置',
 			'recorder.caCustomCleared' => '已恢复使用内置根证书',
 			'recorder.startNowBusyOther' => '另一个窗口正在录制这个房间',
-			'recorder.startNowCaFailed' => '自定义 CA 证书读不到，先重新选择或恢复内置',
 			_ => null,
 		} ?? switch (path) {
+			'recorder.startNowCaFailed' => '自定义 CA 证书读不到，先重新选择或恢复内置',
 			'recorder.menuMore' => '更多操作',
 			'recorder.openRoom' => '进入直播间',
 			'recorder.openFolder' => '打开文件夹',
@@ -16170,9 +16174,9 @@ extension on Translations {
 			'settings.groupIptv' => 'IPTV',
 			'settings.groupVod' => 'Bilibili 视频',
 			'settings.generalDescription' => '浏览、窗口与启动设置。',
-			'settings.appearanceDescription' => '主题、字体与配色。',
 			_ => null,
 		} ?? switch (path) {
+			'settings.appearanceDescription' => '主题、字体与配色。',
 			'settings.personalizationDescription' => '主题、外观、背景与导航。',
 			'settings.liveSettingsDescription' => '直播资源、弹幕与录制。',
 			'settings.liveSourcesDescription' => '平台、账号与自动刷新。',
@@ -16684,9 +16688,9 @@ extension on Translations {
 			'settings.navMiniDanmaku' => '小窗弹幕',
 			'settings.navKernel' => '播放器内核',
 			'settings.navRecording' => '录制',
-			'settings.videoDescription' => '画质、音量与画面比例。',
 			_ => null,
 		} ?? switch (path) {
+			'settings.videoDescription' => '画质、音量与画面比例。',
 			'settings.danmakuDescription' => '弹幕显示、样式与屏蔽。',
 			'settings.miniDanmakuDescription' => '画中画小窗里的弹幕。',
 			'settings.kernelDescription' => '内核、硬件解码、预设与画质增强。',
@@ -17198,9 +17202,9 @@ extension on Translations {
 			'settings.tagManagementDesc' => '自定义和管理直播间的过滤标签',
 			'settings.tagAdd' => '添加标签',
 			'settings.tagEdit' => '编辑标签',
-			'settings.tagPin' => '移到最前',
 			_ => null,
 		} ?? switch (path) {
+			'settings.tagPin' => '移到最前',
 			'settings.tagSaveAction' => '保存',
 			'settings.tagNameLabel' => '标签名称',
 			'settings.tagNameHint' => '例如“常看”“睡前听”',
@@ -17712,9 +17716,9 @@ extension on Translations {
 			'toolbox.nodeSourceHot' => '热门接口',
 			'toolbox.nodeSummary' => ({required Object ok, required Object tested, required Object total}) => '${ok} / ${tested} 可用 · 共 ${total} 个平台',
 			'toolbox.nodeUntestedSummary' => ({required Object total}) => '尚未测速 · 共 ${total} 个平台',
-			'toolbox.logsSection' => '日志与诊断',
 			_ => null,
 		} ?? switch (path) {
+			'toolbox.logsSection' => '日志与诊断',
 			'toolbox.logsExport' => '复制日志',
 			'toolbox.logsClear' => '清空日志',
 			'toolbox.logsClearConfirm' => '清空内存日志？',

@@ -269,7 +269,7 @@ final class _VodPersonalPageState extends ConsumerState<VodPersonalPage> {
       slivers: [
         if (filter != null)
           SliverPadding(
-            padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s4),
+            padding: const EdgeInsets.only(top: DsSpace.s12),
             sliver: SliverToBoxAdapter(
               child: InlineFilterBar(
                 word: filter,

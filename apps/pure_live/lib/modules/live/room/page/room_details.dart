@@ -402,7 +402,7 @@ final class _Actions extends StatelessWidget {
     Widget button(DsIconData icon, String label, VoidCallback onPressed) => DsButton(
       variant: DsButtonVariant.secondary,
       size: DsSize.sm,
-      leading: DsIcon(icon, size: 15),
+      leading: DsIcon(icon, size: 16),
       onPressed: onPressed,
       child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
     );

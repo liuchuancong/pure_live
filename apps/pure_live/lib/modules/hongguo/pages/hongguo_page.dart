@@ -24,6 +24,7 @@ import 'package:pure_live/shared/shared.dart'
         LiveWindow,
         NavigationItem,
         PagedCardGrid,
+        SkeletonRows,
         avatarInitials,
         feedGutter,
         inlineFilterKeeps,
@@ -1506,7 +1507,7 @@ final class _HistoryViewState extends ConsumerState<_HistoryView> {
                 DsButton(
                   variant: DsButtonVariant.dangerSoft,
                   size: DsSize.sm,
-                  leading: const DsIcon(DsIcons.trash2, size: 16),
+                  leading: const DsIcon(DsIcons.trash2, size: 14),
                   onPressed: _selected.isEmpty ? null : () => unawaited(_removeSelected(t)),
                   child: Text(t.hongguo.historyManageDeleteCount(count: _selected.length)),
                 ),
@@ -2219,7 +2220,9 @@ final class _SeriesList extends StatelessWidget {
       );
     }
     if (loading && rows.isEmpty) {
-      return const Center(child: DsSpinner());
+      // The waiting face is the grid's own skeleton, the sibling views'
+      // way — a bare spinner read as a hang.
+      return const Center(child: SkeletonRows(rows: 6));
     }
     if (rows.isEmpty) {
       return Center(
@@ -2333,8 +2336,8 @@ final class _QrLoginCardState extends ConsumerState<_QrLoginCard> {
               borderRadius: BorderRadius.circular(theme.radii.card),
               child: Image(
                 image: MemoryImage(session.qr!.image),
-                width: 220,
-                height: 220,
+                width: 240,
+                height: 240,
                 fit: BoxFit.contain,
                 semanticLabel: t.hongguo.accountQrLabel,
               ),
