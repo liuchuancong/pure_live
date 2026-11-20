@@ -9,7 +9,6 @@ import 'package:flutter/services.dart'
     show KeyDownEvent, KeyUpEvent, LogicalKeyboardKey, MouseCursor, SystemMouseCursors;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart' show GoRouterHelper;
 import 'package:live_cache/live_cache.dart' show ImageCachePolicies;
 import 'package:live_device/live_device.dart'
@@ -1144,46 +1143,19 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
                       ),
                     ),
                   // The compact window's own chrome: hover wakes it, idleness
-                  // puts it away (the paused window keeps it). The play/pause
-                  // sits big in the picture's middle; the session verbs ride
-                  // the window-fullscreen cluster's place — a glass pill at
-                  // the top-right: sound, the flying layer's switch, a frame
-                  // copy, the audio mode, the capture and the way out. No
-                  // title, no stream menus, no lock, no more.
-                  if (mini && chromeVisible) ...[
-                    PositionedDirectional(
-                      top: DsSpace.s12,
-                      start: DsSpace.s12,
-                      // The way out, where a corner button is looked for: the
-                      // window's top-left.
-                      child: PlayerGlassPill(
-                        child: PlayerBarButton(
-                          icon: DsIcons.pictureInPicture2,
-                          label: context.t.player.pipOff,
-                          onPressed: widget.onLeave,
-                        ),
-                      ),
-                    ),
-                    Positioned.fill(
-                      child: Center(child: _PipCenterPlay(room: room)),
-                    ),
-                    PositionedDirectional(
-                      top: DsSpace.s12,
-                      end: DsSpace.s12,
-                      // The window-fullscreen cluster itself: a frame copy,
-                      // the audio mode and the capture — no more chip, and
-                      // no pip chip: the way out lives at the top-left.
-                      child: _TopToolCluster(room: room, onWake: _wake, audioMode: true, pipChip: false),
-                    ),
+                  // puts it away (the paused window keeps it). One bar does
+                  // the whole window — the way out, the transport, the sound,
+                  // the flying layer's switch, the capture and the audio
+                  // mode, with the pin at the end — because two corners of
+                  // controls on a window this small read as two different
+                  // players. No title, no stream menus, no lock, no more.
+                  if (mini && chromeVisible)
                     PositionedDirectional(
                       bottom: 0,
                       start: 0,
                       end: 0,
-                      // The transport, where the window-fullscreen bar keeps
-                      // it: sound and the flying layer's switch.
-                      child: _PipTransportBar(room: room),
+                      child: _PipTransportBar(room: room, onLeave: widget.onLeave, onWake: _wake),
                     ),
-                  ],
                   if (showBar && !mini)
                     Positioned(
                       bottom: widget.bottomInset + keyboardLift,

@@ -35,6 +35,8 @@ final class WallpaperVideoPlayer extends StatefulWidget {
     this.onHandle,
     this.onBarVisibleChanged,
     this.barActions = const [],
+    this.barTopActions = const [],
+    this.barLeading,
     this.barHideAfter,
     super.key,
   });
@@ -57,10 +59,20 @@ final class WallpaperVideoPlayer extends StatefulWidget {
   /// with the bar rather than floating over a picture that asked to be alone.
   final ValueChanged<bool>? onBarVisibleChanged;
 
-  /// The host page's own verbs, appended after the transport in the bar's row.
-  /// One bar over the picture is what a preview reads as — the alternative is
-  /// a second floating strip the viewer has to learn separately.
+  /// The host page's own verbs, appended after the transport in the bar's
+  /// bottom row — the sound and file verbs, the hand already at the bar.
   final List<Widget> barActions;
+
+  /// The host page's verbs for the bar's top row — the picture and window
+  /// verbs (the stream's speed, its danmaku, the way the picture fills the
+  /// screen). Two rows, the way the live room reads: what changes the viewing
+  /// above, what moves the playing below, and neither crammed into one row
+  /// the width has to apologise for.
+  final List<Widget> barTopActions;
+
+  /// The one verb leading the top row (the immersive layout's way back).
+  /// Null draws nothing there.
+  final Widget? barLeading;
 
   /// Painted over the picture, under the transport: the preview's mask and
   /// frost, so the controls stay as legible as they are without it.
@@ -199,6 +211,11 @@ final class _WallpaperVideoPlayerState extends State<WallpaperVideoPlayer> {
   }
 
   Future<void> _start() async {
+    // The same kernel shape the app's own players build (player_providers'
+    // factory): the same options and the same media_kit backend, so a preview
+    // decodes a take exactly the way a live room decodes a stream — a bare
+    // kernel here used to open the file with the audio alone and paint
+    // nothing (the black screen with sound).
     final kernel = PlayerKernel()..registerBackend(const MediaKitAdapterFactory().registration());
     _kernel = kernel;
     try {
@@ -208,7 +225,6 @@ final class _WallpaperVideoPlayerState extends State<WallpaperVideoPlayer> {
           autoPlay: true,
           loop: widget.loop,
           muted: _muted,
-          pauseWhenBackgrounded: true,
           enableRecovery: false,
         ),
         source: PlayerSource.of(
@@ -382,7 +398,31 @@ final class _WallpaperVideoPlayerState extends State<WallpaperVideoPlayer> {
           const Center(
             child: DsSpinner(style: DsSpinnerStyle(size: 32, color: Color(0xFFFFFFFF))),
           ),
-        if (_barVisible || !_playing)
+        if (_barVisible || !_playing) ...[
+          if (widget.barLeading != null || widget.barTopActions.isNotEmpty)
+            PositionedDirectional(
+              start: 0,
+              end: 0,
+              top: 0,
+              child: MouseRegion(
+                // Resting on either row keeps both up; leaving settles them
+                // the way an idle pointer does.
+                onEnter: (_) => _hideTimer?.cancel(),
+                onExit: (_) => _scheduleHideBar(),
+                child: DecoratedBox(
+                  decoration: BoxDecoration(gradient: OnVideoColors.shade(edge: VerticalDirection.up)),
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(DsSpace.s12, DsSpace.s8, DsSpace.s12, DsSpace.s20),
+                    // The top row: the host's way back on the left, the
+                    // picture and window verbs on the right.
+                    child: Row(
+                      spacing: DsSpace.s4,
+                      children: [?widget.barLeading, const Spacer(), ...widget.barTopActions],
+                    ),
+                  ),
+                ),
+              ),
+            ),
           PositionedDirectional(
             start: 0,
             end: 0,
@@ -398,10 +438,11 @@ final class _WallpaperVideoPlayerState extends State<WallpaperVideoPlayer> {
                 ),
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(DsSpace.s12, DsSpace.s24, DsSpace.s12, DsSpace.s8),
-                  // One row, the way every player in the app reads: the pure
-                  // transport on the left — skip back, play, skip forward, the
-                  // seek bar, the clock — then the host page's verbs, which
-                  // bring their own flexible room and carry the row's end.
+                  // Two rows, the way the live room reads: the pure transport
+                  // on the bottom row's left — skip back, play, skip forward,
+                  // the seek bar, the clock — then the host page's sound and
+                  // file verbs carrying the row's end. The picture and window
+                  // verbs live on the row above.
                   child: Row(
                     spacing: DsSpace.s4,
                     children: [
@@ -455,6 +496,7 @@ final class _WallpaperVideoPlayerState extends State<WallpaperVideoPlayer> {
               ),
             ),
           ),
+        ],
       ],
     );
   }

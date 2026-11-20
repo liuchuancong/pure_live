@@ -367,13 +367,7 @@ final class _AnchorFollowChip extends ConsumerWidget {
 /// room for a fourth word. The verbs ride the bars' auto-hide with everything
 /// else, and a running capture turns its chip the recorder's red.
 final class _TopToolCluster extends ConsumerWidget {
-  const _TopToolCluster({
-    required this.room,
-    required this.onWake,
-    this.onMore,
-    this.audioMode = false,
-    this.pipChip = true,
-  });
+  const _TopToolCluster({required this.room, required this.onWake, this.onMore});
 
   final RoomState room;
 
@@ -381,16 +375,8 @@ final class _TopToolCluster extends ConsumerWidget {
   final VoidCallback onWake;
 
   /// Opens the room's more container (the page-level panel/sheet); null
-  /// leaves the more chip off — the compact window's cluster carries none.
+  /// leaves the more chip off.
   final VoidCallback? onMore;
-
-  /// Whether the audio mode chip rides the cluster: the compact window's
-  /// only audio verb, the page's bars being out of reach there.
-  final bool audioMode;
-
-  /// Whether the small window's verb rides the cluster; the compact window
-  /// itself keeps its way out at the bottom-right corner instead.
-  final bool pipChip;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -401,9 +387,6 @@ final class _TopToolCluster extends ConsumerWidget {
     final canShot = capture != null && capture.canCaptureScreenshot;
     final task = roomRecordingTaskOf(ref.watch(recordingTasksProvider).tasks, room.room);
     final recording = task?.state == RecordingTaskState.recording;
-    final pipAvailable = room.handle != null && ref.read(roomPresentationProvider.notifier).pipAvailable;
-    final presentation = ref.watch(roomPresentationProvider);
-    final audioOnly = room.audioOnly;
     final danger = colors.danger.text;
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -488,21 +471,6 @@ final class _TopToolCluster extends ConsumerWidget {
                     icon: DsIcons.disc,
                     label: context.t.room.record,
                     onPressed: () => unawaited(toggleRoomRecording(context, ref)),
-                  ),
-                if (audioMode)
-                  chip(
-                    icon: audioOnly ? DsIcons.video : DsIcons.headphones,
-                    label: audioOnly ? context.t.player.restoreVideo : context.t.player.audioOnlyMode,
-                    onPressed: () => unawaited(ref.read(roomProvider.notifier).setAudioOnly(value: !audioOnly)),
-                  ),
-                // The way into or out of the small window; on a narrow cluster
-                // it stays — leaving the window is the one verb the window
-                // cannot lose.
-                if (pipChip && pipAvailable && (!small || presentation == PresentationMode.pip))
-                  chip(
-                    icon: DsIcons.pictureInPicture2,
-                    label: presentation == PresentationMode.pip ? context.t.player.pipOff : context.t.player.pipOn,
-                    onPressed: () => unawaited(toggleRoomPip(context, ref)),
                   ),
                 if (onMore != null) chip(icon: DsIcons.ellipsis, label: context.t.common.more, onPressed: onMore),
               ],

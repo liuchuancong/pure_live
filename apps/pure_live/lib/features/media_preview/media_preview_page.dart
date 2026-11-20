@@ -33,10 +33,13 @@ import 'package:path/path.dart' as p;
 
 import 'package:pure_live/app/app.dart'
     show
+        AudioOwner,
+        AudioOwnerKind,
         RoomPresentationController,
         RouteCaptionTail,
         SettingsSectionRoute,
         appPathsProvider,
+        audioArbiterProvider,
         fullscreenDriverProvider,
         isPrimaryWindowProvider,
         pipDriverProvider,
@@ -214,6 +217,11 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
   /// preferences.
   bool _autoNext = true;
 
+  /// The current entry's hold on the app's sound: claimed when its player
+  /// starts, released when it stops or the page leaves. Opening a take here
+  /// is what hushes a live window the viewer left running.
+  AudioOwner? _soundOwner;
+
   /// The current entry's decoded timeline; null while it has no sidecar or
   /// the file is still being read.
   List<BarrageItem>? _timeline;
@@ -251,6 +259,8 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
   void dispose() {
     _disposed = true;
     _danmakuToken++;
+    final soundOwner = _soundOwner;
+    if (soundOwner != null) ref.read(audioArbiterProvider.notifier).release(soundOwner);
     _volumeHudTimer?.cancel();
     // Cancelled here as well as in _detachPlayer so the subscription's owner
     // is the method the analyzer, and a reader, looks for it in.
@@ -291,6 +301,7 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
   void _onHandle(PlayerHandle handle) {
     if (_disposed) return;
     _detachPlayer();
+    _syncSoundHold();
     // A playing mini window belongs to the take the viewer just left; a new
     // one here supersedes it (its close path checkpoints the old).
     FloatingVideoWindow.dismiss();
@@ -321,6 +332,19 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
     if (_audioOnly) unawaited(_applyAudioOnly(handle, true));
     if (_loop) unawaited(_applyLoop(handle, true));
     _scheduleTimeline();
+  }
+
+  /// The stage's entry in the app's sound table, under the entry it plays.
+  /// The pause verb reads the field, so a hush lands on whatever engine the
+  /// stage holds when another kind of player asks.
+  void _syncSoundHold() {
+    final arbiter = ref.read(audioArbiterProvider.notifier);
+    final previous = _soundOwner;
+    final item = _current;
+    final owner = item == null ? null : AudioOwner(AudioOwnerKind.preview, item.path);
+    if (previous != null && previous != owner) arbiter.release(previous);
+    _soundOwner = owner;
+    if (owner != null) unawaited(arbiter.claim(owner, () => Future<void>.value(_handle?.pause())));
   }
 
   /// A take that ended walks the list while the page is told to; the last
@@ -672,6 +696,7 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
       _danmakuLoading = false;
     });
     _detachPlayer();
+    _syncSoundHold();
     unawaited(_loadDanmaku());
   }
 
@@ -1040,9 +1065,7 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
     final theme = DsTheme.of(context);
     return Container(
       padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s8, DsSpace.s8, DsSpace.s12, DsSpace.s20),
-      decoration: BoxDecoration(
-        gradient: OnVideoColors.shade(edge: VerticalDirection.up),
-      ),
+      decoration: BoxDecoration(gradient: OnVideoColors.shade(edge: VerticalDirection.up)),
       child: Row(
         spacing: DsSpace.s8,
         children: [
@@ -1099,7 +1122,7 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
   /// screen back); a stage the window's own shape drove has a back pill
   /// instead, and Escape leaves the page.
   Widget _immersiveStage(Translations t, {required bool compact, required bool pipOwned, required bool ownsWindow}) {
-    final stage = _stageOf(t, compact: compact, immersive: true);
+    final stage = _stageOf(t, compact: compact, immersive: true, pipOwned: pipOwned, ownsWindow: ownsWindow);
     if (pipOwned) {
       // The compact window keeps its page's keys: Escape is the way back to
       // it, I raises the stream's figures over the picture. The strip below
@@ -1372,7 +1395,13 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
     ),
   );
 
-  Widget _stageOf(Translations t, {required bool compact, bool immersive = false}) {
+  Widget _stageOf(
+    Translations t, {
+    required bool compact,
+    bool immersive = false,
+    bool pipOwned = false,
+    bool ownsWindow = false,
+  }) {
     final item = _current;
     if (item == null) {
       // The stage is a picture's black whatever the app's theme, so its words
@@ -1484,17 +1513,20 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
                 controller: _barrage,
               )
             : null,
-        // The bar carries the whole transport now — the page's own verbs ride
-        // its right end at every width, so there is no dock under the picture
-        // to keep in sync with it.
-        barActions: _barActions(
-          t,
-          compact: compact,
-          visible: visible,
-          has: _hasDanmaku,
-          loading: _danmakuLoading,
-          immersive: immersive,
-        ),
+        // Two rows, the live room's own arrangement: the picture and window
+        // verbs above (with the way back leading them where the page's header
+        // is absent), the transport and the sound and file verbs below.
+        barTopActions: _barTopActions(t, visible: visible, has: _hasDanmaku, loading: _danmakuLoading),
+        barActions: _barActions(t, compact: compact),
+        barLeading: immersive && !pipOwned && !ownsWindow
+            ? PlayerGlassPill(
+                child: PlayerBarButton(
+                  icon: DsIcons.arrowLeft,
+                  label: t.common.back,
+                  onPressed: () => _leave(context, immersive: false, narrow: false),
+                ),
+              )
+            : null,
       ),
     );
     // The numbers sit over the picture, not in the bar: they are read against
@@ -1671,17 +1703,11 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
   /// A touch width has no room for a slider or the speed's number, so they
   /// fold: the volume leaves (mute is the player's button at any width) and
   /// the speed keeps its glyph.
-  List<Widget> _barActions(
-    Translations t, {
-    required bool compact,
-    required bool visible,
-    required bool has,
-    required bool loading,
-    required bool immersive,
-  }) {
+  List<Widget> _barActions(Translations t, {required bool compact}) {
     final handle = _handle;
-    final presentation = ref.watch(roomPresentationProvider);
-    final windowFullscreen = presentation == PresentationMode.windowFullscreen;
+    // The bottom row's own verbs: the sound and the file. The volume slider
+    // joins the transport's mute pill on a wide row; a narrow one keeps the
+    // mute alone.
     return [
       if (!compact)
         SizedBox(
@@ -1692,6 +1718,39 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
             onChanged: handle == null ? null : (value) => unawaited(_setVolume(value)),
           ),
         ),
+      // The sound-only mode, for a take the viewer is listening to.
+      PlayerBarButton(
+        icon: _audioOnly ? DsIcons.video : DsIcons.headphones,
+        label: _audioOnly ? t.player.restoreVideo : t.player.audioOnlyMode,
+        selected: _audioOnly,
+        onPressed: handle == null ? null : () => unawaited(_setAudioOnly(!_audioOnly)),
+      ),
+      // The replay switch, for a take watched in circles.
+      PlayerBarButton(
+        icon: DsIcons.repeat,
+        label: t.common.previewLoop,
+        selected: _loop,
+        onPressed: handle == null ? null : () => unawaited(_setLoop(!_loop)),
+      ),
+      // A frame of the take, into the screenshots folder.
+      PlayerBarButton(icon: DsIcons.camera, label: t.player.screenshot, onPressed: handle == null ? null : _screenshot),
+      // The floating mini window, where the handoff hands the take over.
+      if (_miniWindowReady)
+        PlayerBarButton(
+          icon: DsIcons.pictureInPicture,
+          label: t.player.pipOn,
+          onPressed: () => unawaited(_enterMiniWindow()),
+        ),
+    ];
+  }
+
+  /// The top row's verbs: the picture and window words — the speed, the
+  /// danmaku's pair, the way the picture fills the screen.
+  List<Widget> _barTopActions(Translations t, {required bool visible, required bool has, required bool loading}) {
+    final handle = _handle;
+    final presentation = ref.watch(roomPresentationProvider);
+    final windowFullscreen = presentation == PresentationMode.windowFullscreen;
+    return [
       // The speed as a chip that says what it would set — a number a viewer
       // chose is a state worth reading, not only a menu to open.
       DsMenuAnchor(

@@ -363,8 +363,21 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
     }
   }
 
+  /// The page's hold on the app's sound: opening a channel hushes a live
+  /// window or the music the viewer left running. The pause verb reads the
+  /// field, so a hush lands on the channel the page holds when it lands.
+  void _holdSound() {
+    final id = _channel?.id ?? widget.channelId;
+    unawaited(
+      ref
+          .read(audioArbiterProvider.notifier)
+          .claim(AudioOwner(AudioOwnerKind.iptv, id), () => Future<void>.value(_playback?.pause())),
+    );
+  }
+
   @override
   void dispose() {
+    ref.read(audioArbiterProvider.notifier).release(AudioOwner(AudioOwnerKind.iptv, _channel?.id ?? widget.channelId));
     _sleepTimerNotifier.onFire_ = null;
     Timer.run(() => _sleepTimerNotifier.start(null));
     WidgetsBinding.instance.removeObserver(this);
@@ -527,6 +540,7 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
       // a new one here supersedes it (its close path checkpoints the old).
       FloatingVideoWindow.dismiss();
       setState(() => _handle = handle);
+      _holdSound();
       unawaited(_applyAudio(handle));
       unawaited(_applyEngineOptions(handle));
       _bindGeometry(handle);

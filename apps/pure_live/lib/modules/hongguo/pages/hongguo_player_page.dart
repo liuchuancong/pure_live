@@ -355,9 +355,23 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
     unawaited((hold ? _screenAwake.enable() : _screenAwake.disable()).catchError((Object _) {}));
   }
 
+  /// The page's hold on the app's sound: playing an episode hushes a live
+  /// window or the music the viewer left running.
+  void _holdSound() {
+    unawaited(
+      ref
+          .read(audioArbiterProvider.notifier)
+          .claim(
+            AudioOwner(AudioOwnerKind.audiobook, 'hongguo:${widget.seriesId}'),
+            () => Future<void>.value(_handle?.pause()),
+          ),
+    );
+  }
+
   @override
   void dispose() {
     _disposed = true;
+    ref.read(audioArbiterProvider.notifier).release(AudioOwner(AudioOwnerKind.audiobook, 'hongguo:${widget.seriesId}'));
     _backgroundGate?.dispose();
     _backgroundGate = null;
     unawaited(_screenAwake.disable().catchError((Object _) {}));
@@ -539,6 +553,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
       }
       _handle = handle;
       _bind(handle);
+      _holdSound();
       // A playing mini window belongs to the episode the viewer just left;
       // a new one here supersedes it (its close path checkpoints the old).
       FloatingVideoWindow.dismiss();

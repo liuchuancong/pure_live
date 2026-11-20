@@ -199,6 +199,7 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
         return;
       }
       _handle = handle;
+      _holdSound();
       _controller = HuyaVideoPlaybackController(
         api: ref.read(huyaVideoApiProvider),
         session: handle,
@@ -245,9 +246,20 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
     _backgroundGate?.handleLifecycle(state);
   }
 
+  /// The page's hold on the app's sound: playing a replay hushes a live
+  /// window or the music the viewer left running.
+  void _holdSound() {
+    unawaited(
+      ref
+          .read(audioArbiterProvider.notifier)
+          .claim(AudioOwner(AudioOwnerKind.vod, 'huya-video:${widget.id}'), () => Future<void>.value(_handle?.pause())),
+    );
+  }
+
   @override
   void dispose() {
     _disposed = true;
+    ref.read(audioArbiterProvider.notifier).release(AudioOwner(AudioOwnerKind.vod, 'huya-video:${widget.id}'));
     _tipTimer?.cancel();
     _hideTimer?.cancel();
     _keySeekTimer?.cancel();

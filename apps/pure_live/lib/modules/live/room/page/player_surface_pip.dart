@@ -112,74 +112,51 @@ final class _PresentationCluster extends ConsumerWidget {
   }
 }
 
-/// The compact window's play/pause: a glass disc in the picture's middle,
-/// bigger than any bar button — the one verb a small window is watched for.
-/// It rides the chrome's visibility: hover wakes it, idleness puts it away.
-final class _PipCenterPlay extends ConsumerWidget {
-  const _PipCenterPlay({required this.room});
-
-  final RoomState room;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final playing = room.playback.playing;
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        // A small window's disc shrinks with it: a 64 px button in a 200 px
-        // window is a billboard, not a control.
-        final compact = constraints.maxWidth < 320;
-        final side = compact ? 40.0 : 64.0;
-        final glyph = compact ? 18.0 : 28.0;
-        return PlayerGlassPill(
-          child: DsPressable(
-            semanticLabel: playing ? context.t.player.pause : context.t.player.play,
-            onPressed: () => unawaited(ref.read(roomProvider.notifier).togglePlayPause()),
-            builder: (context, states, _) => Container(
-              width: side,
-              height: side,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: states.contains(WidgetState.hovered) ? _onVideoHover : null,
-              ),
-              child: Center(
-                child: SvgPicture.asset(
-                  playing ? 'assets/icons/pause.svg' : 'assets/icons/play.svg',
-                  width: glyph,
-                  height: glyph,
-                  colorFilter: const ColorFilter.mode(OnVideoColors.foreground, BlendMode.srcIn),
-                ),
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-}
-
-/// The compact window's transport: the window-fullscreen bar's own look at
-/// the picture's bottom edge — the sound and the flying layer's switch, the
-/// two verbs the watching hand reaches for, with the window's pin at the
-/// right corner. The play/pause lives in the picture's middle, the capture
-/// verbs in the top-right cluster, the way out at the top-left.
+/// The compact window's play/pause: one bar button among the transport, the
+/// same size the rest of the row wears — a window this small has no room for
+/// a second kind of control to learn.
+///
+/// (The big centre disc this button used to sit behind is gone: the window's
+/// whole chrome is the one bar now, and a disc in the picture's middle plus
+/// a row of buttons at its edge read as two different players.)
+///
+/// The compact window's transport: the window's only control row, at the
+/// picture's bottom edge. The way out leads, the transport follows, then the
+/// sound and the flying layer's switch, then the session verbs the bars
+/// carry on the full-size picture — a frame copy and the capture and the
+/// audio mode — with the window's pin at the end. A narrower window drops
+/// the level first, then the session verbs it has the least room for.
 final class _PipTransportBar extends ConsumerWidget {
-  const _PipTransportBar({required this.room});
+  const _PipTransportBar({required this.room, required this.onLeave, required this.onWake});
 
   final RoomState room;
+
+  /// The way back to the page: the compact window's leave verb.
+  final VoidCallback onLeave;
+
+  /// Resets the bars' auto-hide timer after a press.
+  final VoidCallback onWake;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
-    final room = this.room;
     final controller = ref.read(roomProvider.notifier);
     final muted = room.muted;
+    final playing = room.playback.playing;
+    final capture = room.handle;
+    final canShot = capture != null && capture.canCaptureScreenshot;
+    final task = roomRecordingTaskOf(ref.watch(recordingTasksProvider).tasks, room.room);
+    final recording = task?.state == RecordingTaskState.recording;
+    final audioOnly = room.audioOnly;
     final dmVisible = ref.watch(playbackSettingsProvider.select((settings) => settings.miniDanmakuVisible));
     final pinTop = ref.watch(playbackSettingsProvider.select((settings) => settings.windowsPipAlwaysOnTop));
     return LayoutBuilder(
       builder: (context, constraints) {
-        // A small window drops the level: the slider's thumb is wider than
-        // the verbs it sits between, and the mute pill still says sound.
+        // A small window drops the level first — the slider's thumb is wider
+        // than the verbs it sits between, and the mute pill still says sound
+        // — then the session verbs it has the least room for.
         final wide = constraints.maxWidth >= 320;
+        final roomy = constraints.maxWidth >= 260;
         return Container(
           padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s12, DsSpace.s8, DsSpace.s12, DsSpace.s8),
           decoration: BoxDecoration(
@@ -189,6 +166,19 @@ final class _PipTransportBar extends ConsumerWidget {
           child: Row(
             spacing: DsSpace.s4,
             children: [
+              PlayerGlassPill(
+                child: PlayerBarButton(icon: DsIcons.pictureInPicture2, label: t.player.pipOff, onPressed: onLeave),
+              ),
+              PlayerGlassPill(
+                child: PlayerBarButton(
+                  iconAsset: playing ? 'assets/icons/pause.svg' : 'assets/icons/play.svg',
+                  label: playing ? t.player.pause : t.player.play,
+                  onPressed: () {
+                    onWake();
+                    unawaited(controller.togglePlayPause());
+                  },
+                ),
+              ),
               PlayerGlassPill(
                 child: PlayerBarButton(
                   icon: muted ? DsIcons.volumeX : DsIcons.volume2,
@@ -218,6 +208,49 @@ final class _PipTransportBar extends ConsumerWidget {
                       unawaited(ref.read(playbackSettingsProvider.notifier).setMiniDanmakuVisible(value: !dmVisible)),
                 ),
               ),
+              if (roomy && canShot)
+                PlayerGlassPill(
+                  child: PlayerBarButton(
+                    icon: DsIcons.camera,
+                    label: t.player.screenshot,
+                    onPressed: () {
+                      onWake();
+                      if (!capture.canCaptureScreenshot) return;
+                      unawaited(takeRoomScreenshot(context, ref, capture));
+                    },
+                  ),
+                ),
+              if (recording)
+                PlayerGlassPill(
+                  child: RecordingIndicator(
+                    startedAt: task?.startedAt,
+                    label: t.room.stopRecording,
+                    onStop: () => unawaited(toggleRoomRecording(context, ref)),
+                  ),
+                )
+              else if (roomy)
+                PlayerGlassPill(
+                  child: PlayerBarButton(
+                    icon: DsIcons.disc,
+                    label: t.room.record,
+                    onPressed: () {
+                      onWake();
+                      unawaited(toggleRoomRecording(context, ref));
+                    },
+                  ),
+                ),
+              if (roomy)
+                PlayerGlassPill(
+                  child: PlayerBarButton(
+                    icon: audioOnly ? DsIcons.video : DsIcons.headphones,
+                    label: audioOnly ? t.player.restoreVideo : t.player.audioOnlyMode,
+                    selected: audioOnly,
+                    onPressed: () {
+                      onWake();
+                      unawaited(controller.setAudioOnly(value: !audioOnly));
+                    },
+                  ),
+                ),
               const Spacer(),
               // The window's pin: live on the host, remembered for the next
               // entry.

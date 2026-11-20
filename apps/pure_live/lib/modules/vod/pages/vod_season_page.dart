@@ -276,9 +276,23 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
     }
   }
 
+  /// The page's hold on the app's sound: playing an episode hushes a live
+  /// window or the music the viewer left running.
+  void _holdSound() {
+    unawaited(
+      ref
+          .read(audioArbiterProvider.notifier)
+          .claim(
+            AudioOwner(AudioOwnerKind.vod, 'vod-season:${widget.seasonId}'),
+            () => Future<void>.value(_handle?.pause()),
+          ),
+    );
+  }
+
   @override
   void dispose() {
     _disposed = true;
+    ref.read(audioArbiterProvider.notifier).release(AudioOwner(AudioOwnerKind.vod, 'vod-season:${widget.seasonId}'));
     // The page's last position lands through the captured writer and
     // ladder; no `ref` read below this line.
     _savePosition(force: true);
@@ -405,6 +419,7 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
       }
       _handle = handle;
       _bind(handle);
+      _holdSound();
       // A playing mini window belongs to the episode the viewer just left;
       // a new one here supersedes it (its close path checkpoints the old).
       FloatingVideoWindow.dismiss();

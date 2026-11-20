@@ -3,6 +3,7 @@
 /// verb.
 library;
 
+export 'audio_arbiter.dart';
 export 'live_ingest.dart';
 export 'media_session_providers.dart';
 export 'player_backend_providers.dart';

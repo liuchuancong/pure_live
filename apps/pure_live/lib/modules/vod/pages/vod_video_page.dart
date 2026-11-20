@@ -364,9 +364,23 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
     unawaited((hold ? _screenAwake.enable() : _screenAwake.disable()).catchError((Object _) {}));
   }
 
+  /// The page's hold on the app's sound: playing a video hushes a live
+  /// window or the music the viewer left running.
+  void _holdSound() {
+    unawaited(
+      ref
+          .read(audioArbiterProvider.notifier)
+          .claim(
+            AudioOwner(AudioOwnerKind.vod, 'vod-video:${widget.bvid}'),
+            () => Future<void>.value(_handle?.pause()),
+          ),
+    );
+  }
+
   @override
   void dispose() {
     _disposed = true;
+    ref.read(audioArbiterProvider.notifier).release(AudioOwner(AudioOwnerKind.vod, 'vod-video:${widget.bvid}'));
     unawaited(_screenAwake.disable().catchError((Object _) {}));
     // The player goes quiet before anything else: the route's leave animation
     // runs while the release's queue drains, and the video must not be heard
@@ -584,6 +598,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
       }
       _handle = handle;
       _bind(handle);
+      _holdSound();
       // A playing mini window belongs to the video the viewer just left; a
       // new one here supersedes it (its close path checkpoints the old one).
       FloatingVideoWindow.dismiss();

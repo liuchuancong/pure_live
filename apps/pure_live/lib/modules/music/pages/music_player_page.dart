@@ -39,6 +39,12 @@ import 'package:pure_live/shared/shared.dart' show LiveWindow, cachedImage, play
 import 'package:pure_live/shared/widgets/app_dialog.dart';
 import 'package:pure_live/shared/widgets/app_panel.dart';
 
+/// The speeds the module's playback menu offers, the dock's own chip too.
+const List<double> _musicRates = [0.5, 0.75, 1, 1.25, 1.5, 2];
+
+/// The sleep timer's minute steps.
+const List<int> _musicSleepMinutes = [15, 30, 45, 60, 90];
+
 /// The module's player page: the song at listening size, its transport, and
 /// the queue behind it — the reference's PlayDetail, with the module's own
 /// artwork and controls rather than the video players'.
@@ -455,9 +461,7 @@ final class _PlayerMenu extends ConsumerStatefulWidget {
 }
 
 final class _PlayerMenuState extends ConsumerState<_PlayerMenu> {
-  static const List<double> _rates = [0.5, 0.75, 1, 1.25, 1.5, 2];
   static const List<int> _offsets = [-2000, -1500, -1000, -500, 0, 500, 1000, 1500, 2000];
-  static const List<int> _sleepMinutes = [15, 30, 45, 60, 90];
 
   String _offsetLabel(Translations t, int ms) {
     if (ms == 0) return t.music.lyricOffsetReset;
@@ -657,7 +661,7 @@ final class _PlayerMenuState extends ConsumerState<_PlayerMenu> {
               checked: sleepRemaining == null && !pauseAfter,
               onPressed: () => controller.setSleepTimer(null),
             ),
-            for (final minutes in _sleepMinutes)
+            for (final minutes in _musicSleepMinutes)
               DsMenuItem(
                 label: Text(t.music.sleepMinutes(count: minutes)),
                 onPressed: () => controller.setSleepTimer(Duration(minutes: minutes)),
@@ -678,7 +682,7 @@ final class _PlayerMenuState extends ConsumerState<_PlayerMenu> {
             DsMenuItem.submenu(
               label: Text('${t.music.playbackRate} · ${playerRateLabel(currentRate)}'),
               submenu: [
-                for (final rate in _rates)
+                for (final rate in _musicRates)
                   DsMenuItem(
                     label: Text(playerRateLabel(rate)),
                     checked: (currentRate - rate).abs() < 0.001,
@@ -1121,8 +1125,18 @@ final class _TransportBarState extends ConsumerState<_TransportBar> {
     // revision, a volume echo — rebuilds nothing here. The track stays
     // nullable: clearing the queue fires this selector before the page above
     // can rebuild.
-    final (track, duration, mode, playing) = ref.watch(
-      musicPlayerProvider.select((state) => (state.track, state.duration, state.mode, state.playing)),
+    final (track, duration, mode, playing, sleepRemaining, pauseAfter, currentRate) = ref.watch(
+      musicPlayerProvider.select(
+        (state) => (
+          state.track,
+          state.duration,
+          state.mode,
+          state.playing,
+          state.sleepTimerRemaining,
+          state.pauseAfterCurrentTrack,
+          state.rate,
+        ),
+      ),
     );
     final controller = ref.read(musicPlayerProvider.notifier);
     // A switch to another song retires the drag in progress: the held
@@ -1223,64 +1237,155 @@ final class _TransportBarState extends ConsumerState<_TransportBar> {
       onPressed: () => unawaited(favouriteController.toggle(track)),
       icon: DsIcon(DsIcons.heart, color: loved ? colors.accent : null, fill: loved),
     );
-    // The dock floats on the song's own backdrop: the blurred cover runs
-    // behind the verbs, so a surface slab here would cut the page into a
-    // picture and a control panel — the reference's play bar sits on the
-    // artwork, not on a card.
+    // The dock's own verbs, lifted out of the ⋯ menu: the speed a chip that
+    // says what it sets, the sleep timer a menu whose mark shows when it is
+    // armed, the effect centre one press away. The menu keeps the long tail
+    // (devices, lyric tools, pitch).
+    final speedMenu = DsMenuAnchor(
+      semanticLabel: t.music.playbackRate,
+      align: DsAlign.end,
+      items: [
+        for (final rate in _musicRates)
+          DsMenuItem(
+            label: Text(playerRateLabel(rate)),
+            checked: (currentRate - rate).abs() < 0.001,
+            onPressed: () => unawaited(controller.setRate(rate)),
+          ),
+      ],
+      builder: (context, menu, _) => DsButton.icon(
+        variant: DsButtonVariant.ghost,
+        size: DsSize.lg,
+        semanticLabel: t.music.playbackRate,
+        onPressed: menu.toggle,
+        icon: DsIcon(DsIcons.timer, color: currentRate == 1 ? null : colors.accent),
+      ),
+    );
+    final sleepMenu = DsMenuAnchor(
+      semanticLabel: t.music.sleepTimer,
+      align: DsAlign.end,
+      items: [
+        DsMenuItem(
+          label: Text(t.music.sleepOff),
+          checked: sleepRemaining == null && !pauseAfter,
+          onPressed: () => controller.setSleepTimer(null),
+        ),
+        for (final minutes in _musicSleepMinutes)
+          DsMenuItem(
+            label: Text(t.music.sleepMinutes(count: minutes)),
+            onPressed: () => controller.setSleepTimer(Duration(minutes: minutes)),
+          ),
+        DsMenuItem(
+          label: Text(t.music.sleepAfterCurrent),
+          checked: pauseAfter,
+          onPressed: () => controller.setPauseAfterCurrentTrack(enabled: !pauseAfter),
+        ),
+      ],
+      builder: (context, menu, _) => DsButton.icon(
+        variant: DsButtonVariant.ghost,
+        size: DsSize.lg,
+        semanticLabel: t.music.sleepTimer,
+        onPressed: menu.toggle,
+        icon: DsIcon(DsIcons.alarm, color: sleepRemaining == null && !pauseAfter ? null : colors.accent),
+      ),
+    );
+    final effects = DsButton.icon(
+      variant: DsButtonVariant.ghost,
+      size: DsSize.lg,
+      semanticLabel: t.music.eqCenter,
+      onPressed: () => unawaited(context.push(RouteNames.musicEffects)),
+      icon: const DsIcon(DsIcons.audioLines),
+    );
+    // The dock on its own slab: the verbs read as one instrument panel — the
+    // blurred cover runs behind it, the card keeps them from drifting over
+    // the artwork like loose buttons.
     return Padding(
       padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s16, 0, DsSpace.s16, DsSpace.s12),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        spacing: DsSpace.s4,
-        children: [
-          // The engine's own taps as a quiet strip tight above the seek —
-          // where the reference keeps its spectrum: a band that breathes
-          // with the song, not a wall under the stage.
-          const MusicSpectrum(),
-          seek,
-          LayoutBuilder(
-            builder: (context, constraints) {
-              // Equal flanks put the movement verbs at the page's own centre:
-              // the song's heart reads from the left, the sound from the
-              // right, and a phone leaves the volume to its hardware keys.
-              return Row(
-                children: [
-                  Expanded(
-                    child: Align(alignment: AlignmentDirectional.centerStart, child: favourite),
-                  ),
-                  transport,
-                  Expanded(
-                    child: Align(
-                      alignment: AlignmentDirectional.centerEnd,
-                      child: constraints.maxWidth < 600
-                          ? const SizedBox.shrink()
-                          : ConstrainedBox(
-                              // The reference's volume walks a short rail —
-                              // a 180 slider read as a second seek line
-                              // under the real one.
-                              constraints: const BoxConstraints(maxWidth: 120),
-                              child: Consumer(
-                                builder: (context, ref, _) {
-                                  final (volume, muted) = ref.watch(
-                                    musicPlayerProvider.select((state) => (state.volume, state.muted)),
-                                  );
-                                  return _Volume(
-                                    volume: volume,
-                                    muted: muted,
-                                    onVolume: (value) => unawaited(controller.setVolume(value)),
-                                    onMute: () => unawaited(controller.setMuted(muted: !muted)),
-                                  );
-                                },
-                              ),
-                            ),
-                    ),
-                  ),
-                ],
-              );
-            },
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: colors.surface.withValues(alpha: 0.72),
+          border: Border.all(color: colors.border),
+          borderRadius: BorderRadius.circular(theme.radii.card),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(DsSpace.s16, DsSpace.s8, DsSpace.s16, DsSpace.s12),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            spacing: DsSpace.s4,
+            children: [
+              // The engine's own taps as a quiet strip tight above the seek —
+              // where the reference keeps its spectrum: a band that breathes
+              // with the song, not a wall under the stage.
+              const MusicSpectrum(),
+              seek,
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  // Equal flanks put the movement verbs at the page's own
+                  // centre: the song's heart reads from the left, the sound
+                  // and the lifted verbs from the right, and a narrow dock
+                  // keeps only the sound at hand — the three verbs wait in
+                  // the ⋯ menu, where they came from.
+                  final dockWide = constraints.maxWidth >= 600;
+                  return Row(
+                    children: [
+                      Expanded(
+                        child: Align(alignment: AlignmentDirectional.centerStart, child: favourite),
+                      ),
+                      transport,
+                      Expanded(
+                        child: Align(
+                          alignment: AlignmentDirectional.centerEnd,
+                          child: dockWide
+                              ? Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  spacing: DsSpace.s4,
+                                  children: [
+                                    speedMenu,
+                                    sleepMenu,
+                                    effects,
+                                    ConstrainedBox(
+                                      // The reference's volume walks a short
+                                      // rail — a 180 slider read as a second
+                                      // seek line under the real one.
+                                      constraints: const BoxConstraints(maxWidth: 120),
+                                      child: Consumer(
+                                        builder: (context, ref, _) {
+                                          final (volume, muted) = ref.watch(
+                                            musicPlayerProvider.select((state) => (state.volume, state.muted)),
+                                          );
+                                          return _Volume(
+                                            volume: volume,
+                                            muted: muted,
+                                            onVolume: (value) => unawaited(controller.setVolume(value)),
+                                            onMute: () => unawaited(controller.setMuted(muted: !muted)),
+                                          );
+                                        },
+                                      ),
+                                    ),
+                                  ],
+                                )
+                              : Consumer(
+                                  builder: (context, ref, _) {
+                                    final (volume, muted) = ref.watch(
+                                      musicPlayerProvider.select((state) => (state.volume, state.muted)),
+                                    );
+                                    return _Volume(
+                                      volume: volume,
+                                      muted: muted,
+                                      onVolume: (value) => unawaited(controller.setVolume(value)),
+                                      onMute: () => unawaited(controller.setMuted(muted: !muted)),
+                                    );
+                                  },
+                                ),
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

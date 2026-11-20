@@ -1476,7 +1476,22 @@ final class RoomController extends Notifier<RoomState> {
 
   /// Pauses (the sleep timer's stop; never resumes a paused room).
   Future<void> pause() async {
+    _syncSoundHold(playing: false);
     await _playback?.pause();
+  }
+
+  /// The room's entry in the app's sound table. Playing holds it — a claim
+  /// from another kind of player hushes this room — and stopping lets it go.
+  void _syncSoundHold({required bool playing}) {
+    final room = state.room;
+    if (room == null) return;
+    final arbiter = ref.read(audioArbiterProvider.notifier);
+    final owner = AudioOwner(AudioOwnerKind.live, room.ref.identityKey);
+    if (playing) {
+      unawaited(arbiter.claim(owner, () => Future<void>.value(_playback?.pause())));
+    } else {
+      arbiter.release(owner);
+    }
   }
 
   /// Pauses or resumes.
@@ -1550,6 +1565,10 @@ final class RoomController extends Notifier<RoomState> {
   /// stream, which is exactly why the page must say when it is done.
   Future<void> close() async {
     _teardown();
+    final room = state.room;
+    if (room != null) {
+      ref.read(audioArbiterProvider.notifier).release(AudioOwner(AudioOwnerKind.live, room.ref.identityKey));
+    }
     state = _initial();
     _queueAutoSwitchSync();
     ref.read(roomChatProvider.notifier).clear();
@@ -2041,6 +2060,9 @@ final class RoomController extends Notifier<RoomState> {
     final playback = _playback ??= _openSession(capability, room);
     _states ??= playback.onStateChanged.listen((playback_) {
       state = _with(playback: playback_);
+      // The room's hold on the sound follows its own playing state: starting
+      // claims it (hushing the other kinds' holders), stopping lets go.
+      _syncSoundHold(playing: playback_.playing);
       // A recovery that landed spends the open's failure verdict: the room
       // plays, so the follow-walking switch has nothing to act on.
       if (playback_.playing) {

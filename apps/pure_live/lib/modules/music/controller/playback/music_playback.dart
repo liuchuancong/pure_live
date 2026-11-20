@@ -20,7 +20,8 @@ import 'package:media_core_mpv_audio/media_core_mpv_audio.dart'
         MpvAudioPlayerAdapter,
         PcmFrame,
         kMpvAudioBackendId;
-import 'package:pure_live/app/app.dart' show playerKernelProvider, selectedModuleProvider;
+import 'package:pure_live/app/app.dart'
+    show AudioOwner, AudioOwnerKind, audioArbiterProvider, playerKernelProvider, selectedModuleProvider;
 import 'package:pure_live/app/logging/app_log.dart' show appLog;
 import 'package:pure_live/app/providers/boot/storage_providers.dart' show appPathsProvider;
 import 'package:pure_live/app/providers/network/network_providers.dart' show networkFactoryProvider;
@@ -828,6 +829,23 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
 
     _queueEpoch++;
     await _audio.playTrack(track);
+    _holdSound();
+  }
+
+  /// The engine's hold on the app's sound: a song starting claims it —
+  /// hushing a live window or a take the viewer left running — and a pause
+  /// lets it go. The pause verb is the engine's own, so a hush lands on
+  /// whatever the engine holds when it lands.
+  static const AudioOwner _soundOwner = AudioOwner(AudioOwnerKind.music, 'music');
+
+  void _holdSound({bool? playing}) {
+    final arbiter = ref.read(audioArbiterProvider.notifier);
+    final isPlaying = playing ?? ref.read(musicPlayerProvider).playing;
+    if (isPlaying) {
+      unawaited(arbiter.claim(_soundOwner, () => Future<void>.value(_audio.pause())));
+    } else {
+      arbiter.release(_soundOwner);
+    }
   }
 
   /// Plays the queue entry at [index].
@@ -843,6 +861,7 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
     }
 
     await _audio.playAt(index);
+    _holdSound();
   }
 
   /// Whether [tracks] is the queue already in place (same songs, same order).
@@ -865,11 +884,20 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
   /// Puts [track] right after the current one.
   Future<void> playNext(audio.MusicTrack track) => _audio.playTrack(track, insertNext: true);
 
-  Future<void> toggle() => _audio.toggle();
+  Future<void> toggle() async {
+    await _audio.toggle();
+    _holdSound();
+  }
 
-  Future<void> next() => _audio.next();
+  Future<void> next() async {
+    await _audio.next();
+    _holdSound();
+  }
 
-  Future<void> previous() => _audio.previous();
+  Future<void> previous() async {
+    await _audio.previous();
+    _holdSound();
+  }
 
   Future<void> seek(Duration position) => _audio.seek(position);
 

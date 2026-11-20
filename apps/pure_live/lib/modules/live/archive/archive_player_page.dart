@@ -164,6 +164,23 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> wit
   /// The rate ladder the bar lists; the keyboard walks it step by step.
   static const _speedChoices = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0];
 
+  /// The page's hold on the app's sound: opening a replay hushes a live
+  /// window or the music engine the viewer left running. The pause verb
+  /// reads the field, so a hush lands on whatever engine the page holds.
+  void _holdSound() {
+    unawaited(
+      ref
+          .read(audioArbiterProvider.notifier)
+          .claim(AudioOwner(AudioOwnerKind.archive, _soundId()), () => Future<void>.value(_handle?.pause())),
+    );
+  }
+
+  /// The replay's identity in the sound table.
+  String _soundId() {
+    final request = widget.request;
+    return request == null ? 'archive' : (request.douyu?.id ?? request.huya?.id ?? request.soop?.id ?? request.title);
+  }
+
   @override
   void initState() {
     super.initState();
@@ -218,6 +235,7 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> wit
         return;
       }
       _handle = handle;
+      _holdSound();
       final http = ref.read(networkFactoryProvider).create(profile: ClientProfile.api);
       final soop = request.soop;
       final huya = request.huya;
@@ -341,6 +359,7 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> wit
   @override
   void dispose() {
     _disposed = true;
+    ref.read(audioArbiterProvider.notifier).release(AudioOwner(AudioOwnerKind.archive, _soundId()));
     _tipTimer?.cancel();
     _hideTimer?.cancel();
     _keySeekTimer?.cancel();

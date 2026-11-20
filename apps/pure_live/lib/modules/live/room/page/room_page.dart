@@ -1,6 +1,5 @@
 import 'dart:async' show StreamSubscription, Timer, unawaited;
 import 'dart:math' as math;
-import 'dart:ui' show clampDouble;
 
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform, kIsWeb;
@@ -939,6 +938,50 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
               .toDouble()
         : 0.0;
 
+    // The picture with the chat down the right edge: the wide room's
+    // arrangement, shared with the compact desktop window whose landscape
+    // stream used to park the talk under the picture. The column's width
+    // is the chat setting's own; the seam's drag previews it, the
+    // gesture's end stores it, and a double-tap puts the default back.
+    Widget rightChatColumnRoom() {
+      final mediaWidth = MediaQuery.sizeOf(context).width;
+      final columnMaxWidth = math.max(kChatPanelWidthMin, math.min(kChatPanelWidthMax, mediaWidth - _wideStageFloor));
+      final columnWidth = ref.watch(chatPanelWidthProvider).clamp(kChatPanelWidthMin, columnMaxWidth);
+      // A room that owns the window (window fullscreen) fills it with
+      // the picture alone — no docked chat column.
+      final columnOpen = !ownsWindow && !chatCollapsed;
+      // The room reads like the live sites: the picture fills the
+      // content area edge to edge, the chat down the right, and the
+      // room's facts ride the bar above — no card, no inset. The chat
+      // column folds and unfolds from the bar's toggle only; the
+      // picture keeps no floating sidebar button of its own.
+      final stage = ColoredBox(color: kPlayerStageColor, child: playerWith());
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(child: stage),
+          if (columnOpen) ...[
+            ChatSplitter(
+              width: columnWidth,
+              minWidth: kChatPanelWidthMin,
+              maxWidth: columnMaxWidth,
+              onResize: ref.read(chatPanelWidthProvider.notifier).preview,
+              onResizeEnd: (value) => unawaited(ref.read(chatPanelWidthProvider.notifier).set(value)),
+              onReset: () => unawaited(ref.read(chatPanelWidthProvider.notifier).set(kChatPanelWidthDefault)),
+              label: t.room.chatColumnWidth,
+            ),
+            SizedBox(
+              width: columnWidth,
+              // The column is the panel's own: its tabs lead it, and
+              // the identity lives once, in the bar above — the
+              // redesign's single-owner rule for the anchor's card.
+              child: const RoomChatPanel(),
+            ),
+          ],
+        ],
+      );
+    }
+
     final body = _portraitFullscreen
         ? _buildPortraitFullscreen(
             context,
@@ -1053,66 +1096,19 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
                     ),
                   );
                 }
-                // The reference's own compact column (the fCompact shape): the
-                // picture takes what the panel leaves, the grip drags the panel
-                // between its three stops, and the panel is the facts row over
-                // the chat with the docks' chips at its foot. A pull past the
-                // lowest stop — or a downward flick — hands the room to its
-                // portrait full screen.
-                return _CompactRoomBody(
-                  player: playerWith(),
-                  ratio: pictureRatio,
-                  chat: const RoomChatPanel(),
-                  onPortraitFullscreen: _enterFullscreen,
-                );
+                // The compact desktop window keeps the wide room's own
+                // arrangement (see rightChatColumnRoom above): a landscape
+                // stream's talk hangs down the right edge, where a danmaku
+                // list is readable, instead of a sheet under the picture.
+                return rightChatColumnRoom();
               }
               // 宽屏桌面：像直播站本站一样的满铺排版。画面贴边占满内容区，
               // 聊天列沿右缘（宽度由聊天设置保管，可拖可折），房间的事实在
               // 顶上的应用栏（返回、标题、关注与房间菜单）；弹幕流模式或
-              // 收起的聊天列让画面独占整行。
-              if (!tv) {
-                final columnMaxWidth = math.max(
-                  kChatPanelWidthMin,
-                  math.min(kChatPanelWidthMax, constraints.maxWidth - _wideStageFloor),
-                );
-                // The column's width is the chat setting's own: the seam's
-                // drag previews it, the gesture's end stores it, and a
-                // double-tap puts the default back.
-                final columnWidth = ref.watch(chatPanelWidthProvider).clamp(kChatPanelWidthMin, columnMaxWidth);
-                // A room that owns the window (window fullscreen) fills it with
-                // the picture alone — no docked chat column.
-                final columnOpen = !ownsWindow && !chatCollapsed;
-                // The wide room reads like the live sites: the picture fills the
-                // content area edge to edge, the chat down the right, and the
-                // room's facts ride the bar above — no card, no inset. The chat
-                // column folds and unfolds from the bar's toggle only; the
-                // picture keeps no floating sidebar button of its own.
-                final stage = ColoredBox(color: kPlayerStageColor, child: playerWith());
-                return Row(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Expanded(child: stage),
-                    if (columnOpen) ...[
-                      ChatSplitter(
-                        width: columnWidth,
-                        minWidth: kChatPanelWidthMin,
-                        maxWidth: columnMaxWidth,
-                        onResize: ref.read(chatPanelWidthProvider.notifier).preview,
-                        onResizeEnd: (value) => unawaited(ref.read(chatPanelWidthProvider.notifier).set(value)),
-                        onReset: () => unawaited(ref.read(chatPanelWidthProvider.notifier).set(kChatPanelWidthDefault)),
-                        label: t.room.chatColumnWidth,
-                      ),
-                      SizedBox(
-                        width: columnWidth,
-                        // The column is the panel's own: its tabs lead it, and
-                        // the identity lives once, in the bar above — the
-                        // redesign's single-owner rule for the anchor's card.
-                        child: const RoomChatPanel(),
-                      ),
-                    ],
-                  ],
-                );
-              }
+              // 收起的聊天列让画面独占整行。窄窗（600–840）的横屏流也是
+              // 这个排版——弹幕列表挂在右缘，而不是把谈话压成画面底部的
+              // 一条：一个读弹幕的人要的是一张竖着的清单，不是一条横幅。
+              if (!tv) return rightChatColumnRoom();
               // TV 房间保持满铺舞台与浮动玻璃列：遥控没有指针去唤卡片，
               // 双栏卡片是给有指针的桌面准备的。标题玻璃是画面左上的浮层，
               // 弹幕列是右缘可折叠的浮层——折叠后只剩画面和一个展开按钮，
