@@ -161,6 +161,20 @@ final class VodPlaybackSettings {
     longPressSpeed: longPressSpeed ?? this.longPressSpeed,
     seekPreview: seekPreview ?? this.seekPreview,
   );
+
+  @override
+  bool operator ==(Object other) =>
+      other is VodPlaybackSettings &&
+      other.speed == speed &&
+      other.finish == finish &&
+      other.showDetails == showDetails &&
+      other.apiType == apiType &&
+      other.skipHeadTail == skipHeadTail &&
+      other.longPressSpeed == longPressSpeed &&
+      other.seekPreview == seekPreview;
+
+  @override
+  int get hashCode => Object.hash(speed, finish, showDetails, apiType, skipHeadTail, longPressSpeed, seekPreview);
 }
 
 /// The keys the choices are kept under.
