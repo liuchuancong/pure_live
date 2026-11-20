@@ -341,7 +341,17 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
       return RoomCardMenu(
         room: room,
         onOpen: open,
-        child: RoomCard(room: room, listRow: listRow, tags: names, onOpen: open, livePreview: true),
+        child: RoomCard(
+          room: room,
+          listRow: listRow,
+          tags: names,
+          onOpen: open,
+          livePreview: true,
+          // Every room here is followed by definition, so the per-card
+          // heart would repeat the page's premise on every tile; the
+          // card's menu keeps unfollow.
+          showFollowState: false,
+        ),
       );
     }
 

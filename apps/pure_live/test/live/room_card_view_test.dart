@@ -66,6 +66,32 @@ void main() {
     expect(find.text('An evening of quiet games'), findsOneWidget);
     expect(find.text('1234'), findsOneWidget);
     expect(find.text('Douyu'), findsOneWidget);
+    // The followed heart is the solid one, in the theme's vivid status red —
+    // the colour travels on the corner button's foreground, not the glyph.
+    final heart = tester.widget<DsIcon>(
+      find.byWidgetPredicate((widget) => widget is DsIcon && widget.icon == DsIcons.heart),
+    );
+    expect(heart.fill, isTrue);
+    final button = tester.widget<DsButton>(find.byType(DsButton));
+    expect(button.style?.foreground, DsTheme.colorsOf(tester.element(find.byType(DsButton).first)).danger.signal);
+  });
+
+  testWidgets('a page whose premise is the followed state draws no heart', (tester) async {
+    await show(
+      tester,
+      RoomCardView(
+        room: room('Followed anyway'),
+        visibility: RoomCardVisibility.standard,
+        figure: 12,
+        followed: true,
+        showFollowState: false,
+        platformIcon: const SizedBox.shrink(),
+        platformName: 'Douyu',
+        listRow: true,
+      ),
+    );
+    expect(find.text('Followed anyway'), findsOneWidget);
+    expect(find.byWidgetPredicate((widget) => widget is DsIcon && widget.icon == DsIcons.heart), findsNothing);
   });
 
   testWidgets('the visibility the caller passes decides what the grid shows', (tester) async {

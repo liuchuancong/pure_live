@@ -19,9 +19,11 @@ import 'package:pure_live/shared/shared.dart';
 /// The grid tile leads with the cover: the platform's mark and name in a pill
 /// in its top-left corner, the room's category in the bottom-left chip and
 /// the audience figure in the bottom-right one. The top-right corner holds
-/// the red heart of a followed room — an unfollowed room says nothing there —
-/// and the one state a feed cannot assume, a recording. A page that lists its
-/// own rooms puts its ✕ there instead of the heart. Beneath the cover the
+/// the solid red heart of a followed room — an unfollowed room says nothing
+/// there, and a page whose whole list is the followed state draws no heart
+/// at all ([showFollowState]) — and the one state a feed cannot assume, a
+/// recording. A page that lists its own rooms puts its ✕ there instead of
+/// the heart. Beneath the cover the
 /// title keeps one line, then the anchor beside the avatar. The list row drops
 /// the cover altogether: the streamer's avatar leads and the title, the
 /// streamer and the audience fill three lines beside it.
@@ -66,6 +68,7 @@ final class RoomCard extends ConsumerWidget {
     this.removeLabel,
     this.hoverReveal = true,
     this.livePreview = false,
+    this.showFollowState = true,
     super.key,
   });
 
@@ -109,6 +112,11 @@ final class RoomCard extends ConsumerWidget {
   /// the cover. The list row has no cover and takes no preview.
   final bool livePreview;
 
+  /// Whether the followed heart is drawn at all. False on the page whose
+  /// whole list is the followed state — the follows page — where the per
+  /// card heart would repeat the page's premise on every tile.
+  final bool showFollowState;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // Everything the card draws that is a fact about the app — the saved
@@ -142,6 +150,7 @@ final class RoomCard extends ConsumerWidget {
       removeLabel: removeLabel,
       hoverReveal: hoverReveal,
       livePreview: livePreview,
+      showFollowState: showFollowState,
       visibility: visibility,
       figure: figure,
       followed: followed,
@@ -177,6 +186,7 @@ final class RoomCardView extends StatelessWidget {
     this.removeLabel,
     this.hoverReveal = true,
     this.livePreview = false,
+    this.showFollowState = true,
     super.key,
   });
 
@@ -230,6 +240,9 @@ final class RoomCardView extends StatelessWidget {
   /// the cover. The list row has no cover and takes no preview.
   final bool livePreview;
 
+  /// Whether the followed heart is drawn at all; see [RoomCard].
+  final bool showFollowState;
+
   @override
   Widget build(BuildContext context) {
     final title = room.content.title;
@@ -261,6 +274,7 @@ final class RoomCardView extends StatelessWidget {
         followed: followed,
         onFollow: onFollow,
         removeButton: removeButton,
+        showFollowState: showFollowState,
         visibility: visibility,
         onOpen: onOpen,
       );
@@ -276,6 +290,7 @@ final class RoomCardView extends StatelessWidget {
       figure: figure,
       followed: followed,
       onFollow: onFollow,
+      showFollowState: showFollowState,
       platformIcon: platformIcon,
       platformName: platformName,
       showsState: showsState,
@@ -313,6 +328,7 @@ final class _GridTile extends StatefulWidget {
     required this.onOpen,
     required this.hoverReveal,
     required this.livePreview,
+    required this.showFollowState,
   });
 
   final LiveRoom room;
@@ -325,6 +341,7 @@ final class _GridTile extends StatefulWidget {
   final int? figure;
   final bool followed;
   final VoidCallback? onFollow;
+  final bool showFollowState;
   final Widget? platformIcon;
   final String platformName;
   final bool showsState;
@@ -465,7 +482,7 @@ final class _GridTileState extends State<_GridTile> with CoverPreviewDwell<_Grid
                           // so the resident piece never moves.
                           if (widget.removeButton != null)
                             _reveal(widget.removeButton!)
-                          else if (widget.followed)
+                          else if (widget.followed && widget.showFollowState)
                             _reveal(_FollowButton(onPressed: widget.onFollow)),
                           if (widget.showsState) pill,
                         ],
@@ -605,6 +622,7 @@ final class _ListRow extends StatelessWidget {
     required this.followed,
     required this.onFollow,
     required this.removeButton,
+    required this.showFollowState,
     required this.visibility,
     required this.onOpen,
   });
@@ -619,6 +637,7 @@ final class _ListRow extends StatelessWidget {
   final bool followed;
   final VoidCallback? onFollow;
   final Widget? removeButton;
+  final bool showFollowState;
   final RoomCardVisibility visibility;
   final VoidCallback? onOpen;
 
@@ -702,7 +721,10 @@ final class _ListRow extends StatelessWidget {
                   ],
                 ),
               ),
-              if (removeButton != null) removeButton! else if (followed) _FollowButton(onPressed: onFollow),
+              if (removeButton != null)
+                removeButton!
+              else if (followed && showFollowState)
+                _FollowButton(onPressed: onFollow),
             ],
           ),
         ),
@@ -711,8 +733,9 @@ final class _ListRow extends StatelessWidget {
   }
 }
 
-/// The card's heart, drawn only while the room is followed: a red glyph over
-/// the cover, and the press lets the room go.
+/// The card's heart, drawn only while the room is followed: a filled heart
+/// in the theme's vivid status red over the cover, and the press lets the
+/// room go.
 final class _FollowButton extends StatelessWidget {
   const _FollowButton({required this.onPressed});
 
@@ -721,7 +744,8 @@ final class _FollowButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) => _CornerButton(
     icon: DsIcons.heart,
-    color: DsTheme.colorsOf(context).danger.fill,
+    fill: true,
+    color: DsTheme.colorsOf(context).danger.signal,
     semanticLabel: context.t.favorites.unfollow,
     onPressed: onPressed,
   );
@@ -755,12 +779,17 @@ final class _CornerButton extends StatelessWidget {
     required this.semanticLabel,
     required this.onPressed,
     this.color = OnVideoColors.foreground,
+    this.fill = false,
   });
 
   final DsIconData icon;
   final String semanticLabel;
   final VoidCallback? onPressed;
   final Color color;
+
+  /// Whether the glyph draws solid — a heart holding the followed state is,
+  /// an ✕ is not.
+  final bool fill;
 
   @override
   Widget build(BuildContext context) {
@@ -770,7 +799,7 @@ final class _CornerButton extends StatelessWidget {
       semanticLabel: semanticLabel,
       size: DsSize.xs,
       variant: DsButtonVariant.ghost,
-      icon: DsIcon(icon),
+      icon: DsIcon(icon, fill: fill),
       style: DsButtonStyle(
         height: theme.sizes.xs,
         padding: EdgeInsets.zero,
