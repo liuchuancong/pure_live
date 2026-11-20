@@ -353,9 +353,9 @@ final class _MultiviewPageState extends ConsumerState<MultiviewPage> {
     );
   }
 
-  /// The page's toolbar: the arrangements as drawn thumbnails, the pill
-  /// naming the pane that owns the sound, and — once a pane plays — mute-all
-  /// and pause-all, with the add action at the row's right end. A narrow
+  /// The page's toolbar: the arrangements, the pill naming the pane that
+  /// owns the sound, and — once a pane plays — mute-all and pause-all, with
+  /// the danmaku hint and the add action at the row's right end. A narrow
   /// window folds everything into the shell's head-line more menu.
   Widget _header(
     MultiviewState wall,
@@ -365,13 +365,19 @@ final class _MultiviewPageState extends ConsumerState<MultiviewPage> {
     required String? audibleName,
   }) {
     final t = context.t;
+    final colors = DsTheme.colorsOf(context);
+    final theme = DsTheme.of(context);
     final controls = ref.read(multiviewPlaybackProvider.notifier);
     final selected = playback.selected;
     // The app-wide mute is a second reason the wall can be silent; the
     // button reflects either and clears both in one press.
     final globallyMuted = ref.watch(playbackSettingsProvider.select((settings) => settings.globalMute));
     final wallMuted = playback.allMuted || globallyMuted;
-    final layout = _LayoutPicker(
+    final layout = DsSegmentedControl<MultiviewLayout>(
+      segments: [
+        for (final arrangement in MultiviewLayout.values)
+          DsSegment(value: arrangement, label: Text(_arrangementLabel(arrangement))),
+      ],
       value: wall.layout,
       semanticLabel: t.multiview.layoutLabel,
       onChanged: (arrangement) {
@@ -381,8 +387,7 @@ final class _MultiviewPageState extends ConsumerState<MultiviewPage> {
     );
     // The focus pill names the pane that owns the sound and opens the
     // picker on it, so replacing what plays there moves the sound with the
-    // pane. Its tooltip carries the danmaku note — the chat follows the
-    // sound, and the pill is where the sound is named.
+    // pane.
     final audibleFocus = selected == null || audibleName == null || audibleName.isEmpty
         ? null
         : _AudibleFocusButton(
@@ -423,8 +428,8 @@ final class _MultiviewPageState extends ConsumerState<MultiviewPage> {
         ),
     ];
     // A stacked toolbar hands everything to the shell's head line as one
-    // labelled more menu: the arrangements drawn as thumbnails, then the
-    // wall's switches. The page keeps only the wall below.
+    // labelled more menu: the arrangements, then the wall's switches. The
+    // page keeps only the wall below.
     if (PageLayoutScope.isNarrow(context)) {
       void chooseLayout(MultiviewLayout arrangement) {
         setState(() => _swapSource = null);
@@ -439,7 +444,6 @@ final class _MultiviewPageState extends ConsumerState<MultiviewPage> {
         }
       }
 
-      final colors = DsTheme.colorsOf(context);
       publishPageHeadActions(context, ref, NavigationItem.multiview, [
         DsButton(
           variant: DsButtonVariant.secondary,
@@ -457,12 +461,6 @@ final class _MultiviewPageState extends ConsumerState<MultiviewPage> {
                   children: [
                     for (final arrangement in MultiviewLayout.values)
                       DsListRow(
-                        leading: _ArrangementGlyph(
-                          arrangement: arrangement,
-                          color: colors.textMuted,
-                          width: 28,
-                          height: 20,
-                        ),
                         title: Text(_arrangementLabel(arrangement)),
                         trailing: wall.layout == arrangement ? const DsIcon(DsIcons.check, size: 16) : null,
                         onPressed: () {
@@ -533,13 +531,28 @@ final class _MultiviewPageState extends ConsumerState<MultiviewPage> {
           );
         }
         // The reference's 44 px toolbar line: the arrangements and the
-        // wall's switches left, the add action right, the stretch between
-        // the two groups the row's own. The danmaku note lives on the
-        // sound pill's tooltip now — a sentence standing in the row was
-        // the old wall's noise.
+        // wall's switches left, the danmaku hint and the add action right,
+        // the stretch between the two groups the row's own.
         return SizedBox(
           height: 44,
-          child: Row(spacing: DsSpace.s8, children: [layout, ?audibleFocus, ...switches, const Spacer(), addRoom]),
+          child: Row(
+            spacing: DsSpace.s8,
+            children: [
+              layout,
+              ?audibleFocus,
+              ...switches,
+              const Spacer(),
+              Flexible(
+                child: Text(
+                  t.multiview.danmakuHint,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.typography.small.copyWith(color: colors.textSubtle),
+                ),
+              ),
+              addRoom,
+            ],
+          ),
         );
       },
     );
@@ -1037,28 +1050,23 @@ final class _PaneTile extends StatelessWidget {
                 : Stack(
                     fit: StackFit.expand,
                     children: [
-                      // The invitation, centred: a circled plus (or the
-                      // swap's arrows while a swap is looking for its
-                      // target) over the one word the cell needs.
+                      // The invitation, centred: a quiet glyph over the one
+                      // word the cell needs — the accent speaks when the
+                      // picker or a swap is aiming here, and the pointer
+                      // tints the glyph.
                       Center(
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           spacing: DsSpace.s8,
                           children: [
-                            Container(
-                              width: 44,
-                              height: 44,
-                              decoration: BoxDecoration(
-                                color: swapping || picking || lit ? colors.accentTint : colors.hover,
-                                shape: BoxShape.circle,
-                              ),
-                              child: Center(
-                                child: DsIcon(
-                                  swapping ? DsIcons.arrowLeftRight : DsIcons.plus,
-                                  size: 20,
-                                  color: swapping || picking ? colors.accentText : colors.textMuted,
-                                ),
-                              ),
+                            DsIcon(
+                              swapping ? DsIcons.arrowLeftRight : DsIcons.plus,
+                              size: theme.sizes.iconLg,
+                              color: swapping || picking
+                                  ? colors.accentText
+                                  : lit
+                                  ? colors.text
+                                  : colors.textSubtle,
                             ),
                             Text(
                               swapping
@@ -1066,7 +1074,9 @@ final class _PaneTile extends StatelessWidget {
                                   : picking
                                   ? t.multiview.panePicking
                                   : t.multiview.addRoom,
-                              style: theme.typography.caption.copyWith(color: colors.textMuted),
+                              style: theme.typography.caption.copyWith(
+                                color: swapping || picking ? colors.accentText : colors.textMuted,
+                              ),
                               textAlign: TextAlign.center,
                             ),
                           ],
@@ -1076,8 +1086,13 @@ final class _PaneTile extends StatelessWidget {
                       // names a cell the viewer can see.
                       PositionedDirectional(
                         top: DsSpace.s8,
-                        start: DsSpace.s8,
-                        child: _PaneNumberBadge(index: slot.index + 1, highlighted: swapping || picking),
+                        start: DsSpace.s12,
+                        child: Text(
+                          '${slot.index + 1}',
+                          style: theme.typography.caption.copyWith(
+                            color: swapping || picking ? colors.accentText : colors.textSubtle,
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -1270,43 +1285,6 @@ final class _PaneTile extends StatelessWidget {
 const Color _paneGlass = OnVideoColors.paneGlass;
 const Color _paneGlassEdge = OnVideoColors.inkHover;
 
-/// An empty pane's number, top-start: a small theme-toned chip so the
-/// picker's 「第 N 格」 names a cell the viewer can find. It takes the
-/// accent while the picker or a swap is aiming at this cell.
-final class _PaneNumberBadge extends StatelessWidget {
-  const _PaneNumberBadge({required this.index, required this.highlighted});
-
-  /// The pane's one-based place in the wall.
-  final int index;
-
-  /// Whether this is the cell a pick or a swap is aiming at.
-  final bool highlighted;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = DsTheme.colorsOf(context);
-    final theme = DsTheme.of(context);
-    return Container(
-      height: 18,
-      constraints: const BoxConstraints(minWidth: 18),
-      padding: const EdgeInsetsDirectional.symmetric(horizontal: DsSpace.s6),
-      alignment: AlignmentDirectional.center,
-      decoration: DsBoxDecoration(
-        color: highlighted ? colors.accentTint : colors.hover,
-        borderRadius: BorderRadius.circular(6),
-        shadows: highlighted ? [DsShadow.ring(colors.accent)] : const [],
-      ),
-      child: Text(
-        '$index',
-        style: theme.typography.caption.copyWith(
-          fontWeight: FontWeight.w700,
-          color: highlighted ? colors.accentText : colors.textMuted,
-        ),
-      ),
-    );
-  }
-}
-
 /// A pane's floating island, top-right: a strip of pane glass holding the
 /// pane's small controls, so they ride over the picture instead of taking
 /// a bar away from it.
@@ -1442,9 +1420,7 @@ final class _PaneStreamBadge extends StatelessWidget {
 
 /// The toolbar's sound-focus pill: an accent outline naming the pane that
 /// owns the sound; pressing it opens the picker on that pane, so replacing
-/// what plays there moves the sound with it. The tooltip carries the
-/// danmaku note: the chat follows the sound, and this pill is where the
-/// sound is named.
+/// what plays there moves the sound with it.
 final class _AudibleFocusButton extends StatelessWidget {
   const _AudibleFocusButton({required this.name, required this.semanticLabel, required this.onPressed});
 
@@ -1458,11 +1434,10 @@ final class _AudibleFocusButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final t = context.t;
     final colors = DsTheme.colorsOf(context);
     final theme = DsTheme.of(context);
     return DsTooltip(
-      message: '$semanticLabel · ${t.multiview.danmakuHint}',
+      message: semanticLabel,
       excludeFromSemantics: true,
       child: DsPressable(
         semanticLabel: semanticLabel,
@@ -1565,187 +1540,6 @@ final class _ToolbarButton extends StatelessWidget {
       ),
     );
   }
-}
-
-/// The layout switcher: each arrangement drawn as a thumbnail in a
-/// pill-shaped group, the chosen one filled with the accent. Figures like
-/// 「1+3」 name a shape a viewer must decode; a drawing of it is read at a
-/// glance, and the words stay in the tooltip and the screen reader.
-final class _LayoutPicker extends StatelessWidget {
-  const _LayoutPicker({required this.value, required this.semanticLabel, required this.onChanged});
-
-  /// The arrangement on the wall.
-  final MultiviewLayout value;
-
-  /// The name screen readers hear for the group.
-  final String semanticLabel;
-
-  /// Fires with the arrangement the viewer chose.
-  final ValueChanged<MultiviewLayout> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = DsTheme.colorsOf(context);
-    final theme = DsTheme.of(context);
-    return DsTooltip(
-      message: semanticLabel,
-      excludeFromSemantics: true,
-      child: Container(
-        height: theme.sizes.sm,
-        padding: const EdgeInsetsDirectional.symmetric(horizontal: DsSpace.s3),
-        decoration: DsBoxDecoration(
-          color: colors.control,
-          borderRadius: BorderRadius.circular(theme.sizes.sm / 2),
-          shadows: [DsShadow.innerRing(colors.border)],
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          spacing: DsSpace.s3,
-          children: [
-            for (final arrangement in MultiviewLayout.values)
-              _LayoutPickItem(arrangement: arrangement, selected: value == arrangement, onChanged: onChanged),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// One thumbnail of the layout switcher.
-final class _LayoutPickItem extends StatelessWidget {
-  const _LayoutPickItem({required this.arrangement, required this.selected, required this.onChanged});
-
-  /// The arrangement this thumbnail draws and fires.
-  final MultiviewLayout arrangement;
-
-  /// Whether it is the arrangement on the wall.
-  final bool selected;
-
-  /// Fires with the arrangement when pressed.
-  final ValueChanged<MultiviewLayout> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = DsTheme.colorsOf(context);
-    final label = _arrangementLabel(arrangement);
-    return DsTooltip(
-      message: label,
-      excludeFromSemantics: true,
-      child: DsPressable(
-        semanticLabel: label,
-        selected: selected,
-        onPressed: () => onChanged(arrangement),
-        builder: (context, states, _) {
-          final lit = states.contains(WidgetState.hovered) || states.contains(WidgetState.focused);
-          return Container(
-            width: 40,
-            height: 24,
-            decoration: DsBoxDecoration(
-              color: selected
-                  ? colors.accentTint
-                  : lit
-                  ? colors.hover
-                  : null,
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Center(
-              child: _ArrangementGlyph(
-                arrangement: arrangement,
-                color: selected
-                    ? colors.accentText
-                    : lit
-                    ? colors.text
-                    : colors.textMuted,
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-}
-
-/// An arrangement drawn small: the panes as stroked rounded rects in the
-/// shape the wall gives them. The strip draws its canonical four-across
-/// form; the wall itself turns it upright on a tall window.
-final class _ArrangementGlyph extends StatelessWidget {
-  const _ArrangementGlyph({required this.arrangement, required this.color, this.width = 26, this.height = 18});
-
-  /// The arrangement drawn.
-  final MultiviewLayout arrangement;
-
-  /// The stroke color.
-  final Color color;
-
-  /// The drawing's size.
-  final double width;
-  final double height;
-
-  @override
-  Widget build(BuildContext context) =>
-      CustomPaint(size: Size(width, height), painter: _ArrangementGlyphPainter(arrangement, color));
-}
-
-/// Draws an arrangement's panes as stroked rounded rects.
-final class _ArrangementGlyphPainter extends CustomPainter {
-  const _ArrangementGlyphPainter(this.arrangement, this.color);
-
-  /// The arrangement drawn and the stroke color.
-  final MultiviewLayout arrangement;
-  final Color color;
-
-  static const double _gap = 2;
-  static const double _radius = 2;
-  static const double _stroke = 1.2;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = _stroke;
-    void pane(Rect rect) =>
-        canvas.drawRRect(RRect.fromRectAndRadius(rect.deflate(_stroke / 2), const Radius.circular(_radius)), paint);
-    final width = size.width;
-    final height = size.height;
-    switch (arrangement) {
-      case MultiviewLayout.single:
-        pane(Offset.zero & size);
-      case MultiviewLayout.dual:
-        final cell = (width - _gap) / 2;
-        for (final at in [0.0, cell + _gap]) {
-          pane(Rect.fromLTWH(at, 0, cell, height));
-        }
-      case MultiviewLayout.quad:
-        final cellWidth = (width - _gap) / 2;
-        final cellHeight = (height - _gap) / 2;
-        for (final (x, y) in [
-          (0.0, 0.0),
-          (cellWidth + _gap, 0.0),
-          (0.0, cellHeight + _gap),
-          (cellWidth + _gap, cellHeight + _gap),
-        ]) {
-          pane(Rect.fromLTWH(x, y, cellWidth, cellHeight));
-        }
-      case MultiviewLayout.focus:
-        final largeWidth = (width - _gap) * 0.58;
-        final railWidth = width - largeWidth - _gap;
-        final cellHeight = (height - _gap * 2) / 3;
-        pane(Rect.fromLTWH(0, 0, largeWidth, height));
-        for (var row = 0; row < 3; row++) {
-          pane(Rect.fromLTWH(largeWidth + _gap, row * (cellHeight + _gap), railWidth, cellHeight));
-        }
-      case MultiviewLayout.strip:
-        final cell = (width - _gap * 3) / 4;
-        for (var column = 0; column < 4; column++) {
-          pane(Rect.fromLTWH(column * (cell + _gap), 0, cell, height));
-        }
-    }
-  }
-
-  @override
-  bool shouldRepaint(_ArrangementGlyphPainter oldDelegate) =>
-      oldDelegate.arrangement != arrangement || oldDelegate.color != color;
 }
 
 /// The selected pane's controls, under the toolbar: pause, quality, line and
