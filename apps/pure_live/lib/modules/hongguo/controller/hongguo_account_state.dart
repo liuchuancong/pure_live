@@ -75,9 +75,13 @@ final class HongguoAccountController extends Notifier<HongguoAccountState> {
     state = HongguoAccountState(credentials: credentials, profile: state.profile, loading: true);
     try {
       final profile = await ref.read(hongguoAccountClientProvider).profile(credentials);
+      // A sign-out or a fresh sign-in while the read was under way owns the
+      // state; the late answer must not sign the viewer back in.
+      if (!ref.mounted || state.credentials != credentials) return;
       state = HongguoAccountState(credentials: credentials, profile: profile);
     } on Object catch (error) {
       appLog.forCategory('hongguo.account').warning('account operation failed', fields: {'error': '$error'});
+      if (!ref.mounted || state.credentials != credentials) return;
       if (error is HongguoAccountFailure && error.message.contains('重新登录')) {
         await signOut();
         state = HongguoAccountState(error: hongguoFailureText(error));
@@ -354,6 +358,7 @@ typedef HongguoHomeState = ({HongguoGenre? genre, List<HongguoSeries> items, boo
 final class HongguoHomeController extends Notifier<HongguoHomeState> {
   HongguoHomeFeed? _feed;
   HongguoGenre? _genre;
+  int _generation = 0;
 
   @override
   HongguoHomeState build() => (genre: null, items: const [], loading: false, error: null);
@@ -378,6 +383,9 @@ final class HongguoHomeController extends Notifier<HongguoHomeState> {
   Future<void> retry() => _load(state.genre);
 
   Future<void> _load(HongguoGenre? genre, {bool keep = false}) async {
+    // A retry while a batch is still under way starts the newer session; the
+    // older session's answer, whenever it lands, must stay out.
+    final generation = ++_generation;
     if (!keep) {
       _feed = null;
       _genre = genre;
@@ -390,9 +398,11 @@ final class HongguoHomeController extends Notifier<HongguoHomeState> {
     state = (genre: genre, items: keep ? state.items : const [], loading: true, error: null);
     try {
       final items = await feed.page(genre);
+      if (!ref.mounted || generation != _generation) return;
       state = (genre: genre, items: keep ? [...state.items, ...items] : items, loading: false, error: null);
     } on Object catch (error) {
       appLog.forCategory('hongguo.account').warning('account operation failed', fields: {'error': '$error'});
+      if (!ref.mounted || generation != _generation) return;
       state = (
         genre: genre,
         items: state.items,
