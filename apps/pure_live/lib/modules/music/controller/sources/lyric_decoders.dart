@@ -74,7 +74,7 @@ DecodedLyric? decodeKrc(String base64Data) {
         index++;
         return '[$stamp]';
       })
-      .replaceAll(_krcWordTail, r'<$1>');
+      .replaceAllMapped(_krcWordTail, (match) => '<${match[1]}>');
 
   return DecodedLyric(lyric: lxlyric, translation: _linesOf(tlyricLines), romanization: _linesOf(rlyricLines));
 }
