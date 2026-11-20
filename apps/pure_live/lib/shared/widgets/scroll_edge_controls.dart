@@ -56,8 +56,14 @@ final class _ScrollEdgeControlsState extends State<ScrollEdgeControls> {
   /// end reads as sitting at it.
   static const double _epsilon = 1;
 
-  /// The scroll the pair drives.
-  ScrollPosition? _position;
+  /// The scroll the pair drives, kept with the scrollable that owns it.
+  ///
+  /// A [ScrollPosition] cannot be asked whether it is still alive, and a
+  /// dead one answers every touch — even a listener removal — with an
+  /// assert. The owner element is the witness: a scrollable is defunct
+  /// exactly when its position went down with it, so every entry to the
+  /// position goes through the owner first.
+  (ScrollableState, ScrollPosition)? _tracked;
 
   /// Where that scroll stands, so a rebuild can answer "at which end?"
   /// without touching a position that has since detached.
@@ -91,7 +97,15 @@ final class _ScrollEdgeControlsState extends State<ScrollEdgeControls> {
 
   @override
   void dispose() {
-    _position?.removeListener(_onScrollChanged);
+    // The tracked scroll can be long gone — the shell swaps pages under
+    // this wrapper and the page's tree dies first — and a notifier met
+    // after its death answers even a removal with the same assert. The
+    // owner element is the witness; gone with it, the listener is gone
+    // for us already.
+    final tracked = _tracked;
+    if (tracked != null && tracked.$1.context.mounted) {
+      tracked.$2.removeListener(_onScrollChanged);
+    }
     super.dispose();
   }
 
@@ -105,19 +119,24 @@ final class _ScrollEdgeControlsState extends State<ScrollEdgeControls> {
     });
   }
 
-  /// Points the pair at [position], following it from then on.
-  void _attach(ScrollPosition? position) {
-    if (position == null) {
-      _position?.removeListener(_onScrollChanged);
-      _position = null;
+  /// Points the pair at [scrollable]'s position, following it from then on.
+  void _attach(ScrollableState? scrollable) {
+    final current = _tracked;
+    if (identical(current?.$1, scrollable)) {
+      _read();
+      return;
+    }
+    if (current != null && current.$1.context.mounted) {
+      current.$2.removeListener(_onScrollChanged);
+    }
+    if (scrollable == null) {
+      _tracked = null;
       _publish(scrollable: false);
       return;
     }
-    if (!identical(_position, position)) {
-      _position?.removeListener(_onScrollChanged);
-      _position = position;
-      position.addListener(_onScrollChanged);
-    }
+    final position = scrollable.position;
+    _tracked = (scrollable, position);
+    position.addListener(_onScrollChanged);
     _read();
   }
 
@@ -125,8 +144,10 @@ final class _ScrollEdgeControlsState extends State<ScrollEdgeControls> {
 
   /// Re-reads the tracked scroll and rebuilds only when an answer moved.
   void _read() {
-    final position = _position;
-    if (position == null || !position.hasPixels || !position.hasContentDimensions) return;
+    final tracked = _tracked;
+    if (tracked == null) return;
+    final position = tracked.$2;
+    if (!position.hasPixels || !position.hasContentDimensions) return;
     _pixels = position.pixels;
     _min = position.minScrollExtent;
     _max = position.maxScrollExtent;
@@ -157,9 +178,9 @@ final class _ScrollEdgeControlsState extends State<ScrollEdgeControls> {
     if (!widget.showControls) return false;
     if (notification.depth != 0) return false;
     if (notification.metrics.axis != Axis.vertical) return false;
-    final position = _positionOf(notification.context);
-    if (position == null) return false;
-    _attach(position);
+    final scrollable = _scrollableOf(notification.context);
+    if (scrollable == null) return false;
+    _attach(scrollable);
     return false;
   }
 
@@ -170,29 +191,36 @@ final class _ScrollEdgeControlsState extends State<ScrollEdgeControls> {
     if (!widget.showControls) return false;
     if (notification.depth != 0) return false;
     if (notification.metrics.axis != Axis.vertical) return false;
-    final position = _positionOf(notification.context);
-    if (position == null) return false;
+    final scrollable = _scrollableOf(notification.context);
+    if (scrollable == null) return false;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _attach(position);
+      // The metrics can outlive their scroll: opening a room tears the
+      // page's grid down in the very frame its last metrics fires, and the
+      // pair, still mounted around the slot, would otherwise reach into
+      // the dead position. A defunct owner means the position is dead —
+      // let it rest; whatever replaces the scroll announces itself with
+      // its own metrics.
+      if (!mounted || !scrollable.context.mounted) return;
+      _attach(scrollable);
     });
     return false;
   }
 
-  /// The position a notification came from: the notification's context sits
-  /// inside the scrollable's gesture detector, so the state is found through
-  /// the nearest vertical [Scrollable], not by assuming the context itself is
-  /// the scrollable.
-  ScrollPosition? _positionOf(BuildContext? context) {
+  /// The scrollable a notification came from: the notification's context
+  /// sits inside the scrollable's gesture detector, so the state is found
+  /// through the nearest vertical [Scrollable], not by assuming the context
+  /// itself is the scrollable.
+  ScrollableState? _scrollableOf(BuildContext? context) {
     if (context == null) return null;
-    return Scrollable.maybeOf(context, axis: Axis.vertical)?.position;
+    return Scrollable.maybeOf(context, axis: Axis.vertical);
   }
 
   /// The shown page's outermost vertical scroll: the first one a walk down
   /// what is actually on screen reaches. The shell's branch stack and any
   /// off-stage page keep scrolls of their own; those are not the one shown.
-  ScrollPosition? _visibleScroll(BuildContext root) {
+  ScrollableState? _visibleScroll(BuildContext root) {
     if (root is! Element) return null;
-    ScrollPosition? found;
+    ScrollableState? found;
     void visit(Element element) {
       if (found != null) return;
       final widget = element.widget;
@@ -208,7 +236,7 @@ final class _ScrollEdgeControlsState extends State<ScrollEdgeControls> {
       }
       if (widget is Scrollable) {
         final state = element is StatefulElement ? element.state : null;
-        if (state is ScrollableState && state.position.axis == Axis.vertical) found = state.position;
+        if (state is ScrollableState && state.position.axis == Axis.vertical) found = state;
         return;
       }
       element.visitChildren(visit);
@@ -219,7 +247,7 @@ final class _ScrollEdgeControlsState extends State<ScrollEdgeControls> {
   }
 
   void _jump({required bool toTop}) {
-    final position = _position;
+    final position = _tracked?.$2;
     if (position == null || !position.hasContentDimensions) return;
     unawaited(
       position.animateTo(toTop ? _min : _max, duration: const Duration(milliseconds: 320), curve: Curves.easeOutCubic),
