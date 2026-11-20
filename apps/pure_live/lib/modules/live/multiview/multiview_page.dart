@@ -25,16 +25,27 @@ import 'package:pure_live/modules/live/search/room_search_picker.dart' show show
 import 'package:pure_live/shared/shared.dart';
 
 /// The multi-view wall (the reference's multiview): the 1×1, 1×2, 2×2,
-/// 1+3 and 1×4 arrangements, each pane holding a followed room, with the layout
-/// switcher in the header and every pane picking, playing, selecting,
-/// clearing or exchanging its room. The arrangement persists in the
-/// multiview store, so a revisit opens the same wall.
+/// 1+3 and 1×4 arrangements, each pane holding a followed room, with the
+/// layout chosen from drawn thumbnails in the header and every pane
+/// picking, playing, selecting, clearing or exchanging its room. The
+/// arrangement persists in the multiview store, so a revisit opens the
+/// same wall.
+///
+/// The wall reads as a grid of cards before anything plays: an empty pane
+/// is a solid slot with a circled invite and its number, not a dashed
+/// placeholder, so the arrangement's shape is visible the moment the page
+/// opens. The layout switcher draws each arrangement as a thumbnail rather
+/// than naming it in figures.
 ///
 /// Every assigned pane plays live through its own `LivePlaybackController`
 /// and `MediaPlayerView`; the selected pane owns the sound, and leaving the
 /// page releases every engine. A pane without a session yet shows its
 /// room's cover. In the 1+3 arrangement the selected pane is the large one,
 /// so choosing a small pane brings it forward and gives it the sound.
+///
+/// Picking a room happens beside the wall on a wide window — the cell a
+/// pick lands in stays in sight — and as a sheet over the wall on a narrow
+/// one, so the wall never gives up height to the picker.
 final class MultiviewPage extends ConsumerStatefulWidget {
   /// The multi-view page.
   const MultiviewPage({super.key});
@@ -51,8 +62,9 @@ final class _MultiviewPageState extends ConsumerState<MultiviewPage> {
   /// while another branch shows, so this — not disposal — ends playback.
   bool _visible = false;
 
-  /// The cell the picker dock is choosing for, or null while the dock is
-  /// closed.
+  /// The cell the picker is choosing for, or null while no pick is running.
+  /// On a wide window this is the dock beside the wall; on a narrow one it
+  /// names the cell the sheet is filling.
   int? _pickingSlot;
 
   /// Whether the first ready wall has been looked at once; the dock opens
@@ -175,7 +187,7 @@ final class _MultiviewPageState extends ConsumerState<MultiviewPage> {
     );
   }
 
-  /// Puts the picked room in the current cell: the one the dock is open
+  /// Puts the picked room in the current cell: the one the picker is open
   /// for, else the selected (audible) pane, else the first empty cell,
   /// else the first.
   Future<void> _assignFromSearch(LiveRoom room) async {
@@ -207,6 +219,11 @@ final class _MultiviewPageState extends ConsumerState<MultiviewPage> {
       if (mounted) ref.read(multiviewPlaybackProvider.notifier).setActive(active: visible);
     });
   }
+
+  /// Whether the picker docks beside the wall: past this width both the
+  /// wall and the picking list keep their legs; below it the picker opens
+  /// as a sheet over the wall instead.
+  bool get _docksBesideWall => MediaQuery.sizeOf(context).width >= 760;
 
   @override
   Widget build(BuildContext context) {
@@ -255,7 +272,7 @@ final class _MultiviewPageState extends ConsumerState<MultiviewPage> {
     final audibleName = selected == null || selected < 0 || selected >= slots.length ? null : slots[selected].title;
     return CallbackShortcuts(
       // Escape walks out the way the title bar's back arrow does: a
-      // pending swap or an open picker dock folds first, then a pushed
+      // pending swap or an open picker folds first, then a pushed
       // page pops and a destination branch goes home.
       bindings: {
         const SingleActivator(LogicalKeyboardKey.escape): () {
@@ -307,29 +324,27 @@ final class _MultiviewPageState extends ConsumerState<MultiviewPage> {
                 if (picking == null || picking >= slots.length) {
                   return _wall(wall, slots, playback);
                 }
-                final dock = _PanePickerDock(
-                  slotIndex: picking,
-                  onAssign: (room) => unawaited(_assign(picking, room)),
-                  onClose: () => setState(() => _pickingSlot = null),
-                );
-                // A wide window docks the picker beside the wall so the
-                // cell it fills stays in sight; a narrow one is already
-                // stacked, so the picker goes under it.
+                // The picker beside the wall needs the room to keep both
+                // legible; a narrower window already picked the sheet shape
+                // (see [_pickForSlot]), so below the split the wall alone
+                // keeps the body and the sheet rides above it.
                 if (constraints.maxWidth >= 760) {
                   return Row(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       Expanded(child: _wall(wall, slots, playback)),
-                      SizedBox(width: 340, child: dock),
+                      SizedBox(
+                        width: 340,
+                        child: _PanePickerDock(
+                          slotIndex: picking,
+                          onAssign: (room) => unawaited(_assign(picking, room)),
+                          onClose: () => setState(() => _pickingSlot = null),
+                        ),
+                      ),
                     ],
                   );
                 }
-                return Column(
-                  children: [
-                    Expanded(child: _wall(wall, slots, playback)),
-                    SizedBox(height: 300, child: dock),
-                  ],
-                );
+                return _wall(wall, slots, playback);
               },
             ),
           ),
@@ -338,9 +353,9 @@ final class _MultiviewPageState extends ConsumerState<MultiviewPage> {
     );
   }
 
-  /// The page's toolbar: the arrangements, the pill naming the pane that
-  /// owns the sound, and — once a pane plays — mute-all and pause-all, with
-  /// the danmaku hint and the add action at the row's right end. A narrow
+  /// The page's toolbar: the arrangements as drawn thumbnails, the pill
+  /// naming the pane that owns the sound, and — once a pane plays — mute-all
+  /// and pause-all, with the add action at the row's right end. A narrow
   /// window folds everything into the shell's head-line more menu.
   Widget _header(
     MultiviewState wall,
@@ -350,19 +365,13 @@ final class _MultiviewPageState extends ConsumerState<MultiviewPage> {
     required String? audibleName,
   }) {
     final t = context.t;
-    final colors = DsTheme.colorsOf(context);
-    final theme = DsTheme.of(context);
     final controls = ref.read(multiviewPlaybackProvider.notifier);
     final selected = playback.selected;
     // The app-wide mute is a second reason the wall can be silent; the
     // button reflects either and clears both in one press.
     final globallyMuted = ref.watch(playbackSettingsProvider.select((settings) => settings.globalMute));
     final wallMuted = playback.allMuted || globallyMuted;
-    final layout = DsSegmentedControl<MultiviewLayout>(
-      segments: [
-        for (final arrangement in MultiviewLayout.values)
-          DsSegment(value: arrangement, label: Text(_arrangementLabel(arrangement))),
-      ],
+    final layout = _LayoutPicker(
       value: wall.layout,
       semanticLabel: t.multiview.layoutLabel,
       onChanged: (arrangement) {
@@ -370,8 +379,10 @@ final class _MultiviewPageState extends ConsumerState<MultiviewPage> {
         unawaited(ref.read(multiviewProvider.notifier).setLayout(arrangement));
       },
     );
-    // The focus pill names the pane that owns the sound and opens the dock
-    // on it, so replacing what plays there moves the sound with the pane.
+    // The focus pill names the pane that owns the sound and opens the
+    // picker on it, so replacing what plays there moves the sound with the
+    // pane. Its tooltip carries the danmaku note — the chat follows the
+    // sound, and the pill is where the sound is named.
     final audibleFocus = selected == null || audibleName == null || audibleName.isEmpty
         ? null
         : _AudibleFocusButton(
@@ -412,8 +423,8 @@ final class _MultiviewPageState extends ConsumerState<MultiviewPage> {
         ),
     ];
     // A stacked toolbar hands everything to the shell's head line as one
-    // labelled more menu: the arrangements, then the wall's switches. The
-    // page keeps only the wall below.
+    // labelled more menu: the arrangements drawn as thumbnails, then the
+    // wall's switches. The page keeps only the wall below.
     if (PageLayoutScope.isNarrow(context)) {
       void chooseLayout(MultiviewLayout arrangement) {
         setState(() => _swapSource = null);
@@ -428,6 +439,7 @@ final class _MultiviewPageState extends ConsumerState<MultiviewPage> {
         }
       }
 
+      final colors = DsTheme.colorsOf(context);
       publishPageHeadActions(context, ref, NavigationItem.multiview, [
         DsButton(
           variant: DsButtonVariant.secondary,
@@ -445,6 +457,12 @@ final class _MultiviewPageState extends ConsumerState<MultiviewPage> {
                   children: [
                     for (final arrangement in MultiviewLayout.values)
                       DsListRow(
+                        leading: _ArrangementGlyph(
+                          arrangement: arrangement,
+                          color: colors.textMuted,
+                          width: 28,
+                          height: 20,
+                        ),
                         title: Text(_arrangementLabel(arrangement)),
                         trailing: wall.layout == arrangement ? const DsIcon(DsIcons.check, size: 16) : null,
                         onPressed: () {
@@ -504,7 +522,6 @@ final class _MultiviewPageState extends ConsumerState<MultiviewPage> {
       ]);
       return const SizedBox.shrink();
     }
-    final inline = switches;
     return LayoutBuilder(
       builder: (context, constraints) {
         if (constraints.maxWidth < 560) {
@@ -512,32 +529,17 @@ final class _MultiviewPageState extends ConsumerState<MultiviewPage> {
             spacing: DsSpace.s8,
             runSpacing: DsSpace.s6,
             crossAxisAlignment: WrapCrossAlignment.center,
-            children: [layout, ?audibleFocus, ...inline, addRoom],
+            children: [layout, ?audibleFocus, ...switches, addRoom],
           );
         }
-        // The reference's 44 px toolbar line: the arrangements and the wall's
-        // switches left, the danmaku hint and the add action right, the
-        // stretch between the two groups the row's own.
+        // The reference's 44 px toolbar line: the arrangements and the
+        // wall's switches left, the add action right, the stretch between
+        // the two groups the row's own. The danmaku note lives on the
+        // sound pill's tooltip now — a sentence standing in the row was
+        // the old wall's noise.
         return SizedBox(
           height: 44,
-          child: Row(
-            spacing: DsSpace.s8,
-            children: [
-              layout,
-              ?audibleFocus,
-              ...inline,
-              const Spacer(),
-              Flexible(
-                child: Text(
-                  t.multiview.danmakuHint,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.typography.small.copyWith(color: colors.textSubtle),
-                ),
-              ),
-              addRoom,
-            ],
-          ),
+          child: Row(spacing: DsSpace.s8, children: [layout, ?audibleFocus, ...switches, const Spacer(), addRoom]),
         );
       },
     );
@@ -746,13 +748,16 @@ final class _MultiviewPageState extends ConsumerState<MultiviewPage> {
     unawaited(ref.read(multiviewProvider.notifier).swapSlots(source, index));
   }
 
-  /// A wall that has never been arranged opens with its picker dock on the
-  /// first empty cell: an empty wall with nothing to look at is the one case
-  /// where the picker is the page's subject, and the reference opens there too.
+  /// A wall that has never been arranged opens with its picker on the
+  /// first empty cell: an empty wall with nothing to look at is the one
+  /// case where the picker is the page's subject. A narrow window picks in
+  /// a sheet, and a sheet rising to meet a page that is still settling is
+  /// an interruption, not an invitation — there the empty panes invite on
+  /// their own.
   void _openDockForFirstEmptyCell(MultiviewState wall) {
     if (_dockConsidered) return;
     _dockConsidered = true;
-    if (_pickingSlot != null) return;
+    if (_pickingSlot != null || !_docksBesideWall) return;
     if (wall.slots.every((slot) => slot != null)) return;
     final at = wall.slots.indexOf(null);
     if (at < 0) return;
@@ -761,12 +766,53 @@ final class _MultiviewPageState extends ConsumerState<MultiviewPage> {
     });
   }
 
-  /// Opens the picker dock for slot [index]: the wall shrinks beside
-  /// it rather than losing itself behind a dialog, so a viewer can
-  /// still see which cell the room is landing in.
-  void _pickForSlot(int index) => setState(() => _pickingSlot = index);
+  /// Opens the picker for slot [index]: beside the wall on a wide window —
+  /// the cell a pick lands in stays visible — and as a sheet over the wall
+  /// on a narrow one, where a dock under the wall would take the height
+  /// the pictures need.
+  void _pickForSlot(int index) {
+    setState(() => _pickingSlot = index);
+    if (!_docksBesideWall) {
+      // The sheet's dismissal — any dismissal — ends the pick: the cell's
+      // highlight goes with it, whatever way the sheet was closed.
+      unawaited(
+        _openPickerSheet(index).then((_) {
+          if (!mounted) return;
+          if (_pickingSlot == index) setState(() => _pickingSlot = null);
+        }),
+      );
+    }
+  }
 
-  /// The toolbar's add action: the dock opens on the first empty cell; a
+  /// The sheet that picks a room for slot [index] on a narrow window. One
+  /// pick per open: a phone fills a wall in opens, not in a running list.
+  Future<void> _openPickerSheet(int index) {
+    final t = context.t;
+    return showAppPanel<void>(
+      context: context,
+      detents: const [0.7, 1],
+      builder: (context) => AppPanel(
+        title: Text(t.multiview.pickerTitle(index: index + 1)),
+        scrollable: false,
+        child: _PanePickerBody(
+          slotIndex: index,
+          onAssign: (room) {
+            Navigator.of(context).pop();
+            unawaited(_assignFromSheet(index, room));
+          },
+        ),
+      ),
+    );
+  }
+
+  /// Puts [room] in slot [index] from the sheet and ends the pick.
+  Future<void> _assignFromSheet(int index, LiveRoom room) async {
+    await ref.read(multiviewProvider.notifier).assign(index, room);
+    if (!mounted) return;
+    setState(() => _pickingSlot = null);
+  }
+
+  /// The toolbar's add action: the picker opens on the first empty cell; a
   /// full wall says so instead of pointing at a cell that is not there.
   void _addRoom() {
     final at = ref.read(multiviewProvider).slots.indexOf(null);
@@ -808,11 +854,14 @@ typedef _Slot = ({int index, String? key, LiveRoom? room, String title, String p
 /// One pane of the wall: an assigned one plays its room edge to edge, with
 /// its title on a glass tag at the top left, its controls on a glass island
 /// at the top right, and the stream facts on a glass badge at the bottom
-/// left; an empty one offers the pane picker behind a dashed border. A
-/// [compact] pane (a small one of the 1+3 arrangement) keeps only the
-/// audible and close buttons — selecting it brings it large, with the rest.
-/// While a swap is pending ([swapSource]), every pane joins in — the source
-/// rings and each tap elsewhere exchanges.
+/// left — a full pane is a picture, and a picture carries no frame of its
+/// own; the ring appears when it is hovered, owns the sound, or starts a
+/// swap. An empty one is a solid slot: the theme's control surface, a
+/// hairline edge, a circled invite and its number — a place in the grid the
+/// viewer can name, not a dashed hole. A [compact] pane (a small one of the
+/// 1+3 arrangement) keeps only the audible and close buttons — selecting it
+/// brings it large, with the rest. While a swap is pending ([swapSource]),
+/// every pane joins in — the source rings and each tap elsewhere exchanges.
 final class _PaneTile extends StatelessWidget {
   const _PaneTile({
     required this.fit,
@@ -851,7 +900,7 @@ final class _PaneTile extends StatelessWidget {
   /// The pane a pending swap starts from, null while none is pending.
   final int? swapSource;
 
-  /// Whether the picker dock is choosing for this cell right now.
+  /// Whether the picker is choosing for this cell right now.
   final bool picking;
 
   final VoidCallback onPick;
@@ -889,11 +938,25 @@ final class _PaneTile extends StatelessWidget {
           : onPick,
       builder: (context, states, _) {
         final lit = states.contains(WidgetState.hovered) || states.contains(WidgetState.focused);
-        final ring = isSource
-            ? colors.channel
-            : selected && assigned
-            ? colors.accent
-            : colors.border;
+        // A full pane is a picture — no frame while it rests; the ring is
+        // the pointer's, the sound's or the swap's. An empty pane keeps a
+        // hairline edge at rest so the grid's slots stay legible, and the
+        // accent when the picker or a swap is aiming at it.
+        final List<DsShadow> shadows;
+        if (assigned) {
+          final ring = isSource
+              ? colors.channel
+              : selected
+              ? colors.accent
+              : lit
+              ? colors.border
+              : null;
+          shadows = [if (ring case final color?) DsShadow.innerRing(color, width: isSource || selected ? 2 : 1)];
+        } else {
+          shadows = swapping || picking
+              ? [DsShadow.innerRing(colors.accent, width: 2)]
+              : [DsShadow.innerRing(colors.border)];
+        }
         // DsBoxDecoration paints corners but cannot clip: the Container
         // asks a decoration for its clip path when clipBehavior is set, and
         // DsBoxDecoration refuses that. The clip therefore lives above it.
@@ -903,7 +966,7 @@ final class _PaneTile extends StatelessWidget {
             decoration: DsBoxDecoration(
               color: colors.control,
               borderRadius: BorderRadius.circular(theme.radii.card),
-              shadows: [DsShadow.innerRing(ring, width: isSource || (selected && assigned) ? 2 : 1)],
+              shadows: shadows,
             ),
             child: assigned
                 ? Stack(
@@ -974,24 +1037,28 @@ final class _PaneTile extends StatelessWidget {
                 : Stack(
                     fit: StackFit.expand,
                     children: [
-                      // The dashed border is the empty cell's own
-                      // invitation; it takes the accent while this is the
-                      // cell the dock or a swap is aiming at.
-                      CustomPaint(
-                        foregroundPainter: _DashedBorderPainter(
-                          color: swapping || picking ? colors.accent : colors.border,
-                          radius: theme.radii.card,
-                        ),
-                      ),
+                      // The invitation, centred: a circled plus (or the
+                      // swap's arrows while a swap is looking for its
+                      // target) over the one word the cell needs.
                       Center(
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           spacing: DsSpace.s8,
                           children: [
-                            DsIcon(
-                              swapping ? DsIcons.arrowLeftRight : DsIcons.plus,
-                              size: theme.sizes.iconLg,
-                              color: colors.textSubtle,
+                            Container(
+                              width: 44,
+                              height: 44,
+                              decoration: BoxDecoration(
+                                color: swapping || picking || lit ? colors.accentTint : colors.hover,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Center(
+                                child: DsIcon(
+                                  swapping ? DsIcons.arrowLeftRight : DsIcons.plus,
+                                  size: 20,
+                                  color: swapping || picking ? colors.accentText : colors.textMuted,
+                                ),
+                              ),
                             ),
                             Text(
                               swapping
@@ -1009,11 +1076,8 @@ final class _PaneTile extends StatelessWidget {
                       // names a cell the viewer can see.
                       PositionedDirectional(
                         top: DsSpace.s8,
-                        start: DsSpace.s12,
-                        child: Text(
-                          '${slot.index + 1}',
-                          style: theme.typography.caption.copyWith(color: colors.textSubtle),
-                        ),
+                        start: DsSpace.s8,
+                        child: _PaneNumberBadge(index: slot.index + 1, highlighted: swapping || picking),
                       ),
                     ],
                   ),
@@ -1206,6 +1270,43 @@ final class _PaneTile extends StatelessWidget {
 const Color _paneGlass = OnVideoColors.paneGlass;
 const Color _paneGlassEdge = OnVideoColors.inkHover;
 
+/// An empty pane's number, top-start: a small theme-toned chip so the
+/// picker's 「第 N 格」 names a cell the viewer can find. It takes the
+/// accent while the picker or a swap is aiming at this cell.
+final class _PaneNumberBadge extends StatelessWidget {
+  const _PaneNumberBadge({required this.index, required this.highlighted});
+
+  /// The pane's one-based place in the wall.
+  final int index;
+
+  /// Whether this is the cell a pick or a swap is aiming at.
+  final bool highlighted;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = DsTheme.colorsOf(context);
+    final theme = DsTheme.of(context);
+    return Container(
+      height: 18,
+      constraints: const BoxConstraints(minWidth: 18),
+      padding: const EdgeInsetsDirectional.symmetric(horizontal: DsSpace.s6),
+      alignment: AlignmentDirectional.center,
+      decoration: DsBoxDecoration(
+        color: highlighted ? colors.accentTint : colors.hover,
+        borderRadius: BorderRadius.circular(6),
+        shadows: highlighted ? [DsShadow.ring(colors.accent)] : const [],
+      ),
+      child: Text(
+        '$index',
+        style: theme.typography.caption.copyWith(
+          fontWeight: FontWeight.w700,
+          color: highlighted ? colors.accentText : colors.textMuted,
+        ),
+      ),
+    );
+  }
+}
+
 /// A pane's floating island, top-right: a strip of pane glass holding the
 /// pane's small controls, so they ride over the picture instead of taking
 /// a bar away from it.
@@ -1339,62 +1440,29 @@ final class _PaneStreamBadge extends StatelessWidget {
   }
 }
 
-/// A rounded dashed border, for the empty cell that asks to be filled.
-/// Hand-painted along the rrect's metrics — a plain border cannot dash,
-/// and the wall buys no package for one stroke.
-final class _DashedBorderPainter extends CustomPainter {
-  const _DashedBorderPainter({required this.color, required this.radius});
-
-  /// The dash color.
-  final Color color;
-
-  /// The rrect's corner radius, the pane's own.
-  final double radius;
-
-  static const double _dash = 5;
-  static const double _gap = 4;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.5;
-    // The path is inset by half the stroke, so the clip along the pane's
-    // edge never takes the dash's outer half away.
-    final rect = (Offset.zero & size).deflate(0.75);
-    final path = Path()..addRRect(RRect.fromRectAndRadius(rect, Radius.circular(math.max(0, radius - 0.75))));
-    for (final metric in path.computeMetrics()) {
-      for (var distance = 0.0; distance < metric.length; distance += _dash + _gap) {
-        canvas.drawPath(metric.extractPath(distance, math.min(distance + _dash, metric.length)), paint);
-      }
-    }
-  }
-
-  @override
-  bool shouldRepaint(_DashedBorderPainter oldDelegate) => oldDelegate.color != color || oldDelegate.radius != radius;
-}
-
 /// The toolbar's sound-focus pill: an accent outline naming the pane that
-/// owns the sound; pressing it opens the dock on that pane, so replacing
-/// what plays there moves the sound with it.
+/// owns the sound; pressing it opens the picker on that pane, so replacing
+/// what plays there moves the sound with it. The tooltip carries the
+/// danmaku note: the chat follows the sound, and this pill is where the
+/// sound is named.
 final class _AudibleFocusButton extends StatelessWidget {
   const _AudibleFocusButton({required this.name, required this.semanticLabel, required this.onPressed});
 
   /// The audible pane's name, the pill's text.
   final String name;
 
-  /// The name screen readers hear and the pointer reads on hover.
+  /// The name screen readers hear.
   final String semanticLabel;
 
   final VoidCallback onPressed;
 
   @override
   Widget build(BuildContext context) {
+    final t = context.t;
     final colors = DsTheme.colorsOf(context);
     final theme = DsTheme.of(context);
     return DsTooltip(
-      message: semanticLabel,
+      message: '$semanticLabel · ${t.multiview.danmakuHint}',
       excludeFromSemantics: true,
       child: DsPressable(
         semanticLabel: semanticLabel,
@@ -1497,6 +1565,187 @@ final class _ToolbarButton extends StatelessWidget {
       ),
     );
   }
+}
+
+/// The layout switcher: each arrangement drawn as a thumbnail in a
+/// pill-shaped group, the chosen one filled with the accent. Figures like
+/// 「1+3」 name a shape a viewer must decode; a drawing of it is read at a
+/// glance, and the words stay in the tooltip and the screen reader.
+final class _LayoutPicker extends StatelessWidget {
+  const _LayoutPicker({required this.value, required this.semanticLabel, required this.onChanged});
+
+  /// The arrangement on the wall.
+  final MultiviewLayout value;
+
+  /// The name screen readers hear for the group.
+  final String semanticLabel;
+
+  /// Fires with the arrangement the viewer chose.
+  final ValueChanged<MultiviewLayout> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = DsTheme.colorsOf(context);
+    final theme = DsTheme.of(context);
+    return DsTooltip(
+      message: semanticLabel,
+      excludeFromSemantics: true,
+      child: Container(
+        height: theme.sizes.sm,
+        padding: const EdgeInsetsDirectional.symmetric(horizontal: DsSpace.s3),
+        decoration: DsBoxDecoration(
+          color: colors.control,
+          borderRadius: BorderRadius.circular(theme.sizes.sm / 2),
+          shadows: [DsShadow.innerRing(colors.border)],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          spacing: DsSpace.s3,
+          children: [
+            for (final arrangement in MultiviewLayout.values)
+              _LayoutPickItem(arrangement: arrangement, selected: value == arrangement, onChanged: onChanged),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// One thumbnail of the layout switcher.
+final class _LayoutPickItem extends StatelessWidget {
+  const _LayoutPickItem({required this.arrangement, required this.selected, required this.onChanged});
+
+  /// The arrangement this thumbnail draws and fires.
+  final MultiviewLayout arrangement;
+
+  /// Whether it is the arrangement on the wall.
+  final bool selected;
+
+  /// Fires with the arrangement when pressed.
+  final ValueChanged<MultiviewLayout> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = DsTheme.colorsOf(context);
+    final label = _arrangementLabel(arrangement);
+    return DsTooltip(
+      message: label,
+      excludeFromSemantics: true,
+      child: DsPressable(
+        semanticLabel: label,
+        selected: selected,
+        onPressed: () => onChanged(arrangement),
+        builder: (context, states, _) {
+          final lit = states.contains(WidgetState.hovered) || states.contains(WidgetState.focused);
+          return Container(
+            width: 40,
+            height: 24,
+            decoration: DsBoxDecoration(
+              color: selected
+                  ? colors.accentTint
+                  : lit
+                  ? colors.hover
+                  : null,
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Center(
+              child: _ArrangementGlyph(
+                arrangement: arrangement,
+                color: selected
+                    ? colors.accentText
+                    : lit
+                    ? colors.text
+                    : colors.textMuted,
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+/// An arrangement drawn small: the panes as stroked rounded rects in the
+/// shape the wall gives them. The strip draws its canonical four-across
+/// form; the wall itself turns it upright on a tall window.
+final class _ArrangementGlyph extends StatelessWidget {
+  const _ArrangementGlyph({required this.arrangement, required this.color, this.width = 26, this.height = 18});
+
+  /// The arrangement drawn.
+  final MultiviewLayout arrangement;
+
+  /// The stroke color.
+  final Color color;
+
+  /// The drawing's size.
+  final double width;
+  final double height;
+
+  @override
+  Widget build(BuildContext context) =>
+      CustomPaint(size: Size(width, height), painter: _ArrangementGlyphPainter(arrangement, color));
+}
+
+/// Draws an arrangement's panes as stroked rounded rects.
+final class _ArrangementGlyphPainter extends CustomPainter {
+  const _ArrangementGlyphPainter(this.arrangement, this.color);
+
+  /// The arrangement drawn and the stroke color.
+  final MultiviewLayout arrangement;
+  final Color color;
+
+  static const double _gap = 2;
+  static const double _radius = 2;
+  static const double _stroke = 1.2;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = _stroke;
+    void pane(Rect rect) =>
+        canvas.drawRRect(RRect.fromRectAndRadius(rect.deflate(_stroke / 2), const Radius.circular(_radius)), paint);
+    final width = size.width;
+    final height = size.height;
+    switch (arrangement) {
+      case MultiviewLayout.single:
+        pane(Offset.zero & size);
+      case MultiviewLayout.dual:
+        final cell = (width - _gap) / 2;
+        for (final at in [0.0, cell + _gap]) {
+          pane(Rect.fromLTWH(at, 0, cell, height));
+        }
+      case MultiviewLayout.quad:
+        final cellWidth = (width - _gap) / 2;
+        final cellHeight = (height - _gap) / 2;
+        for (final (x, y) in [
+          (0.0, 0.0),
+          (cellWidth + _gap, 0.0),
+          (0.0, cellHeight + _gap),
+          (cellWidth + _gap, cellHeight + _gap),
+        ]) {
+          pane(Rect.fromLTWH(x, y, cellWidth, cellHeight));
+        }
+      case MultiviewLayout.focus:
+        final largeWidth = (width - _gap) * 0.58;
+        final railWidth = width - largeWidth - _gap;
+        final cellHeight = (height - _gap * 2) / 3;
+        pane(Rect.fromLTWH(0, 0, largeWidth, height));
+        for (var row = 0; row < 3; row++) {
+          pane(Rect.fromLTWH(largeWidth + _gap, row * (cellHeight + _gap), railWidth, cellHeight));
+        }
+      case MultiviewLayout.strip:
+        final cell = (width - _gap * 3) / 4;
+        for (var column = 0; column < 4; column++) {
+          pane(Rect.fromLTWH(column * (cell + _gap), 0, cell, height));
+        }
+    }
+  }
+
+  @override
+  bool shouldRepaint(_ArrangementGlyphPainter oldDelegate) =>
+      oldDelegate.arrangement != arrangement || oldDelegate.color != color;
 }
 
 /// The selected pane's controls, under the toolbar: pause, quality, line and
@@ -1724,12 +1973,13 @@ final class _PaneVolumeState extends State<_PaneVolume> {
   }
 }
 
-/// The picker dock: the followed rooms and the watched ones, in a panel
-/// beside the wall rather than over it — the cell a pick lands in stays
-/// visible while the list is read. Its header names the cell, its tabs
-/// choose where the rooms come from, and its search field narrows by
-/// title, streamer, room id or platform.
-final class _PanePickerDock extends ConsumerStatefulWidget {
+/// The picker dock beside the wall: the followed rooms and the watched
+/// ones, in a panel next to the panes rather than over them — the cell a
+/// pick lands in stays visible while the list is read. The header names
+/// the cell and carries the close; the hint lives on its own quiet line;
+/// the list itself is [_PanePickerBody], the same body the narrow window's
+/// sheet hosts.
+final class _PanePickerDock extends StatelessWidget {
   const _PanePickerDock({required this.slotIndex, required this.onAssign, required this.onClose});
 
   /// The pane (0-based) the picked room lands in.
@@ -1742,21 +1992,92 @@ final class _PanePickerDock extends ConsumerStatefulWidget {
   final VoidCallback onClose;
 
   @override
-  ConsumerState<_PanePickerDock> createState() => _PanePickerDockState();
+  Widget build(BuildContext context) {
+    final t = context.t;
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
+    return Container(
+      decoration: DsBoxDecoration(
+        color: colors.surface,
+        borderRadius: BorderRadius.circular(theme.radii.card),
+        shadows: [DsShadow.innerRing(colors.border)],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(DsSpace.s12, DsSpace.s8, DsSpace.s6, DsSpace.s3),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    t.multiview.pickerTitle(index: slotIndex + 1),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.typography.bodyStrong.copyWith(color: colors.text),
+                  ),
+                ),
+                DsButton.icon(
+                  variant: DsButtonVariant.ghost,
+                  size: DsSize.sm,
+                  semanticLabel: t.common.close,
+                  onPressed: onClose,
+                  icon: const DsIcon(DsIcons.x, size: 16),
+                ),
+              ],
+            ),
+          ),
+          // The hint on its own quiet line, where it can say a whole
+          // sentence instead of bending inside the header's row.
+          Padding(
+            padding: const EdgeInsets.fromLTRB(DsSpace.s12, DsSpace.s3, DsSpace.s12, DsSpace.s6),
+            child: Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: Text(
+                t.multiview.pickerHint,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.typography.caption.copyWith(color: colors.textSubtle),
+              ),
+            ),
+          ),
+          Expanded(
+            child: _PanePickerBody(slotIndex: slotIndex, onAssign: onAssign),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
-final class _PanePickerDockState extends ConsumerState<_PanePickerDock> {
+/// The picker's working part — the follows/history tabs, the search field
+/// and the room rows — shared by the wide dock beside the wall and the
+/// narrow window's sheet. One row per identity, no duplicates; the search
+/// narrows by title, streamer, room id or platform; a room already on the
+/// wall names its pane instead of moving.
+final class _PanePickerBody extends ConsumerStatefulWidget {
+  const _PanePickerBody({required this.slotIndex, required this.onAssign});
+
+  /// The pane (0-based) the picked room lands in.
+  final int slotIndex;
+
+  /// Hands the picked room to the wall.
+  final void Function(LiveRoom room) onAssign;
+
+  @override
+  ConsumerState<_PanePickerBody> createState() => _PanePickerBodyState();
+}
+
+final class _PanePickerBodyState extends ConsumerState<_PanePickerBody> {
   /// The filter's current words.
   String _query = '';
 
-  /// Which list the dock is showing: follows, or what was watched.
+  /// Which list the picker is showing: follows, or what was watched.
   bool _fromHistory = false;
 
   @override
   Widget build(BuildContext context) {
     final t = context.t;
-    final theme = DsTheme.of(context);
-    final colors = DsTheme.colorsOf(context);
     final follows = ref.watch(followsProvider);
     final history = ref.watch(historyProvider);
     final wall = ref.watch(multiviewProvider);
@@ -1781,109 +2102,68 @@ final class _PanePickerDockState extends ConsumerState<_PanePickerDock> {
               if (_matches(room, needle)) room,
           ];
     final loading = !follows.ready || !history.ready;
-    return Container(
-      decoration: DsBoxDecoration(
-        color: colors.surface,
-        borderRadius: BorderRadius.circular(theme.radii.card),
-        shadows: [DsShadow.innerRing(colors.border)],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(DsSpace.s12, DsSpace.s12, DsSpace.s6, DsSpace.s4),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    spacing: DsSpace.s4,
-                    children: [
-                      // Both lines bend: at the window's floor the dock is
-                      // the page's own width and the two cannot stand at
-                      // full size — an unbent Text paints past the row. The
-                      // title takes two shares, the hint one.
-                      Row(
-                        spacing: DsSpace.s6,
-                        children: [
-                          Flexible(
-                            flex: 2,
-                            child: Text(
-                              t.multiview.pickerTitle(index: widget.slotIndex + 1),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: theme.typography.bodyStrong.copyWith(color: colors.text),
-                            ),
-                          ),
-                          Flexible(
-                            child: Text(
-                              t.multiview.pickerHint,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: theme.typography.caption.copyWith(color: colors.textSubtle),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(DsSpace.s12, DsSpace.s4, DsSpace.s12, DsSpace.s6),
+          child: DsSegmentedControl<bool>(
+            segments: [
+              DsSegment(value: false, label: Text(t.multiview.pickerTabFollows)),
+              DsSegment(value: true, label: Text(t.multiview.pickerTabHistory)),
+            ],
+            value: _fromHistory,
+            semanticLabel: t.multiview.pickerTitle(index: widget.slotIndex + 1),
+            onChanged: (value) => setState(() => _fromHistory = value),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(DsSpace.s12, DsSpace.s3, DsSpace.s12, DsSpace.s8),
+          child: TvInputField(
+            placeholder: t.multiview.pickerSearchShort,
+            semanticLabel: t.multiview.pickerSearch,
+            onChanged: (value) => setState(() => _query = value),
+          ),
+        ),
+        Expanded(
+          child: loading
+              ? const Padding(padding: EdgeInsets.all(DsSpace.s8), child: SkeletonRows(rows: 6))
+              : rooms.isEmpty
+              ? Center(
+                  child: DsEmptyState(
+                    icon: const DsIcon(DsIcons.heart),
+                    title: Text(t.multiview.pickerEmptyTitle),
+                    description: Text(t.multiview.pickerEmptyHint),
                   ),
-                ),
-                DsButton.icon(
-                  variant: DsButtonVariant.ghost,
-                  size: DsSize.sm,
-                  semanticLabel: t.common.close,
-                  onPressed: widget.onClose,
-                  icon: const DsIcon(DsIcons.x, size: 16),
-                ),
-              ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: DsSpace.s12),
-            child: DsSegmentedControl<bool>(
-              segments: [
-                DsSegment(value: false, label: Text(t.multiview.pickerTabFollows)),
-                DsSegment(value: true, label: Text(t.multiview.pickerTabHistory)),
-              ],
-              value: _fromHistory,
-              semanticLabel: t.multiview.pickerTitle(index: widget.slotIndex + 1),
-              onChanged: (value) => setState(() => _fromHistory = value),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(DsSpace.s12, DsSpace.s8, DsSpace.s12, DsSpace.s8),
-            child: TvInputField(
-              placeholder: t.multiview.pickerSearchShort,
-              semanticLabel: t.multiview.pickerSearch,
-              onChanged: (value) => setState(() => _query = value),
-            ),
-          ),
-          Expanded(
-            child: loading
-                ? const Padding(padding: EdgeInsets.all(DsSpace.s8), child: SkeletonRows(rows: 6))
-                : rooms.isEmpty
-                ? Center(
-                    child: DsEmptyState(
-                      icon: const DsIcon(DsIcons.heart),
-                      title: Text(t.multiview.pickerEmptyTitle),
-                      description: Text(t.multiview.pickerEmptyHint),
-                    ),
-                  )
-                : visible.isEmpty
-                ? Center(
-                    child: DsEmptyState(icon: const DsIcon(DsIcons.searchX), title: Text(t.multiview.pickerNoMatch)),
-                  )
-                : ListView(
-                    padding: const EdgeInsets.fromLTRB(DsSpace.s8, 0, DsSpace.s8, DsSpace.s8),
-                    children: [
-                      DsListSection(
-                        children: [for (final room in visible) _row(context, ref, room, shown[room.ref.identityKey])],
+                )
+              : visible.isEmpty
+              ? Center(
+                  child: DsEmptyState(icon: const DsIcon(DsIcons.searchX), title: Text(t.multiview.pickerNoMatch)),
+                )
+              : ListView(
+                  padding: const EdgeInsets.fromLTRB(DsSpace.s8, DsSpace.s3, DsSpace.s8, DsSpace.s8),
+                  children: [
+                    for (final room in visible)
+                      _PickerRow(
+                        room: room,
+                        shownAt: shown[room.ref.identityKey],
+                        platformName: _platformName(context, ref, room.ref.platform),
+                        onTap: () {
+                          final shownAt = shown[room.ref.identityKey];
+                          if (shownAt != null) {
+                            showDsToast(
+                              context: context,
+                              title: t.multiview.alreadyShown(index: shownAt + 1),
+                            );
+                            return;
+                          }
+                          widget.onAssign(room);
+                        },
                       ),
-                    ],
-                  ),
-          ),
-        ],
-      ),
+                  ],
+                ),
+        ),
+      ],
     );
   }
 
@@ -1897,60 +2177,6 @@ final class _PanePickerDockState extends ConsumerState<_PanePickerDock> {
         platform.contains(needle);
   }
 
-  /// One room as a picker row: the platform's letter tile, the room
-  /// title, its anchor and platform, and — when it already plays — the
-  /// pane it sits in.
-  DsListRow _row(BuildContext context, WidgetRef ref, LiveRoom room, int? shownAt) {
-    final t = context.t;
-    return DsListRow(
-      leading: _platformTile(context, ref, room),
-      title: Text(room.content.title, maxLines: 1, overflow: TextOverflow.ellipsis),
-      description: Text(
-        [
-          if (room.anchor?.name case final name? when name.isNotEmpty) name else room.ref.roomId,
-          _platformName(context, ref, room.ref.platform),
-        ].join(' · '),
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-      ),
-      detail: shownAt == null ? null : Text(t.multiview.shownIn(index: shownAt + 1)),
-      onPressed: () {
-        if (shownAt != null) {
-          showDsToast(
-            context: context,
-            title: t.multiview.alreadyShown(index: shownAt + 1),
-          );
-          return;
-        }
-        widget.onAssign(room);
-      },
-    );
-  }
-
-  /// The platform's letter tile (the picker's identity mark until
-  /// platform logos arrive).
-  Widget _platformTile(BuildContext context, WidgetRef ref, LiveRoom room) {
-    final colors = DsTheme.colorsOf(context);
-    final theme = DsTheme.of(context);
-    final platform = room.ref.platform;
-    final site = ref.read(sitesProvider).getById(platform);
-    final icon = localizedSiteIcon(site, size: theme.sizes.lg);
-    if (icon != null) return icon;
-    return Container(
-      width: theme.sizes.lg,
-      height: theme.sizes.lg,
-      alignment: AlignmentDirectional.center,
-      decoration: DsBoxDecoration(
-        color: colors.accentTint,
-        borderRadius: BorderRadius.circular(theme.radii.nested(theme.radii.card, DsSpace.s12)),
-      ),
-      child: Text(
-        platform.isEmpty ? '?' : platform[0].toUpperCase(),
-        style: theme.typography.body.copyWith(fontWeight: FontWeight.w700, color: colors.accentText),
-      ),
-    );
-  }
-
   /// A platform id's display name, or the id itself when the registry
   /// does not know it.
   String _platformName(BuildContext context, WidgetRef ref, String platform) {
@@ -1959,7 +2185,104 @@ final class _PanePickerDockState extends ConsumerState<_PanePickerDock> {
   }
 }
 
-/// The arrangement's own word on the toolbar and in the more menu.
+/// One room in the picker: its cover as a small picture — a thumbnail says
+/// in one glance what a platform letter never did — the title and its
+/// anchor and platform beside it, and the pane it already sits in at the
+/// row's end.
+final class _PickerRow extends StatelessWidget {
+  const _PickerRow({required this.room, required this.shownAt, required this.platformName, required this.onTap});
+
+  /// The room the row offers.
+  final LiveRoom room;
+
+  /// The pane the room already sits in, null when it is free.
+  final int? shownAt;
+
+  /// The platform's display name, for the row's second line.
+  final String platformName;
+
+  /// Fired on the row: assigns the room, or names the pane it is in.
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
+    final title = room.content.title;
+    final anchor = room.anchor?.name ?? '';
+    final url = room.content.coverUrl;
+    final thumb = ClipRRect(
+      borderRadius: BorderRadius.circular(6),
+      child: SizedBox(
+        width: 64,
+        height: 36,
+        child: url.isEmpty
+            ? ColoredBox(
+                color: colors.channel,
+                child: Center(child: DsIcon(DsIcons.tv, size: 14, color: colors.textSubtle)),
+              )
+            : DsImage(
+                image: cachedImage(url, policy: ImageCachePolicies.liveRoomCover),
+                aspectRatio: 16 / 9,
+                semanticLabel: title,
+                fallback: ColoredBox(
+                  color: colors.channel,
+                  child: Center(child: DsIcon(DsIcons.tv, size: 14, color: colors.textSubtle)),
+                ),
+              ),
+      ),
+    );
+    return DsPressable(
+      semanticLabel: title,
+      onPressed: onTap,
+      builder: (context, states, _) {
+        final lit = states.contains(WidgetState.hovered) || states.contains(WidgetState.focused);
+        return Container(
+          height: 52,
+          margin: const EdgeInsetsDirectional.only(bottom: DsSpace.s3),
+          padding: const EdgeInsetsDirectional.symmetric(horizontal: DsSpace.s8),
+          decoration: DsBoxDecoration(color: lit ? colors.hover : null, borderRadius: BorderRadius.circular(8)),
+          child: Row(
+            spacing: DsSpace.s8,
+            children: [
+              thumb,
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  spacing: DsSpace.s3,
+                  children: [
+                    Text(
+                      title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.typography.caption.copyWith(fontWeight: FontWeight.w600, color: colors.text),
+                    ),
+                    Text(
+                      [if (anchor.isNotEmpty) anchor else room.ref.roomId, platformName].join(' · '),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.typography.caption.copyWith(color: colors.textSubtle),
+                    ),
+                  ],
+                ),
+              ),
+              if (shownAt != null)
+                DsBadge(
+                  label: Text(context.t.multiview.shownIn(index: shownAt! + 1)),
+                  dot: false,
+                  style: const DsBadgeStyle(height: 18),
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// The arrangement's own word on the tooltips, the screen reader and the
+/// more menu.
 String _arrangementLabel(MultiviewLayout arrangement) => switch (arrangement) {
   MultiviewLayout.single => '1×1',
   MultiviewLayout.dual => '1×2',
