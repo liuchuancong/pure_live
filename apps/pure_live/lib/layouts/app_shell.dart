@@ -356,6 +356,21 @@ final class _AppShellState extends ConsumerState<AppShell> {
     ],
   };
 
+  /// The bar tab's icon, with the destination's badge riding its shoulder —
+  /// the favorites count the rail's row and the drawer carry. The bar's
+  /// slots have no count of their own, so the number wears the kit's bubble.
+  Widget _barIcon(NavigationItem item) {
+    final count = widget.badges[item];
+    if (count == null || count <= 0) return DsIcon(item.icon);
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        DsIcon(item.icon),
+        PositionedDirectional(top: -6, end: -10, child: DsCount(count, style: const DsCountStyle(minSize: 16))),
+      ],
+    );
+  }
+
   /// One menu block as the drawer shows it: the live home block is the
   /// navigation setting's list, a block made entirely of tools follows the
   /// tool-order setting, and every other block keeps the registry's order.
@@ -473,7 +488,7 @@ final class _AppShellState extends ConsumerState<AppShell> {
           for (final item in tabs)
             DsBottomNavItem<NavigationItem>(
               value: item,
-              icon: DsIcon(item.icon),
+              icon: _barIcon(item),
               label: Text(item.label(t)),
               semanticLabel: item.label(t),
             ),

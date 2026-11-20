@@ -230,12 +230,13 @@ final class _AppLayoutState extends ConsumerState<AppLayout> {
         );
     // The shelf's new episodes ride on the hongguo menu's favorites row,
     // the reference's badge: the number each favorite gained since the
-    // series was last opened. Only the station that owns the shelf is
-    // followed, so other modules never subscribe to it. The live rail's
-    // favorites row carries its own count the same way — the rooms the
-    // follow store holds, the total the page's tabs name.
+    // series was last opened. The live rail's favorites row carries its own
+    // count the same way — the rooms the follow store holds — and it is
+    // subscribed in every module, so the number is fresh wherever a switch
+    // lands, not one module behind. The hongguo shelf keeps its lazy boot:
+    // its store is heavier than one open database.
     final newEpisodes = module == AppModule.hongguo ? ref.watch(hongguoLibraryProvider).addedCount : 0;
-    final followCount = module == AppModule.live ? ref.watch(followsProvider.select((state) => state.rooms.length)) : 0;
+    final followCount = ref.watch(followsProvider.select((state) => state.rooms.length));
     final badges = <NavigationItem, int>{
       if (newEpisodes > 0) NavigationItem.hongguoFavorites: newEpisodes,
       if (followCount > 0) NavigationItem.favorites: followCount,
