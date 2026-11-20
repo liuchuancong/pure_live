@@ -358,16 +358,35 @@ final class _AppShellState extends ConsumerState<AppShell> {
 
   /// The bar tab's icon, with the destination's badge riding its shoulder —
   /// the favorites count the rail's row and the drawer carry. The bar's
-  /// slots have no count of their own, so the number wears the kit's bubble.
+  /// slots have no count of their own, so the number wears the kit's
+  /// bubble — inside the icon's own box: the bar and its glass pane clip
+  /// their children, and a bubble pushed past the icon's edge was cut down
+  /// to the sliver that overlapped, reading as a bare dot.
   Widget _barIcon(NavigationItem item) {
     final count = widget.badges[item];
     if (count == null || count <= 0) return DsIcon(item.icon);
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        DsIcon(item.icon),
-        PositionedDirectional(top: -6, end: -10, child: DsCount(count, style: const DsCountStyle(minSize: 16))),
-      ],
+    return SizedBox(
+      width: 28,
+      height: 28,
+      child: Stack(
+        alignment: Alignment.center,
+        clipBehavior: Clip.none,
+        children: [
+          DsIcon(item.icon),
+          PositionedDirectional(
+            top: 0,
+            end: 0,
+            child: DsCount(
+              count,
+              style: const DsCountStyle(
+                minSize: 15,
+                padding: EdgeInsets.symmetric(horizontal: DsSpace.s4),
+                textStyle: TextStyle(fontSize: 10, fontWeight: FontWeight.w600),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
