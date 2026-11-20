@@ -31,6 +31,7 @@ final class ShieldEntryList extends ConsumerStatefulWidget {
     required this.onAdd,
     required this.onRemove,
     required this.onClear,
+    this.hasRoom,
     this.acceptsPatterns = false,
     super.key,
   });
@@ -59,6 +60,10 @@ final class ShieldEntryList extends ConsumerStatefulWidget {
   /// Adds an entry; answers false when it is empty or a duplicate.
   final Future<bool> Function(String value) onAdd;
 
+  /// Whether the list still takes an entry, read at the moment of the press;
+  /// the field says "full" instead of "already here" when it answers false.
+  final Future<bool> Function()? hasRoom;
+
   /// Removes one entry.
   final Future<void> Function(String value) onRemove;
 
@@ -85,6 +90,7 @@ final class _ShieldEntryListState extends ConsumerState<ShieldEntryList> {
           fieldHint: widget.fieldHint,
           acceptsPatterns: widget.acceptsPatterns,
           onAdd: widget.onAdd,
+          hasRoom: widget.hasRoom,
           padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s8, DsSpace.s20, DsSpace.s8),
           // Clearing the whole list sits beside the add button: both are
           // actions on the list.

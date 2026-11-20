@@ -16,6 +16,7 @@ final class ShieldAddField extends ConsumerStatefulWidget {
   const ShieldAddField({
     required this.fieldHint,
     required this.onAdd,
+    this.hasRoom,
     this.acceptsPatterns = false,
     this.padding = EdgeInsets.zero,
     this.trailing,
@@ -27,6 +28,12 @@ final class ShieldAddField extends ConsumerStatefulWidget {
 
   /// Adds the entry; answers false when it is empty or a duplicate.
   final Future<bool> Function(String value) onAdd;
+
+  /// Whether the list still takes an entry, read at the moment of the press.
+  /// Without it a full list's refusal reads as "already here", because both
+  /// answer false — the room's own block actions tell the two apart, and so
+  /// does this field when its list can say which.
+  final Future<bool> Function()? hasRoom;
 
   /// Whether a word written `/…/` means a regular expression here. It is the
   /// keyword list's property, not the user list's, and the guard that decides
@@ -85,7 +92,11 @@ final class _ShieldAddFieldState extends ConsumerState<ShieldAddField> {
   Future<void> _commit() async {
     final t = context.t;
     final value = _field.text;
-    if (widget.acceptsPatterns && value.trim().isNotEmpty) {
+    if (value.trim().isEmpty) {
+      showDsToast(context: context, title: t.shield.invalidEntry);
+      return;
+    }
+    if (widget.acceptsPatterns) {
       final problem = DanmakuBlockPattern.check(value);
       if (problem != null) {
         // The lists read a refused word as nothing at all, so the field is the
@@ -100,12 +111,13 @@ final class _ShieldAddFieldState extends ConsumerState<ShieldAddField> {
         return;
       }
     }
-    final added = await widget.onAdd(value);
-    if (!mounted) return;
-    if (value.trim().isEmpty) {
-      showDsToast(context: context, title: t.shield.invalidEntry);
+    if (widget.hasRoom != null && !await widget.hasRoom!()) {
+      if (!mounted) return;
+      showDsToast(context: context, title: t.shield.listFull);
       return;
     }
+    final added = await widget.onAdd(value);
+    if (!mounted) return;
     if (!added) {
       showDsToast(context: context, title: t.shield.duplicateEntry);
       return;
