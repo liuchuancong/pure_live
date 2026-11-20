@@ -78,6 +78,18 @@ final class MultiviewPlaybackController extends Notifier<MultiviewPlaybackState>
   bool _globalMuted = false;
   int? _selected;
 
+  /// Whether this visit's first look at a ready wall has happened, and what
+  /// it found: the ask belongs to the wall the document kept on arrival, so
+  /// a room a viewer assigns on an empty visit opens straight away instead
+  /// of being asked about as if it were the document's own.
+  bool _arrivalSeen = false;
+  bool _savedAtArrival = false;
+
+  /// Whether a decline is walking the saved slots clear: each clear lands
+  /// in this controller through the wall's own stream, and the slots still
+  /// standing are the ones the viewer just refused — they must not open.
+  bool _declining = false;
+
   @override
   MultiviewPlaybackState build() {
     _globalMuted = ref.read(playbackSettingsProvider).globalMute;
@@ -124,12 +136,16 @@ final class MultiviewPlaybackController extends Notifier<MultiviewPlaybackState>
     if (_active == active) return;
     _active = active;
     if (active) {
+      _arrivalSeen = false;
+      _savedAtArrival = false;
       _sync();
       return;
     }
     _releaseAll();
     _allMuted = false;
     _restoreDecided = false;
+    _arrivalSeen = false;
+    _savedAtArrival = false;
     _publish();
   }
 
@@ -146,10 +162,15 @@ final class MultiviewPlaybackController extends Notifier<MultiviewPlaybackState>
   Future<void> declineRestoreWall() async {
     if (_restoreDecided) return;
     _restoreDecided = true;
-    final wall = ref.read(multiviewProvider);
-    final controller = ref.read(multiviewProvider.notifier);
-    for (var index = 0; index < wall.slots.length; index++) {
-      if (wall.slots[index] != null) await controller.clearSlot(index);
+    _declining = true;
+    try {
+      final wall = ref.read(multiviewProvider);
+      final controller = ref.read(multiviewProvider.notifier);
+      for (var index = 0; index < wall.slots.length; index++) {
+        if (wall.slots[index] != null) await controller.clearSlot(index);
+      }
+    } finally {
+      _declining = false;
     }
     _publish();
     _sync();
@@ -316,6 +337,10 @@ final class MultiviewPlaybackController extends Notifier<MultiviewPlaybackState>
     if (!_active) return;
     final wall = ref.read(multiviewProvider);
     if (!wall.ready) return;
+    if (!_arrivalSeen) {
+      _arrivalSeen = true;
+      _savedAtArrival = wall.slots.any((slot) => slot != null);
+    }
     final followed = {for (final room in ref.read(followsProvider).rooms) room.ref.identityKey: room};
     for (final session in [..._sessions]) {
       if (session.slot >= wall.slots.length || wall.slots[session.slot] != session.identity) {
@@ -324,12 +349,18 @@ final class MultiviewPlaybackController extends Notifier<MultiviewPlaybackState>
     }
     // A wall the document saved asks before it opens: opening four streams
     // at once is the reference's own courtesy, and the ask costs nothing —
-    // a wall built by hand this visit is already decided.
+    // a wall built by hand this visit is not the document's, so it opens
+    // straight away, and a decline's remaining slots are going away and
+    // never open.
     final saved = [
       for (var slot = 0; slot < wall.slots.length; slot++)
         if (wall.slots[slot] != null && !_sessions.any((session) => session.slot == slot)) slot,
     ];
-    if (saved.isNotEmpty && !_restoreDecided && _sessions.isEmpty) {
+    if (saved.isNotEmpty && _declining) {
+      _publish();
+      return;
+    }
+    if (saved.isNotEmpty && _savedAtArrival && !_restoreDecided && _sessions.isEmpty) {
       _publish();
       return;
     }
