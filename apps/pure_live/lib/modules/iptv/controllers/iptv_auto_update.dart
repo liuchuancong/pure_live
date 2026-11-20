@@ -65,11 +65,13 @@ final class IptvUpdateIntervalController extends Notifier<IptvUpdateInterval> {
   /// Chooses [interval]. The updater reads the choice every tick, so a
   /// change lands within a minute — the earlier note about the next start
   /// was wrong, and so was the sibling comment above the class.
-  void select(IptvUpdateInterval interval) {
+  Future<void> select(IptvUpdateInterval interval) async {
     if (interval == state) return;
     state = interval;
     try {
-      unawaited(StoragePrefs.setInt(_intervalPref, interval.hours));
+      // The write is awaited: a closed store then loses the choice inside
+      // this catch instead of answering an unhandled error somewhere else.
+      await StoragePrefs.setInt(_intervalPref, interval.hours);
     } on Object {
       // A preference; a closed store loses it.
     }

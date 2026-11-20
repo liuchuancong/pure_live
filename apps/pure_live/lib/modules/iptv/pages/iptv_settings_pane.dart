@@ -73,7 +73,7 @@ final class IptvSettingsPane extends ConsumerWidget {
             options: [
               for (final value in IptvUpdateInterval.values) DsSelectOption(value: value, label: value.label(t)),
             ],
-            onChanged: ref.read(iptvUpdateIntervalProvider.notifier).select,
+            onChanged: (value) => unawaited(ref.read(iptvUpdateIntervalProvider.notifier).select(value)),
           ),
         if (autoSync)
           SettingsConfigRow(

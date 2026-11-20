@@ -121,6 +121,10 @@ final class IptvRemindersController extends Notifier<List<IptvReminder>> {
     unawaited(
       Future<void>.microtask(() {
         _announceMissed(missed);
+        // A lapsed reminder has served: the announcement is its trace, so
+        // it leaves the store here rather than announcing again at every
+        // launch until some other edit happens to write through.
+        if (missed.isNotEmpty) unawaited(_save());
         _arm();
       }),
     );
