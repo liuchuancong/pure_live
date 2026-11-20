@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:live_net/live_net.dart' show LiveHttp, LiveRequest, LiveResponse, LiveStreamedResponse;
 import 'package:live_storage/live_storage.dart';
-import 'package:live_vod/live_vod.dart' show HuyaArchiveApi, HuyaVideoApi;
+import 'package:live_vod/live_vod.dart' show HuyaArchiveApi, HuyaChannel, HuyaChannelGroup, HuyaVideoApi;
 import 'package:pure_live/modules/huya/controller/huya_video.dart';
 
 /// The huya video station's controllers, argued over a stub transport: a
@@ -28,7 +28,7 @@ void main() {
   group('the ranking surface', () {
     test('a switch while a board page is in flight still loads the board it landed on', () async {
       final http = _StubHttp()
-        ..route('rank/all.html', () async {
+        ..route('rank/all.html', (url) async {
           return _ok(
             _ssr({
               'channelItemList': [
@@ -38,14 +38,13 @@ void main() {
             }),
           );
         })
-        ..route(
-          'rank/1.html',
-          () async => _ok(
+        ..route('rank/1.html', (url) async {
+          return _ok(
             _ssr({
               'rankData': {'list': <Object?>[], 'total': 0},
             }),
-          ),
-        );
+          );
+        });
       final firstBoard = http.hold('rank/2168.html');
 
       final container = ProviderContainer(overrides: [huyaVideoApiProvider.overrideWith((ref) => HuyaVideoApi(http))]);
@@ -78,7 +77,7 @@ void main() {
 
     test('a board page that failed keeps the failure, and refresh asks again', () async {
       final http = _StubHttp()
-        ..route('rank/all.html', () async {
+        ..route('rank/all.html', (url) async {
           return _ok(
             _ssr({
               'channelItemList': [
@@ -87,7 +86,9 @@ void main() {
             }),
           );
         })
-        ..route('rank/2168.html', () async => _fail());
+        ..route('rank/2168.html', (url) async {
+          return _fail();
+        });
       final container = ProviderContainer(overrides: [huyaVideoApiProvider.overrideWith((ref) => HuyaVideoApi(http))]);
       addTearDown(container.dispose);
       container.listen(huyaRankProvider, (_, _) {});
@@ -107,7 +108,10 @@ void main() {
 
   group('the replay tab', () {
     test('a first page that failed answers the retry ask again', () async {
-      final http = _StubHttp()..route('video/u/', () => Future<LiveResponse>.value(_fail()));
+      final http = _StubHttp()
+        ..route('video/u/', (url) async {
+          return _fail();
+        });
       final container = ProviderContainer(
         overrides: [huyaArchiveApiProvider.overrideWith((ref) => HuyaArchiveApi(http))],
       );
@@ -129,7 +133,7 @@ void main() {
 
     test('a replay page that answered is not asked again', () async {
       final http = _StubHttp()
-        ..route('video/u/', () async {
+        ..route('video/u/', (url) async {
           return _ok(
             _ssr({
               'userPageLiveRecordVideoRsp': {
@@ -195,6 +199,217 @@ void main() {
     });
   });
 
+  group('the browse surface', () {
+    test('the groups and the first page load, and a second page appends its new rows only', () async {
+      final http = _StubHttp()
+        ..route(r'g/all$', (url) async {
+          return _ok(_ssr(_groupsFixture()));
+        })
+        ..route('all_hot_0', (url) async {
+          final page = int.parse(url.queryParameters['page'] ?? '1');
+          return _ok(_ssr(_listPage(pageIndex: page, total: 45, ids: page == 1 ? ['11', '12'] : ['12', '13'])));
+        });
+      final container = ProviderContainer(overrides: [huyaVideoApiProvider.overrideWith((ref) => HuyaVideoApi(http))]);
+      addTearDown(container.dispose);
+      container.listen(huyaBrowseProvider, (_, _) {});
+      final controller = container.read(huyaBrowseProvider.notifier);
+
+      await controller.open();
+      var state = container.read(huyaBrowseProvider);
+      expect(state.groups, hasLength(2)); // the strip carries both groups
+      expect(state.current.videos.map((video) => video.id), ['11', '12']);
+      expect(state.current.hasMore, isTrue); // twenty read, forty-five on the shelf
+
+      await controller.loadMore();
+      state = container.read(huyaBrowseProvider);
+      expect(state.current.videos.map((video) => video.id), ['11', '12', '13']); // the repeat dropped
+      expect(state.current.hasMore, isTrue);
+    });
+
+    test('a listing that ignores its page stops the walk after two unchanged pages', () async {
+      final http = _StubHttp()
+        ..route(r'g/all$', (url) async {
+          return _ok(_ssr(_groupsFixture()));
+        })
+        ..route('all_hot_0', (url) async {
+          return _ok(_ssr(_listPage(pageIndex: 1, total: 100, ids: ['11', '12'])));
+        });
+      final container = ProviderContainer(overrides: [huyaVideoApiProvider.overrideWith((ref) => HuyaVideoApi(http))]);
+      addTearDown(container.dispose);
+      container.listen(huyaBrowseProvider, (_, _) {});
+      final controller = container.read(huyaBrowseProvider.notifier);
+
+      await controller.open();
+      expect(container.read(huyaBrowseProvider).current.hasMore, isTrue);
+
+      await controller.loadMore(); // the station answered page one again
+      var state = container.read(huyaBrowseProvider);
+      expect(state.current.videos, hasLength(2)); // nothing new came
+      expect(state.current.hasMore, isTrue); // one unchanged page is forgiven
+
+      await controller.loadMore(); // and a second one ends the walk
+      state = container.read(huyaBrowseProvider);
+      expect(state.current.hasMore, isFalse);
+
+      await controller.loadMore(); // the walk is over: nothing asks again
+      expect(http.calls.where((uri) => uri.path.contains('all_hot_0')), hasLength(3));
+    });
+
+    test('each listing keeps its own walked pages, and returning to one asks nothing', () async {
+      final http = _StubHttp()
+        ..route(r'g/all$', (url) async {
+          return _ok(_ssr(_groupsFixture()));
+        })
+        ..route('all_hot_0', (url) async {
+          return _ok(_ssr(_listPage(pageIndex: 1, total: 2, ids: ['11', '12'])));
+        })
+        ..route('all_hot_2', (url) async {
+          return _ok(_ssr(_listPage(pageIndex: 1, total: 1, ids: ['21'])));
+        })
+        ..route('2168_hot_0', (url) async {
+          return _ok(_ssr(_listPage(pageIndex: 1, total: 1, ids: ['31'])));
+        });
+      final container = ProviderContainer(overrides: [huyaVideoApiProvider.overrideWith((ref) => HuyaVideoApi(http))]);
+      addTearDown(container.dispose);
+      container.listen(huyaBrowseProvider, (_, _) {});
+      final controller = container.read(huyaBrowseProvider.notifier);
+      await controller.open(); // the whole site, ungrouped
+      expect(container.read(huyaBrowseProvider).current.videos, hasLength(2));
+
+      await controller.selectChannel(_groupOf(container, 2), const HuyaChannel(id: 'all', name: '全部'));
+      expect(container.read(huyaBrowseProvider).current.videos.map((video) => video.id), ['21']);
+
+      await controller.selectChannel(_groupOf(container, 1), const HuyaChannel(id: '2168', name: '英雄'));
+      expect(container.read(huyaBrowseProvider).current.videos.map((video) => video.id), ['31']);
+
+      await controller.selectChannel(_groupOf(container, 2), const HuyaChannel(id: 'all', name: '全部'));
+      expect(container.read(huyaBrowseProvider).current.videos.map((video) => video.id), ['21']); // walked pages stand
+      expect(http.calls.where((uri) => uri.path.contains('video/g/')), hasLength(4)); // groups + three pages
+    });
+
+    test('walking into a channel from a shelf lands in the group that holds it', () async {
+      final http = _StubHttp()
+        ..route(r'g/all$', (url) async {
+          return _ok(_ssr(_groupsFixture()));
+        })
+        ..route('all_hot_0', (url) async {
+          return _ok(_ssr(_listPage(pageIndex: 1, total: 2, ids: ['11', '12'])));
+        })
+        ..route('135_hot_0', (url) async {
+          return _ok(_ssr(_listPage(pageIndex: 1, total: 1, ids: ['41'])));
+        });
+      final container = ProviderContainer(overrides: [huyaVideoApiProvider.overrideWith((ref) => HuyaVideoApi(http))]);
+      addTearDown(container.dispose);
+      container.listen(huyaBrowseProvider, (_, _) {});
+      final controller = container.read(huyaBrowseProvider.notifier);
+
+      await controller.open();
+      await controller.walkInto('135'); // the shelf's channel
+      final state = container.read(huyaBrowseProvider);
+      expect(state.groupId, 2); // the group that holds it leads the strip
+      expect(state.channelId, '135');
+      expect(state.current.videos.map((video) => video.id), ['41']);
+    });
+  });
+
+  group('the home shelves', () {
+    test('the home opens once, and a failed first open retries', () async {
+      final failing = _StubHttp()
+        ..route('video/', (url) async {
+          return _fail();
+        });
+      final container = ProviderContainer(
+        overrides: [huyaVideoApiProvider.overrideWith((ref) => HuyaVideoApi(failing))],
+      );
+      addTearDown(container.dispose);
+      container.listen(huyaVideoHomeProvider, (_, _) {});
+      final controller = container.read(huyaVideoHomeProvider.notifier);
+
+      await controller.open();
+      var state = container.read(huyaVideoHomeProvider);
+      expect(state.home, isNull);
+      expect(state.error, isNotNull);
+      expect(failing.calls, hasLength(1));
+
+      await controller.open(); // the page's re-entry after the failure
+      expect(failing.calls, hasLength(2)); // the ask went out again
+
+      failing.route('video/', (url) async {
+        return _ok(
+          _ssr({
+            'aggregationList': [
+              {
+                'recommendItem': {
+                  'title': '热门推荐',
+                  'setId': 1,
+                  'channelItemList': [
+                    {'id': '2168', 'name': '英雄'},
+                  ],
+                },
+                'videoInfoList': [
+                  {'vid': '11', 'videoTitle': '第一条'},
+                ],
+              },
+            ],
+          }),
+        );
+      });
+      await controller.refresh();
+      state = container.read(huyaVideoHomeProvider);
+      expect(state.error, isNull);
+      expect(state.home!.shelves, hasLength(1));
+      expect(state.home!.shelves.first.videos.single.id, '11');
+
+      await controller.open(); // the shelves stand: the re-entry asks nothing
+      expect(failing.calls, hasLength(3));
+    });
+  });
+
+  group('the home batch', () {
+    test('exchanging walks the channel pages, wraps to the first, and a channel restarts', () async {
+      final http = _StubHttp()
+        ..route('2168_hot_0', (url) async {
+          final page = int.parse(url.queryParameters['page'] ?? '1');
+          return _ok(
+            _ssr(
+              _listPage(
+                pageIndex: page,
+                total: 40,
+                ids: page == 1
+                    ? ['11']
+                    : page == 2
+                    ? ['21']
+                    : const [],
+              ),
+            ),
+          );
+        })
+        ..route('712_hot_0', (url) async {
+          return _ok(_ssr(_listPage(pageIndex: 1, total: 40, ids: ['71'])));
+        });
+      final container = ProviderContainer(overrides: [huyaVideoApiProvider.overrideWith((ref) => HuyaVideoApi(http))]);
+      addTearDown(container.dispose);
+      container.listen(huyaBatchProvider, (_, _) {});
+      final controller = container.read(huyaBatchProvider.notifier);
+
+      await controller.exchange(channelId: '2168', setId: 0);
+      expect(container.read(huyaBatchProvider).videos.single.id, '11');
+      expect(container.read(huyaBatchProvider).page, 1);
+
+      await controller.exchange(channelId: '2168', setId: 0);
+      expect(container.read(huyaBatchProvider).videos.single.id, '21');
+      expect(container.read(huyaBatchProvider).page, 2);
+
+      await controller.exchange(channelId: '2168', setId: 0); // the shelf ran out: back to page one
+      expect(container.read(huyaBatchProvider).videos.single.id, '11');
+      expect(container.read(huyaBatchProvider).page, 1);
+
+      await controller.exchange(channelId: '712', setId: 0); // another channel starts over
+      expect(container.read(huyaBatchProvider).videos.single.id, '71');
+      expect(container.read(huyaBatchProvider).page, 1);
+    });
+  });
+
   group('the information column', () {
     test('the width a drag ended on is shown, stored and restored', () async {
       final container = ProviderContainer();
@@ -227,27 +442,70 @@ LiveResponse _fail() => LiveResponse(statusCode: 500, headers: const {}, bodyByt
 /// The station's page answer: the official data assignment over any markup.
 String _ssr(Object json) => '<html><script>window.HNF_GLOBAL_INIT = ${jsonEncode(json)}</script></html>';
 
+/// The station's channel strip: two groups, two channels apiece.
+Map<String, Object?> _groupsFixture() => {
+  'channelList': [
+    {
+      'title': '网游',
+      'setId': 1,
+      'channelItemList': [
+        {'id': '2168', 'name': '英雄'},
+        {'id': '712', 'name': '主机'},
+      ],
+    },
+    {
+      'title': '一起看',
+      'setId': 2,
+      'channelItemList': [
+        {'id': '135', 'name': '电影'},
+      ],
+    },
+  ],
+};
+
+/// One listing page: [ids] are the rows' video ids, [total] drives hasMore.
+Map<String, Object?> _listPage({required int pageIndex, required int total, required List<String> ids}) => {
+  'channelInfo': {'pageIndex': pageIndex},
+  'videoData': {
+    'respHeader': {'code': 0},
+    'videoDataList': [
+      for (final id in ids) {'vid': id, 'videoTitle': '视频 $id'},
+    ],
+    'total': total,
+  },
+};
+
+/// The group on screen whose setId is [setId].
+HuyaChannelGroup _groupOf(ProviderContainer container, int setId) =>
+    container.read(huyaBrowseProvider).groups.firstWhere((group) => group.setId == setId);
+
 /// The transport the tests code against: routes by a path fragment, holds
 /// the calls a gate names until it is released, and remembers every ask.
 final class _StubHttp implements LiveHttp {
   final calls = <Uri>[];
-  final Map<String, Future<LiveResponse> Function()> _routes = {};
+  final Map<String, Future<LiveResponse> Function(Uri url)> _routes = {};
   final Map<String, Completer<void>> _gates = {};
 
-  /// Answers every call whose path carries [fragment] with [answer].
-  void route(String fragment, Future<LiveResponse> Function() answer) => _routes[fragment] = answer;
+  /// Answers every call whose path carries [fragment] with [answer]. A
+  /// fragment ending in `$` matches the path's tail, so `g/all$` tells the
+  /// groups page apart from the `g/all_hot_0` listings it would otherwise
+  /// swallow.
+  void route(String fragment, Future<LiveResponse> Function(Uri url) answer) => _routes[fragment] = answer;
 
   /// Holds every call whose path carries [fragment] until it is completed.
   Completer<void> hold(String fragment) => _gates.putIfAbsent(fragment, Completer<void>.new);
+
+  static bool _hits(String fragment, String path) =>
+      fragment.endsWith(r'$') ? path.endsWith(fragment.substring(0, fragment.length - 1)) : path.contains(fragment);
 
   @override
   Future<LiveResponse> send(LiveRequest request) async {
     calls.add(request.url);
     for (final gate in _gates.entries) {
-      if (request.url.path.contains(gate.key)) await gate.value.future;
+      if (_hits(gate.key, request.url.path)) await gate.value.future;
     }
     for (final route in _routes.entries) {
-      if (request.url.path.contains(route.key)) return await route.value();
+      if (_hits(route.key, request.url.path)) return await route.value(request.url);
     }
     throw StateError('the stub holds no answer for ${request.url.path}');
   }
