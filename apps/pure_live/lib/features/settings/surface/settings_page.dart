@@ -143,7 +143,7 @@ final class _SettingsBodyWithSearchState extends ConsumerState<_SettingsBodyWith
     final hits = query.isEmpty
         ? const <SettingsSearchHit>[]
         : settingsSearchHits(t, query, settingsSearchSections(groups));
-    final inset = LiveWindow.isCompact(MediaQuery.sizeOf(context).width) ? DsSpace.s16 : DsSpace.s24;
+    final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -218,7 +218,7 @@ final class SettingsCategoryPane extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = context.t;
-    final inset = LiveWindow.isCompact(MediaQuery.sizeOf(context).width) ? DsSpace.s16 : DsSpace.s24;
+    final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
     return SingleChildScrollView(
       padding: EdgeInsets.fromLTRB(inset, DsSpace.s20, inset, DsSpace.s24),
       child: _SettingsColumn(
@@ -293,7 +293,7 @@ final class _SectionSearchResults extends StatelessWidget {
         child: DsEmptyState(icon: const DsIcon(DsIcons.searchX), title: Text(t.settings.searchNoResults)),
       );
     }
-    final inset = LiveWindow.isCompact(MediaQuery.sizeOf(context).width) ? DsSpace.s16 : DsSpace.s24;
+    final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
     return SingleChildScrollView(
       padding: EdgeInsets.fromLTRB(inset, DsSpace.s16, inset, DsSpace.s24),
       child: _SettingsColumn(
@@ -449,7 +449,12 @@ final class _SettingsMenuListState extends ConsumerState<_SettingsMenuList> {
       );
     }
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s24),
+      padding: EdgeInsets.fromLTRB(
+        LiveWindow.pageInset(MediaQuery.sizeOf(context).width),
+        0,
+        LiveWindow.pageInset(MediaQuery.sizeOf(context).width),
+        DsSpace.s24,
+      ),
       child: _SettingsColumn(spacing: DsSpace.s16, children: blocks),
     );
   }
@@ -552,7 +557,7 @@ final class SettingsSectionPane extends StatelessWidget {
       // or a stored deep link still opens that page on the right half.
       SettingsSection.musicEq => const MusicSettingsPane(initialSection: SettingsSection.musicEq),
     };
-    final inset = LiveWindow.isCompact(MediaQuery.sizeOf(context).width) ? DsSpace.s16 : DsSpace.s24;
+    final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
     final padding = EdgeInsets.fromLTRB(inset, DsSpace.s20, inset, DsSpace.s24);
     // Some pages own their height instead of scrolling the whole pane with
     // it: a wallpaper page fills the window with as many whole rows as fit,
@@ -573,5 +578,3 @@ final class SettingsSectionPane extends StatelessWidget {
     );
   }
 }
-
-/// The two faces of the network page.

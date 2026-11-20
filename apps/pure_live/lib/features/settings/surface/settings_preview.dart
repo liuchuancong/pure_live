@@ -453,9 +453,7 @@ final class SettingsPreviewBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DecoratedBox(
-      decoration: BoxDecoration(
-        gradient: OnVideoColors.shade(edge: VerticalDirection.down),
-      ),
+      decoration: BoxDecoration(gradient: OnVideoColors.shade(edge: VerticalDirection.down)),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(DsSpace.s12, DsSpace.s24, DsSpace.s12, DsSpace.s8),
         child: Row(spacing: DsSpace.s4, children: children),

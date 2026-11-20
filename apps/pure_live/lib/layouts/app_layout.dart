@@ -424,8 +424,6 @@ final class _AppLayoutState extends ConsumerState<AppLayout> {
       onMenu: handleMenu,
       badges: badges,
       settingsSection: inSettings ? settingsSection : null,
-      settingsCategoryKey: inSettings ? settingsCategory : null,
-      settingsSectionOpen: inSettings && sectionOpen,
       // The toggle rules; a window crossing under the breakpoint folds the
       // sidebar once (didChangeDependencies), never outvoting this.
       expanded: (tv && ref.watch(tvMenuExpandedProvider)) || sidebar.expanded,

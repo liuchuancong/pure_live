@@ -74,8 +74,6 @@ final class AppShell extends ConsumerStatefulWidget {
     required this.onToggleSidebar,
     required this.onSidebarWidthChanged,
     this.settingsSection,
-    this.settingsCategoryKey,
-    this.settingsSectionOpen = false,
     this.homeMenuItems = kHomeMenuItems,
     this.badges = const {},
     this.tv = false,
@@ -130,12 +128,6 @@ final class AppShell extends ConsumerStatefulWidget {
 
   /// The section on screen while the settings surface is showing.
   final SettingsSection? settingsSection;
-
-  /// The settings category the surface is on, for the breadcrumb.
-  final String? settingsCategoryKey;
-
-  /// Whether a section page is open below [settingsCategoryKey].
-  final bool settingsSectionOpen;
 
   /// The live home menu's visible entries in the viewer's order.
   final List<NavigationItem> homeMenuItems;
@@ -676,7 +668,15 @@ final class _AppShellState extends ConsumerState<AppShell> {
                         Column(
                           children: [
                             Padding(
-                              padding: const EdgeInsets.fromLTRB(DsSpace.s16, DsSpace.s12, DsSpace.s16, 0),
+                              // The head rides the content's own gutter: a
+                              // fixed 16 left it 4px proud of the pages on a
+                              // wide window.
+                              padding: EdgeInsets.fromLTRB(
+                                LiveWindow.pageInset(MediaQuery.sizeOf(context).width),
+                                DsSpace.s12,
+                                LiveWindow.pageInset(MediaQuery.sizeOf(context).width),
+                                0,
+                              ),
                               child: Row(
                                 children: [
                                   Expanded(child: widget.breadcrumb),
@@ -704,7 +704,11 @@ final class _AppShellState extends ConsumerState<AppShell> {
                                   if (logsGear) ...[const LogsSettingsButton(), const SizedBox(width: DsSpace.s8)],
                                   if (themeToggle) ...[
                                     const SizedBox(width: DsSpace.s8),
-                                    const ThemeModeToggle(size: 36),
+                                    // The control's own default (44): the
+                                    // head's reserve already budgets 48 per
+                                    // verb, and a 36 toggle read smaller than
+                                    // its neighbours.
+                                    const ThemeModeToggle(),
                                   ],
                                 ],
                               ),

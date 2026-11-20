@@ -57,7 +57,7 @@ final class StartupPane extends ConsumerWidget {
                 control: startup.loading
                     ? const Align(
                         alignment: AlignmentDirectional.centerEnd,
-                        child: SizedBox.square(dimension: 18, child: DsSpinner()),
+                        child: SizedBox.square(dimension: 16, child: DsSpinner()),
                       )
                     : DsSwitch(
                         value: startup.enabled,
@@ -417,7 +417,8 @@ final class AboutPane extends ConsumerWidget {
           leading: const DsIcon(DsIcons.history),
           title: Text(t.settings.releaseHistory),
           description: Text(t.settings.releaseHistoryDesc),
-          showChevron: true,
+          // A dialog is not a page: the chevron is the pushed-page's mark,
+          // and these open over the pane.
           onPressed: () => unawaited(showReleaseHistory(context)),
         ),
         DsListRow(
@@ -427,7 +428,6 @@ final class AboutPane extends ConsumerWidget {
           // take the right one.
           title: Text(t.settings.downloadTitle),
           description: Text(t.settings.downloadHint),
-          showChevron: true,
           onPressed: () => unawaited(showDownloadPage(context)),
         ),
         DsListRow(

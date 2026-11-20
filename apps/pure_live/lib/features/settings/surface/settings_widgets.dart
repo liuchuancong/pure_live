@@ -106,9 +106,9 @@ final class SettingsConfigRow extends StatelessWidget {
 }
 
 /// A muted paragraph inside a settings card: the explanation a row cannot
-/// carry, or the caveat that would make its description too long. Every page
-/// uses this so notes share one measure, one tone and one distance from the
-/// row above them.
+/// carry, or the caveat that would make its description too long. The panes
+/// that note things use it so notes share one measure, one tone and one
+/// distance from the row above them.
 final class SettingsHint extends StatelessWidget {
   /// The note's [text]; [style] overrides the muted caption for a warning.
   const SettingsHint(this.text, {this.style, super.key});
