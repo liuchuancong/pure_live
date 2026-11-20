@@ -1,12 +1,14 @@
-import 'dart:async' show Completer, unawaited;
+import 'dart:async' show unawaited;
 import 'dart:convert' show jsonEncode, utf8;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:live_net/live_net.dart' show LiveHttp, LiveRequest, LiveResponse, LiveStreamedResponse;
+import 'package:live_net/live_net.dart' show LiveResponse;
 import 'package:live_storage/live_storage.dart';
 import 'package:live_vod/live_vod.dart' show HuyaArchiveApi, HuyaChannel, HuyaChannelGroup, HuyaVideoApi;
 import 'package:pure_live/modules/huya/controller/huya_video.dart';
+
+import 'stub_http.dart' show StubHttp;
 
 /// The huya video station's controllers, argued over a stub transport: a
 /// board switch that lands while the old board's page is still in flight
@@ -27,7 +29,7 @@ void main() {
 
   group('the ranking surface', () {
     test('a switch while a board page is in flight still loads the board it landed on', () async {
-      final http = _StubHttp()
+      final http = StubHttp()
         ..route('rank/all.html', (url) async {
           return _ok(
             _ssr({
@@ -76,7 +78,7 @@ void main() {
     });
 
     test('a board page that failed keeps the failure, and refresh asks again', () async {
-      final http = _StubHttp()
+      final http = StubHttp()
         ..route('rank/all.html', (url) async {
           return _ok(
             _ssr({
@@ -108,7 +110,7 @@ void main() {
 
   group('the replay tab', () {
     test('a first page that failed answers the retry ask again', () async {
-      final http = _StubHttp()
+      final http = StubHttp()
         ..route('video/u/', (url) async {
           return _fail();
         });
@@ -132,7 +134,7 @@ void main() {
     });
 
     test('a replay page that answered is not asked again', () async {
-      final http = _StubHttp()
+      final http = StubHttp()
         ..route('video/u/', (url) async {
           return _ok(
             _ssr({
@@ -201,7 +203,7 @@ void main() {
 
   group('the browse surface', () {
     test('the groups and the first page load, and a second page appends its new rows only', () async {
-      final http = _StubHttp()
+      final http = StubHttp()
         ..route(r'g/all$', (url) async {
           return _ok(_ssr(_groupsFixture()));
         })
@@ -227,7 +229,7 @@ void main() {
     });
 
     test('a listing that ignores its page stops the walk after two unchanged pages', () async {
-      final http = _StubHttp()
+      final http = StubHttp()
         ..route(r'g/all$', (url) async {
           return _ok(_ssr(_groupsFixture()));
         })
@@ -256,7 +258,7 @@ void main() {
     });
 
     test('each listing keeps its own walked pages, and returning to one asks nothing', () async {
-      final http = _StubHttp()
+      final http = StubHttp()
         ..route(r'g/all$', (url) async {
           return _ok(_ssr(_groupsFixture()));
         })
@@ -288,7 +290,7 @@ void main() {
     });
 
     test('walking into a channel from a shelf lands in the group that holds it', () async {
-      final http = _StubHttp()
+      final http = StubHttp()
         ..route(r'g/all$', (url) async {
           return _ok(_ssr(_groupsFixture()));
         })
@@ -314,7 +316,7 @@ void main() {
 
   group('the home shelves', () {
     test('the home opens once, and a failed first open retries', () async {
-      final failing = _StubHttp()
+      final failing = StubHttp()
         ..route('video/', (url) async {
           return _fail();
         });
@@ -367,7 +369,7 @@ void main() {
 
   group('the home batch', () {
     test('exchanging walks the channel pages, wraps to the first, and a channel restarts', () async {
-      final http = _StubHttp()
+      final http = StubHttp()
         ..route('2168_hot_0', (url) async {
           final page = int.parse(url.queryParameters['page'] ?? '1');
           return _ok(
@@ -478,41 +480,3 @@ Map<String, Object?> _listPage({required int pageIndex, required int total, requ
 /// The group on screen whose setId is [setId].
 HuyaChannelGroup _groupOf(ProviderContainer container, int setId) =>
     container.read(huyaBrowseProvider).groups.firstWhere((group) => group.setId == setId);
-
-/// The transport the tests code against: routes by a path fragment, holds
-/// the calls a gate names until it is released, and remembers every ask.
-final class _StubHttp implements LiveHttp {
-  final calls = <Uri>[];
-  final Map<String, Future<LiveResponse> Function(Uri url)> _routes = {};
-  final Map<String, Completer<void>> _gates = {};
-
-  /// Answers every call whose path carries [fragment] with [answer]. A
-  /// fragment ending in `$` matches the path's tail, so `g/all$` tells the
-  /// groups page apart from the `g/all_hot_0` listings it would otherwise
-  /// swallow.
-  void route(String fragment, Future<LiveResponse> Function(Uri url) answer) => _routes[fragment] = answer;
-
-  /// Holds every call whose path carries [fragment] until it is completed.
-  Completer<void> hold(String fragment) => _gates.putIfAbsent(fragment, Completer<void>.new);
-
-  static bool _hits(String fragment, String path) =>
-      fragment.endsWith(r'$') ? path.endsWith(fragment.substring(0, fragment.length - 1)) : path.contains(fragment);
-
-  @override
-  Future<LiveResponse> send(LiveRequest request) async {
-    calls.add(request.url);
-    for (final gate in _gates.entries) {
-      if (_hits(gate.key, request.url.path)) await gate.value.future;
-    }
-    for (final route in _routes.entries) {
-      if (_hits(route.key, request.url.path)) return await route.value(request.url);
-    }
-    throw StateError('the stub holds no answer for ${request.url.path}');
-  }
-
-  @override
-  Future<LiveStreamedResponse> open(LiveRequest request) => throw UnimplementedError();
-
-  @override
-  void close() {}
-}
