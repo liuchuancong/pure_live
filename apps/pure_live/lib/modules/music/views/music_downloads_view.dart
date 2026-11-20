@@ -334,7 +334,7 @@ class MusicDownloadsViewState extends ConsumerState<MusicDownloadsView> {
           DsButton(
             variant: DsButtonVariant.secondary,
             size: DsSize.sm,
-            leading: const DsIcon(DsIcons.filter, size: 14),
+            leading: const DsIcon(DsIcons.filter, size: 16),
             onPressed: () => setState(() {
               _statusGroup = DownloadStatusGroup.all;
               _playableOnly = false;
@@ -344,7 +344,7 @@ class MusicDownloadsViewState extends ConsumerState<MusicDownloadsView> {
         DsButton(
           variant: DsButtonVariant.secondary,
           size: DsSize.sm,
-          leading: const DsIcon(DsIcons.folderOpen, size: 14),
+          leading: const DsIcon(DsIcons.folderOpen, size: 16),
           onPressed: () => unawaited(openDownloadedPath(context, directory)),
           child: Text(t.settings.downloadManagerOpenFolder),
         ),

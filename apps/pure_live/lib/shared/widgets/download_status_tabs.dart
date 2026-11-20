@@ -66,7 +66,10 @@ final class DownloadStatusTabs<T> extends StatelessWidget {
     return DsTabs<T>(
       value: value,
       semanticLabel: semanticLabel,
-      style: const DsTabsStyle(padding: EdgeInsets.zero, dividerColor: Color(0x00000000)),
+      // The app's tab line is 44 tall — the module tab style's measure; the
+      // component default's 46 left this row a hair taller than its
+      // siblings on every download page.
+      style: const DsTabsStyle(height: 44, padding: EdgeInsets.zero, dividerColor: Color(0x00000000)),
       onChanged: onChanged,
       tabs: [for (final tab in tabs) DsTab(value: tab.value, label: Text(tab.label), count: tab.count)],
     );

@@ -437,7 +437,7 @@ final class MusicLibraryViewState extends ConsumerState<MusicLibraryView> {
                     if (item < state.songs.length) return songAt(item);
                     if (state.error != null) {
                       return Padding(
-                        padding: const EdgeInsets.fromLTRB(DsSpace.s16, DsSpace.s12, DsSpace.s16, DsSpace.s8),
+                        padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s8),
                         child: loadMoreError(),
                       );
                     }
@@ -478,7 +478,7 @@ final class MusicLibraryViewState extends ConsumerState<MusicLibraryView> {
                     mainAxisSize: MainAxisSize.min,
                     spacing: DsSpace.s8,
                     children: [
-                      if (state.loading) const SizedBox(width: 14, height: 14, child: DsSpinner()),
+                      if (state.loading) const SizedBox(width: 16, height: 16, child: DsSpinner()),
                       DsPagination(
                         page: page,
                         pageCount: pageCount,
@@ -720,7 +720,12 @@ final class _SonglistResultsState extends ConsumerState<_SonglistResults> {
       children: [
         if (lastFailed)
           Padding(
-            padding: const EdgeInsets.fromLTRB(DsSpace.s16, DsSpace.s4, DsSpace.s16, DsSpace.s4),
+            padding: EdgeInsets.fromLTRB(
+              LiveWindow.pageInset(MediaQuery.sizeOf(context).width),
+              DsSpace.s4,
+              LiveWindow.pageInset(MediaQuery.sizeOf(context).width),
+              DsSpace.s4,
+            ),
             child: Row(
               spacing: DsSpace.s8,
               children: [

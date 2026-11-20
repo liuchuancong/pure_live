@@ -98,10 +98,12 @@ final class MusicMineView extends ConsumerWidget {
         padding: EdgeInsets.symmetric(horizontal: inset),
         sliver: SliverToBoxAdapter(
           child: DecoratedBox(
+            // The card is a flat fill, the module's other cards' way: a
+            // shadow on the caps alone left the rows between them flat and
+            // the seams showed.
             decoration: DsBoxDecoration(
               color: colors.surface,
               borderRadius: BorderRadius.vertical(top: Radius.circular(theme.radii.card)),
-              shadows: theme.shadows.surface,
             ),
             child: const Padding(
               padding: EdgeInsets.fromLTRB(DsSpace.s5, DsSpace.s5, DsSpace.s5, 0),
@@ -123,7 +125,7 @@ final class MusicMineView extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Padding(
-                    padding: const EdgeInsetsDirectional.only(start: DsSpace.s12, end: 10),
+                    padding: const EdgeInsetsDirectional.only(start: DsSpace.s12, end: DsSpace.s12),
                     child: DsLine(color: colors.border),
                   ),
                   MusicSongRow(
@@ -152,7 +154,6 @@ final class MusicMineView extends ConsumerWidget {
             decoration: DsBoxDecoration(
               color: colors.surface,
               borderRadius: BorderRadius.vertical(bottom: Radius.circular(theme.radii.card)),
-              shadows: theme.shadows.surface,
             ),
             child: const Padding(
               padding: EdgeInsets.fromLTRB(DsSpace.s5, 0, DsSpace.s5, DsSpace.s5),

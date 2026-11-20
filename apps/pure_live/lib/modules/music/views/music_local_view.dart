@@ -176,21 +176,27 @@ final class MusicLocalViewState extends ConsumerState<MusicLocalView> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Padding(
-          padding: EdgeInsets.fromLTRB(inset, 0, inset, DsSpace.s8),
-          child: Row(
-            spacing: DsSpace.s8,
-            children: [
-              Expanded(
-                child: Text(
-                  state.tracks.isEmpty ? t.music.localHint : t.music.localFiles(count: state.tracks.length),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.typography.caption.copyWith(color: colors.textMuted),
+        // The hint and the folder verbs share the module's 44px tool line: a
+        // free-height caption row read as a second, shorter measure under
+        // every sibling page's first row.
+        SizedBox(
+          height: 44,
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(inset, DsSpace.s4, inset, DsSpace.s4),
+            child: Row(
+              spacing: DsSpace.s8,
+              children: [
+                Expanded(
+                  child: Text(
+                    state.tracks.isEmpty ? t.music.localHint : t.music.localFiles(count: state.tracks.length),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.typography.caption.copyWith(color: colors.textMuted),
+                  ),
                 ),
-              ),
-              if (!narrow) ...actions,
-            ],
+                if (!narrow) ...actions,
+              ],
+            ),
           ),
         ),
         if (_selecting)

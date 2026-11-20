@@ -93,10 +93,13 @@ final class MusicDetailBackRow extends StatelessWidget {
     final t = context.t;
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
+    // The row rides the page's own gutter: the detail body under it keeps
+    // the page inset, and a leading 8 left the back button proud of it.
+    final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
     return SizedBox(
       height: 44,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(DsSpace.s8, DsSpace.s4, DsSpace.s20, DsSpace.s4),
+        padding: EdgeInsets.fromLTRB(inset, DsSpace.s4, inset, DsSpace.s4),
         child: Row(
           spacing: DsSpace.s8,
           children: [
@@ -127,17 +130,9 @@ final class MusicDetailBackRow extends StatelessWidget {
 /// a load-more at the end. A source without the capability says so plainly
 /// instead of showing an empty list.
 ///
-/// The 歌单 page shows it under the 我的/在线 tabs; 精选 shows the same
-/// browser on its own, with a heading in their place.
+/// The 歌单 page shows it under the 我的/在线 tabs.
 final class MusicOnlinePlaylistBrowse extends ConsumerStatefulWidget {
-  const MusicOnlinePlaylistBrowse({
-    required this.onOpen,
-    this.mineCount = 0,
-    this.onBackToMine,
-    this.showTabs = true,
-    this.heading,
-    super.key,
-  });
+  const MusicOnlinePlaylistBrowse({required this.onOpen, this.mineCount = 0, this.onBackToMine, super.key});
 
   final ValueChanged<MusicPlaylistInfo> onOpen;
 
@@ -146,13 +141,6 @@ final class MusicOnlinePlaylistBrowse extends ConsumerStatefulWidget {
 
   /// Called when the tabs move back to the viewer's own lists.
   final VoidCallback? onBackToMine;
-
-  /// Whether the 我的/在线 tab row leads the page; 精选 names a heading
-  /// instead.
-  final bool showTabs;
-
-  /// The heading shown in the tabs' place.
-  final String? heading;
 
   @override
   ConsumerState<MusicOnlinePlaylistBrowse> createState() => MusicOnlinePlaylistBrowseState();
@@ -313,29 +301,14 @@ final class MusicOnlinePlaylistBrowseState extends ConsumerState<MusicOnlinePlay
           height: 44,
           child: Padding(
             padding: EdgeInsets.fromLTRB(inset, DsSpace.s4, inset, DsSpace.s4),
-            child: widget.showTabs
-                ? MusicSonglistTabs(
-                    online: true,
-                    mineCount: widget.mineCount,
-                    onChanged: (online) {
-                      if (!online) widget.onBackToMine?.call();
-                    },
-                    actions: headActions,
-                  )
-                : Row(
-                    spacing: DsSpace.s8,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          widget.heading ?? '',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: DsTheme.of(context).typography.title.copyWith(color: DsTheme.colorsOf(context).text),
-                        ),
-                      ),
-                      ...headActions,
-                    ],
-                  ),
+            child: MusicSonglistTabs(
+              online: true,
+              mineCount: widget.mineCount,
+              onChanged: (online) {
+                if (!online) widget.onBackToMine?.call();
+              },
+              actions: headActions,
+            ),
           ),
         ),
         if (supported && summary.isNotEmpty)

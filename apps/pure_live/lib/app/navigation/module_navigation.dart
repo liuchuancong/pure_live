@@ -333,7 +333,6 @@ final Map<NavigationItem, Widget Function()> kModulePages = {
   NavigationItem.musicLibrary: () => const MusicPage(view: MusicView.mine),
   NavigationItem.musicLocal: () => const MusicPage(view: MusicView.local),
   NavigationItem.musicDownloads: () => const MusicPage(view: MusicView.downloads),
-  NavigationItem.musicEffects: MusicEqCenterPage.new,
   NavigationItem.hongguoHome: HongguoPage.new,
   NavigationItem.hongguoDownloads: HongguoDownloadsPage.new,
   NavigationItem.hongguoFind: () => const HongguoPage(view: HongguoView.find),

@@ -587,10 +587,14 @@ final class MusicPlaylistsViewState extends ConsumerState<MusicPlaylistsView> {
       child: Text(t.music.playlistCreate),
     );
     if (narrow) publishPageHeadActions(context, ref, NavigationItem.musicSonglist, [importButton, createButton]);
+    // The page's gutter, the measure every sibling keeps — the fixed 20 the
+    // toolbar and grid used left them proud of the rows beside them on a
+    // compact window.
+    final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
     final Widget toolbar = SizedBox(
       height: 44,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s4),
+        padding: EdgeInsets.fromLTRB(inset, DsSpace.s4, inset, DsSpace.s4),
         child: Row(
           spacing: DsSpace.s8,
           children: [
@@ -644,7 +648,7 @@ final class MusicPlaylistsViewState extends ConsumerState<MusicPlaylistsView> {
         Expanded(
           child: MusicPlaylistGrid<MusicPlaylist>(
             items: playlists,
-            padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s24),
+            padding: EdgeInsets.fromLTRB(inset, DsSpace.s4, inset, DsSpace.s24),
             itemBuilder: (context, playlist) => MusicPlaylistCard.own(
               playlist: playlist,
               onOpen: () => setState(() {

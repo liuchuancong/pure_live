@@ -34,7 +34,10 @@ final class MusicChartsView extends ConsumerWidget {
     final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
     final catalogs = ref.watch(musicCatalogsProvider);
     return catalogs.when(
-      loading: () => const Padding(padding: EdgeInsets.all(DsSpace.s16), child: SkeletonRows()),
+      loading: () => Padding(
+        padding: EdgeInsets.symmetric(horizontal: inset, vertical: DsSpace.s16),
+        child: const SkeletonRows(),
+      ),
       error: (error, _) => Center(
         child: DsEmptyState(
           icon: DsIcon(MusicView.toplists.icon),
@@ -263,7 +266,13 @@ final class MusicChartItems extends ConsumerWidget {
     final favourites = ref.watch(musicFavouritesProvider);
     final favouriteController = ref.read(musicFavouritesProvider.notifier);
     return items.when(
-      loading: () => const Padding(padding: EdgeInsets.all(DsSpace.s16), child: SkeletonRows()),
+      loading: () => Padding(
+        padding: EdgeInsets.symmetric(
+          horizontal: LiveWindow.pageInset(MediaQuery.sizeOf(context).width),
+          vertical: DsSpace.s16,
+        ),
+        child: const SkeletonRows(),
+      ),
       error: (error, _) => Center(
         child: DsEmptyState(
           icon: DsIcon(MusicView.toplists.icon),
