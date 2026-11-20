@@ -56,14 +56,15 @@ final class _ScrollEdgeControlsState extends State<ScrollEdgeControls> {
   /// end reads as sitting at it.
   static const double _epsilon = 1;
 
-  /// The scroll the pair drives, kept with the scrollable that owns it.
+  /// The scroll the pair drives, kept with the element that owns it.
   ///
   /// A [ScrollPosition] cannot be asked whether it is still alive, and a
   /// dead one answers every touch — even a listener removal — with an
-  /// assert. The owner element is the witness: a scrollable is defunct
-  /// exactly when its position went down with it, so every entry to the
-  /// position goes through the owner first.
-  (ScrollableState, ScrollPosition)? _tracked;
+  /// assert. The owner element is the witness: defunct exactly when the
+  /// scrollable — and the position with it — has been torn down, and an
+  /// element answers `mounted` with a plain field read, where a defunct
+  /// State refuses even to name its context.
+  (Element, ScrollPosition)? _tracked;
 
   /// Where that scroll stands, so a rebuild can answer "at which end?"
   /// without touching a position that has since detached.
@@ -103,7 +104,7 @@ final class _ScrollEdgeControlsState extends State<ScrollEdgeControls> {
     // owner element is the witness; gone with it, the listener is gone
     // for us already.
     final tracked = _tracked;
-    if (tracked != null && tracked.$1.context.mounted) {
+    if (tracked != null && tracked.$1.mounted) {
       tracked.$2.removeListener(_onScrollChanged);
     }
     super.dispose();
@@ -121,23 +122,35 @@ final class _ScrollEdgeControlsState extends State<ScrollEdgeControls> {
 
   /// Points the pair at [scrollable]'s position, following it from then on.
   void _attach(ScrollableState? scrollable) {
-    final current = _tracked;
-    if (identical(current?.$1, scrollable)) {
-      _read();
-      return;
-    }
-    if (current != null && current.$1.context.mounted) {
-      current.$2.removeListener(_onScrollChanged);
-    }
     if (scrollable == null) {
-      _tracked = null;
+      _detach();
       _publish(scrollable: false);
       return;
     }
+    // A scrollable in hand is alive — it comes from a live notification or
+    // a walk over the mounted tree — so this is the moment to take its
+    // element as the witness; a defunct State cannot be asked later.
+    final owner = scrollable.context as Element;
     final position = scrollable.position;
-    _tracked = (scrollable, position);
+    final current = _tracked;
+    if (identical(current?.$1, owner)) {
+      _read();
+      return;
+    }
+    if (current != null && current.$1.mounted) {
+      current.$2.removeListener(_onScrollChanged);
+    }
+    _tracked = (owner, position);
     position.addListener(_onScrollChanged);
     _read();
+  }
+
+  /// Drops the tracked scroll; a long-gone owner took its listener with it.
+  void _detach() {
+    final current = _tracked;
+    if (current == null) return;
+    if (current.$1.mounted) current.$2.removeListener(_onScrollChanged);
+    _tracked = null;
   }
 
   void _onScrollChanged() => _read();
@@ -193,6 +206,10 @@ final class _ScrollEdgeControlsState extends State<ScrollEdgeControls> {
     if (notification.metrics.axis != Axis.vertical) return false;
     final scrollable = _scrollableOf(notification.context);
     if (scrollable == null) return false;
+    // The element is taken while the scroll is alive: reading an element
+    // after it goes defunct is a plain field read, while its State would
+    // refuse even to name the context.
+    final owner = scrollable.context as Element;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       // The metrics can outlive their scroll: opening a room tears the
       // page's grid down in the very frame its last metrics fires, and the
@@ -200,7 +217,7 @@ final class _ScrollEdgeControlsState extends State<ScrollEdgeControls> {
       // the dead position. A defunct owner means the position is dead —
       // let it rest; whatever replaces the scroll announces itself with
       // its own metrics.
-      if (!mounted || !scrollable.context.mounted) return;
+      if (!mounted || !owner.mounted) return;
       _attach(scrollable);
     });
     return false;
