@@ -88,8 +88,12 @@ final class BackupDocument {
 
   factory BackupDocument._fromRoot(Map<String, Object?> root) {
     final version = _objectMap(root['version']);
-    final exportedAt =
-        DateTime.tryParse(version?['exportedAt'] as String? ?? '') ?? DateTime.fromMillisecondsSinceEpoch(0);
+    // The stamp a newer writer (or a hand edit) wrote in another type is
+    // simply unreadable: the epoch stands in rather than the decode failing.
+    final stamp = version?['exportedAt'];
+    final exportedAt = stamp is String
+        ? DateTime.tryParse(stamp) ?? DateTime.fromMillisecondsSinceEpoch(0)
+        : DateTime.fromMillisecondsSinceEpoch(0);
     // Only the sections the document actually carries may be restored: an
     // older writer that never knew a section must not clear it.
     final carried = {
