@@ -876,7 +876,10 @@ final class _PaneTile extends StatelessWidget {
     final pane = playback;
     final streamNote = pane == null || pane.stage != MultiviewPaneStage.playing || pane.quality == null
         ? null
-        : [pane.quality!.displayLabel, if (pane.lines.length > 1) t.player.lineNumber(n: pane.lineIndex + 1)].join(' · ');
+        : [
+            pane.quality!.displayLabel,
+            if (pane.lines.length > 1) t.player.lineNumber(n: pane.lineIndex + 1),
+          ].join(' · ');
     return DsPressable(
       semanticLabel: assigned ? slot.title : t.multiview.pickRoom,
       onPressed: swapping

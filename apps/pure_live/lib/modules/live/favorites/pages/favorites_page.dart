@@ -369,22 +369,23 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
                       onChanged: _selectGroup,
                       tabs: [
                         // The reference's order: live, replay, offline, all.
+                        // Each count rides as a badge on the label — the
+                        // kit's tab count read as a bare number beside the
+                        // words, and the badge is what every other count in
+                        // the app wears.
                         DsTab<LiveFollowGroup?>(
                           value: LiveFollowGroup.live,
-                          label: Text(t.favorites.statusLiveNow),
-                          count: counts[LiveFollowGroup.live],
+                          label: _TabCountBadge(t.favorites.statusLiveNow, counts[LiveFollowGroup.live]),
                         ),
                         DsTab<LiveFollowGroup?>(
                           value: LiveFollowGroup.replay,
-                          label: Text(t.favorites.statusReplay),
-                          count: counts[LiveFollowGroup.replay],
+                          label: _TabCountBadge(t.favorites.statusReplay, counts[LiveFollowGroup.replay]),
                         ),
                         DsTab<LiveFollowGroup?>(
                           value: LiveFollowGroup.offline,
-                          label: Text(t.favorites.statusOfflineNow),
-                          count: counts[LiveFollowGroup.offline],
+                          label: _TabCountBadge(t.favorites.statusOfflineNow, counts[LiveFollowGroup.offline]),
                         ),
-                        DsTab<LiveFollowGroup?>(value: null, label: Text(t.favorites.statusAll), count: total),
+                        DsTab<LiveFollowGroup?>(value: null, label: _TabCountBadge(t.favorites.statusAll, total)),
                       ],
                     ),
                   ),
@@ -582,6 +583,29 @@ final class _RefreshButton extends StatelessWidget {
       loading: refreshing,
       onPressed: refreshing ? null : () => unawaited(onRefresh()),
       icon: const DsIcon(DsIcons.refreshCw, size: 16),
+    );
+  }
+}
+
+/// A tab's words with the page's count as a badge: the count the kit's own
+/// tab slot renders reads as a bare number beside the words; the badge is
+/// what the app's other counts wear, so the tabs wear it too.
+final class _TabCountBadge extends StatelessWidget {
+  const _TabCountBadge(this.name, this.count);
+
+  final String name;
+  final int? count;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      spacing: DsSpace.s6,
+      children: [
+        Text(name),
+        if (count != null && count! > 0)
+          DsBadge(label: Text('$count'), dot: false, style: const DsBadgeStyle(height: 18)),
+      ],
     );
   }
 }

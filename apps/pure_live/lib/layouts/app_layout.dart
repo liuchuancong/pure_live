@@ -11,6 +11,7 @@ import 'package:pure_live/layouts/location_breadcrumb.dart';
 // No `show` clause on this one either: the save-time organizer wraps it.
 import 'package:pure_live/layouts/tv/tv_exit_confirm.dart';
 import 'package:pure_live/modules/hongguo/hongguo.dart' show hongguoLibraryProvider;
+import 'package:pure_live/modules/live/favorites/data/follow_repository.dart' show followsProvider;
 import 'package:pure_live/modules/music/widgets/music_now_playing_bar.dart' show MusicNowPlayingBar;
 import 'package:pure_live/shared/shared.dart';
 
@@ -230,9 +231,15 @@ final class _AppLayoutState extends ConsumerState<AppLayout> {
     // The shelf's new episodes ride on the hongguo menu's favorites row,
     // the reference's badge: the number each favorite gained since the
     // series was last opened. Only the station that owns the shelf is
-    // followed, so other modules never subscribe to it.
+    // followed, so other modules never subscribe to it. The live rail's
+    // favorites row carries its own count the same way — the rooms the
+    // follow store holds, the total the page's tabs name.
     final newEpisodes = module == AppModule.hongguo ? ref.watch(hongguoLibraryProvider).addedCount : 0;
-    final badges = newEpisodes > 0 ? {NavigationItem.hongguoFavorites: newEpisodes} : const <NavigationItem, int>{};
+    final followCount = module == AppModule.live ? ref.watch(followsProvider.select((state) => state.rooms.length)) : 0;
+    final badges = <NavigationItem, int>{
+      if (newEpisodes > 0) NavigationItem.hongguoFavorites: newEpisodes,
+      if (followCount > 0) NavigationItem.favorites: followCount,
+    };
     // The tools block follows the order the settings pane edits, not the
     // registry's fixed list; a stored order never drops a tool the
     // registry added later.

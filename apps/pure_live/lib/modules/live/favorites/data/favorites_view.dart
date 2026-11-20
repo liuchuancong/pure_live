@@ -18,7 +18,9 @@ typedef FavoritesView = ({LiveFollowGroup? group, String platform, String? tag})
 /// The follows view, shared by the page and the phone's top bar.
 final class FavoritesViewController extends Notifier<FavoritesView> {
   @override
-  FavoritesView build() => (group: null, platform: kAllPlatforms, tag: null);
+  // The page opens on the rooms on air: the group a viewer follows for is
+  // "what is live now", and 全部 opened on a wall of dark rooms first.
+  FavoritesView build() => (group: LiveFollowGroup.live, platform: kAllPlatforms, tag: null);
 
   /// Shows [group]; a new group is a new slice of the follows.
   void selectGroup(LiveFollowGroup? group) {

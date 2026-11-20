@@ -466,8 +466,10 @@ final class _PlatformPanel extends StatelessWidget {
 }
 
 /// A platform tab's label: its name, and the page's count for it when the
-/// page has one. One weight throughout, so selecting a tab moves nothing
-/// beside it (the kit's own rule for a top nav).
+/// page has one — the count as a badge, the app's other counts' dress, in
+/// the place a bare overline number used to sit. One weight throughout, so
+/// selecting a tab moves nothing beside it (the kit's own rule for a top
+/// nav).
 final class _TabLabel extends StatelessWidget {
   const _TabLabel({required this.name, this.count});
 
@@ -476,14 +478,13 @@ final class _TabLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = DsTheme.of(context);
-    if (count case final count?) {
+    if (count case final count? when count > 0) {
       return Row(
         mainAxisSize: MainAxisSize.min,
-        spacing: DsSpace.s4,
+        spacing: DsSpace.s6,
         children: [
           Text(name),
-          Text('$count', style: theme.typography.overline.copyWith(color: theme.colors.textSubtle)),
+          DsBadge(label: Text('$count'), dot: false, style: const DsBadgeStyle(height: 18)),
         ],
       );
     }
