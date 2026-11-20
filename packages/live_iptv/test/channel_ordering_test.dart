@@ -32,7 +32,7 @@ void main() {
           channel('b', group: '央视'),
         ],
         groups: [
-          IptvGroup.of(name: '卫视'),
+          IptvGroup.of(name: '卫视', order: 0),
           IptvGroup.of(name: '央视', order: 1),
         ],
       );
@@ -66,7 +66,7 @@ void main() {
           channel('d', group: '体育', position: 40),
         ],
         groups: [
-          IptvGroup.of(name: '卫视'),
+          IptvGroup.of(name: '卫视', order: 0),
           IptvGroup.of(name: '央视', order: 1),
         ],
       );
@@ -91,8 +91,8 @@ void main() {
           channel('b', group: 'Alpha'),
         ],
         groups: [
-          IptvGroup.of(name: 'Beta'),
-          IptvGroup.of(name: 'Alpha'),
+          IptvGroup.of(name: 'Beta', order: 0),
+          IptvGroup.of(name: 'Alpha', order: 0),
         ],
       );
 

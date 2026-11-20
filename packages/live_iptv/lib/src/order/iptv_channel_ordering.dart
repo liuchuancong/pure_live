@@ -52,7 +52,13 @@ int compareIptvGroups(IptvGroup a, IptvGroup b) {
 /// hide channels; ranking them by name would reorder a list the user never
 /// asked to have reordered.
 Map<String, int> rankIptvGroups({required List<IptvChannel> channels, required List<IptvGroup> groups}) {
-  final arranged = sortIptvGroups(groups);
+  // A record the viewer never placed — the one a hide makes, order -1 and
+  // unpinned — is a flag, not an arrangement: it must not promote its group
+  // ahead of the playlist's untouched groups when the flag reads back.
+  final arranged = sortIptvGroups([
+    for (final group in groups)
+      if (group.pinned || group.order >= 0) group,
+  ]);
   final ranks = <String, int>{};
   for (final (index, group) in arranged.indexed) {
     ranks[group.name] = index;

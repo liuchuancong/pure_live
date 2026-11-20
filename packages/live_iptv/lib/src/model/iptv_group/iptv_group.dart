@@ -21,14 +21,19 @@ abstract class IptvGroup implements Built<IptvGroup, IptvGroupBuilder> {
   factory IptvGroup([void Function(IptvGroupBuilder)? updates]) = _$IptvGroup;
 
   /// A group record.
-  factory IptvGroup.of({required String name, int order = 0, bool pinned = false, bool hidden = false}) =>
-      IptvGroup(
-        (b) => b
-          ..name = name
-          ..order = order
-          ..pinned = pinned
-          ..hidden = hidden,
-      );
+  ///
+  /// [order] defaults to [-1] — "no arrangement" — because the records made
+  /// without one are the flags a viewer flips on a group they never placed
+  /// (a hide, mostly). Such a record must not read back as an arrangement:
+  /// a group hidden and shown again would otherwise jump ahead of every
+  /// group the playlist carries and the user never touched.
+  factory IptvGroup.of({required String name, int order = -1, bool pinned = false, bool hidden = false}) => IptvGroup(
+    (b) => b
+      ..name = name
+      ..order = order
+      ..pinned = pinned
+      ..hidden = hidden,
+  );
 
   IptvGroup._();
 
