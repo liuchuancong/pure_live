@@ -29,11 +29,14 @@ final class HistoryRepository {
   List<LiveRoom> list() => [for (final (room, _) in entries()) room];
 
   /// The watched rooms with their watch moments, newest watch first — the
-  /// page groups them by day (the reference's history sections).
+  /// page groups them by day (the reference's history sections). The
+  /// moments answer in the viewer's own timezone: the stored text is UTC,
+  /// and a day cut from the UTC fields puts the after-midnight watches of
+  /// a Shanghai evening under yesterday.
   List<(LiveRoom, DateTime)> entries() {
     final records = store.entries;
     final entries = records.entries.toList()..sort((a, b) => _watchedAt(b.value).compareTo(_watchedAt(a.value)));
-    return [for (final entry in entries) (LiveRoom.fromJson(_jsonOf(entry.value)), _watchedAt(entry.value))];
+    return [for (final entry in entries) (LiveRoom.fromJson(_jsonOf(entry.value)), _watchedAt(entry.value).toLocal())];
   }
 
   /// Records a viewing of [room] that ended [at], trimming past [limit]:
@@ -82,14 +85,16 @@ final class HistoryRepository {
   /// chose clear, moments included: an entry watched again since then has
   /// moved on, and the version the viewer was looking at is not theirs to
   /// delete (another window's RPC write lands between the render and the
-  /// confirm).
+  /// confirm). The moments compare as instants: the page holds them in the
+  /// viewer's timezone, the store keeps UTC, and the same moment answers
+  /// both.
   Future<void> clear(Iterable<(LiveRoom, DateTime)> shown) async {
     final stale = <String>[];
     for (final (room, watchedAt) in shown) {
       final key = room.ref.identityKey;
       final stored = store.get(key);
       if (stored == null) continue;
-      if (_watchedAt(stored) != watchedAt) continue;
+      if (_watchedAt(stored).toUtc() != watchedAt.toUtc()) continue;
       stale.add(key);
     }
     if (stale.isNotEmpty) await store.deleteAll(stale);
