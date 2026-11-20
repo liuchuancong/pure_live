@@ -76,8 +76,10 @@ final class PopularCatalogController extends Notifier<Map<String, PopularFeedSta
 
   /// Re-applies the discovery filter to every loaded feed (the settings'
   /// "显示不能直接播放的直播" changed, or a sign-in altered the login part).
-  /// A walk that hid rooms under the old answer starts a fresh walk for the
-  /// next fill, since its seen set holds the ones it never published.
+  /// The walks keep their place: a fetched room is never shown twice
+  /// whatever the rule says, and a walk thrown back to page 1 would replay
+  /// the pages it already brought, starve the stagnation rule, and end the
+  /// feed while the platform still has rooms.
   void refreshVisibility() {
     for (final entry in state.entries.toList()) {
       final platform = entry.key;
@@ -89,8 +91,6 @@ final class PopularCatalogController extends Notifier<Map<String, PopularFeedSta
       ];
       if (visible.length == feed.rooms.length && visible.length == full.length) continue;
       state = {...state, platform: _with(feed, rooms: visible, hidden: full.length - visible.length)};
-      _walks.remove(platform);
-      _seen.remove(platform);
     }
   }
 
