@@ -27,6 +27,10 @@ final class HuyaMaterialPage extends ConsumerStatefulWidget {
 }
 
 final class _HuyaMaterialPageState extends ConsumerState<HuyaMaterialPage> {
+  /// The field's cap, the search page's own: one search-field measure in
+  /// the module.
+  static const double _kMaterialSearchMaxWidth = 960;
+
   final TextEditingController _field = TextEditingController();
 
   @override
@@ -61,13 +65,21 @@ final class _HuyaMaterialPageState extends ConsumerState<HuyaMaterialPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Padding(
-            padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s8),
-            child: DsSearchField(
-              controller: _field,
-              placeholder: t.huya.materialSearchHint,
-              semanticLabel: t.huya.materialSearchHint,
-              onSubmitted: _run,
+          // The field keeps the search page's own measure — centred under a
+          // 960 cap, not stretched edge to edge; the module's two search
+          // fields used to read as two different controls.
+          Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: _kMaterialSearchMaxWidth),
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s8),
+                child: DsSearchField(
+                  controller: _field,
+                  placeholder: t.huya.materialSearchHint,
+                  semanticLabel: t.huya.materialSearchHint,
+                  onSubmitted: _run,
+                ),
+              ),
             ),
           ),
           // The stands ride the same chip strip the station's listings walk;

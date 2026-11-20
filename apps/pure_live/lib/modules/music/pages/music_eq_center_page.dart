@@ -18,7 +18,7 @@ import 'package:pure_live/modules/music/controller/playback/music_playback.dart'
 import 'package:pure_live/modules/music/pages/music_eq_editor.dart';
 import 'package:pure_live/modules/music/pages/music_settings_pane.dart' show MusicEqPane, MusicFxRow;
 import 'package:pure_live/modules/music/widgets/music_browse_widgets.dart' show MusicBrowseHeader;
-import 'package:pure_live/shared/shared.dart' show cachedImage;
+import 'package:pure_live/shared/shared.dart' show LiveWindow, cachedImage;
 import 'package:pure_live/shared/widgets/app_dialog.dart';
 
 /// The sound-effect center — the spec's own page, drawn after the streaming
@@ -41,7 +41,14 @@ final class MusicEqCenterPage extends ConsumerWidget {
     final applyFailed = ref.watch(musicEqApplyFailedProvider);
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(DsSpace.s20),
+      // The page keeps the module's gutter; the vertical breathing stays the
+      // fixed measure the cards' spacing reads against.
+      padding: EdgeInsets.fromLTRB(
+        LiveWindow.pageInset(MediaQuery.sizeOf(context).width),
+        DsSpace.s20,
+        LiveWindow.pageInset(MediaQuery.sizeOf(context).width),
+        DsSpace.s20,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         spacing: DsSpace.s16,
@@ -498,10 +505,13 @@ final class _GalleryCard extends ConsumerWidget {
         decoration: BoxDecoration(
           // A preset card painted nothing for the pointer or the D-pad until
           // its own states were read; the wash sits under the accent border
-          // so the selected one still reads first.
+          // so the selected one still reads first. The tile rests on the
+          // page's ground colour, not on the panel's own fill — a tile
+          // filled with the panel's colour read as a box drawn inside a box
+          // of the same paint.
           color: states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed)
-              ? Color.alphaBlend(colors.hover, colors.surface)
-              : colors.surface,
+              ? Color.alphaBlend(colors.hover, colors.canvas)
+              : colors.canvas,
           borderRadius: BorderRadius.circular(theme.radii.control(36)),
           border: Border.all(
             color: selected
