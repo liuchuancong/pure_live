@@ -20,7 +20,15 @@ final class FavoritesPageRefresh extends Notifier<void Function()?> {
   /// before any post-frame publish, so a page arriving as one leaves cannot
   /// have its hook cleared by the page that left.
   void Function()? get handler => state;
-  set handler(void Function()? value) => unawaited(Future.microtask(() => state = value));
+  set handler(void Function()? value) => unawaited(
+    Future<void>.microtask(() {
+      // The clear is asked from the page's dispose and the publish from a
+      // post frame; a window closing in between has torn the provider down
+      // before either lands, and a disposed notifier takes no state.
+      if (!ref.mounted) return;
+      state = value;
+    }),
+  );
 
   /// Runs the page's refresh when there is one.
   void run() => state?.call();

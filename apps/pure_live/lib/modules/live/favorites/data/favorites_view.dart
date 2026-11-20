@@ -5,6 +5,7 @@ import 'package:pure_live/modules/live/favorites/data/favorite_rules.dart'
 import 'package:pure_live/modules/live/favorites/data/favorites_inline_search.dart'
     show favoritesInlineSearchProvider, followMatchesQuery;
 import 'package:pure_live/modules/live/favorites/data/follow_repository.dart' show followsProvider;
+import 'package:pure_live/modules/live/favorites/data/follow_tags.dart' show followTagsProvider;
 import 'package:pure_live/shared/shared.dart' show kAllPlatforms;
 
 /// The follows page's own choices: the group tab, the platform tab and
@@ -43,33 +44,50 @@ final class FavoritesViewController extends Notifier<FavoritesView> {
 
 /// The follows page's rooms under the view's three cuts and the toolbar's
 /// word, derived once per change — the page reads a finished list instead of
-/// re-running the filter chain on every build.
+/// re-running the filter chain on every build. A tag the tag list no longer
+/// holds cuts nothing: the view's remembered id dies with its tag, the way
+/// the page's own chip fallback already reads it — otherwise removing a
+/// selected tag empties the page under the viewer.
 final favoritesListedRoomsProvider = Provider<List<LiveRoom>>((ref) {
   final view = ref.watch(favoritesViewProvider);
   final rooms = ref.watch(followsProvider).rooms;
   final query = (ref.watch(favoritesInlineSearchProvider) ?? '').toLowerCase();
+  final tag = ref.watch(followTagsProvider).any((entry) => entry.id == view.tag) ? view.tag : null;
+  final scope = _activePlatformOf(view, rooms);
   return [
     for (final room in rooms)
-      if (onFollowPlatform(room, view.platform == kAllPlatforms ? null : view.platform) &&
+      if (onFollowPlatform(room, scope == kAllPlatforms ? null : scope) &&
           (view.group == null || followGroupOf(room) == view.group) &&
-          (view.tag == null || room.local.tagIds.contains(view.tag)) &&
+          (tag == null || room.local.tagIds.contains(tag)) &&
           followMatchesQuery(room, query))
         room,
   ];
 });
 
+/// The view's platform as the page shows it: a platform whose last follow
+/// left reads 全部, the way the page's own tab fallback reads it — the tabs
+/// stop naming the platform the moment its rooms are gone, and a list cut
+/// by the remembered name would sit empty under an 全部 tab.
+String _activePlatformOf(FavoritesView view, List<LiveRoom> rooms) {
+  if (view.platform == kAllPlatforms) return kAllPlatforms;
+  final present = rooms.any((room) => room.ref.platform == view.platform);
+  return present ? view.platform : kAllPlatforms;
+}
+
 /// The group tabs' counts under the view's platform, derived likewise.
 final favoritesGroupCountsProvider = Provider<Map<LiveFollowGroup, int>>((ref) {
   final view = ref.watch(favoritesViewProvider);
-  final scope = view.platform == kAllPlatforms ? null : view.platform;
-  return followGroupCounts(ref.watch(followsProvider).rooms, scope);
+  final rooms = ref.watch(followsProvider).rooms;
+  final scope = _activePlatformOf(view, rooms);
+  return followGroupCounts(rooms, scope == kAllPlatforms ? null : scope);
 });
 
 /// The whole count the page's head shows under the view's platform.
 final favoritesTotalProvider = Provider<int>((ref) {
   final view = ref.watch(favoritesViewProvider);
-  final scope = view.platform == kAllPlatforms ? null : view.platform;
-  return followCount(ref.watch(followsProvider).rooms, platform: scope);
+  final rooms = ref.watch(followsProvider).rooms;
+  final scope = _activePlatformOf(view, rooms);
+  return followCount(rooms, platform: scope == kAllPlatforms ? null : scope);
 });
 
 /// The follows page's group and platform, as the page and the bar read them.
