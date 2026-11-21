@@ -133,4 +133,75 @@ void main() {
     // Windows' reserved characters never reach the file system.
     expect(hongguoDownloadFileName(title: '剧:名/上', part: '第一话', index: 2, parts: 12), '剧 名 上 - EP2 第一话.mp4');
   });
+
+  test('the retry count defaults to off, follows its setting and rejects the extremes', () async {
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+
+    expect(container.read(hongguoDownloadRetryProvider), 0); // off, until asked
+    container.read(hongguoDownloadRetryProvider.notifier).select(3);
+    expect(container.read(hongguoDownloadRetryProvider), 3);
+    container.read(hongguoDownloadRetryProvider.notifier).select(-1);
+    expect(container.read(hongguoDownloadRetryProvider), 0); // clamped back to the floor
+    await Future<void>.delayed(const Duration(milliseconds: 50));
+
+    final second = ProviderContainer();
+    addTearDown(second.dispose);
+    expect(second.read(hongguoDownloadRetryProvider), 0); // the last honest choice is what was stored
+
+    await StoragePrefs.setInt('hongguo.download.retryAttempts', 2);
+    final third = ProviderContainer();
+    addTearDown(third.dispose);
+    expect(third.read(hongguoDownloadRetryProvider), 2);
+
+    await StoragePrefs.setInt('hongguo.download.retryAttempts', 9);
+    final fourth = ProviderContainer();
+    addTearDown(fourth.dispose);
+    expect(fourth.read(hongguoDownloadRetryProvider), 0); // a stranger to the choices is off
+  });
+
+  test('the retry wait picks from its list, refuses strangers and keeps its pick', () async {
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+
+    expect(container.read(hongguoDownloadRetryDelayProvider), 10); // ten seconds, until asked
+    container.read(hongguoDownloadRetryDelayProvider.notifier).select(60);
+    expect(container.read(hongguoDownloadRetryDelayProvider), 60);
+    container.read(hongguoDownloadRetryDelayProvider.notifier).select(7);
+    expect(container.read(hongguoDownloadRetryDelayProvider), 60); // a stranger to the list changes nothing
+    await Future<void>.delayed(const Duration(milliseconds: 50));
+
+    final second = ProviderContainer();
+    addTearDown(second.dispose);
+    expect(second.read(hongguoDownloadRetryDelayProvider), 60);
+
+    await StoragePrefs.setInt('hongguo.download.retryDelaySeconds', 30);
+    final third = ProviderContainer();
+    addTearDown(third.dispose);
+    expect(third.read(hongguoDownloadRetryDelayProvider), 30);
+
+    await StoragePrefs.setInt('hongguo.download.retryDelaySeconds', 45); // not one of the list's own
+    final fourth = ProviderContainer();
+    addTearDown(fourth.dispose);
+    expect(fourth.read(hongguoDownloadRetryDelayProvider), 10);
+  });
+
+  test("a task's progress reads its share, or nothing when the size is unknown", () {
+    expect(item('7100001:1', received: 40).progress, 0.4);
+    expect(item('7100001:1', received: 200).progress, 1.0); // no more than the whole
+    const unknown = HongguoDownloadItem(
+      id: '7100001:9',
+      seriesId: '7100001',
+      title: '剧名',
+      part: '第一话',
+      index: 9,
+      parts: 12,
+      maxHeight: 1080,
+      fileName: 'f.mp4',
+      filePath: '/videos/f.mp4',
+      phase: HongguoDownloadPhase.queued,
+      stamp: 0,
+    );
+    expect(unknown.progress, isNull); // no size to read a share of
+  });
 }
