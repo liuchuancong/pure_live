@@ -7,11 +7,12 @@ import 'package:flutter/widgets.dart';
 import 'package:pure_live/shared/grids/card_grid.dart';
 
 /// The feed's scroll logic in one place, the popular page's rule: one display
-/// page of [pageSize] items under the kit's pagination at every width, the
-/// wheel's end moving the pager forward and a fresh page starting at its head.
-/// The feeds hand the accumulated [items] in; this widget slices them locally
-/// and asks [onLoadMore] for the source's next block only when the block the
-/// viewer is moving to is not in hand yet.
+/// page of [pageSize] items under the kit's pagination at every width, and a
+/// fresh page starting at its head. The pager is the paged feed's only
+/// advancer — the wheel and the D-pad never turn a page (see
+/// [CardGrid.paged]). The feeds hand the accumulated [items] in; this widget
+/// slices them locally and asks [onLoadMore] for the source's next block only
+/// when the block the viewer is moving to is not in hand yet.
 ///
 /// A list that is whole in hand (the follows, the areas, the records) pages
 /// the same way with [hasMore] false: the pager counts the local pages.
@@ -147,6 +148,16 @@ final class _PagedCardGridState<T> extends State<PagedCardGrid<T>> {
   /// The page the wide pager was asked for.
   int _asked = 1;
 
+  /// The grid's controller while the caller passes none: a fresh page starts
+  /// at its head whatever controller the grid ends up on.
+  final ScrollController _ownScroll = ScrollController();
+
+  @override
+  void dispose() {
+    _ownScroll.dispose();
+    super.dispose();
+  }
+
   /// The last display page the accumulated list fills, whole or in part.
   int get _lastInHand => widget.items.isEmpty ? 1 : (widget.items.length + widget.pageSize - 1) ~/ widget.pageSize;
 
@@ -154,8 +165,8 @@ final class _PagedCardGridState<T> extends State<PagedCardGrid<T>> {
   int get _page => _asked.clamp(1, _lastInHand);
 
   void _jumpToTop() {
-    final controller = widget.scrollController;
-    if (controller?.hasClients ?? false) controller!.jumpTo(0);
+    final controller = widget.scrollController ?? _ownScroll;
+    if (controller.hasClients) controller.jumpTo(0);
   }
 
   /// Moves the wide pager to [next]: a page already in hand moves without a
@@ -203,7 +214,7 @@ final class _PagedCardGridState<T> extends State<PagedCardGrid<T>> {
     required bool pages,
   }) {
     return CardGrid<T>(
-      scrollController: widget.scrollController,
+      scrollController: widget.scrollController ?? _ownScroll,
       items: items,
       layout: widget.layout,
       listItemBuilder: widget.listItemBuilder,
@@ -234,8 +245,8 @@ final class _PagedCardGridState<T> extends State<PagedCardGrid<T>> {
     );
   }
 
-  /// The one page the pager names, the wheel's end moving the pager forward
-  /// one page at a time.
+  /// The one page the pager names; the pager is the paged feed's only
+  /// advancer.
   Widget _pagedGrid() {
     final start = (_page - 1) * widget.pageSize;
     final end = math.min(widget.items.length, start + widget.pageSize);
