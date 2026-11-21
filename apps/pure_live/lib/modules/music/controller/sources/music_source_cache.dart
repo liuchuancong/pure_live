@@ -58,7 +58,13 @@ class CachedLyricSource extends audio.MusicSource {
     if (cached != null) return cached;
     try {
       final payload = await inner.resolveLyric(track);
-      if (payload != null) await _write(track, payload);
+      if (payload != null) {
+        try {
+          await _write(track, payload);
+        } on Object {
+          // A write that fails must not lose the lyric it was holding.
+        }
+      }
       return payload;
     } on Object {
       return null;
