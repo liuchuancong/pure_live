@@ -113,7 +113,10 @@ final class HongguoCardVisibility {
 const String kHongguoCardPrefsKey = 'interface.hongguoCard';
 
 /// Owns the series card's visibility under `interface.hongguoCard`.
-final class HongguoCardSettingsController extends Notifier<HongguoCardVisibility> {
+///
+/// Base, not final: a test substitutes the store write for an in-memory one,
+/// since a write never lands under the widget test's clock.
+base class HongguoCardSettingsController extends Notifier<HongguoCardVisibility> {
   @override
   HongguoCardVisibility build() {
     final String? raw;

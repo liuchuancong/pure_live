@@ -224,7 +224,9 @@ final class _HongguoCardPreviewPageState extends ConsumerState<HongguoCardPrevie
         ],
       ),
     );
-    if (confirmed ?? false) await ref.read(hongguoCardSettingsProvider.notifier).reset();
+    if (!(confirmed ?? false)) return;
+    if (!mounted) return; // the ask outlived the page that raised it
+    await ref.read(hongguoCardSettingsProvider.notifier).reset();
   }
 }
 
