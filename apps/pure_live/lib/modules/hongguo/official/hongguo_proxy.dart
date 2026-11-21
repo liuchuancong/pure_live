@@ -2,7 +2,7 @@
 // the proxy range-fetches the CDN's CENC-encrypted file (with the vendor
 // headers the CDN insists on), decrypts the samples on the fly and serves
 // the plain mp4 — the Dart answer to the reference's player DataSource.
-import 'dart:async' show Completer, unawaited;
+import 'dart:async' show Completer, FutureExtensions, unawaited;
 import 'dart:io' show ContentType, HttpRequest, HttpServer, InternetAddress;
 import 'dart:math' as math;
 import 'dart:typed_data' show Uint8List;
@@ -136,7 +136,7 @@ final class HongguoStreamProxy {
     if (rawStart.isEmpty && rawEnd.isEmpty) return null;
     if (rawStart.isEmpty) {
       final suffix = int.parse(rawEnd);
-      return (total - suffix, total - 1);
+      return (math.max(0, total - suffix), total - 1); // a wider suffix than the file is the whole file
     }
     final start = int.parse(rawStart);
     final end = rawEnd.isEmpty ? total - 1 : math.min(int.parse(rawEnd), total - 1);
@@ -170,6 +170,7 @@ final class HongguoStreamProxy {
     } on Object catch (error) {
       entry.preparing = null;
       completer.completeError(error);
+      completer.future.ignore(); // nobody may be waiting; the error already flew to the ask
       rethrow;
     }
   }
