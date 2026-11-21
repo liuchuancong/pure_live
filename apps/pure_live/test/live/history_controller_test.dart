@@ -95,9 +95,13 @@ void main() {
   });
 
   test('a failed ask and a platform without the capability both count', () async {
-    await repository.record(roomOf('douyu', '1'), DateTime.now().toUtc());
-    await repository.record(roomOf('huya', '2'), DateTime.now().toUtc());
-    await repository.record(roomOf('bigo', '3'), DateTime.now().toUtc());
+    // The moments step apart on purpose: two records written inside one
+    // clock tick (a real shape on Windows) keep the store's own order, and
+    // the assertions read the newest-first order, not the clock's luck.
+    final base = DateTime.now().toUtc();
+    await repository.record(roomOf('douyu', '1'), base);
+    await repository.record(roomOf('huya', '2'), base.add(const Duration(milliseconds: 1)));
+    await repository.record(roomOf('bigo', '3'), base.add(const Duration(milliseconds: 2)));
     await pumpEventQueue();
     final steps = <int>[];
     installSites(

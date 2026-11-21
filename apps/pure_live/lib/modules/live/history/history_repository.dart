@@ -34,9 +34,10 @@ final class HistoryRepository {
   /// and a day cut from the UTC fields puts the after-midnight watches of
   /// a Shanghai evening under yesterday.
   List<(LiveRoom, DateTime)> entries() {
-    final records = store.entries;
-    final entries = records.entries.toList()..sort((a, b) => _watchedAt(b.value).compareTo(_watchedAt(a.value)));
-    return [for (final entry in entries) (LiveRoom.fromJson(_jsonOf(entry.value)), _watchedAt(entry.value).toLocal())];
+    final ordered = _newestFirst(store.entries.entries.toList());
+    return [
+      for (final (entry, _) in ordered) (LiveRoom.fromJson(_jsonOf(entry.value)), _watchedAt(entry.value).toLocal()),
+    ];
   }
 
   /// Records a viewing of [room] that ended [at], trimming past [limit]:
@@ -104,10 +105,21 @@ final class HistoryRepository {
   /// choice and keeps them all, so nothing is deleted.
   Future<void> _trim(int limit) async {
     if (limit <= 0) return;
-    final keys = store.entries.entries.toList()..sort((a, b) => _watchedAt(b.value).compareTo(_watchedAt(a.value)));
-    final excess = keys.skip(limit).map((entry) => entry.key).toList();
+    final ordered = _newestFirst(store.entries.entries.toList());
+    final excess = [for (final (entry, _) in ordered.skip(limit)) entry.key];
     if (excess.isNotEmpty) await store.deleteAll(excess);
   }
+
+  /// The records newest watch first; equal moments keep the store's own
+  /// insertion order. `List.sort` is not stable — two records written
+  /// inside one clock tick would otherwise trade places between reads,
+  /// and the page would shuffle them on every rebuild — so the insertion
+  /// index rides along as the tie-break and the order is a fact.
+  static List<(MapEntry<String, Object?>, int)> _newestFirst(List<MapEntry<String, Object?>> records) =>
+      [for (final (index, entry) in records.indexed) (entry, index)]..sort((a, b) {
+        final byTime = _watchedAt(b.$1.value).compareTo(_watchedAt(a.$1.value));
+        return byTime != 0 ? byTime : a.$2.compareTo(b.$2);
+      });
 
   /// The entry's watch moment; entries without one (from a future writer)
   /// sort oldest.
