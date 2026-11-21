@@ -204,6 +204,19 @@ void main() {
       expect(page.items.single.id, 'new');
     });
 
+    test("a body that is not JSON fails in the module's own words", () async {
+      final stub = _RouteStub()..routeFor('comment/list/7100005', (request) => 'not-json at all');
+      final container = ProviderContainer(
+        overrides: [hongguoCommentClientProvider.overrideWith((ref) => HongguoCommentClient(http: stub))],
+      );
+      addTearDown(container.dispose);
+      container.listen(hongguoCommentsProvider, (_, _) {});
+      final controller = container.read(hongguoCommentsProvider.notifier);
+
+      await controller.open('7100001', '7100005');
+      expect(container.read(hongguoCommentsProvider).error, startsWith('评论响应格式异常（'));
+    });
+
     test('a failure names itself and the retry reads the held pair', () async {
       final stub = _RouteStub()..routeFor('comment/list/7100004', (request) => '{"code":403,"message":"拒绝"}');
       final container = ProviderContainer(
@@ -334,6 +347,18 @@ void main() {
   });
 
   group('the related shelf', () {
+    test("a body that is not JSON fails in the module's own words", () async {
+      final stub = _RouteStub()..routeFor('bookapi/plan', (request) => '<html>not json</html>');
+      final container = ProviderContainer(
+        overrides: [hongguoRelatedClientProvider.overrideWith((ref) => HongguoRelatedClient(http: stub))],
+      );
+      addTearDown(container.dispose);
+      container.listen(hongguoRelatedProvider, (_, _) {});
+
+      await container.read(hongguoRelatedProvider.notifier).open('7100001');
+      expect(container.read(hongguoRelatedProvider).error, startsWith('相关作品响应格式已变化（'));
+    });
+
     test('the current series never shows, and the rows keep their seasons', () async {
       final stub = _RouteStub()
         ..routeFor(

@@ -364,7 +364,14 @@ final class HongguoCommentClient {
     if (!response.isOk) {
       throw HongguoCommentFailure('评论读取失败（HTTP ${response.statusCode}）');
     }
-    final decoded = jsonDecode(response.text);
+    // A body that is not JSON at all says so in the module's own words —
+    // a bare `FormatException` would reach the panel as engine noise.
+    final Object? decoded;
+    try {
+      decoded = jsonDecode(response.text);
+    } on FormatException catch (error) {
+      throw HongguoCommentFailure('评论响应格式异常（$error）');
+    }
     if (decoded is! Map<String, Object?>) {
       throw const HongguoCommentFailure('评论响应格式异常');
     }

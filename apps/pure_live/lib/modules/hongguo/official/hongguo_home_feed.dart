@@ -157,7 +157,16 @@ final class HongguoHomeFeed {
       if (text.trim().isEmpty) {
         throw const HongguoHomeFeedFailure('推荐接口返回空响应，请稍后重试');
       }
-      final decoded = jsonDecode(text);
+      // A bare `jsonDecode` throws `FormatException` on a body that is not
+      // JSON at all — the module's own failure is what the error card is
+      // built to carry, so the shape change is said here (the official
+      // client's `_jsonBody` made the same turn for the same reason).
+      final Object? decoded;
+      try {
+        decoded = jsonDecode(text);
+      } on FormatException catch (error) {
+        throw HongguoHomeFeedFailure('推荐数据格式已变化（$error）');
+      }
       if (decoded is! Map<String, Object?>) {
         throw const HongguoHomeFeedFailure('推荐数据格式已变化');
       }
@@ -261,9 +270,9 @@ final class HongguoHomeFeed {
       );
       if (items.length >= 30) break;
     }
-    if (items.isEmpty) {
-      throw const HongguoHomeFeedFailure('推荐未返回可播放的剧集，请刷新重试');
-    }
+    // An empty batch is not a failure: the page's own walk asks again, and
+    // three in a row give up with the words the panel shows. Throwing here
+    // instead would leave those asks unreachable.
     return (items: items, allIds: seen.toList(), session: session);
   }
 }

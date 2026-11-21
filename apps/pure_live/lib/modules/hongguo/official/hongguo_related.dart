@@ -143,7 +143,13 @@ final class HongguoRelatedClient {
     if (!response.isOk) {
       throw HongguoAccountFailure('HTTP ${response.statusCode}');
     }
-    final decoded = jsonDecode(response.text);
+    // A body that is not JSON at all says so in the module's own words.
+    final Object? decoded;
+    try {
+      decoded = jsonDecode(response.text);
+    } on FormatException catch (error) {
+      throw HongguoAccountFailure('预约响应格式已变化（$error）');
+    }
     final code = decoded is Map<String, Object?> ? (decoded['code'] as num?)?.toInt() ?? -1 : -1;
     if (code != 0) {
       throw HongguoAccountFailure('预约未成功（错误码 $code），请稍后重试');
@@ -153,7 +159,12 @@ final class HongguoRelatedClient {
 
 /// The related/plan endpoints' parse, the reference's cell shape.
 List<HongguoRelatedWork> _parseRelated(String raw, String currentId) {
-  final root = jsonDecode(raw);
+  final Object? root;
+  try {
+    root = jsonDecode(raw);
+  } on FormatException catch (error) {
+    throw HongguoAccountFailure('相关作品响应格式已变化（$error）');
+  }
   if (root is! Map<String, Object?> || ((root['code'] as num?)?.toInt() ?? -1) != 0) {
     throw const HongguoAccountFailure('相关作品接口暂不可用');
   }
