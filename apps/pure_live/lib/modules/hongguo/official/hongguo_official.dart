@@ -146,7 +146,10 @@ const String _kWebUa =
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
 
 /// The official client the station's feeds ask.
-final class HongguoOfficialClient {
+///
+/// Base, not final: the feeds controllers' tests substitute the client with
+/// a subclass that answers from a script, so no network ever runs there.
+base class HongguoOfficialClient {
   /// Creates the client over [http].
   HongguoOfficialClient({required LiveHttp http})
     : _http = http,

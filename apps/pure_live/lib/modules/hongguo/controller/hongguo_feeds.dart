@@ -68,13 +68,17 @@ final class HongguoBrowseController extends Notifier<Map<String, HongguoBrowseFe
   /// Chooses [id] under [rowType], or clears the dimension when null; the
   /// feed resets and the ask goes out. A new genre discards the previous
   /// shelf's conditions, as the reference does.
+  ///
+  /// A 类型 choice replaces the shelf kind — the row's options are the kinds
+  /// themselves (`short_play`, `comic_series`) — so the other kinds'
+  /// dimensions drop, and the ask rides the chosen kind: the tab's own wire
+  /// only stands in when no 类型 was picked.
   Future<void> select(HongguoGenre genre, String rowType, String? id) {
     final selection = Map<String, String>.of(feedOf(genre).selection);
     if (id == null || id.isEmpty) {
       selection.remove(rowType);
-    } else if (rowType == 'genre') {
-      selection.clear();
     } else {
+      if (rowType == 'genre') selection.clear();
       selection[rowType] = id;
     }
     return _load(genre, selection);
