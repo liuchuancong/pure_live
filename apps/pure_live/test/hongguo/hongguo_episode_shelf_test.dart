@@ -13,7 +13,8 @@ import 'package:pure_live/l10n/translations.g.dart';
 import 'package:pure_live/modules/hongguo/controller/hongguo_library.dart' show HongguoWatchProgress;
 import 'package:pure_live/modules/hongguo/controller/hongguo_models.dart'
     show HongguoEpisode, HongguoSeriesDetail, HongguoSeriesMeta;
-import 'package:pure_live/modules/hongguo/widgets/hongguo_episode_shelf.dart' show hongguoEpisodeMarks;
+import 'package:pure_live/modules/hongguo/widgets/hongguo_episode_shelf.dart'
+    show HongguoEpisodeShelf, hongguoEpisodeGroupOf, hongguoEpisodeMarks, hongguoEpisodeRangeLabel;
 import 'package:pure_live/shared/images/app_image_cache.dart' show installLiveCacheManager;
 
 /// The episode shelf: the watch marks every surface reads the same way, the
