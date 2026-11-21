@@ -9,6 +9,8 @@ import 'dart:convert' show base64Decode, jsonDecode, utf8;
 import 'dart:io' show HttpClient, HttpClientResponse, HttpHeaders;
 import 'dart:typed_data' show Uint8List;
 
+import 'package:flutter/foundation.dart' show visibleForTesting;
+
 const String _kBase = 'https://hongguoduanju.com';
 const String _kLoginUa =
     'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36';
@@ -38,11 +40,13 @@ final class HongguoQrCode {
 /// One website login session; one instance per QR code shown.
 final class HongguoWebLogin {
   /// Creates the session; the [proxy] field (`host:port`) routes the
-  /// browser-flow requests through the app's proxy when one is in force.
-  HongguoWebLogin({this.proxy});
+  /// browser-flow requests through the app's proxy when one is in force,
+  /// and `_clientFactory` replaces the session's own transport in tests.
+  HongguoWebLogin({this.proxy, @visibleForTesting this._clientFactory});
 
   /// The proxy endpoint in force, or null for direct.
   final String? proxy;
+  final HttpClient Function()? _clientFactory;
   final List<_LoginCookie> _cookies = [];
   String _token = '';
   HttpClient? _io;
@@ -58,6 +62,8 @@ final class HongguoWebLogin {
   HttpClient _client() => _io ??= _newClient();
 
   HttpClient _newClient() {
+    final made = _clientFactory?.call();
+    if (made != null) return made;
     final client = HttpClient();
     final proxy = this.proxy;
     if (proxy != null && proxy.contains(':')) {
