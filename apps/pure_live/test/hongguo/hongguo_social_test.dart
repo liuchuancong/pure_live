@@ -8,12 +8,14 @@ import 'package:live_net/live_net.dart' show LiveHttp, LiveRequest, LiveResponse
 import 'package:live_storage/live_storage.dart';
 import 'package:pure_live/modules/hongguo/controller/hongguo_social.dart';
 import 'package:pure_live/modules/hongguo/official/hongguo_comments.dart' show HongguoCommentClient;
+import 'package:pure_live/modules/hongguo/official/hongguo_public_reviews.dart' show HongguoPublicReviewsClient;
 import 'package:pure_live/modules/hongguo/official/hongguo_related.dart' show HongguoRelatedClient;
 
-/// The episode's comment list, the danmaku chain and the related works over
-/// stubbed transports: the keyed swaps that never land a stale answer, the
-/// paging by the server's cursor, the windows that chain by time, and the
-/// series seat that never shows in its own related shelf.
+/// The episode's comment list, the danmaku chain, the related works and the
+/// public pages' reviews over stubbed transports: the keyed swaps that never
+/// land a stale answer nor keep the last pair's rows on the new pair's
+/// panel, the paging by the server's cursor, the windows that chain by
+/// time, and the series seat that never shows in its own related shelf.
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   late StorageStores stores;
@@ -51,6 +53,56 @@ void main() {
           'data_list': rows,
         },
       });
+
+  /// One review row as the public pages spell it.
+  Map<String, Object?> reviewRow(
+    String text, {
+    String author = '乙',
+    String avatar = 'https://cdn.example/a.jpg',
+    int created = 1700000000,
+    int likes = 4,
+    Object rating = 9.0,
+  }) => {
+    'content': text,
+    'user_name': author,
+    'user_avatar': avatar,
+    'create_time': created,
+    'digg_count': likes,
+    'rating': rating,
+  };
+
+  /// One public page carrying its loader data the site's own way.
+  String reviewsHtml(Map<String, Object?> node) =>
+      '<html><script>window._ROUTER_DATA = ${jsonEncode({
+        'loaderData': {'loader': node},
+      })};</script></html>';
+
+  String playerHtml({required String vid, required int total, required List<Map<String, Object?>> reviews}) =>
+      reviewsHtml({
+        'seriesDetail': {'series_id': '7100001'},
+        'vid': vid,
+        'episodeSocialInfo': {
+          'reviews': {'reviews': reviews, 'total_count': total},
+        },
+      });
+
+  String detailHtml({required List<Map<String, Object?>> reviews}) => reviewsHtml({
+    'seriesDetail': {'series_id': '7100001'},
+    'seriesSocialInfo': {
+      'reviews': {'reviews': reviews, 'total_count': 88},
+      'rating': 8.7,
+      'rating_count': 120,
+    },
+  });
+
+  ProviderContainer reviewsContainer(_RouteStub stub) {
+    final container = ProviderContainer(
+      overrides: [hongguoPublicReviewsClientProvider.overrideWith((ref) => HongguoPublicReviewsClient(http: stub))],
+    );
+    addTearDown(container.dispose);
+    container.listen(hongguoPublicReviewsProvider, (_, _) {});
+    return container;
+  }
 
   group('the comment walk', () {
     test('opens, keeps the keyed order, pages, and drops the bad rows', () async {
@@ -333,6 +385,163 @@ void main() {
       // The held series keeps its shelf; nothing re-asks.
       await controller.open('7100001');
       expect(stub.seen, hasLength(1));
+    });
+  });
+
+  group('the public reviews', () {
+    test('both lists land, the rows keep their fields, and the bad rows stay out', () async {
+      final stub = _RouteStub()
+        ..routeFor(
+          '/player/7100001/7100002',
+          (request) => playerHtml(
+            vid: '7100002',
+            total: 99,
+            reviews: [
+              reviewRow('第一条'),
+              reviewRow('   '), // a blank says nothing
+              reviewRow('第一条'), // the same fields twice: one review
+              {'content': '裸行'}, // no name or time: still a review
+              reviewRow('相册', avatar: 'http://cdn.example/x.jpg'), // not https: no picture trusted
+            ],
+          ),
+        )
+        ..routeFor('/detail', (request) => detailHtml(reviews: [reviewRow('剧评头名', author: '丙')]));
+      final container = reviewsContainer(stub);
+
+      await container.read(hongguoPublicReviewsProvider.notifier).open('7100001', '7100002');
+      final state = container.read(hongguoPublicReviewsProvider);
+      expect(state.error, isNull);
+      expect(state.loading, isFalse);
+      expect(state.data!.episode.items.map((review) => review.content), ['第一条', '裸行', '相册']);
+      expect(state.data!.episode.total, 99); // the platform's own count, not the trimmed list
+      expect(state.data!.episode.items.last.avatar, isEmpty); // the plain-http address stayed off
+      expect(state.data!.series.items.single.content, '剧评头名');
+      expect(state.data!.rating, 8.7);
+      expect(state.data!.ratingCount, 120);
+      expect(stub.seen.map((request) => request.url.path), ['/player/7100001/7100002', '/detail']);
+    });
+
+    test('the held pair asks nothing again, and a second episode reuses the detail page', () async {
+      final stub = _RouteStub()
+        ..routeFor(
+          '/player/7100001/7100002',
+          (request) => playerHtml(vid: '7100002', total: 1, reviews: [reviewRow('本集一')]),
+        )
+        ..routeFor(
+          '/player/7100001/7100004',
+          (request) => playerHtml(vid: '7100004', total: 1, reviews: [reviewRow('本集二')]),
+        )
+        ..routeFor('/detail', (request) => detailHtml(reviews: [reviewRow('剧评')]));
+      final container = reviewsContainer(stub);
+      final controller = container.read(hongguoPublicReviewsProvider.notifier);
+
+      await controller.open('7100001', '7100002');
+      await controller.open('7100001', '7100002'); // the held pair: nothing flies again
+      expect(stub.seen, hasLength(2));
+
+      await controller.open('7100001', '7100004'); // another episode of the same series
+      expect(stub.seen, hasLength(3)); // only its player page was asked
+      expect(container.read(hongguoPublicReviewsProvider).data!.episode.items.single.content, '本集二');
+      expect(stub.seen.where((request) => request.url.path == '/detail'), hasLength(1)); // the series' page is fresh
+    });
+
+    test('a stalled answer never lands on the pair that replaced it', () async {
+      final gate = Completer<String>();
+      final stub = _RouteStub()
+        ..hold('/player/7100001/7100006', gate)
+        ..routeFor(
+          '/player/7100001/7100006',
+          (request) => playerHtml(vid: '7100006', total: 1, reviews: [reviewRow('迟到的一集')]),
+        )
+        ..routeFor(
+          '/player/7100001/7100008',
+          (request) => playerHtml(vid: '7100008', total: 1, reviews: [reviewRow('在场的一集')]),
+        )
+        ..routeFor('/detail', (request) => detailHtml(reviews: [reviewRow('剧评')]));
+      final container = reviewsContainer(stub);
+      final controller = container.read(hongguoPublicReviewsProvider.notifier);
+
+      final first = controller.open('7100001', '7100006'); // held mid-flight
+      await pumpEventQueue();
+      await controller.open('7100001', '7100008');
+      expect(container.read(hongguoPublicReviewsProvider).data!.episode.items.single.content, '在场的一集');
+
+      gate.complete(playerHtml(vid: '7100006', total: 1, reviews: [reviewRow('迟到的一集')]));
+      await first;
+      await pumpEventQueue();
+      expect(container.read(hongguoPublicReviewsProvider).data!.episode.items.single.content, '在场的一集');
+    });
+
+    test('a swap leaves the old pair behind, the failure shows, and retry reads again', () async {
+      final stub = _RouteStub()
+        ..routeFor(
+          '/player/7100001/7100002',
+          (request) => playerHtml(vid: '7100002', total: 1, reviews: [reviewRow('旧集的评论')]),
+        )
+        ..routeFor('/player/7100001/7100009', (request) => '<html>维护中</html>') // no router data at all
+        ..routeFor('/detail', (request) => detailHtml(reviews: [reviewRow('剧评')]));
+      final container = reviewsContainer(stub);
+      final controller = container.read(hongguoPublicReviewsProvider.notifier);
+
+      await controller.open('7100001', '7100002');
+      expect(container.read(hongguoPublicReviewsProvider).data!.episode.items.single.content, '旧集的评论');
+
+      await controller.open('7100001', '7100009'); // the new pair's page says nothing the app can read
+      final failed = container.read(hongguoPublicReviewsProvider);
+      expect(failed.error, '页面没有内容数据');
+      expect(failed.data, isNull); // the old pair's rows are not this pair's
+
+      final before = stub.seen.length;
+      await controller.open('7100001', '7100009'); // the failed pair is held: nothing re-asks
+      expect(stub.seen.length, before);
+
+      stub.routeFor(
+        '/player/7100001/7100009',
+        (request) => playerHtml(vid: '7100009', total: 1, reviews: [reviewRow('恢复的一集')]),
+      );
+      await controller.retry();
+      final healed = container.read(hongguoPublicReviewsProvider);
+      expect(healed.error, isNull);
+      expect(healed.data!.episode.items.single.content, '恢复的一集');
+    });
+
+    test('a retry with nothing held asks nothing', () async {
+      final stub = _RouteStub();
+      final container = reviewsContainer(stub);
+
+      await container.read(hongguoPublicReviewsProvider.notifier).retry();
+      expect(stub.seen, isEmpty);
+      expect(container.read(hongguoPublicReviewsProvider).data, isNull);
+    });
+
+    test('a player page naming another episode fails the read plainly', () async {
+      final stub = _RouteStub()
+        ..routeFor(
+          '/player/7100001/7100002',
+          (request) => playerHtml(vid: '9999999', total: 1, reviews: [reviewRow('别集的行')]),
+        )
+        ..routeFor('/detail', (request) => detailHtml(reviews: [reviewRow('剧评')]));
+      final container = reviewsContainer(stub);
+
+      await container.read(hongguoPublicReviewsProvider.notifier).open('7100001', '7100002');
+      expect(container.read(hongguoPublicReviewsProvider).error, '评论分集不匹配');
+      expect(container.read(hongguoPublicReviewsProvider).data, isNull);
+    });
+
+    test('a loader answer that declares itself failed reads as none', () async {
+      final stub = _RouteStub()
+        ..routeFor(
+          '/player/7100001/7100002',
+          (request) => reviewsHtml({
+            'seriesDetail': {'series_id': '7100001'},
+            'vid': '7100002',
+            'isSuccess': false,
+          }),
+        );
+      final container = reviewsContainer(stub);
+
+      await container.read(hongguoPublicReviewsProvider.notifier).open('7100001', '7100002');
+      expect(container.read(hongguoPublicReviewsProvider).error, '公开评论格式已变化');
     });
   });
 }

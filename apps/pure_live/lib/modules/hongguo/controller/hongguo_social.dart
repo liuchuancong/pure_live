@@ -229,6 +229,7 @@ final class HongguoPublicReviewsController extends Notifier<HongguoPublicReviews
   Future<void> open(String seriesId, String episodeVid) async {
     final key = '$seriesId/$episodeVid';
     if (_key == key) return;
+    state = (data: null, loading: false, error: null); // the old pair's answer is not this pair's
     await _load(seriesId, episodeVid);
   }
 
