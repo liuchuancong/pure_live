@@ -34,7 +34,7 @@ void main() {
       await root.delete(recursive: true);
     });
 
-    test('a sidecar is the video\'s own name with the format\'s extension', () {
+    test("a sidecar is the video's own name with the format's extension", () {
       expect(danmakuFileFor(video, DanmakuFormat.xml).path, '${root.path}/episode 1.xml');
       expect(danmakuFileFor(video, DanmakuFormat.ass).path, '${root.path}/episode 1.ass');
       expect(danmakuFileFor(video, DanmakuFormat.json).path, '${root.path}/episode 1.json');
@@ -54,7 +54,7 @@ void main() {
       expect(video.readAsStringSync(), 'video'); // the video itself untouched
     });
 
-    test('the delete takes every sidecar the video\'s name owns, and stays quiet when none are there', () async {
+    test("the delete takes every sidecar the video's name owns, and stays quiet when none are there", () async {
       await writeDanmakuFiles(video, [entry(1, '一条')], DanmakuFormat.values);
       File('${root.path}/episode 1.stray').writeAsStringSync('not a sidecar');
 
