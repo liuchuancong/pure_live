@@ -69,6 +69,16 @@ final class _PagedCardListState<T> extends State<PagedCardList<T>> {
   /// The page the wide pager was asked for.
   int _asked = 1;
 
+  /// The list's controller while the caller passes none: a fresh page starts
+  /// at its head whatever controller the list ends up on.
+  final ScrollController _ownScroll = ScrollController();
+
+  @override
+  void dispose() {
+    _ownScroll.dispose();
+    super.dispose();
+  }
+
   /// The last display page the accumulated list fills, whole or in part.
   int get _lastInHand => widget.items.isEmpty ? 1 : (widget.items.length + widget.pageSize - 1) ~/ widget.pageSize;
 
@@ -76,8 +86,8 @@ final class _PagedCardListState<T> extends State<PagedCardList<T>> {
   int get _page => _asked.clamp(1, _lastInHand);
 
   void _jumpToTop() {
-    final controller = widget.scrollController;
-    if (controller?.hasClients ?? false) controller!.jumpTo(0);
+    final controller = widget.scrollController ?? _ownScroll;
+    if (controller.hasClients) controller.jumpTo(0);
   }
 
   /// Moves the wide pager to [next]; the page past the hand asks the source
@@ -132,7 +142,7 @@ final class _PagedCardListState<T> extends State<PagedCardList<T>> {
       gap: widget.gap,
       padding: widget.padding,
       skeletonBuilder: widget.skeletonBuilder,
-      scrollController: widget.scrollController,
+      scrollController: widget.scrollController ?? _ownScroll,
     );
   }
 }
