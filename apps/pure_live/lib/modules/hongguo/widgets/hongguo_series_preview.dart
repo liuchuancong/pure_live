@@ -25,6 +25,20 @@ final class HongguoSeriesPreview extends ConsumerStatefulWidget {
   ConsumerState<HongguoSeriesPreview> createState() => _HongguoSeriesPreviewState();
 }
 
+/// The glance's tier: the ladder's lowest, and where the station ties the
+/// tiers, the one every engine on this device decodes (h264). A ladder with
+/// nothing on it hands back nothing.
+@visibleForTesting
+HongguoRendition? hongguoPreviewRendition(List<HongguoRendition> ladder) {
+  if (ladder.isEmpty) return null;
+  int rank(HongguoRendition rendition) {
+    final avc = rendition.codec.toLowerCase().contains('264');
+    return (avc ? 0 : 1) * 1000000 + rendition.quality * 10;
+  }
+
+  return ([...ladder]..sort((a, b) => rank(a).compareTo(rank(b)))).first;
+}
+
 final class _HongguoSeriesPreviewState extends ConsumerState<HongguoSeriesPreview> {
   @override
   Widget build(BuildContext context) {
@@ -36,17 +50,9 @@ final class _HongguoSeriesPreviewState extends ConsumerState<HongguoSeriesPrevie
     final detail = await client.detail(widget.series.seriesId);
     if (detail.episodes.isEmpty) return null;
     final ladder = await client.playbackLadder(detail.episodes.first.vid);
-    if (ladder.isEmpty) return null;
-    // The ladder arrives lowest first; sorting keeps the glance honest even
-    // if the station ever changes its mind about the order. h264 is the
-    // tier every engine on this device decodes, so a tie prefers it.
-    int rank(HongguoRendition rendition) {
-      final avc = rendition.codec.toLowerCase().contains('264');
-      return (avc ? 1 : 0) * 1000000 + (100000 - rendition.quality) * 10;
-    }
-
-    final rendition = [...ladder]..sort((a, b) => rank(a).compareTo(rank(b)));
-    final url = await ref.read(hongguoStreamProxyProvider).register(rendition.first);
+    final rendition = hongguoPreviewRendition(ladder);
+    if (rendition == null) return null;
+    final url = await ref.read(hongguoStreamProxyProvider).register(rendition);
     return (
       source: PlayerSource.of(
         id: SourceId('hongguo-preview:${widget.series.seriesId}'),
