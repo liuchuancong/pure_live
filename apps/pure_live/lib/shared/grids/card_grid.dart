@@ -498,7 +498,10 @@ final class _CardGridState<T> extends ConsumerState<CardGrid<T>> {
       target = index - columns;
     } else if (key == LogicalKeyboardKey.arrowDown) {
       if (row >= lastRow) {
-        _askForMore();
+        // A paged feed moves by its pager alone — this DOWN falls through to
+        // the pager below it. An endless one pre-loads, so the walk never
+        // stops one row short of its end.
+        if (!widget.paged) _askForMore();
         return KeyEventResult.ignored;
       }
       target = math.min(index + columns, count - 1);
