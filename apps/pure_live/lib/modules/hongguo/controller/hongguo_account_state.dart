@@ -49,7 +49,10 @@ final class HongguoAccountState {
 
 /// Owns the sign-in: restoring a stored login, settling a fresh QR
 /// confirmation, reading the profile, and signing out.
-final class HongguoAccountController extends Notifier<HongguoAccountState> {
+///
+/// Base, not final: a test substitutes a memory state, since neither the
+/// store nor the transport runs under the widget test's clock.
+base class HongguoAccountController extends Notifier<HongguoAccountState> {
   @override
   HongguoAccountState build() {
     final stored = _readStored();
@@ -134,7 +137,10 @@ final hongguoAccountClientProvider = Provider<HongguoAccountClient>((ref) {
 
 /// One QR login session in flight: the code to show, its expiry, and the
 /// poll loop's state. Disposed when the account view leaves.
-final class HongguoLoginSessionController extends Notifier<({HongguoQrCode? qr, bool polling, String? error})> {
+///
+/// Base, not final: a test scripts the passport's answers, since neither
+/// the store nor the transport runs under the widget test's clock.
+base class HongguoLoginSessionController extends Notifier<({HongguoQrCode? qr, bool polling, String? error})> {
   HongguoWebLogin? _login;
 
   @override
