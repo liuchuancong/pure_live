@@ -173,7 +173,14 @@ final class _ControlBarState extends ConsumerState<_ControlBar> {
           final pickers = !pip ? widget.streamPickers?.call(labelled: true, fitOnly: compactPickers) : null;
           final windowButton = !pip && player != null && wide
               ? PlayerBarButton(
-                  icon: presentation == PresentationMode.windowFullscreen ? DsIcons.copy : DsIcons.square,
+                  // The window's own shape with the arrows that say which way
+                  // it goes — out to the screen's corners, or back into a
+                  // window. The frame sets this verb apart from the picture's
+                  // own fullscreen beside it, whose maximize/minimize carry no
+                  // frame.
+                  icon: presentation == PresentationMode.windowFullscreen
+                      ? DsIcons.squareShrinkUpLeftDownRight
+                      : DsIcons.squareExpandUpRightDownLeft,
                   label: presentation == PresentationMode.windowFullscreen
                       ? t.player.windowFullscreenOff
                       : t.player.windowFullscreenOn,
@@ -199,16 +206,9 @@ final class _ControlBarState extends ConsumerState<_ControlBar> {
                   },
                 )
               : null;
-          final pipButton = !pip && player != null && presentationController.pipAvailable
-              ? PlayerBarButton(
-                  icon: DsIcons.pictureInPicture2,
-                  label: t.player.pipOn,
-                  onPressed: () {
-                    widget.onWake();
-                    unawaited(toggleRoomPip(context, ref));
-                  },
-                )
-              : null;
+          // The picture-in-picture verb lives at the picture's top-right tool
+          // cluster now; the bar keeps the two fullscreen halves it shares a
+          // corner with.
           return Row(
             spacing: tv ? DsSpace.s8 : DsSpace.s4,
             children: [
@@ -227,7 +227,6 @@ final class _ControlBarState extends ConsumerState<_ControlBar> {
               else
                 const Spacer(),
               if (!crowded) const _BarDivider(),
-              ?pipButton,
               ?windowButton,
               ?fullscreenButton,
             ],

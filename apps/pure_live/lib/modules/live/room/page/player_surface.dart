@@ -1291,22 +1291,45 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
                         ),
                       ),
                     ),
-                  // The lock, on the picture's right edge (the reference's
-                  // LockButton): it comes with the bars, and once it is on it is
-                  // the only thing drawn — whatever the room does next. A locked
-                  // picture with no unlock on it is a door bricked from inside.
+                  // The picture's right edge (the reference's LockButton
+                  // column): the frame copy above the lock, the pair a viewer
+                  // reaches for together — take the shot, then hand the
+                  // picture over to the lock. The lock comes with the bars,
+                  // and once it is on it is the only thing drawn — whatever
+                  // the room does next. A locked picture with no unlock on it
+                  // is a door bricked from inside. The TV keeps the frame copy
+                  // on its full strip instead: one row holds everything there.
                   if (!mini && (_locked || showBar))
                     PositionedDirectional(
                       end: DsSpace.s12,
                       top: 0,
                       bottom: widget.bottomInset + keyboardLift,
                       child: Center(
-                        child: PlayerGlassPill(
-                          child: PlayerBarButton(
-                            icon: _locked ? DsIcons.unlock : DsIcons.lock,
-                            label: _locked ? context.t.room.unlockControls : context.t.room.lockControls,
-                            onPressed: _toggleLock,
-                          ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          spacing: DsSpace.s8,
+                          children: [
+                            if (!_locked && !widget.tv && (handle?.canCaptureScreenshot ?? false))
+                              PlayerGlassPill(
+                                child: PlayerBarButton(
+                                  icon: DsIcons.camera,
+                                  label: context.t.player.screenshot,
+                                  onPressed: () {
+                                    _wake();
+                                    final capture = handle;
+                                    if (capture == null || !capture.canCaptureScreenshot) return;
+                                    unawaited(takeRoomScreenshot(context, ref, capture));
+                                  },
+                                ),
+                              ),
+                            PlayerGlassPill(
+                              child: PlayerBarButton(
+                                icon: _locked ? DsIcons.unlock : DsIcons.lock,
+                                label: _locked ? context.t.room.unlockControls : context.t.room.lockControls,
+                                onPressed: _toggleLock,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),

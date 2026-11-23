@@ -360,8 +360,10 @@ final class _AnchorFollowChip extends ConsumerWidget {
 }
 
 /// The picture's own tool cluster, floating at its top-right corner: the
-/// session verbs — a frame copy, the capture, the small window and the room's
-/// more container — in one glass pill (the redesign's tcluster). A wide
+/// session verbs — the small window, the recorder and the room's more
+/// container — in one glass pill (the redesign's tcluster). The frame copy
+/// lives on the picture's right edge above the lock now, so a viewer reaching
+/// for one adjustment finds both there. A wide
 /// picture draws icons; a narrow one (under 460 px, the strip's own narrow
 /// measure) switches to text chips and drops the small window, which has no
 /// room for a fourth word. The verbs ride the bars' auto-hide with everything
@@ -383,17 +385,24 @@ final class _TopToolCluster extends ConsumerWidget {
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
     final tv = PlayerBarTier.tvOf(context);
-    final capture = room.handle;
-    final canShot = capture != null && capture.canCaptureScreenshot;
     final task = roomRecordingTaskOf(ref.watch(recordingTasksProvider).tasks, room.room);
     final recording = task?.state == RecordingTaskState.recording;
+    final presentation = ref.watch(roomPresentationProvider);
+    final pipInWindow = presentation == PresentationMode.pip;
+    final pipAvailable = room.handle != null && ref.read(roomPresentationProvider.notifier).pipAvailable;
     final danger = colors.danger.text;
     return LayoutBuilder(
       builder: (context, constraints) {
         final small = constraints.maxWidth < 460;
         final side = tv ? theme.sizes.lg : theme.sizes.sm;
 
-        Widget chip({required String label, required VoidCallback? onPressed, DsIconData? icon, bool alert = false}) {
+        Widget chip({
+          required String label,
+          required VoidCallback? onPressed,
+          DsIconData? icon,
+          bool alert = false,
+          bool selected = false,
+        }) {
           final corners = theme.radii.controlCorners(null, side);
           final ink = alert ? danger : _onVideo;
           final Widget child;
@@ -408,7 +417,7 @@ final class _TopToolCluster extends ConsumerWidget {
             child = DsIcon(
               icon!,
               size: tv ? theme.sizes.iconLg : theme.sizes.iconSm,
-              color: alert ? danger : _onVideoMuted,
+              color: alert ? danger : selected ? _onVideo : _onVideoMuted,
             );
           }
           final pressable = DsPressable(
@@ -450,15 +459,12 @@ final class _TopToolCluster extends ConsumerWidget {
               mainAxisSize: MainAxisSize.min,
               spacing: DsSpace.s4,
               children: [
-                if (canShot)
+                if (pipAvailable)
                   chip(
-                    icon: DsIcons.camera,
-                    label: context.t.player.screenshot,
-                    onPressed: () {
-                      final handle = room.handle;
-                      if (handle == null || !handle.canCaptureScreenshot) return;
-                      unawaited(takeRoomScreenshot(context, ref, handle));
-                    },
+                    icon: pipInWindow ? DsIcons.pictureInPicture2 : DsIcons.pictureInPicture,
+                    label: pipInWindow ? context.t.player.pipOff : context.t.player.pipOn,
+                    selected: pipInWindow,
+                    onPressed: () => unawaited(toggleRoomPip(context, ref)),
                   ),
                 if (recording)
                   RecordingIndicator(
