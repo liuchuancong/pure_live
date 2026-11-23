@@ -60,6 +60,7 @@ final class RoomDetailsPanel extends ConsumerWidget {
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
     final platform = _platformName(ref, room);
+    final title = room.content.title.trim();
     final external = room.links.webUrl?.trim().isNotEmpty == true || room.links.appUrl?.trim().isNotEmpty == true;
     final directLinks = ref.read(sitesProvider).getById(room.ref.platform)?.capability<LivePlaybackProvider>() != null;
     final mobile =
@@ -89,6 +90,10 @@ final class RoomDetailsPanel extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               spacing: DsSpace.s12,
               children: [
+                // The stream's own words lead the body: the title is the
+                // room's headline, not a fact row's small print.
+                if (title.isNotEmpty) _RoomTitle(title: title),
+                _LiveStatusBand(room: room),
                 _RoomFactsList(room: room, watchStarted: state.watchStartedAt),
                 const DsDivider(),
                 _Actions(
@@ -104,6 +109,120 @@ final class RoomDetailsPanel extends ConsumerWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// The room's headline: the stream's own name in the body's heading voice,
+/// wrapping like prose rather than a fact row's one muted line.
+final class _RoomTitle extends StatelessWidget {
+  const _RoomTitle({required this.title});
+
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
+    return Text(
+      title,
+      maxLines: 3,
+      overflow: TextOverflow.ellipsis,
+      style: theme.typography.heading.copyWith(color: colors.text),
+    );
+  }
+}
+
+/// The live status band: the broadcast's badge, the clock it has been on —
+/// the panel's one moving number — the audience it draws, and a restriction,
+/// when the stream carries one, all in one wrapping line. The facts list
+/// under it holds what a viewer looks up; this line holds what they check.
+final class _LiveStatusBand extends StatefulWidget {
+  const _LiveStatusBand({required this.room});
+
+  final LiveRoom room;
+
+  @override
+  State<_LiveStatusBand> createState() => _LiveStatusBandState();
+}
+
+final class _LiveStatusBandState extends State<_LiveStatusBand> {
+  Timer? _tick;
+
+  @override
+  void initState() {
+    super.initState();
+    _tick = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _tick?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
+    final room = widget.room;
+    // The badge says which kind of broadcast this is; an offline room with
+    // neither name wears none, the same silence the top strip keeps.
+    final badge = room.broadcast.isRecord
+        ? DsBadge(label: Text(t.favorites.statusReplay))
+        : room.broadcast.isLiveNow
+        ? DsBadge(label: Text(t.favorites.statusLive), status: DsStatus.success)
+        : null;
+    final startedAt = room.broadcast.startedAt;
+    // The audience figure with the word that names where it came from — the
+    // same read the picture's top strip does, so the two surfaces cannot
+    // disagree about what the number means.
+    final audience = room.audience;
+    final (figure, audienceLabel) = audience.onlineViewers != null
+        ? (audience.onlineViewers, t.room.onlineViewers)
+        : audience.popularity != null
+        ? (audience.popularity, t.room.popularity)
+        : audience.totalViewers != null
+        ? (audience.totalViewers, t.room.totalViewers)
+        : (null, null);
+    final muted = theme.typography.caption.copyWith(color: colors.textMuted);
+    final figureStyle = theme.typography.numeric(theme.typography.labelStrong.copyWith(color: colors.text));
+    return Wrap(
+      spacing: DsSpace.s12,
+      runSpacing: DsSpace.s6,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        ?badge,
+        if (startedAt != null)
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            spacing: DsSpace.s6,
+            children: [
+              Text(t.room.statWatched, style: muted),
+              Text(_durationText(startedAt), style: figureStyle),
+              Text(t.room.startedAtShort(time: _startedClock(startedAt)), style: muted),
+            ],
+          ),
+        if (figure != null && audienceLabel != null)
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            spacing: DsSpace.s4,
+            children: [
+              DsIcon(DsIcons.eye, size: 14, color: colors.textMuted),
+              Text(AudienceFormat.format(figure), style: figureStyle),
+              Text(audienceLabel, style: muted),
+            ],
+          ),
+        if (room.broadcast.isRestricted)
+          DsBadge(label: Text(_restrictionLabel(t, room.broadcast.effectiveRestriction)), status: DsStatus.danger),
+      ],
     );
   }
 }
@@ -211,12 +330,11 @@ final class _DetailsFollow extends ConsumerWidget {
   }
 }
 
-/// The room's facts as the component library's own list: the title, the
-/// notice and the introduction under their own rows, the broadcast's start
-/// clock and elapsed time, this visit's watch time, and the room's number
-/// and link — the number and the link copy on a press. A timer keeps the
-/// two durations moving; a restriction, when the stream carries one, keeps
-/// its badge.
+/// The room's facts as the component library's own list: the two doors (the
+/// streamer's videos, the partition), this visit's watch time, and the room's
+/// number and link — the number and the link copy on a press, with the copy
+/// glyph saying so. The broadcast's clock and audience live in the status
+/// band above; the prose cards keep their own measure below.
 final class _RoomFactsList extends ConsumerStatefulWidget {
   const _RoomFactsList({required this.room, required this.watchStarted});
 
@@ -248,17 +366,15 @@ final class _RoomFactsListState extends ConsumerState<_RoomFactsList> {
   Widget build(BuildContext context) {
     final t = context.t;
     final room = widget.room;
-    final startedAt = room.broadcast.startedAt;
-    final title = room.content.title.trim();
     final notice = room.content.notice?.trim() ?? '';
     final introduction = room.content.introduction?.trim() ?? '';
     final link = roomLinkOf(room);
-    // The title's own words ride under the row name: a long name wraps
-    // instead of squeezing into the end-side value slot.
-    const prose = DsListRowStyle(maxLines: 8);
     // The live room's lists run at the library's own measure: the app's
     // settings-sized rows and paddings stop at this subtree.
     final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
+    // The quiet glyph that says "this row copies" before the press does.
+    final copyHint = DsIcon(DsIcons.copy, size: 14, color: colors.textSubtle);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: DsSpace.s12,
@@ -269,15 +385,6 @@ final class _RoomFactsListState extends ConsumerState<_RoomFactsList> {
             data: DsListSectionThemeData(style: DsListSection.defaultStyle(theme)),
             child: DsListSection(
               children: [
-                if (title.isNotEmpty)
-                  DsListRow(
-                    title: Text(t.room.titleLabel),
-                    // The stream's own name, not a text document's: the camera,
-                    // not the letter T.
-                    leading: const DsIcon(DsIcons.video),
-                    description: Text(title),
-                    style: prose,
-                  ),
                 // The panel's two doors, said as rows rather than hidden on
                 // the hero's words: the streamer's videos on their platform,
                 // and the partition's own room list.
@@ -293,18 +400,6 @@ final class _RoomFactsListState extends ConsumerState<_RoomFactsList> {
                     detail: Text(room.area!.areaName),
                     onPressed: () => unawaited(openRoomArea(context, ref, room)),
                   ),
-                if (startedAt != null) ...[
-                  DsListRow(
-                    title: Text(t.room.startTime),
-                    leading: const DsIcon(DsIcons.clock),
-                    detail: Text(_startedClock(startedAt)),
-                  ),
-                  DsListRow(
-                    title: Text(t.room.statWatched),
-                    leading: const DsIcon(DsIcons.hourglass),
-                    detail: Text(_durationText(startedAt)),
-                  ),
-                ],
                 DsListRow(
                   title: Text(t.room.watchDuration),
                   leading: const DsIcon(DsIcons.eye),
@@ -314,6 +409,7 @@ final class _RoomFactsListState extends ConsumerState<_RoomFactsList> {
                   title: Text(t.room.roomNumber),
                   leading: const DsIcon(DsIcons.hash),
                   detail: Text(room.ref.roomId),
+                  trailing: copyHint,
                   onPressed: () => unawaited(copyRoomValue(context, room.ref.roomId)),
                 ),
                 if (link.isNotEmpty)
@@ -321,6 +417,7 @@ final class _RoomFactsListState extends ConsumerState<_RoomFactsList> {
                     title: Text(t.room.link),
                     leading: const DsIcon(DsIcons.link2),
                     detail: Text(_withoutScheme(link)),
+                    trailing: copyHint,
                     onPressed: () => unawaited(copyRoomValue(context, link)),
                   ),
               ],
@@ -330,12 +427,6 @@ final class _RoomFactsListState extends ConsumerState<_RoomFactsList> {
         if (notice.isNotEmpty) _RoomProseCard(icon: DsIcons.megaphone, label: t.room.notice, text: notice),
         if (introduction.isNotEmpty && introduction != notice)
           _RoomProseCard(icon: DsIcons.fileText, label: t.room.introduction, text: introduction),
-        if (room.broadcast.isRestricted)
-          Wrap(
-            children: [
-              DsBadge(label: Text(_restrictionLabel(t, room.broadcast.effectiveRestriction)), status: DsStatus.danger),
-            ],
-          ),
       ],
     );
   }
