@@ -126,9 +126,11 @@ final class _RoomRecordTabState extends ConsumerState<RoomRecordTab> with Single
               ? ListView(
                   padding: const EdgeInsets.all(DsSpace.s16),
                   children: [
-                    _statusCard(task: task),
-                    const SizedBox(height: DsSpace.s12),
-                    _autoRecordCard(room: room, task: task, waiting: waiting, recording: recording),
+                    // One card tells the whole capture: the transport above,
+                    // the record-when-live switch as its foot — an orphan
+                    // switch in its own card read as a second, unrelated
+                    // thing.
+                    _statusCard(task: task, room: room, waiting: waiting, recording: recording),
                   ],
                 )
               : _filesPane(room: room),
@@ -156,10 +158,16 @@ final class _RoomRecordTabState extends ConsumerState<RoomRecordTab> with Single
   /// The capture's own card, built like a recorder's transport: the state
   /// line on top (a breathing dot when on air), the elapsed clock as the
   /// hero figure with its size·rate line under it, the session's facts as
-  /// label:value tiles, and the start/stop verb as one full-width block at
-  /// the bottom — the recorder-page pattern (OBS's own Start Recording
-  /// block): the verb is a destination, not a chip at the end of a row.
-  Widget _statusCard({required RecordingTask? task}) {
+  /// label:value tiles, the start/stop verb as one full-width block, and the
+  /// record-when-live switch as the card's foot — the recorder-page pattern
+  /// (OBS's own Start Recording block): the verb is a destination, not a
+  /// chip at the end of a row.
+  Widget _statusCard({
+    required RecordingTask? task,
+    required LiveRoom? room,
+    required bool waiting,
+    required bool recording,
+  }) {
     final t = context.t;
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
@@ -274,6 +282,23 @@ final class _RoomRecordTabState extends ConsumerState<RoomRecordTab> with Single
                   child: Text(recording ? t.room.stopRecording : t.room.recordStarted),
                 ),
               ),
+              // The card's foot: record when live, with the cadence it will
+              // run at — armed or not, the description names what the switch
+              // does, so an off switch still advertises its own meaning. A
+              // running capture pins the switch: the take answers for itself.
+              if (room != null) ...[
+                Container(height: 1, color: colors.border),
+                DsSwitch(
+                  value: waiting,
+                  onChanged: recording ? null : (_) => unawaited(toggleRoomAutoRecord(context, ref, room, task)),
+                  label: Text(t.room.autoRecordOn),
+                  description: Text(
+                    waiting
+                        ? t.room.autoRecordArmed(seconds: ref.watch(recordingSettingsProvider).schedule.liveCheckSeconds)
+                        : t.room.autoRecordHint,
+                  ),
+                ),
+              ],
             ],
           ),
         ),
@@ -339,39 +364,12 @@ final class _RoomRecordTabState extends ConsumerState<RoomRecordTab> with Single
     }
   }
 
-  /// The schedule card: record when live, with the cadence it will run at —
-  /// armed or not, the description names what the switch does, so an off
-  /// switch still advertises its own meaning.
-  Widget _autoRecordCard({
-    required LiveRoom? room,
-    required RecordingTask? task,
-    required bool waiting,
-    required bool recording,
-  }) {
-    if (room == null) return const SizedBox.shrink();
-    final t = context.t;
-    final seconds = ref.watch(recordingSettingsProvider).schedule.liveCheckSeconds;
-    return DsListSection(
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: DsSpace.s12, vertical: DsSpace.s8),
-          child: DsSwitch(
-            value: waiting,
-            onChanged: recording ? null : (_) => unawaited(toggleRoomAutoRecord(context, ref, room, task)),
-            label: Text(t.room.autoRecordOn),
-            description: Text(waiting ? t.room.autoRecordArmed(seconds: seconds) : t.room.autoRecordHint),
-          ),
-        ),
-      ],
-    );
-  }
-
   /// The files pane: this room's finished takes as playlist rows — the
-  /// title on the first line, the platform, the length, the weight and the
-  /// moment on the second, a row number leading them. No covers: a shelf
-  /// of one room's takes reads by its words, and the rows stay one glance
-  /// tall. Tap plays; a right press and a long press open the verbs the
-  /// ellipsis does.
+  /// title on the first line, the platform, the weight and the moment on
+  /// the second, a duration badge leading them. No covers: a shelf
+  /// of one room's takes reads by its words and its lengths, and the rows
+  /// stay one glance tall. Tap plays; a right press and a long press open
+  /// the verbs the ellipsis does.
   Widget _filesPane({required LiveRoom? room}) {
     final t = context.t;
     final theme = DsTheme.of(context);
@@ -383,15 +381,28 @@ final class _RoomRecordTabState extends ConsumerState<RoomRecordTab> with Single
       for (final take in takesAsync.value ?? const <RecordingTake>[])
         if (take.playable && platform != null && take.platformId == platform && take.roomId == roomId) take,
     ];
+    // The shelf's weight: what this room's takes have laid on the disk, so a
+    // cleanup decision does not need each row read for it.
+    final totalBytes = takes.fold<int>(0, (sum, take) => sum + take.bytes);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (takes.isNotEmpty)
           Padding(
             padding: const EdgeInsets.fromLTRB(DsSpace.s16, DsSpace.s12, DsSpace.s16, DsSpace.s8),
-            child: Text(
-              t.room.roomRecordTakes(count: takes.length),
-              style: theme.typography.overline.copyWith(color: colors.textSubtle),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    t.room.roomRecordTakes(count: takes.length),
+                    style: theme.typography.overline.copyWith(color: colors.textSubtle),
+                  ),
+                ),
+                Text(
+                  t.room.roomRecordTakesTotalSize(size: formatRecordingBytes(totalBytes)),
+                  style: theme.typography.numeric(theme.typography.caption.copyWith(color: colors.textSubtle)),
+                ),
+              ],
             ),
           ),
         Expanded(
@@ -402,10 +413,10 @@ final class _RoomRecordTabState extends ConsumerState<RoomRecordTab> with Single
               : ListView(
                   padding: const EdgeInsets.fromLTRB(DsSpace.s16, DsSpace.s4, DsSpace.s16, DsSpace.s16),
                   children: [
-                    for (final (index, take) in takes.indexed)
+                    for (final take in takes)
                       Padding(
                         padding: const EdgeInsets.only(bottom: DsSpace.s8),
-                        child: _takeCard(take, index + 1, takes),
+                        child: _takeCard(take, takes),
                       ),
                   ],
                 ),
@@ -415,20 +426,20 @@ final class _RoomRecordTabState extends ConsumerState<RoomRecordTab> with Single
   }
 
   /// One playlist row: the take's title, and under it the platform, the
-  /// length, the weight and the moment led by the row's number — no cover,
-  /// because the words are what pick a take out of this room's shelf. The
-  /// tap opens the preview; a right press and a long press open the same
-  /// verbs the ellipsis does.
-  Widget _takeCard(RecordingTake take, int row, List<RecordingTake> around) {
+  /// weight and the moment, led by the take's own length in a badge — no
+  /// cover, because the length is what says "a video" faster than a number
+  /// of a row does. The tap opens the preview; a right press and a long
+  /// press open the same verbs the ellipsis does.
+  Widget _takeCard(RecordingTake take, List<RecordingTake> around) {
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
     final bytes = take.bytes > 0 ? formatRecordingBytes(take.bytes) : null;
     final meta = [
       _platformName(take.platformId),
-      if (take.duration case final duration?) formatRecordingDuration(duration),
       ?bytes,
       formatRecordingMoment(take.takenAt),
     ].join(' · ');
+    final length = take.duration == null ? null : formatRecordingDuration(take.duration!);
     return DsCard(
       onPressed: () =>
           unawaited(playRecordingTake(context, ref, around: around, take: take, platformName: _platformName)),
@@ -442,9 +453,21 @@ final class _RoomRecordTabState extends ConsumerState<RoomRecordTab> with Single
           child: Row(
             spacing: DsSpace.s8,
             children: [
-              Text(
-                '$row',
-                style: theme.typography.numeric(theme.typography.caption.copyWith(color: colors.textSubtle)),
+              // The length as the leading badge: what a shelf of takes is
+              // picked over, in the player's own `mm:ss` words. A take still
+              // being measured wears a quiet dash rather than a lie.
+              Container(
+                constraints: const BoxConstraints(minWidth: 48),
+                padding: const EdgeInsets.symmetric(horizontal: DsSpace.s8, vertical: DsSpace.s3),
+                alignment: Alignment.center,
+                decoration: DsBoxDecoration(
+                  color: colors.control,
+                  borderRadius: BorderRadius.circular(theme.radii.nested(theme.radii.card, DsSpace.s5)),
+                ),
+                child: Text(
+                  length ?? '—',
+                  style: theme.typography.numeric(theme.typography.labelStrong.copyWith(color: colors.text)),
+                ),
               ),
               Expanded(
                 child: Column(

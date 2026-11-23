@@ -55,5 +55,10 @@
   "minFansLevel": "粉丝等级下限",
   "minFansLevelDescription": "低于该等级的弹幕不显示；粉丝牌未知的永不屏蔽。",
   "levelValue": "{count: int} 级",
-  "levelOff": "关闭"
+  "levelOff": "关闭",
+  "paused": "已暂停",
+  "blockedLabel": "本场已屏蔽",
+  "rulesEnabled": "启用 {enabled: int}/{total: int} 项",
+  "entriesCount": "{count: int} 条",
+  "usersCount": "{count: int} 人"
 }

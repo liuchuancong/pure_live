@@ -55,5 +55,10 @@
   "minFansLevel": "Minimum fan-badge level",
   "minFansLevelDescription": "Lines under the level are hidden; a badge the platform never gave is never blocked.",
   "levelValue": "Level {count: int}",
-  "levelOff": "Off"
+  "levelOff": "Off",
+  "paused": "Paused",
+  "blockedLabel": "Hidden this stream",
+  "rulesEnabled": "{enabled: int}/{total: int} rules on",
+  "entriesCount": "{count: int} entries",
+  "usersCount": "{count: int} users"
 }

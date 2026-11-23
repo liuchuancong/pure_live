@@ -2354,6 +2354,8 @@ class _Translations$room$en extends Translations$room$zh_CN {
 	@override String get recordStopped => 'Recording stopped';
 	@override String get tabRecording => 'Recording';
 	@override String roomRecordTakes({required Object count}) => 'This room\'s recordings · ${count}';
+	@override String roomRecordTakesTotalSize({required Object size}) => '${size} in total';
+	@override String startedAtShort({required Object time}) => 'since ${time}';
 	@override String get roomRecordTakesEmpty => 'No saved recordings yet';
 	@override String get autoRecordOn => 'Record when live';
 	@override String autoRecordArmed({required Object seconds}) => 'Live check is on (every ${seconds} s); recording starts when the room goes live';
@@ -4145,6 +4147,11 @@ class _Translations$shield$en extends Translations$shield$zh_CN {
 	@override String get minFansLevelDescription => 'Lines under the level are hidden; a badge the platform never gave is never blocked.';
 	@override String levelValue({required int count}) => 'Level ${count}';
 	@override String get levelOff => 'Off';
+	@override String get paused => 'Paused';
+	@override String get blockedLabel => 'Hidden this stream';
+	@override String rulesEnabled({required int enabled, required int total}) => '${enabled}/${total} rules on';
+	@override String entriesCount({required int count}) => '${count} entries';
+	@override String usersCount({required int count}) => '${count} users';
 }
 
 // Path: sites
@@ -7038,6 +7045,8 @@ extension on TranslationsEn {
 			'room.recordStopped' => 'Recording stopped',
 			'room.tabRecording' => 'Recording',
 			'room.roomRecordTakes' => ({required Object count}) => 'This room\'s recordings · ${count}',
+			'room.roomRecordTakesTotalSize' => ({required Object size}) => '${size} in total',
+			'room.startedAtShort' => ({required Object time}) => 'since ${time}',
 			'room.roomRecordTakesEmpty' => 'No saved recordings yet',
 			'room.autoRecordOn' => 'Record when live',
 			'room.autoRecordArmed' => ({required Object seconds}) => 'Live check is on (every ${seconds} s); recording starts when the room goes live',
@@ -7314,10 +7323,10 @@ extension on TranslationsEn {
 			'settings.navFloatingWindow' => 'Floating window & PiP',
 			'settings.groupData' => 'Data',
 			'settings.groupAbout' => 'About',
-			'settings.groupIptv' => 'IPTV',
-			'settings.groupVod' => 'Bilibili video',
 			_ => null,
 		} ?? switch (path) {
+			'settings.groupIptv' => 'IPTV',
+			'settings.groupVod' => 'Bilibili video',
 			'settings.generalDescription' => 'Browsing, window and startup pages.',
 			'settings.appearanceDescription' => 'Theme, typography and colours.',
 			'settings.personalizationDescription' => 'Theme, appearance, background and navigation.',
@@ -7828,10 +7837,10 @@ extension on TranslationsEn {
 			'settings.navIptvGroups' => 'Group visibility',
 			'settings.iptvGroupsDescription' => 'Chooses which groups appear in the channel lists and the zapping.',
 			'settings.navDanmaku' => 'Danmaku',
-			'settings.navMiniDanmaku' => 'Mini-window danmaku',
-			'settings.navKernel' => 'Player engine',
 			_ => null,
 		} ?? switch (path) {
+			'settings.navMiniDanmaku' => 'Mini-window danmaku',
+			'settings.navKernel' => 'Player engine',
 			'settings.navRecording' => 'Recording',
 			'settings.videoDescription' => 'Quality, audio and how the picture fits.',
 			'settings.danmakuDescription' => 'Danmaku visibility, style and shields.',
@@ -8342,10 +8351,10 @@ extension on TranslationsEn {
 			'settings.wallpaperCategoryFantasyArt' => 'Fantasy Art',
 			'settings.wallpaperCategoryFinalFantasy' => 'Final Fantasy',
 			'settings.tagManagement' => 'Tag management',
-			'settings.tagManagementDesc' => 'Customize and manage the tags rooms are filtered by',
-			'settings.tagAdd' => 'Add tag',
 			_ => null,
 		} ?? switch (path) {
+			'settings.tagManagementDesc' => 'Customize and manage the tags rooms are filtered by',
+			'settings.tagAdd' => 'Add tag',
 			'settings.tagEdit' => 'Edit tag',
 			'settings.tagPin' => 'Move to top',
 			'settings.tagSaveAction' => 'Save',
@@ -8808,6 +8817,11 @@ extension on TranslationsEn {
 			'shield.minFansLevelDescription' => 'Lines under the level are hidden; a badge the platform never gave is never blocked.',
 			'shield.levelValue' => ({required int count}) => 'Level ${count}',
 			'shield.levelOff' => 'Off',
+			'shield.paused' => 'Paused',
+			'shield.blockedLabel' => 'Hidden this stream',
+			'shield.rulesEnabled' => ({required int enabled, required int total}) => '${enabled}/${total} rules on',
+			'shield.entriesCount' => ({required int count}) => '${count} entries',
+			'shield.usersCount' => ({required int count}) => '${count} users',
 			'sites.title' => 'Sites',
 			'sites.live' => 'Live',
 			'sites.search' => 'Search',
@@ -8851,6 +8865,8 @@ extension on TranslationsEn {
 			'toolbox.nodeTesting' => 'Testing',
 			'toolbox.nodeUntested' => 'Not tested',
 			'toolbox.nodeReachable' => 'Reachable',
+			_ => null,
+		} ?? switch (path) {
 			'toolbox.nodeFailed' => 'Failed',
 			'toolbox.nodeNoSites' => 'No platform can be tested',
 			'toolbox.nodeHint' => 'Run a check to test this platform.',
@@ -8858,8 +8874,6 @@ extension on TranslationsEn {
 			'toolbox.nodeSourceRecommended' => 'Recommended endpoint',
 			'toolbox.nodeSourceHot' => 'Hot-list endpoint',
 			'toolbox.nodeSummary' => ({required Object ok, required Object tested, required Object total}) => '${ok} / ${tested} reachable · ${total} platforms',
-			_ => null,
-		} ?? switch (path) {
 			'toolbox.nodeUntestedSummary' => ({required Object total}) => 'Not tested yet · ${total} platforms',
 			'toolbox.logsSection' => 'Logs & diagnostics',
 			'toolbox.logsExport' => 'Copy log',

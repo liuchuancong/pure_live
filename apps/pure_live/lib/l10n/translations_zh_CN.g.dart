@@ -6628,6 +6628,12 @@ class Translations$room$zh_CN {
 	/// zh-CN: '该直播间的录像 · {count}'
 	String roomRecordTakes({required Object count}) => '该直播间的录像 · ${count}';
 
+	/// zh-CN: '共 {size}'
+	String roomRecordTakesTotalSize({required Object size}) => '共 ${size}';
+
+	/// zh-CN: '{time} 开播'
+	String startedAtShort({required Object time}) => '${time} 开播';
+
 	/// zh-CN: '还没有已保存的录像'
 	String get roomRecordTakesEmpty => '还没有已保存的录像';
 
@@ -11946,6 +11952,21 @@ class Translations$shield$zh_CN {
 
 	/// zh-CN: '关闭'
 	String get levelOff => '关闭';
+
+	/// zh-CN: '已暂停'
+	String get paused => '已暂停';
+
+	/// zh-CN: '本场已屏蔽'
+	String get blockedLabel => '本场已屏蔽';
+
+	/// zh-CN: '启用 {enabled: int}/{total: int} 项'
+	String rulesEnabled({required int enabled, required int total}) => '启用 ${enabled}/${total} 项';
+
+	/// zh-CN: '{count: int} 条'
+	String entriesCount({required int count}) => '${count} 条';
+
+	/// zh-CN: '{count: int} 人'
+	String usersCount({required int count}) => '${count} 人';
 }
 
 // Path: sites
@@ -15899,6 +15920,8 @@ extension on Translations {
 			'room.recordStopped' => '录制已停止',
 			'room.tabRecording' => '录制',
 			'room.roomRecordTakes' => ({required Object count}) => '该直播间的录像 · ${count}',
+			'room.roomRecordTakesTotalSize' => ({required Object size}) => '共 ${size}',
+			'room.startedAtShort' => ({required Object time}) => '${time} 开播',
 			'room.roomRecordTakesEmpty' => '还没有已保存的录像',
 			'room.autoRecordOn' => '开播自动录',
 			'room.autoRecordArmed' => ({required Object seconds}) => '已打开开播检测（每 ${seconds} 秒检查一次）；开播后自动录制',
@@ -16175,10 +16198,10 @@ extension on Translations {
 			'settings.navFloatingWindow' => '小窗与画中画',
 			'settings.groupData' => '数据',
 			'settings.groupAbout' => '关于',
-			'settings.groupIptv' => 'IPTV',
-			'settings.groupVod' => 'Bilibili 视频',
 			_ => null,
 		} ?? switch (path) {
+			'settings.groupIptv' => 'IPTV',
+			'settings.groupVod' => 'Bilibili 视频',
 			'settings.generalDescription' => '浏览、窗口与启动设置。',
 			'settings.appearanceDescription' => '主题、字体与配色。',
 			'settings.personalizationDescription' => '主题、外观、背景与导航。',
@@ -16689,10 +16712,10 @@ extension on Translations {
 			'settings.navIptvGroups' => '分组显示',
 			'settings.iptvGroupsDescription' => '决定哪些分组出现在频道列表和换台里。',
 			'settings.navDanmaku' => '弹幕',
-			'settings.navMiniDanmaku' => '小窗弹幕',
-			'settings.navKernel' => '播放器内核',
 			_ => null,
 		} ?? switch (path) {
+			'settings.navMiniDanmaku' => '小窗弹幕',
+			'settings.navKernel' => '播放器内核',
 			'settings.navRecording' => '录制',
 			'settings.videoDescription' => '画质、音量与画面比例。',
 			'settings.danmakuDescription' => '弹幕显示、样式与屏蔽。',
@@ -17203,10 +17226,10 @@ extension on Translations {
 			'settings.wallpaperCategoryFantasyArt' => '奇幻艺术',
 			'settings.wallpaperCategoryFinalFantasy' => '最终幻想',
 			'settings.tagManagement' => '标签管理',
-			'settings.tagManagementDesc' => '自定义和管理直播间的过滤标签',
-			'settings.tagAdd' => '添加标签',
 			_ => null,
 		} ?? switch (path) {
+			'settings.tagManagementDesc' => '自定义和管理直播间的过滤标签',
+			'settings.tagAdd' => '添加标签',
 			'settings.tagEdit' => '编辑标签',
 			'settings.tagPin' => '移到最前',
 			'settings.tagSaveAction' => '保存',
@@ -17669,6 +17692,11 @@ extension on Translations {
 			'shield.minFansLevelDescription' => '低于该等级的弹幕不显示；粉丝牌未知的永不屏蔽。',
 			'shield.levelValue' => ({required int count}) => '${count} 级',
 			'shield.levelOff' => '关闭',
+			'shield.paused' => '已暂停',
+			'shield.blockedLabel' => '本场已屏蔽',
+			'shield.rulesEnabled' => ({required int enabled, required int total}) => '启用 ${enabled}/${total} 项',
+			'shield.entriesCount' => ({required int count}) => '${count} 条',
+			'shield.usersCount' => ({required int count}) => '${count} 人',
 			'sites.title' => '站点',
 			'sites.live' => '直播',
 			'sites.search' => '搜索',
@@ -17712,6 +17740,8 @@ extension on Translations {
 			'toolbox.nodeTesting' => '测速中',
 			'toolbox.nodeUntested' => '未测速',
 			'toolbox.nodeReachable' => '正常',
+			_ => null,
+		} ?? switch (path) {
 			'toolbox.nodeFailed' => '失败',
 			'toolbox.nodeNoSites' => '没有可测速的平台',
 			'toolbox.nodeHint' => '点「测速」检查这个平台。',
@@ -17719,8 +17749,6 @@ extension on Translations {
 			'toolbox.nodeSourceRecommended' => '推荐接口',
 			'toolbox.nodeSourceHot' => '热门接口',
 			'toolbox.nodeSummary' => ({required Object ok, required Object tested, required Object total}) => '${ok} / ${tested} 可用 · 共 ${total} 个平台',
-			_ => null,
-		} ?? switch (path) {
 			'toolbox.nodeUntestedSummary' => ({required Object total}) => '尚未测速 · 共 ${total} 个平台',
 			'toolbox.logsSection' => '日志与诊断',
 			'toolbox.logsExport' => '复制日志',

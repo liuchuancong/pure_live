@@ -50,6 +50,8 @@
   "recordStopped": "录制已停止",
   "tabRecording": "录制",
   "roomRecordTakes": "该直播间的录像 · {count}",
+  "roomRecordTakesTotalSize": "共 {size}",
+  "startedAtShort": "{time} 开播",
   "roomRecordTakesEmpty": "还没有已保存的录像",
   "autoRecordOn": "开播自动录",
   "autoRecordArmed": "已打开开播检测（每 {seconds} 秒检查一次）；开播后自动录制",
