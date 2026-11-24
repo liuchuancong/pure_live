@@ -294,7 +294,7 @@ final class _FloatingRoomPlayerViewState extends ConsumerState<FloatingRoomPlaye
                               tooltip: false,
                             ),
                             MediaBarButton(
-                              icon: DsIcons.expand,
+                              icon: DsIcons.pictureInPicture2,
                               label: t.room.backToRoom,
                               onPressed: inWindow ? _backToApp : _returnToRoom,
                               tooltip: false,

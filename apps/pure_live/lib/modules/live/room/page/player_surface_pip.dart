@@ -194,6 +194,16 @@ final class _PipTransportBar extends ConsumerWidget {
                   child: DsSlider(
                     value: (room.volume * 100).clamp(0.0, 100.0),
                     max: 100,
+                    // The control bar's own white: the small window's slider
+                    // wears the same track and fill the room's does.
+                    style: const DsSliderStyle(
+                      height: 24,
+                      trackHeight: 4,
+                      trackColor: OnVideoColors.track,
+                      fillColor: OnVideoColors.foreground,
+                      thumbColor: OnVideoColors.foreground,
+                      thumbSize: 12,
+                    ),
                     onChanged: (value) => unawaited(controller.setVolume(value / 100)),
                     semanticLabel: t.player.volume,
                   ),

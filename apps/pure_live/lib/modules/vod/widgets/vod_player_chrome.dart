@@ -194,7 +194,6 @@ final class _VodSeekBarState extends State<VodSeekBar> {
 
   @override
   Widget build(BuildContext context) {
-    final colors = DsTheme.colorsOf(context);
     if (!_enabled) {
       return const SizedBox(height: _hitHeight, child: SizedBox.expand());
     }
@@ -282,9 +281,12 @@ final class _VodSeekBarState extends State<VodSeekBar> {
                         ],
                         marks: [for (final chapter in widget.chapters) chapter.at.inMilliseconds / _total],
                         thickness: thickness,
-                        track: colors.channel,
-                        held: OnVideoColors.held,
-                        playedColor: colors.indicator,
+                        // The room's own ink: a white track, a white 30%
+                        // buffer and a white fill — the theme's accent never
+                        // touches the line that runs over a picture.
+                        track: OnVideoColors.track,
+                        held: OnVideoColors.foreground.withValues(alpha: 0.30),
+                        playedColor: OnVideoColors.foreground,
                         markColor: OnVideoColors.mark,
                       ),
                     ),

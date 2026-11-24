@@ -357,7 +357,7 @@ final class _FloatingVideoViewState extends ConsumerState<FloatingVideoView> {
                                 tooltip: false,
                               ),
                             MediaBarButton(
-                              icon: DsIcons.expand,
+                              icon: DsIcons.pictureInPicture2,
                               label: t.common.backToVideo,
                               onPressed: _returnToVideo,
                               tooltip: false,
