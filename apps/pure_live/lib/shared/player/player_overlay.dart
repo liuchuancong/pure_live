@@ -44,6 +44,65 @@ final class PlayerGlassPill extends StatelessWidget {
   }
 }
 
+/// The replay pages' top-left head: one radius-10 glass capsule holding the
+/// way back and the title — the room's own capsule language, so a video
+/// page's top-left reads as one piece instead of a loose arrow beside loose
+/// words. The back control is the room capsule's own: a 28×28 round hover
+/// plate carrying the arrow.
+final class PlayerCapsuleHead extends StatelessWidget {
+  /// The head naming [title]; [onBack] null leaves the arrow out.
+  const PlayerCapsuleHead({required this.title, this.onBack, super.key});
+
+  /// The words the capsule names — the video's or the page's own.
+  final String title;
+
+  /// Leaves the page; null draws no arrow.
+  final VoidCallback? onBack;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = DsTheme.of(context);
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 420),
+      child: PlayerGlassPill(
+        radius: 10,
+        child: Padding(
+          padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s4, DsSpace.s3, DsSpace.s4, DsSpace.s3),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            spacing: DsSpace.s4,
+            children: [
+              if (onBack != null)
+                DsPressable(
+                  onPressed: onBack,
+                  builder: (context, states, _) => Container(
+                    width: 28,
+                    height: 28,
+                    decoration: DsBoxDecoration(
+                      color: states.contains(WidgetState.hovered) || states.contains(WidgetState.focused)
+                          ? OnVideoColors.inkHover
+                          : null,
+                      borderRadius: BorderRadius.circular(DsRadii.pill),
+                    ),
+                    child: const DsIcon(DsIcons.arrowLeft, size: 16, color: OnVideoColors.foreground),
+                  ),
+                ),
+              Flexible(
+                child: Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.typography.caption.copyWith(color: OnVideoColors.foreground, fontWeight: FontWeight.w600),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// The line left at the picture's bottom edge while the bar is away.
 ///
 /// A seekable picture shows how far it has played; a live one has no end to

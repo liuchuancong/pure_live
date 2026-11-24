@@ -18,7 +18,7 @@ import 'package:media_core/media_core.dart'
 import 'package:media_core_media_kit/media_core_media_kit.dart' show MediaKitAdapterFactory;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/shared/player/on_video_colors.dart' show OnVideoColors;
-import 'package:pure_live/shared/shared.dart' show PlayerBarButton;
+import 'package:pure_live/shared/shared.dart' show PlayerBarButton, PlayerBarRows;
 
 /// The clip's own stage: the app's media_core player with its transport in
 /// one row over the picture's bottom edge — skip ±10s, play/pause, a
@@ -134,6 +134,9 @@ final class _WallpaperVideoPlayerState extends State<WallpaperVideoPlayer> {
 
   /// Puts the bar back up and restarts its countdown.
   void _wakeBar() {
+    // The tracker still walks the clip's lost regions: its exit lands here
+    // after dispose, and a dead state reads no widget.
+    if (!mounted) return;
     if (widget.barHideAfter == null) return;
     if (!_barVisible) setState(() => _barVisible = true);
     _notifyChrome();
@@ -141,6 +144,9 @@ final class _WallpaperVideoPlayerState extends State<WallpaperVideoPlayer> {
   }
 
   void _scheduleHideBar() {
+    // A leaving clip's exit lands here after dispose: a dead state reads no
+    // widget and starts no timer.
+    if (!mounted) return;
     _hideTimer?.cancel();
     final after = widget.barHideAfter;
     // A zero delay is 常显: the bar stays while the clip plays.
@@ -393,10 +399,11 @@ final class _WallpaperVideoPlayerState extends State<WallpaperVideoPlayer> {
             ),
           ),
         ),
-        if (!_playing && !_buffering) const Center(child: DsIcon(DsIcons.play, size: 44, color: Color(0xCCFFFFFF))),
+        if (!_playing && !_buffering)
+          const Center(child: DsIcon(DsIcons.play, size: 44, color: OnVideoColors.foreground)),
         if (_buffering)
           const Center(
-            child: DsSpinner(style: DsSpinnerStyle(size: 32, color: Color(0xFFFFFFFF))),
+            child: DsSpinner(style: DsSpinnerStyle(size: 32, color: OnVideoColors.foreground)),
           ),
         if (_barVisible || !_playing) ...[
           if (widget.barLeading != null || widget.barTopActions.isNotEmpty)
@@ -439,58 +446,76 @@ final class _WallpaperVideoPlayerState extends State<WallpaperVideoPlayer> {
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(DsSpace.s12, DsSpace.s24, DsSpace.s12, DsSpace.s8),
                   // Two rows, the way the live room reads: the pure transport
-                  // on the bottom row's left — skip back, play, skip forward,
-                  // the seek bar, the clock — then the host page's sound and
-                  // file verbs carrying the row's end. The picture and window
-                  // verbs live on the row above.
-                  child: Row(
-                    spacing: DsSpace.s4,
-                    children: [
-                      PlayerBarButton(
-                        icon: DsIcons.goBackward10,
-                        label: t.common.previewSkipBack,
-                        onPressed: total <= Duration.zero
-                            ? null
-                            : () => unawaited(seekBy(const Duration(seconds: -10))),
-                      ),
-                      PlayerBarButton(
-                        iconAsset: _playing ? 'assets/icons/pause.svg' : 'assets/icons/play.svg',
-                        label: _playing ? t.player.pause : t.player.play,
-                        onPressed: () => unawaited(_toggle()),
-                      ),
-                      PlayerBarButton(
-                        icon: DsIcons.goForward10,
-                        label: t.common.previewSkipForward,
-                        onPressed: total <= Duration.zero ? null : () => unawaited(seekBy(const Duration(seconds: 10))),
-                      ),
-                      Expanded(
-                        child: DsSlider(
-                          value: _barValue,
-                          semanticLabel: t.settings.backgroundVideo,
-                          onChanged: total <= Duration.zero ? null : (value) => setState(() => _dragValue = value),
-                          onChangeEnd: total <= Duration.zero
+                  // — skip back, play, skip forward, the mute — with the seek
+                  // line taking the row's slack and the clock beside the host
+                  // page's sound and file verbs at its end while the width
+                  // carries them; the seek line folds to its own row below
+                  // when the width does not. The picture and window verbs
+                  // live on the row above.
+                  child: PlayerBarRows(
+                    start: Row(
+                      spacing: DsSpace.s4,
+                      children: [
+                        PlayerBarButton(
+                          icon: DsIcons.goBackward10,
+                          label: t.common.previewSkipBack,
+                          onPressed: total <= Duration.zero
                               ? null
-                              : (value) {
-                                  setState(() => _dragValue = null);
-                                  unawaited(_seekTo(value));
-                                },
+                              : () => unawaited(seekBy(const Duration(seconds: -10))),
                         ),
-                      ),
-                      SizedBox(
-                        width: 96,
-                        child: Text(
-                          '${_clock(_dragValue == null ? _position : total * _barValue)} / ${_clock(total)}',
-                          style: DsTheme.of(context).typography
-                              .numeric(DsTheme.of(context).typography.caption.copyWith(color: const Color(0xCCFFFFFF))),
+                        PlayerBarButton(
+                          iconAsset: _playing ? 'assets/icons/pause.svg' : 'assets/icons/play.svg',
+                          label: _playing ? t.player.pause : t.player.play,
+                          onPressed: () => unawaited(_toggle()),
                         ),
+                        PlayerBarButton(
+                          icon: DsIcons.goForward10,
+                          label: t.common.previewSkipForward,
+                          onPressed: total <= Duration.zero ? null : () => unawaited(seekBy(const Duration(seconds: 10))),
+                        ),
+                        PlayerBarButton(
+                          iconAsset: _muted ? 'assets/icons/volume-muted.svg' : 'assets/icons/volume.svg',
+                          label: _muted ? t.player.unmute : t.player.mute,
+                          onPressed: () => unawaited(_toggleMute()),
+                        ),
+                      ],
+                    ),
+                    middle: DsSlider(
+                      value: _barValue,
+                      semanticLabel: t.settings.backgroundVideo,
+                      // The live bar's white: the seek line reads as the same
+                      // sound-and-progress language every surface wears.
+                      style: const DsSliderStyle(
+                        height: 24,
+                        trackHeight: 4,
+                        trackColor: OnVideoColors.track,
+                        fillColor: OnVideoColors.foreground,
+                        thumbColor: OnVideoColors.foreground,
+                        thumbSize: 12,
                       ),
-                      PlayerBarButton(
-                        iconAsset: _muted ? 'assets/icons/volume-muted.svg' : 'assets/icons/volume.svg',
-                        label: _muted ? t.player.unmute : t.player.mute,
-                        onPressed: () => unawaited(_toggleMute()),
-                      ),
-                      ...widget.barActions,
-                    ],
+                      onChanged: total <= Duration.zero ? null : (value) => setState(() => _dragValue = value),
+                      onChangeEnd: total <= Duration.zero
+                          ? null
+                          : (value) {
+                              setState(() => _dragValue = null);
+                              unawaited(_seekTo(value));
+                            },
+                    ),
+                    end: Row(
+                      spacing: DsSpace.s4,
+                      children: [
+                        SizedBox(
+                          width: 96,
+                          child: Text(
+                            '${_clock(_dragValue == null ? _position : total * _barValue)} / ${_clock(total)}',
+                            style: DsTheme.of(
+                              context,
+                            ).typography.numeric(DsTheme.of(context).typography.caption.copyWith(color: OnVideoColors.inkMuted)),
+                          ),
+                        ),
+                        ...widget.barActions,
+                      ],
+                    ),
                   ),
                 ),
               ),

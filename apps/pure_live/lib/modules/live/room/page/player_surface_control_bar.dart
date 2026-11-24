@@ -91,14 +91,14 @@ final class _ControlBarState extends ConsumerState<_ControlBar> {
       ),
       // Two width tiers, each a superset of the other: the desktop bar gains
       // the volume slider beside the window-fullscreen button at 720, the
-      // strip's own measure; below 320 the danmaku cluster and the divider
-      // give way, the picture's own catalogues being the cluster a viewer
-      // reaches for when the picture looks wrong.
+      // strip's own measure. The bar's groups fold by the shared rule — the
+      // transport with the fullscreen pair on one line, the danmaku pair and
+      // the picture's own catalogues on their own line below — never a
+      // horizontal scroll, and never a control dropped to make the rest fit.
       child: LayoutBuilder(
         builder: (context, constraints) {
           final pip = presentation == PresentationMode.pip && presentationController.pipOwnsWindow;
           final wide = constraints.maxWidth >= 720;
-          final crowded = constraints.maxWidth < 320;
           final play = PlayerBarButton(
             icon: playing ? DsIcons.pause : DsIcons.play,
             label: playing ? t.player.pause : t.player.play,
@@ -159,7 +159,7 @@ final class _ControlBarState extends ConsumerState<_ControlBar> {
           // The danmaku cluster: the switch and the nut-badged glyph that
           // opens its settings, the pair the viewer tunes without leaving the
           // bar.
-          final danmaku = !crowded && !pip
+          final danmaku = !pip
               ? _DanmakuBarCluster(
                   onWake: widget.onWake,
                   onSettings: widget.onDanmakuSettings,
@@ -207,29 +207,32 @@ final class _ControlBarState extends ConsumerState<_ControlBar> {
                 )
               : null;
           // The picture-in-picture verb lives at the picture's top-right tool
-          // cluster now; the bar keeps the two fullscreen halves it shares a
-          // corner with.
-          return Row(
-            spacing: tv ? DsSpace.s8 : DsSpace.s4,
-            children: [
-              play,
-              retry,
-              ?muteButton,
-              ?volumeSlider,
-              ?danmaku,
-              if (pickers != null)
-                Expanded(
-                  child: Align(
-                    alignment: AlignmentDirectional.centerEnd,
-                    child: SingleChildScrollView(scrollDirection: Axis.horizontal, child: pickers),
+          // cluster; the bar keeps the transport, the catalogues and the two
+          // fullscreen halves it shares a corner with — the transport with
+          // its tail on one line, the catalogues folding below when the
+          // strip runs out.
+          return PlayerBarRows(
+            gap: tv ? DsSpace.s8 : DsSpace.s4,
+            start: Row(
+              spacing: tv ? DsSpace.s8 : DsSpace.s4,
+              children: [play, retry, ?muteButton, ?volumeSlider],
+            ),
+            middle: danmaku == null && pickers == null
+                ? null
+                : Row(
+                    spacing: tv ? DsSpace.s8 : DsSpace.s4,
+                    children: [
+                      ?danmaku,
+                      if (pickers != null)
+                        Flexible(
+                          child: Align(
+                            alignment: AlignmentDirectional.centerEnd,
+                            child: SingleChildScrollView(scrollDirection: Axis.horizontal, child: pickers),
+                          ),
+                        ),
+                    ],
                   ),
-                )
-              else
-                const Spacer(),
-              if (!crowded) const _BarDivider(),
-              ?windowButton,
-              ?fullscreenButton,
-            ],
+            end: Row(spacing: tv ? DsSpace.s8 : DsSpace.s4, children: [?windowButton, ?fullscreenButton]),
           );
         },
       ),
@@ -276,23 +279,6 @@ final class _DanmakuBarCluster extends ConsumerWidget {
           onPressed: onSettings,
         ),
       ],
-    );
-  }
-}
-
-/// A hair divider between the fitted bar's clusters: the transport on one
-/// side, the stream's own menus on the other.
-final class _BarDivider extends StatelessWidget {
-  const _BarDivider();
-
-  @override
-  Widget build(BuildContext context) {
-    final tv = PlayerBarTier.tvOf(context);
-    return Container(
-      width: 1,
-      height: tv ? 20 : 16,
-      margin: EdgeInsets.symmetric(horizontal: tv ? DsSpace.s8 : DsSpace.s4),
-      color: OnVideoColors.track,
     );
   }
 }

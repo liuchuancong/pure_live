@@ -28,26 +28,39 @@ Future<void> showPlayerMoreContainer(BuildContext context, {required PlayerMoreC
 }
 
 /// A group's name over its rows, quiet enough to read as a heading and not
-/// another setting.
+/// another setting — the component library's own section-header measure.
 Widget playerMoreSectionLabel(BuildContext context, String label) {
+  final theme = DsTheme.of(context);
   final colors = DsTheme.colorsOf(context);
   return Padding(
     padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s4, DsSpace.s8, DsSpace.s4, DsSpace.s4),
     child: Text(
       label,
-      style: DsTheme.of(context).typography.caption.copyWith(color: colors.textMuted, fontWeight: FontWeight.w700),
+      style: theme.typography.caption.copyWith(color: colors.textMuted, fontWeight: FontWeight.w700),
     ),
   );
 }
 
-/// A settings row: the label, the current value, and the chevron that opens
-/// where the value lives — or, where the verb is a choice between known
-/// values ([trailing]), the choices themselves.
+/// A settings row, drawn with the component library's own list row — the
+/// room's more panel reads the same part — so a row carries its [leading]
+/// icon, its title at the list's height and its value as a muted detail
+/// before the chevron. Where the verb is a choice between known values
+/// ([trailing]), the choices stand at the row's end instead.
 final class PlayerMoreRow extends StatelessWidget {
   /// The row for one setting or verb.
-  const PlayerMoreRow({required this.label, required this.value, required this.onTap, this.trailing, super.key});
+  const PlayerMoreRow({
+    required this.label,
+    required this.value,
+    required this.onTap,
+    this.leading,
+    this.trailing,
+    super.key,
+  });
 
   final String label;
+
+  /// The row's own icon, the room list's 16 px glyph; null draws none.
+  final DsIconData? leading;
 
   /// The value's word before the chevron; null draws the chevron alone.
   final String? value;
@@ -61,44 +74,15 @@ final class PlayerMoreRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = DsTheme.of(context);
-    final colors = DsTheme.colorsOf(context);
-    return DsPressable(
+    final hasDetail = value != null && trailing == null;
+    final icon = leading;
+    return DsListRow(
+      title: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
+      leading: icon == null ? null : DsIcon(icon),
+      detail: hasDetail ? Text(value!) : null,
+      trailing: trailing,
+      showChevron: trailing == null && onTap != null,
       onPressed: onTap,
-      builder: (context, states, _) => Container(
-        padding: const EdgeInsetsDirectional.symmetric(horizontal: DsSpace.s8, vertical: DsSpace.s8),
-        decoration: DsBoxDecoration(
-          color: states.contains(WidgetState.hovered) ? colors.hover : null,
-          borderRadius: theme.radii.controlCorners(null, theme.sizes.sm),
-        ),
-        child: Row(
-          spacing: DsSpace.s8,
-          children: [
-            Expanded(
-              child: Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: theme.typography.caption.copyWith(color: colors.text),
-              ),
-            ),
-            if (trailing != null)
-              trailing!
-            else ...[
-              if (value != null)
-                Flexible(
-                  child: Text(
-                    value!,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.typography.caption.copyWith(color: colors.textMuted),
-                  ),
-                ),
-              DsIcon(DsIcons.chevronRight, size: 14, color: colors.textMuted),
-            ],
-          ],
-        ),
-      ),
     );
   }
 }
