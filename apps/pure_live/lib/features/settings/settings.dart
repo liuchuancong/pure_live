@@ -38,6 +38,7 @@ export 'panes/danmaku_panes.dart';
 export 'panes/player_kernel_pane.dart';
 export 'panes/room_card_pane.dart';
 export 'playback/floating_window_settings.dart';
+export 'playback/module_playback_settings.dart';
 export 'playback/pip_danmaku_scale_provider.dart';
 export 'playback/playback_settings_providers.dart';
 export 'playback/player_tuning.dart';

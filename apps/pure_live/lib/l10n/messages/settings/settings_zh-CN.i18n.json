@@ -983,6 +983,8 @@
   "autoPipDesc": "播放中离开应用时把画面留在系统小窗；需要悬浮窗权限。",
   "floatPlay": "返回时悬浮播放",
   "floatPlayDesc": "离开房间时把画面留在可拖动的小窗。",
+  "videoFloatWindow": "视频页小窗播放",
+  "videoFloatWindowDesc": "在视频播放页的右上角显示「小窗」按钮",
   "windowsPipAlwaysOnTop": "小窗始终置顶",
   "windowsPipAlwaysOnTopDesc": "小窗始终置顶。",
   "rememberPipPosition": "记住小窗位置",

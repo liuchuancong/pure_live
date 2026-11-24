@@ -482,6 +482,17 @@ final class FloatingWindowPane extends ConsumerWidget {
                 onChanged: (value) => unawaited(controller.setFloatPlay(value: value)),
               ),
             ),
+            // The video pages' own compact window: off, their top bars carry
+            // no 小窗 chip at all; on, the chip shows where it did.
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.appWindow),
+              title: t.settings.videoFloatWindow,
+              description: t.settings.videoFloatWindowDesc,
+              control: DsSwitch(
+                value: settings.floatWindow,
+                onChanged: (value) => unawaited(controller.setFloatWindow(value: value)),
+              ),
+            ),
             SettingsChoiceRow<String>(
               leading: const DsIcon(DsIcons.maximize),
               title: t.settings.floatWindowSize,

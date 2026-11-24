@@ -130,6 +130,7 @@ typedef PlaybackSettings = ({
   bool hardwareDecoding,
   bool autoPipOnLeave,
   bool floatPlay,
+  bool floatWindow,
   bool fullscreenDefault,
   bool windowsPipAlwaysOnTop,
   bool rememberPipPosition,
@@ -161,6 +162,7 @@ const PlaybackSettings _defaults = (
   hardwareDecoding: true,
   autoPipOnLeave: false,
   floatPlay: false,
+  floatWindow: false,
   fullscreenDefault: false,
   windowsPipAlwaysOnTop: false,
   rememberPipPosition: true,
@@ -250,6 +252,7 @@ class PlaybackSettingsController extends Notifier<PlaybackSettings> {
         hardwareDecoding: StoragePrefs.getBool('playback.hwdec') ?? _defaults.hardwareDecoding,
         autoPipOnLeave: StoragePrefs.getBool('playback.autoPip') ?? _defaults.autoPipOnLeave,
         floatPlay: StoragePrefs.getBool('playback.floatPlay') ?? _defaults.floatPlay,
+        floatWindow: StoragePrefs.getBool('playback.floatWindow') ?? _defaults.floatWindow,
         fullscreenDefault: StoragePrefs.getBool('playback.fullscreenDefault') ?? _defaults.fullscreenDefault,
         windowsPipAlwaysOnTop:
             StoragePrefs.getBool('playback.windowsPipAlwaysOnTop') ?? _defaults.windowsPipAlwaysOnTop,
@@ -315,6 +318,7 @@ class PlaybackSettingsController extends Notifier<PlaybackSettings> {
     bool? hardwareDecoding,
     bool? autoPipOnLeave,
     bool? floatPlay,
+    bool? floatWindow,
     bool? fullscreenDefault,
     bool? windowsPipAlwaysOnTop,
     bool? rememberPipPosition,
@@ -344,6 +348,7 @@ class PlaybackSettingsController extends Notifier<PlaybackSettings> {
     hardwareDecoding: hardwareDecoding ?? state.hardwareDecoding,
     autoPipOnLeave: autoPipOnLeave ?? state.autoPipOnLeave,
     floatPlay: floatPlay ?? state.floatPlay,
+    floatWindow: floatWindow ?? state.floatWindow,
     fullscreenDefault: fullscreenDefault ?? state.fullscreenDefault,
     windowsPipAlwaysOnTop: windowsPipAlwaysOnTop ?? state.windowsPipAlwaysOnTop,
     rememberPipPosition: rememberPipPosition ?? state.rememberPipPosition,
@@ -452,6 +457,13 @@ class PlaybackSettingsController extends Notifier<PlaybackSettings> {
   Future<void> setFloatPlay({required bool value}) async {
     state = _with(floatPlay: value);
     await _write(() => StoragePrefs.setBool('playback.floatPlay', value));
+  }
+
+  /// Whether the video pages offer the compact floating window (the cluster's
+  /// 小窗 chip): a settings-governed entry, off so the top bars stay clean.
+  Future<void> setFloatWindow({required bool value}) async {
+    state = _with(floatWindow: value);
+    await _write(() => StoragePrefs.setBool('playback.floatWindow', value));
   }
 
   /// Enters fullscreen automatically once a room's stream plays.

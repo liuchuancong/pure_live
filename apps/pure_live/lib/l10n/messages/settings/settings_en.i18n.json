@@ -983,6 +983,8 @@
   "autoPipDesc": "Keep a playing room in a small window over the other apps when you leave; needs the \"display over other apps\" permission.",
   "floatPlay": "Floating player on exit",
   "floatPlayDesc": "Keeps the picture in a draggable mini window when you leave.",
+  "videoFloatWindow": "Mini window on video pages",
+  "videoFloatWindowDesc": "Show the mini-window button on video players",
   "windowsPipAlwaysOnTop": "Keep the small window on top",
   "windowsPipAlwaysOnTopDesc": "The mini window stays above others.",
   "rememberPipPosition": "Remember the small window position",
