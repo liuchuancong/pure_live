@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import 'package:live_cache/src/image/cdn_mirrors.dart';
 import 'package:live_cache/src/image/image_request.dart';
 import 'package:live_cache/src/models/cache_entry.dart';
 import 'package:live_cache/src/models/cache_failure.dart';
@@ -45,11 +46,39 @@ final class ImageCacheLoader {
   /// stream. A body beyond it is refused before it can fill the disk. An
   /// address with no host is refused at this door: such a GET only ends
   /// as the transport's `No host specified in URI`.
+  ///
+  /// When the original node's transport breaks — a timeout, a refused or
+  /// dropped connection, a handshake cut mid-flight — the same asset is
+  /// replayed on the other nodes of its CDN family (see [mirrorsFor]):
+  /// whole node pools die together on a flaky route, while a sibling
+  /// answers immediately. An HTTP status is the same answer on every node
+  /// and is not retried across the family.
   Future<ImageFetchResult> fetch({required ImageCacheRequest request, required int maxBytes, CacheEntry? entry}) async {
-    final uri = request.url;
-    if (uri.host.isEmpty) {
+    if (request.url.host.isEmpty) {
       throw const CacheFailure(CacheFailureKind.empty, message: 'image url has no host');
     }
+    final attempts = <Uri>[request.url, ...mirrorsFor(request.url)];
+    CacheFailure? lastFailure;
+    for (final candidate in attempts) {
+      try {
+        return await _fetchOne(candidate, request: request, maxBytes: maxBytes, entry: entry);
+      } on CacheFailure catch (failure) {
+        lastFailure = failure;
+        final brokenTransport = failure.kind == CacheFailureKind.offline || failure.kind == CacheFailureKind.timeout;
+        if (!brokenTransport) {
+          rethrow;
+        }
+      }
+    }
+    throw lastFailure!;
+  }
+
+  Future<ImageFetchResult> _fetchOne(
+    Uri uri, {
+    required ImageCacheRequest request,
+    required int maxBytes,
+    CacheEntry? entry,
+  }) async {
     final headers = <String, String>{...request.headers};
     if (entry?.etag != null) {
       headers['if-none-match'] = entry!.etag!;
