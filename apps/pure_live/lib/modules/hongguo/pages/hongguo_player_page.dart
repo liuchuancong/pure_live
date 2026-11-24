@@ -58,10 +58,11 @@ import 'package:pure_live/modules/hongguo/widgets/hongguo_episode_shelf.dart'
 import 'package:pure_live/modules/hongguo/widgets/hongguo_widgets.dart' show hongguoDurationText;
 import 'package:pure_live/modules/live/room/page/chat_splitter.dart' show ChatSplitter;
 import 'package:pure_live/modules/vod/widgets/vod_widgets.dart' show VodFoldedText, VodRailDoor;
+import 'package:pure_live/shared/player/player_danmaku_list_panel.dart';
 import 'package:pure_live/shared/shared.dart';
 
 /// The catalogues the picture bar hangs over.
-enum _HongguoPanel { fit, sleep, speed, quality, episodes, danmaku }
+enum _HongguoPanel { fit, sleep, speed, quality, episodes, danmaku, danmakuList }
 
 /// One episode's player page: the stage, its corner cluster and control row,
 /// the action column along its edge and the episode shelf beside or beneath,
@@ -130,18 +131,17 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
   /// The catalogue hanging over the bar, when one is open.
   _HongguoPanel? _openPanel;
 
+  /// The watching lock, the room's own rule: locked, the strip, the bar and
+  /// the picture's gestures all stand down, and the unlock pill on the
+  /// picture's right edge is the only thing left to press.
+  bool _locked = false;
+
   /// The bar and each picker's box: the open catalogue hangs over the button
   /// that raised it rather than at the picture's end edge.
   final GlobalKey _barAnchor = GlobalKey(debugLabel: 'hongguo-bar');
   final Map<_HongguoPanel, GlobalKey> _panelAnchors = {
     for (final panel in _HongguoPanel.values) panel: GlobalKey(debugLabel: 'hongguo-picker-${panel.name}'),
   };
-
-  /// The corner cluster's more menu. The page owns the controller so a menu
-  /// floating over the picture holds the bar up for as long as it is open —
-  /// the menu lives outside the stage's own stack, where the pointer no
-  /// longer reaches the regions that keep the bar awake.
-  final DsOverlayController _moreMenu = DsOverlayController();
 
   /// The page of the episodes catalogue hanging over the bar. Null follows the
   /// playing episode, so a series hundreds deep opens where the viewer stands
@@ -282,10 +282,9 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
     _danmakuNotifier = ref.read(hongguoDanmakuProvider.notifier);
     _resumeSeconds = widget.resumeSeconds;
     ref.listenManual(roomPresentationProvider, (_, next) => _presentationMode = next, fireImmediately: true);
-    _moreMenu.addListener(_onMoreMenuChanged);
     WidgetsBinding.instance.addObserver(this);
     _globalMute = ref.read(playbackSettingsProvider).globalMute;
-    _volume = ref.read(playbackSettingsProvider.notifier).volume;
+    _volume = ref.read(modulePlaybackSettingsProvider(PlayerModule.hongguo)).volume;
     _backgroundGate = BackgroundPlaybackGate(
       backgroundEnabled: () => ref.read(playbackSettingsProvider).backgroundPlay,
       shouldPause: () =>
@@ -391,8 +390,6 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
     _saveProgress(force: true);
     _hideTimer?.cancel();
     _hideTimer = null;
-    _moreMenu.removeListener(_onMoreMenuChanged);
-    _moreMenu.dispose();
     _volumeHudTimer?.cancel();
     _volumeHudTimer = null;
     _hoverTimer?.cancel();
@@ -935,6 +932,18 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
     }
   }
 
+  /// The watching lock's flip: taking it closes any catalogue first and
+  /// stops the hide clock, leaving it wakes the chrome again.
+  void _toggleLock() {
+    if (!_locked && _openPanel != null) setState(() => _openPanel = null);
+    setState(() => _locked = !_locked);
+    if (_locked) {
+      _hideTimer?.cancel();
+      return;
+    }
+    _wake();
+  }
+
   Future<void> _seekTo(double seconds) async {
     final handle = _handle;
     if (handle == null) return;
@@ -967,6 +976,8 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
     final handle = _handle;
     if (handle == null) return;
     setState(() => _volume = volume);
+    // The module remembers it: the next episode opens here.
+    unawaited(ref.read(modulePlaybackSettingsProvider(PlayerModule.hongguo).notifier).setVolume(volume));
     try {
       await handle.setVolume(volume);
     } on Object catch (_) {
@@ -1783,6 +1794,16 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
     return episodes[index + 1];
   }
 
+  /// The episode before the one held, in episode order.
+  HongguoEpisode? _previousEpisode() {
+    final episodes = _detail?.episodes ?? const <HongguoEpisode>[];
+    final current = _episode;
+    if (current == null) return null;
+    final index = episodes.indexWhere((episode) => episode.vid == current.vid);
+    if (index <= 0) return null;
+    return episodes[index - 1];
+  }
+
   /// The watch head's download button: idle it asks the queue, moving it
   /// reports the percent, paused it resumes, done it stands down.
   Widget _downloadButton(BuildContext context, HongguoEpisode episode) {
@@ -1992,7 +2013,9 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
     final danmakuItems = ref.watch(hongguoDanmakuProvider).items;
     final playing = transport?.isPlaying ?? false;
     _syncScreenWake(playing && ref.watch(keepScreenOnProvider));
-    final showBar = _controlsVisible || !playing || _error != null;
+    // Locked, nothing rides the picture: the unlock pill on the right edge
+    // is the whole chrome, the room's own rule.
+    final showBar = !_locked && (_controlsVisible || !playing || _error != null);
     final ladder = _lastLadder;
     final attempted = _attempted;
     final lower = ladder != null && attempted != null
@@ -2067,24 +2090,30 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
                 // volume — the drag is already spoken for.
                 Listener(
                   onPointerSignal: (signal) {
-                    if (signal is PointerScrollEvent) _wheelVolume(signal.scrollDelta.dy);
+                    if (!_locked && signal is PointerScrollEvent) _wheelVolume(signal.scrollDelta.dy);
                   },
                   child: GestureDetector(
                     behavior: HitTestBehavior.opaque,
-                    onTap: _toggleControls,
-                    onDoubleTap: handle == null
+                    // Locked, the picture's own vocabulary stands down with
+                    // the bar: the unlock pill is the whole chrome.
+                    onTap: _locked ? null : _toggleControls,
+                    onDoubleTap: handle == null || _locked
                         ? null
                         : () {
                             _wake();
                             unawaited(_togglePlay());
                           },
-                    onLongPressStart: handle == null ? null : (_) => _beginHold(),
-                    onLongPressMoveUpdate: handle == null ? null : (details) => _holdMoved(details.offsetFromOrigin.dy),
-                    onLongPressEnd: handle == null ? null : (_) => _endHold(),
-                    onLongPressCancel: handle == null ? null : _endHold,
-                    onVerticalDragStart: handle == null ? null : (_) => _swipeDy = 0,
-                    onVerticalDragUpdate: handle == null ? null : (details) => _swipeDy += details.delta.dy,
-                    onVerticalDragEnd: handle == null ? null : (details) => _endSwipe(details.primaryVelocity ?? 0),
+                    onLongPressStart: handle == null || _locked ? null : (_) => _beginHold(),
+                    onLongPressMoveUpdate: handle == null || _locked
+                        ? null
+                        : (details) => _holdMoved(details.offsetFromOrigin.dy),
+                    onLongPressEnd: handle == null || _locked ? null : (_) => _endHold(),
+                    onLongPressCancel: handle == null || _locked ? null : _endHold,
+                    onVerticalDragStart: handle == null || _locked ? null : (_) => _swipeDy = 0,
+                    onVerticalDragUpdate: handle == null || _locked ? null : (details) => _swipeDy += details.delta.dy,
+                    onVerticalDragEnd: handle == null || _locked
+                        ? null
+                        : (details) => _endSwipe(details.primaryVelocity ?? 0),
                   ),
                 ),
                 if (immersive && showBar) PositionedDirectional(top: 0, start: 0, end: 0, child: _topStrip(t, detail)),
@@ -2093,7 +2122,14 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
                 // gathered under one menu. Fullscreen rides the same cluster
                 // on its top strip, where the way out already lives.
                 if (!immersive && showBar && detail != null)
-                  PositionedDirectional(top: DsSpace.s12, end: DsSpace.s12, child: _stageCornerActions(t, detail)),
+                  PositionedDirectional(
+                    top: DsSpace.s12,
+                    end: DsSpace.s12,
+                    // The rail on the picture's edge carries the capture
+                    // verbs; the wide page's stage, whose rail stands beside
+                    // the picture, keeps them here.
+                    child: _stageCornerActions(t, detail, pictureActions: !overlayActions),
+                  ),
                 // A held press says what it is doing; the lock itself is
                 // confirmed by a toast and the bar's speed reading.
                 if (_holding)
@@ -2125,6 +2161,25 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
                               style: theme.typography.caption.copyWith(color: OnVideoColors.foreground),
                             ),
                           ],
+                        ),
+                      ),
+                    ),
+                  ),
+                // Locked, the unlock pill is the whole chrome — the room's
+                // own rule: the clusters and the episode's own action column
+                // stand down with the bar, and this is the only thing left
+                // to press.
+                if (_locked)
+                  PositionedDirectional(
+                    end: DsSpace.s12,
+                    top: 0,
+                    bottom: 0,
+                    child: Center(
+                      child: PlayerGlassPill(
+                        child: PlayerBarButton(
+                          icon: DsIcons.unlock,
+                          label: t.room.unlockControls,
+                          onPressed: _toggleLock,
                         ),
                       ),
                     ),
@@ -2343,7 +2398,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
           ),
           // The stage's corner cluster rides the strip in fullscreen: the
           // capture, the download and the switches the bar no longer carries.
-          if (detail != null) _stageCornerActions(t, detail),
+          if (detail != null) _stageCornerActions(t, detail, pictureActions: false),
           // The small window's own close: done watching here means the window
           // goes, and the page stays where its host left it. A window that
           // cannot close carries no verb.
@@ -2372,7 +2427,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
   /// the picture bar, the danmaku and the mute. The three choices that want a
   /// catalogue (sleep, fit, danmaku) hang their cards over the bar anchored
   /// here, which is why this cluster carries their anchors.
-  Widget _stageCornerActions(Translations t, HongguoSeriesDetail detail) {
+  Widget _stageCornerActions(Translations t, HongguoSeriesDetail detail, {required bool pictureActions}) {
     final handle = _handle;
     final episode = _episode;
     final task = episode == null ? null : hongguoDownloadOf(ref.watch(hongguoDownloadsProvider), episode.vid);
@@ -2388,7 +2443,6 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
     };
     final fit = ref.watch(playbackSettingsProvider).fit;
     final danmaku = ref.watch(hongguoDanmakuSettingsProvider);
-    final statsVisible = ref.watch(playerStatsVisibleProvider);
     final pipIn = handle != null && _presentationNotifier.pipAvailable;
     final presentation = ref.watch(roomPresentationProvider);
     final pipInMode = presentation == PresentationMode.pip;
@@ -2397,20 +2451,24 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
       onEnter: (_) => _hideTimer?.cancel(),
       onExit: (_) => _scheduleHide(),
       child: KeyedSubtree(
-        key: _panelAnchors[_HongguoPanel.danmaku],
+        key: _panelAnchors[_HongguoPanel.sleep],
         child: KeyedSubtree(
-          key: _panelAnchors[_HongguoPanel.sleep],
-          child: KeyedSubtree(
-            key: _panelAnchors[_HongguoPanel.fit],
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              spacing: DsSpace.s8,
-              children: [
+          key: _panelAnchors[_HongguoPanel.fit],
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            spacing: DsSpace.s8,
+            children: [
+                // One pill, the room cluster's single form: the capture verbs,
+                // the floating windows and the more door together — never two
+                // pills drifting apart. The download lives in the more
+                // container now.
                 PlayerGlassPill(
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      if (handle?.canCaptureScreenshot ?? false)
+                      // The capture verbs show only where no rail on the
+                      // picture's edge already carries them.
+                      if (pictureActions && (handle?.canCaptureScreenshot ?? false))
                         PlayerBarButton(
                           icon: DsIcons.camera,
                           label: t.player.screenshot,
@@ -2419,20 +2477,6 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
                             unawaited(_screenshot());
                           },
                         ),
-                      if (episode != null)
-                        PlayerBarButton(
-                          icon: DsIcons.download,
-                          label: downloadLabel,
-                          onPressed: busy || finished
-                              ? null
-                              : () {
-                                  _wake();
-                                  unawaited(_startDownload());
-                                },
-                        ),
-                      // The small window rides the cluster with the frame
-                      // copy and the download: the cluster is where the
-                      // capture verbs live, the menu holds the settings.
                       if (pipIn && !pipInMode)
                         PlayerBarButton(
                           icon: DsIcons.pictureInPicture,
@@ -2442,9 +2486,8 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
                             unawaited(_togglePip());
                           },
                         ),
-                      // The mini window is the cluster's fourth destination:
-                      // keep the frame, shrink it to a corner of the app.
-                      if (_miniWindowReady)
+                      if (_miniWindowReady &&
+                          ref.watch(playbackSettingsProvider.select((settings) => settings.floatWindow)))
                         PlayerBarButton(
                           icon: DsIcons.appWindow,
                           label: t.common.miniWindow,
@@ -2453,63 +2496,137 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
                             unawaited(_enterMiniWindow());
                           },
                         ),
+                      // The watching lock, the room's own rule. The picture's
+                      // edge here belongs to the episode's own action column,
+                      // so the lock rides the cluster beside the capture
+                      // verb; taken, the unlock pill is the edge's whole
+                      // chrome.
+                      PlayerBarButton(
+                        icon: _locked ? DsIcons.unlock : DsIcons.lock,
+                        label: _locked ? t.room.unlockControls : t.room.lockControls,
+                        onPressed: _toggleLock,
+                      ),
+                      PlayerBarButton(
+                        icon: DsIcons.ellipsisVertical,
+                        label: t.common.more,
+                        onPressed: () {
+                          _wake();
+                          unawaited(
+                            // The room's container — a side panel on a wide
+                            // window, a bottom sheet on a narrow one. The
+                            // download and the audio settle in as rows; the
+                            // timer, the fit and the danmaku give way to their
+                            // own anchored panels, so the container pops first.
+                            showPlayerMoreContainer(
+                              context,
+                              content: (context, {required labeled}) => StatefulBuilder(
+                                builder: (context, setPanel) {
+                                  return Column(
+                                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                                    spacing: DsSpace.s4,
+                                    children: [
+                                      // The download's home since the pill
+                                      // dropped it: a task under way says its
+                                      // own state, and the press starts or
+                                      // resumes it.
+                                      if (episode != null)
+                                        PlayerMoreRow(
+                                          label: t.hongguo.download,
+                                          leading: DsIcons.download,
+                                          value: task == null ? null : downloadLabel,
+                                          onTap: busy || finished
+                                              ? null
+                                              : () {
+                                                  Navigator.of(context).pop();
+                                                  _wake();
+                                                  unawaited(_startDownload());
+                                                },
+                                        ),
+                                      PlayerMoreRow(
+                                        label: t.player.statsToggle,
+                                        leading: DsIcons.activity,
+                                        value: null,
+                                        onTap: handle == null
+                                            ? null
+                                            : () {
+                                                ref.read(playerStatsVisibleProvider.notifier).toggle();
+                                                setPanel(() {});
+                                              },
+                                        // Read fresh on the panel's own redraw:
+                                        // the pick flips the provider under the
+                                        // row, and this switch is the first
+                                        // thing the redraw reads.
+                                        trailing: DsSwitch(
+                                          value: ref.read(playerStatsVisibleProvider),
+                                          onChanged: (_) {
+                                            ref.read(playerStatsVisibleProvider.notifier).toggle();
+                                            setPanel(() {});
+                                          },
+                                        ),
+                                      ),
+                                      PlayerMoreRow(
+                                        label: t.hongguo.sleep,
+                                        leading: DsIcons.timer,
+                                        value: _sleep.active ? _sleep.label(t) : null,
+                                        onTap: () {
+                                          Navigator.of(context).pop();
+                                          _wake();
+                                          _showPanel(_HongguoPanel.sleep);
+                                        },
+                                      ),
+                                      PlayerMoreRow(
+                                        label: t.player.audioOnlyMode,
+                                        leading: DsIcons.headphones,
+                                        value: null,
+                                        onTap: handle == null
+                                            ? null
+                                            : () {
+                                                unawaited(_toggleAudioOnly());
+                                                setPanel(() {});
+                                              },
+                                        trailing: DsSwitch(
+                                          value: _audioOnly,
+                                          onChanged: (_) {
+                                            unawaited(_toggleAudioOnly());
+                                            setPanel(() {});
+                                          },
+                                        ),
+                                      ),
+                                      PlayerMoreRow(
+                                        label: t.settings.fit,
+                                        leading: DsIcons.scaling,
+                                        value: fitLabels(t)[fit.index],
+                                        onTap: () {
+                                          Navigator.of(context).pop();
+                                          _wake();
+                                          _showPanel(_HongguoPanel.fit);
+                                        },
+                                      ),
+                                      PlayerMoreRow(
+                                        label: t.hongguo.danmaku,
+                                        leading: DsIcons.captions,
+                                        value: danmaku.enabled ? t.hongguo.danmakuOn : t.hongguo.danmakuOff,
+                                        onTap: () {
+                                          Navigator.of(context).pop();
+                                          _wake();
+                                          _showPanel(_HongguoPanel.danmaku);
+                                        },
+                                      ),
+                                    ],
+                                  );
+                                },
+                              ),
+                            ),
+                          );
+                        },
+                      ),
                     ],
-                  ),
-                ),
-                PlayerGlassPill(
-                  child: DsMenuAnchor(
-                    controller: _moreMenu,
-                    semanticLabel: t.common.more,
-                    align: DsAlign.end,
-                    items: [
-                      DsMenuItem(
-                        leading: const DsIcon(DsIcons.activity),
-                        label: Text(t.player.statsToggle),
-                        trailing: statsVisible ? const DsIcon(DsIcons.check, size: 16) : null,
-                        onPressed: handle == null ? null : () => ref.read(playerStatsVisibleProvider.notifier).toggle(),
-                      ),
-                      DsMenuItem(
-                        leading: const DsIcon(DsIcons.moon),
-                        label: Text(_sleep.active ? '${t.hongguo.sleep} · ${_sleep.label(t)}' : t.hongguo.sleep),
-                        onPressed: () => _showPanel(_HongguoPanel.sleep),
-                      ),
-                      DsMenuItem(
-                        leading: const DsIcon(DsIcons.headphones),
-                        label: Text(t.player.audioOnlyMode),
-                        trailing: _audioOnly ? const DsIcon(DsIcons.check, size: 16) : null,
-                        onPressed: handle == null
-                            ? null
-                            : () {
-                                _wake();
-                                unawaited(_toggleAudioOnly());
-                              },
-                      ),
-                      DsMenuItem(
-                        leading: const DsIcon(DsIcons.aspectRatio),
-                        label: Text('${t.settings.fit} · ${fitLabels(t)[fit.index]}'),
-                        onPressed: () => _showPanel(_HongguoPanel.fit),
-                      ),
-                      DsMenuItem(
-                        leading: DsIcon(danmaku.enabled ? DsIcons.captions : DsIcons.captionsOff),
-                        label: Text(danmaku.enabled ? t.hongguo.danmakuOn : t.hongguo.danmakuOff),
-                        onPressed: () => _showPanel(_HongguoPanel.danmaku),
-                      ),
-                    ],
-                    builder: (context, anchor, _) => PlayerBarButton(
-                      icon: DsIcons.ellipsisVertical,
-                      label: t.common.more,
-                      onPressed: () {
-                        _wake();
-                        anchor.toggle();
-                      },
-                    ),
                   ),
                 ),
               ],
             ),
           ),
         ),
-      ),
     );
   }
 
@@ -2530,6 +2647,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
         : transport?.position ?? Duration.zero;
     final speedLabel = playerRateLabel(_speed);
     final next = _nextEpisode();
+    final previous = _previousEpisode();
     return PlayerControlBar(
       key: _barAnchor,
       padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s12, DsSpace.s8, DsSpace.s12, DsSpace.s8),
@@ -2537,12 +2655,22 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
         builder: (context, constraints) {
           // The bar bends before it breaks: a portrait picture leaves the
           // bar a few hundred pixels, and a row that does not bend there
-          // overflows — the striped edge that once ate the fullscreen verbs.
-          // A narrow bar moves the clock up onto the seek line's ends, keeps
-          // mute one thumb away and lets the volume slider go; the words on
-          // the pickers come back once the bar can pay for them.
+          // overflows. A narrow bar keeps the transport one thumb wide and
+          // folds the catalogues to their own line under the shared rule —
+          // two rows, never a scroll; the words on the pickers come back
+          // once the bar can pay for them.
           final wide = constraints.maxWidth >= 480;
           final labels = constraints.maxWidth >= 640;
+          // The danmaku trio's state, watched here so the switch and the
+          // list chip read fresh on every pick.
+          final danmaku = ref.watch(hongguoDanmakuSettingsProvider);
+          final danmakuItems = ref.watch(hongguoDanmakuProvider).items;
+          // The bar's own width is the ladder's ruler, the one every surface
+          // reads: the volume slider 96 px when the bar is roomy, 72 when it
+          // bends, and gone under 480, where the mute and the wheel still
+          // carry the sound.
+          final volumeWidth = constraints.maxWidth >= 720 ? 96.0 : (constraints.maxWidth >= 480 ? 72.0 : null);
+          final presentation = ref.watch(roomPresentationProvider);
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             spacing: DsSpace.s4,
@@ -2553,110 +2681,183 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
               PlayerSeekLayer.replay(
                 position: position,
                 duration: duration,
+                buffered: _transport?.buffer.ranges ?? const [],
                 onSeek: (seconds) => unawaited(_seekTo(seconds)),
                 onScrub: (seconds) => setState(() => _dragSeconds = seconds),
               ),
-              Row(
-                spacing: PlayerBarTier.tvOf(context) ? DsSpace.s8 : DsSpace.s4,
-                children: [
-                  PlayerBarButton(
-                    icon: playing ? DsIcons.pause : DsIcons.play,
-                    label: playing ? t.player.pause : t.player.play,
-                    focusNode: _playFocus,
-                    onPressed: handle == null
-                        ? null
-                        : () {
-                            _wake();
-                            unawaited(_togglePlay());
-                          },
-                  ),
-                  // The next episode rides beside the transport, as the
-                  // reference's bar carries it — not only on the action
-                  // column — once the bar can pay for it; a narrow stage
-                  // keeps the verb on the column at the picture's edge.
-                  if (wide && next != null)
+              PlayerBarRows(
+                // Two rows at every width: the transport, then the
+                // catalogues along the picture's bottom edge — the pace and
+                // the pickers never hide at the wide row's right end.
+                foldWidth: double.infinity,
+                gap: PlayerBarTier.tvOf(context) ? DsSpace.s8 : DsSpace.s4,
+                start: Row(
+                  spacing: PlayerBarTier.tvOf(context) ? DsSpace.s8 : DsSpace.s4,
+                  children: [
                     PlayerBarButton(
-                      icon: DsIcons.skipForward,
-                      label: t.hongguo.nextEpisode,
-                      onPressed: handle == null ? null : () => unawaited(_openEpisode(next)),
+                      icon: playing ? DsIcons.pause : DsIcons.play,
+                      label: playing ? t.player.pause : t.player.play,
+                      focusNode: _playFocus,
+                      onPressed: handle == null
+                          ? null
+                          : () {
+                              _wake();
+                              unawaited(_togglePlay());
+                            },
                     ),
-                  // Mute stays one thumb away at every width; the slider
-                  // beside it waits for a bar that can pay for it.
-                  PlayerBarButton(
-                    icon: _effectivelyMuted ? DsIcons.volumeX : DsIcons.volume2,
-                    label: _effectivelyMuted ? t.player.unmute : t.player.mute,
-                    onPressed: handle == null
-                        ? null
-                        : () {
-                            _wake();
-                            unawaited(_setMuted(muted: !_effectivelyMuted));
-                          },
-                  ),
-                  if (wide)
-                    SizedBox(
-                      width: 72,
-                      child: DsSlider(
-                        value: _effectivelyMuted ? 0 : _volume,
-                        style: const DsSliderStyle(
-                          height: 24,
-                          trackHeight: 4,
-                          trackColor: OnVideoColors.track,
-                          fillColor: OnVideoColors.foreground,
-                          thumbColor: OnVideoColors.foreground,
-                          thumbSize: 12,
-                        ),
-                        onChanged: handle == null ? null : (value) => unawaited(_setVolume(value)),
-                        semanticLabel: t.player.volume,
+                    // The episode steps ride beside the transport, as the
+                    // reference's bar carries them — not only on the action
+                    // column — once the bar can pay for it; a narrow stage
+                    // keeps the verbs on the column at the picture's edge.
+                    if (wide && previous != null)
+                      PlayerBarButton(
+                        icon: DsIcons.skipBack,
+                        label: t.hongguo.previousEpisode,
+                        onPressed: handle == null ? null : () => unawaited(_openEpisode(previous)),
                       ),
-                    ),
-                  const Spacer(),
-                  _pickerButton(
-                    panel: _HongguoPanel.episodes,
-                    icon: DsIcons.listVideo,
-                    // The count reads on the panel this opens; the bar's chip
-                    // stays the one word, so the row keeps its line.
-                    label: t.hongguo.episodes,
-                    semanticLabel: t.hongguo.episodes,
-                    compact: !labels,
-                  ),
-                  _pickerButton(
-                    panel: _HongguoPanel.speed,
-                    icon: DsIcons.timer,
-                    label: speedLabel,
-                    semanticLabel: t.player.speed,
-                    compact: !labels,
-                  ),
-                  _pickerButton(
-                    panel: _HongguoPanel.quality,
-                    icon: DsIcons.gauge,
-                    label: (_attempted?.quality ?? 0) > 0 ? '${_attempted!.quality}P' : t.player.quality,
-                    semanticLabel: t.player.quality,
-                    compact: !labels,
-                  ),
-                  // The window verbs, then the way out of the picture's box —
-                  // the room bar's pair: the desktop's window-fullscreen
-                  // first, then the system fullscreen the phone turns for.
-                  if (_desktop && ref.watch(roomPresentationProvider) != PresentationMode.pip)
+                    if (wide && next != null)
+                      PlayerBarButton(
+                        icon: DsIcons.skipForward,
+                        label: t.hongguo.nextEpisode,
+                        onPressed: handle == null ? null : () => unawaited(_openEpisode(next)),
+                      ),
+                    // Mute stays one thumb away at every width; the slider
+                    // beside it waits for a bar that can pay for it.
                     PlayerBarButton(
-                      icon: ref.watch(roomPresentationProvider) == PresentationMode.windowFullscreen
-                          ? DsIcons.copy
-                          : DsIcons.square,
-                      label: ref.watch(roomPresentationProvider) == PresentationMode.windowFullscreen
-                          ? t.player.windowFullscreenOff
-                          : t.player.windowFullscreenOn,
-                      selected: ref.watch(roomPresentationProvider) == PresentationMode.windowFullscreen,
-                      onPressed: handle == null ? null : () => unawaited(_toggleWindowFullscreen()),
+                      icon: _effectivelyMuted ? DsIcons.volumeX : DsIcons.volume2,
+                      label: _effectivelyMuted ? t.player.unmute : t.player.mute,
+                      onPressed: handle == null
+                          ? null
+                          : () {
+                              _wake();
+                              unawaited(_setMuted(muted: !_effectivelyMuted));
+                            },
                     ),
-                  // The small window has no fullscreen of its own to toggle —
-                  // its way back rides the strip's leading pill — so the verb
-                  // stands down there.
-                  if (ref.watch(roomPresentationProvider) != PresentationMode.pip)
+                    if (volumeWidth case final width?)
+                      SizedBox(
+                        width: width,
+                        child: DsSlider(
+                          value: _effectivelyMuted ? 0 : _volume,
+                          style: const DsSliderStyle(
+                            height: 24,
+                            trackHeight: 4,
+                            trackColor: OnVideoColors.track,
+                            fillColor: OnVideoColors.foreground,
+                            thumbColor: OnVideoColors.foreground,
+                            thumbSize: 12,
+                          ),
+                          onChanged: handle == null ? null : (value) => unawaited(_setVolume(value)),
+                          semanticLabel: t.player.volume,
+                        ),
+                      ),
+                  ],
+                ),
+                middle: Row(
+                  spacing: PlayerBarTier.tvOf(context) ? DsSpace.s8 : DsSpace.s4,
+                  children: [
+                    // The danmaku trio leads the catalogue row, the room
+                    // bar's order: the switch, the track as a list against
+                    // the clock, and the gear whose panel keeps its tuning —
+                    // the episode's comments never hide in a menu again.
                     PlayerBarButton(
-                      icon: immersive ? DsIcons.minimize : DsIcons.maximize,
-                      label: immersive ? t.player.fullscreenOff : t.player.fullscreen,
-                      onPressed: handle == null ? null : () => unawaited(_toggleFullscreen()),
+                      iconAsset: danmaku.enabled ? 'assets/icons/danmaku-on.svg' : 'assets/icons/danmaku-off.svg',
+                      label: danmaku.enabled ? t.common.danmakuOff : t.common.danmakuOn,
+                      onPressed: handle == null
+                          ? null
+                          : () {
+                              _wake();
+                              unawaited(
+                                ref
+                                    .read(hongguoDanmakuSettingsProvider.notifier)
+                                    .setEnabled(value: !danmaku.enabled),
+                              );
+                            },
                     ),
-                ],
+                    if (danmakuItems.isNotEmpty)
+                      PlayerBarButton(
+                        key: _panelAnchors[_HongguoPanel.danmakuList],
+                        iconAsset: 'assets/icons/danmaku.svg',
+                        label: t.room.danmakuListTitle,
+                        selected: _openPanel == _HongguoPanel.danmakuList,
+                        onPressed: handle == null
+                            ? null
+                            : () {
+                                _wake();
+                                setState(
+                                  () =>
+                                      _openPanel =
+                                      _openPanel == _HongguoPanel.danmakuList ? null : _HongguoPanel.danmakuList,
+                                );
+                              },
+                      ),
+                    PlayerBarButton(
+                      key: _panelAnchors[_HongguoPanel.danmaku],
+                      iconAsset: 'assets/icons/danmaku-settings.svg',
+                      label: t.settings.navDanmaku,
+                      selected: _openPanel == _HongguoPanel.danmaku,
+                      onPressed: handle == null
+                          ? null
+                          : () {
+                              _wake();
+                              setState(() => _openPanel = _openPanel == _HongguoPanel.danmaku ? null : _HongguoPanel.danmaku);
+                            },
+                    ),
+                    _pickerButton(
+                      panel: _HongguoPanel.quality,
+                      icon: DsIcons.gauge,
+                      label: (_attempted?.quality ?? 0) > 0 ? '${_attempted!.quality}P' : t.player.quality,
+                      semanticLabel: t.player.quality,
+                      compact: !labels,
+                    ),
+                    _pickerButton(
+                      panel: _HongguoPanel.speed,
+                      icon: DsIcons.timer,
+                      label: speedLabel,
+                      semanticLabel: t.player.speed,
+                      compact: !labels,
+                    ),
+                    _pickerButton(
+                      panel: _HongguoPanel.episodes,
+                      icon: DsIcons.listVideo,
+                      // The count reads on the panel this opens; the bar's chip
+                      // stays the one word, so the row keeps its line.
+                      label: t.hongguo.episodes,
+                      semanticLabel: t.hongguo.episodes,
+                      compact: !labels,
+                    ),
+                  ],
+                ),
+                end: Row(
+                  spacing: PlayerBarTier.tvOf(context) ? DsSpace.s8 : DsSpace.s4,
+                  children: [
+                    // The window verbs, then the way out of the picture's box —
+                    // the room bar's pair: the desktop's window-fullscreen
+                    // first, then the system fullscreen the phone turns for.
+                    // The window's own shape with the arrows that say which way
+                    // it goes.
+                    if (_desktop && presentation != PresentationMode.pip)
+                      PlayerBarButton(
+                        icon: presentation == PresentationMode.windowFullscreen
+                            ? DsIcons.squareShrinkUpLeftDownRight
+                            : DsIcons.squareExpandUpRightDownLeft,
+                        label: presentation == PresentationMode.windowFullscreen
+                            ? t.player.windowFullscreenOff
+                            : t.player.windowFullscreenOn,
+                        selected: presentation == PresentationMode.windowFullscreen,
+                        onPressed: handle == null ? null : () => unawaited(_toggleWindowFullscreen()),
+                      ),
+                    // The small window has no fullscreen of its own to toggle —
+                    // its way back rides the strip's leading pill — so the verb
+                    // stands down there.
+                    if (presentation != PresentationMode.pip)
+                      PlayerBarButton(
+                        icon: immersive ? DsIcons.minimize : DsIcons.maximize,
+                        label: immersive ? t.player.fullscreenOff : t.player.fullscreen,
+                        selected: presentation == PresentationMode.fullscreen,
+                        onPressed: handle == null ? null : () => unawaited(_toggleFullscreen()),
+                      ),
+                  ],
+                ),
               ),
             ],
           );
@@ -2736,6 +2937,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
     // series runs to a hundred and the tiles are what a viewer reads.
     _HongguoPanel.episodes => 300,
     _HongguoPanel.danmaku => 200,
+    _HongguoPanel.danmakuList => 300,
   };
 
   /// The open picker's catalogue.
@@ -2884,6 +3086,22 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
               },
             ),
           ],
+        );
+      case _HongguoPanel.danmakuList:
+        // The track's whole timeline, the (time, words) pairs the provider
+        // keeps in the episode's own order: a row's tap seeks the episode
+        // there.
+        return PlayerDanmakuListPanel(
+          lines: [
+            for (final (ms, text) in ref.watch(hongguoDanmakuProvider).items)
+              (at: Duration(milliseconds: ms), text: text, color: 0xFFFFFFFF),
+          ],
+          onSeek: (at) {
+            _closePanel();
+            unawaited(_seekTo(at.inMilliseconds / 1000));
+          },
+          title: t.room.danmakuListTitle,
+          empty: t.room.danmakuListEmpty,
         );
     }
   }
@@ -3064,12 +3282,15 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
   bool get _isTv => ref.read(platformRuntimeProvider).environment.runtime.formFactor == FormFactor.tv;
 
   void _scheduleHide() {
+    // The tracker still walks the regions a leaving page owned: its exit
+    // lands here after dispose, and a dead state reads no store.
+    if (!mounted) return;
     _hideTimer?.cancel();
     // The TV's chrome never hides on idle (see _isTv).
     if (_isTv) return;
     // An open catalogue holds the bar up; a paused stream keeps it too.
     if (_openPanel != null || !(_transport?.isPlaying ?? false)) return;
-    final seconds = ref.read(playbackSettingsProvider).controlsAutoHideSeconds;
+    final seconds = ref.read(modulePlaybackSettingsProvider(PlayerModule.hongguo)).controlsAutoHideSeconds;
     // The setting's zero is 常显: the bar never hides on idle while the
     // drama plays.
     if (seconds <= 0) return;
@@ -3078,17 +3299,6 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
         setState(() => _controlsVisible = false);
       }
     });
-  }
-
-  /// The more menu's own hold on the bar: open, it cancels the hide; closed,
-  /// the bar settles as after any other gesture.
-  void _onMoreMenuChanged() {
-    if (!mounted) return;
-    if (_moreMenu.isOpen) {
-      _hideTimer?.cancel();
-    } else {
-      _scheduleHide();
-    }
   }
 
   void _showPanel(_HongguoPanel panel) {

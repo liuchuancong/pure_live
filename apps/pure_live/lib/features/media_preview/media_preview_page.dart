@@ -57,10 +57,12 @@ import 'package:pure_live/features/settings/pages/wallpaper_video_player.dart' s
 import 'package:pure_live/features/settings/settings.dart'
     show
         PlaybackFit,
+        PlayerModule,
         SettingsSection,
         danmakuEffectiveFpsProvider,
         danmakuStyleProvider,
         fitLabels,
+        modulePlaybackSettingsProvider,
         playbackSettingsProvider;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/shared/player/on_video_colors.dart';
@@ -74,6 +76,8 @@ import 'package:pure_live/shared/shared.dart'
         PlaybackWindowClass,
         PlayerBarButton,
         PlayerGlassPill,
+        PlayerMoreRow,
+        PlayerMoreSeg,
         PlayerStatsOverlay,
         PlayerVolumeHud,
         applyFullscreenOrientation,
@@ -82,9 +86,11 @@ import 'package:pure_live/shared/shared.dart'
         danmakuFileFor,
         kPlaybackWideBreakpoint,
         playerBarrageConfig,
+        playerMoreSectionLabel,
         playerRateLabel,
         playerStatsVisibleProvider,
         showCastUriDialog,
+        showPlayerMoreContainer,
         silencePlayer;
 import 'package:pure_live/shared/widgets/app_dialog.dart';
 
@@ -448,6 +454,9 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
 
   /// Opens or closes the immersive layout's file drawer.
   void _setDrawerOpen(bool value) {
+    // The drawer's edge regions walk their exit after the preview leaves: a
+    // dead state draws nothing.
+    if (!mounted) return;
     if (_drawerOpen == value) return;
     setState(() => _drawerOpen = value);
   }
@@ -482,6 +491,8 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
   Future<void> _setVolume(double value) async {
     final handle = _handle;
     setState(() => _volume = value);
+    // The module remembers it: the next file opens here.
+    unawaited(ref.read(modulePlaybackSettingsProvider(PlayerModule.preview).notifier).setVolume(value));
     if (handle == null) return;
     await _applyVolume(handle, value);
   }
@@ -1071,7 +1082,7 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
         children: [
           PlayerGlassPill(
             child: PlayerBarButton(
-              iconAsset: 'assets/icons/pip-exit.svg',
+              icon: DsIcons.pictureInPicture2,
               label: t.player.pipOff,
               autofocus: true,
               onPressed: () {
@@ -1492,7 +1503,9 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
         barHideAfter: Duration(
           seconds: ref.watch(platformRuntimeProvider).environment.runtime.formFactor == FormFactor.tv
               ? 0
-              : ref.watch(playbackSettingsProvider.select((settings) => settings.controlsAutoHideSeconds)),
+              : ref.watch(
+                modulePlaybackSettingsProvider(PlayerModule.preview).select((settings) => settings.controlsAutoHideSeconds),
+              ),
         ),
         onHandle: _onHandle,
         onBarVisibleChanged: (value) {
@@ -1513,10 +1526,11 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
                 controller: _barrage,
               )
             : null,
-        // Two rows, the live room's own arrangement: the picture and window
-        // verbs above (with the way back leading them where the page's header
-        // is absent), the transport and the sound and file verbs below.
-        barTopActions: _barTopActions(t, visible: visible, has: _hasDanmaku, loading: _danmakuLoading),
+        // Two rows, the live room's own arrangement: the way back alone
+        // above where the page's header is absent, the transport and the
+        // window verbs below — the picture's session verbs (the frame copy,
+        // the cast, the floating windows, the more) live in the stage's
+        // top-right cluster, and the bar keeps no second copy of them.
         barActions: _barActions(t, compact: compact),
         barLeading: immersive && !pipOwned && !ownsWindow
             ? PlayerGlassPill(
@@ -1555,12 +1569,28 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
           bottom: 0,
           child: PlayerVolumeHud(value: value),
         ),
-      if (chrome)
+      if (chrome) ...[
         PositionedDirectional(
           top: DsSpace.s12,
           end: DsSpace.s12,
           child: _topActions(t, immersive: immersive),
         ),
+        // The frame's copy on the picture's right edge, the room column's
+        // verb: hung just under the cluster so the next arrow keeps the
+        // edge's middle to itself.
+        if ((_handle?.canCaptureScreenshot ?? false) && _current?.exists == true)
+          PositionedDirectional(
+            top: DsSpace.s20 + 40,
+            end: DsSpace.s12,
+            child: PlayerGlassPill(
+              child: PlayerBarButton(
+                icon: DsIcons.camera,
+                label: t.player.screenshot,
+                onPressed: () => unawaited(_screenshot()),
+              ),
+            ),
+          ),
+      ],
       // The neighbours, on the picture's own edges where a viewer's hand
       // already is: step past a take without aiming at a corner button.
       if (showArrows && _index > 0)
@@ -1600,111 +1630,230 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
   }
 
   /// The verbs that act on the picture itself, parked at its top-right corner
-  /// in glass pills: the frame's copy, where the picture goes (投屏, the small
-  /// window), and the ⋮ that holds the quieter ones. The page header keeps
-  /// only the file's own errands, so a verb never moves between two bars
-  /// depending on how the window is dressed.
+  /// in one glass pill — the room cluster's single form: where the picture
+  /// goes (投屏, the small window) and the ⋮ that holds the quieter ones,
+  /// never separate pills drifting apart. The page header keeps only the
+  /// file's own errands, so a verb never moves between two bars depending on
+  /// how the window is dressed.
   Widget _topActions(Translations t, {required bool immersive}) {
     final handle = _handle;
     final pip = ref.watch(roomPresentationProvider) == PresentationMode.pip;
-    Widget pill(DsIconData icon, String label, {VoidCallback? onPressed}) => PlayerGlassPill(
-      child: PlayerBarButton(icon: icon, label: label, onPressed: onPressed),
-    );
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      spacing: DsSpace.s8,
-      children: [
-        // A kernel that cannot hand a frame back loses the pill rather than
-        // offering one that only toasts a failure.
-        if (handle?.canCaptureScreenshot ?? false)
-          pill(DsIcons.camera, t.player.screenshot, onPressed: () => unawaited(_screenshot())),
-        // 投屏 of the file itself. A renderer cannot read this disk, but the
-        // DLNA backend serves the path over the LAN through its own media
-        // server, so a finished take casts the way a stream does.
-        if (_current case final entry? when entry.exists)
-          pill(
-            DsIcons.cast,
-            t.player.cast,
-            onPressed: () =>
-                unawaited(showCastUriDialog(context, url: File(entry.path).uri.toString(), title: entry.title)),
-          ),
-        if (handle != null && _presentation.pipAvailable)
-          pill(
-            pip ? DsIcons.pictureInPictureExit : DsIcons.pictureInPicture,
-            pip ? t.player.pipOff : t.player.pipOn,
-            onPressed: () => unawaited(_togglePip()),
-          ),
-        // The mini window is the destinations' last stop: keep the frame,
-        // send it to a TV, shrink it to a corner of the app.
-        if (_miniWindowReady)
-          pill(DsIcons.appWindow, t.common.miniWindow, onPressed: () => unawaited(_enterMiniWindow())),
-        PlayerGlassPill(
-          child: DsMenuAnchor(
-            semanticLabel: t.common.more,
-            align: DsAlign.end,
-            items: [
-              // The sound without the picture, the framing, the stream's own
-              // numbers: the quieter verbs, said in the menu the header used
-              // to spread across itself.
-              DsMenuItem(
-                leading: DsIcon(_audioOnly ? DsIcons.video : DsIcons.headphones),
-                label: Text(_audioOnly ? t.player.restoreVideo : t.player.audioOnlyMode),
-                checked: _audioOnly,
-                onPressed: handle == null ? null : () => unawaited(_setAudioOnly(!_audioOnly)),
-              ),
-              for (final (index, option) in PlaybackFit.values.indexed)
-                DsMenuItem(
-                  label: Text(fitLabels(t)[index]),
-                  checked: option == ref.watch(playbackSettingsProvider.select((settings) => settings.fit)),
-                  onPressed: () => unawaited(ref.read(playbackSettingsProvider.notifier).setFit(option)),
+    // The frame's copy lives on the picture's right edge now — the
+    // picture's own action column — so the cluster keeps the where-to verbs
+    // only.
+    return PlayerGlassPill(
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        spacing: DsSpace.s4,
+        children: [
+          // 投屏 of the file itself. A renderer cannot read this disk, but the
+          // DLNA backend serves the path over the LAN through its own media
+          // server, so a finished take casts the way a stream does.
+          if (_current case final entry? when entry.exists)
+            PlayerBarButton(
+              icon: DsIcons.cast,
+              label: t.player.cast,
+              onPressed: () =>
+                  unawaited(showCastUriDialog(context, url: File(entry.path).uri.toString(), title: entry.title)),
+            ),
+          if (handle != null && _presentation.pipAvailable)
+            PlayerBarButton(
+              icon: pip ? DsIcons.pictureInPicture2 : DsIcons.pictureInPicture,
+              label: pip ? t.player.pipOff : t.player.pipOn,
+              onPressed: () => unawaited(_togglePip()),
+            ),
+          // The mini window is the destinations' last stop: keep the frame,
+          // send it to a TV, shrink it to a corner of the app.
+          if (_miniWindowReady && ref.watch(playbackSettingsProvider.select((settings) => settings.floatWindow)))
+            PlayerBarButton(icon: DsIcons.appWindow, label: t.common.miniWindow, onPressed: () => unawaited(_enterMiniWindow())),
+          PlayerBarButton(
+            icon: DsIcons.ellipsisVertical,
+            label: t.common.more,
+            onPressed: () => unawaited(
+              // The room's container: a side panel on a wide window, a bottom
+              // sheet on a narrow one. The StatefulBuilder is the panel's own
+              // redraw — the page's fields and the providers flip synchronously
+              // under a pick, and the panel reads them again, so a switch never
+              // waits for the page's rebuild to look flipped.
+              showPlayerMoreContainer(
+                context,
+                content: (context, {required labeled}) => StatefulBuilder(
+                  builder: (context, setPanel) {
+                    Widget check({required bool on}) => DsIcon(
+                      DsIcons.check,
+                      size: 14,
+                      color: on ? DsTheme.colorsOf(context).accent : DsTheme.colorsOf(context).textMuted,
+                    );
+                    final settings = ref.read(playbackSettingsProvider);
+                    final visible = settings.danmakuVisible;
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      spacing: DsSpace.s4,
+                      children: [
+                        // The pace: the bar chip's six choices as segments —
+                        // the live one in the accent ink.
+                        PlayerMoreRow(
+                          label: t.player.speed,
+                          leading: DsIcons.timer,
+                          value: null,
+                          onTap: null,
+                          trailing: PlayerMoreSeg<double>(
+                            values: kPreviewRates,
+                            labels: [for (final value in kPreviewRates) playerRateLabel(value)],
+                            current: _rate,
+                            onPick: (value) {
+                              unawaited(_setRate(value));
+                              setPanel(() {});
+                            },
+                          ),
+                        ),
+                        playerMoreSectionLabel(context, t.settings.fit),
+                        for (final option in PlaybackFit.values)
+                          PlayerMoreRow(
+                            label: fitLabels(t)[option.index],
+                            leading: DsIcons.scaling,
+                            value: null,
+                            onTap: () {
+                              unawaited(ref.read(playbackSettingsProvider.notifier).setFit(option));
+                              setPanel(() {});
+                            },
+                            trailing: check(on: option == settings.fit),
+                          ),
+                        // The sound without the picture, the loop, the flying
+                        // danmaku: the quieter switches, said in the panel the
+                        // menu used to spread across itself.
+                        PlayerMoreRow(
+                          label: _audioOnly ? t.player.restoreVideo : t.player.audioOnlyMode,
+                          leading: DsIcons.headphones,
+                          value: null,
+                          onTap: handle == null
+                              ? null
+                              : () {
+                                  unawaited(_setAudioOnly(!_audioOnly));
+                                  setPanel(() {});
+                                },
+                          trailing: DsSwitch(
+                            value: _audioOnly,
+                            onChanged: (_) {
+                              unawaited(_setAudioOnly(!_audioOnly));
+                              setPanel(() {});
+                            },
+                          ),
+                        ),
+                        PlayerMoreRow(
+                          label: t.common.previewLoop,
+                          leading: DsIcons.repeat,
+                          value: null,
+                          onTap: handle == null
+                              ? null
+                              : () {
+                                  unawaited(_setLoop(!_loop));
+                                  setPanel(() {});
+                                },
+                          trailing: DsSwitch(
+                            value: _loop,
+                            onChanged: (_) {
+                              unawaited(_setLoop(!_loop));
+                              setPanel(() {});
+                            },
+                          ),
+                        ),
+                        // A take with a sidecar keeps the pair, a take without
+                        // one says why the switch stands down.
+                        PlayerMoreRow(
+                          label: _danmakuLoading
+                              ? t.common.previewDanmakuLoading
+                              : _hasDanmaku
+                              ? (visible ? t.common.danmakuOff : t.common.danmakuOn)
+                              : t.common.previewDanmakuOff,
+                          leading: DsIcons.captions,
+                          value: null,
+                          onTap: _hasDanmaku
+                              ? () {
+                                  unawaited(
+                                    ref.read(playbackSettingsProvider.notifier).setDanmakuVisible(value: !visible),
+                                  );
+                                  setPanel(() {});
+                                }
+                              : null,
+                          trailing: DsSwitch(
+                            value: _hasDanmaku && visible,
+                            onChanged: _hasDanmaku
+                                ? (_) {
+                                    unawaited(
+                                      ref
+                                          .read(playbackSettingsProvider.notifier)
+                                          .setDanmakuVisible(value: !visible),
+                                    );
+                                    setPanel(() {});
+                                  }
+                                : null,
+                          ),
+                        ),
+                        // The settings door: the container gives way, the
+                        // page takes the walk to the danmaku section itself.
+                        PlayerMoreRow(
+                          label: t.common.previewDanmakuSettings,
+                          leading: DsIcons.slidersHorizontal,
+                          value: null,
+                          onTap: () {
+                            Navigator.of(context).pop();
+                            _openDanmakuSettings();
+                          },
+                        ),
+                        // The theatre needs the list column to float, which a
+                        // narrow window has no room for and a mode that owns
+                        // the window does not need. The pills row is only
+                        // drawn in-page (the header's layout is gone once a
+                        // mode owns the window), so this is where the verb is
+                        // offered from.
+                        if (!immersive)
+                          PlayerMoreRow(
+                            label: _theater ? t.room.theaterOff : t.room.theaterOn,
+                            leading: DsIcons.layoutHeaderSidebarRight,
+                            value: null,
+                            onTap: () {
+                              setState(() => _theater = !_theater);
+                              setPanel(() {});
+                            },
+                            trailing: check(on: _theater),
+                          ),
+                        PlayerMoreRow(
+                          label: t.player.statsToggle,
+                          leading: DsIcons.activity,
+                          value: null,
+                          onTap: handle == null
+                              ? null
+                              : () {
+                                  ref.read(playerStatsVisibleProvider.notifier).toggle();
+                                  setPanel(() {});
+                                },
+                          trailing: check(on: ref.read(playerStatsVisibleProvider)),
+                        ),
+                      ],
+                    );
+                  },
                 ),
-              DsMenuItem(
-                leading: const DsIcon(DsIcons.activity),
-                label: Text(t.player.statsToggle),
-                checked: ref.watch(playerStatsVisibleProvider),
-                onPressed: handle == null ? null : () => ref.read(playerStatsVisibleProvider.notifier).toggle(),
               ),
-              // The theatre needs the list column to float, which a narrow
-              // window has no room for and a mode that owns the window does
-              // not need. The pills row is only drawn in-page (the header's
-              // layout is gone once a mode owns the window), so this is
-              // where the verb is offered from.
-              if (!immersive)
-                DsMenuItem(
-                  leading: const DsIcon(DsIcons.layoutHeaderSidebarRight),
-                  label: Text(_theater ? t.room.theaterOff : t.room.theaterOn),
-                  onPressed: () => setState(() => _theater = !_theater),
-                ),
-              DsMenuItem(
-                leading: const DsIcon(DsIcons.repeat),
-                label: Text(t.common.previewLoop),
-                checked: _loop,
-                onPressed: handle == null ? null : () => unawaited(_setLoop(!_loop)),
-              ),
-              DsMenuItem(
-                leading: const DsIcon(DsIcons.slidersHorizontal),
-                label: Text(t.common.previewDanmakuSettings),
-                onPressed: _openDanmakuSettings,
-              ),
-            ],
-            builder: (context, controller, _) =>
-                PlayerBarButton(icon: DsIcons.ellipsisVertical, label: t.common.more, onPressed: controller.toggle),
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
   /// The bar's right end, the page's own verbs in the player's row: the
-  /// volume the page drives (a drag or a wheel sets it too), the speed, the
-  /// loop, the danmaku pair, and the two ways out of the box — the in-app
-  /// fullscreen first, the system's behind it, the room bar's own order.
+  /// volume the page drives (a drag or a wheel sets it too) and the window
+  /// pair. The frame copy and the floating mini window live at the
+  /// picture's top-right pill — the session verbs' own corner — so the bar
+  /// keeps no second copy of them.
   ///
-  /// A touch width has no room for a slider or the speed's number, so they
-  /// fold: the volume leaves (mute is the player's button at any width) and
-  /// the speed keeps its glyph.
+  /// A touch width has no room for a slider, so it folds: the volume leaves
+  /// (mute is the player's button at any width).
   List<Widget> _barActions(Translations t, {required bool compact}) {
     final handle = _handle;
+    final presentation = ref.watch(roomPresentationProvider);
+    final windowFullscreen = presentation == PresentationMode.windowFullscreen;
     // The bottom row's own verbs: the sound and the file. The volume slider
     // joins the transport's mute pill on a wide row; a narrow one keeps the
     // mute alone.
@@ -1715,72 +1864,27 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
           child: DsSlider(
             value: _volume,
             semanticLabel: t.player.volume,
+            style: const DsSliderStyle(
+              height: 24,
+              trackHeight: 4,
+              trackColor: OnVideoColors.track,
+              fillColor: OnVideoColors.foreground,
+              thumbColor: OnVideoColors.foreground,
+              thumbSize: 12,
+            ),
             onChanged: handle == null ? null : (value) => unawaited(_setVolume(value)),
           ),
         ),
-      // The sound-only mode, for a take the viewer is listening to.
-      PlayerBarButton(
-        icon: _audioOnly ? DsIcons.video : DsIcons.headphones,
-        label: _audioOnly ? t.player.restoreVideo : t.player.audioOnlyMode,
-        selected: _audioOnly,
-        onPressed: handle == null ? null : () => unawaited(_setAudioOnly(!_audioOnly)),
-      ),
-      // The replay switch, for a take watched in circles.
-      PlayerBarButton(
-        icon: DsIcons.repeat,
-        label: t.common.previewLoop,
-        selected: _loop,
-        onPressed: handle == null ? null : () => unawaited(_setLoop(!_loop)),
-      ),
-      // A frame of the take, into the screenshots folder.
-      PlayerBarButton(icon: DsIcons.camera, label: t.player.screenshot, onPressed: handle == null ? null : _screenshot),
-      // The floating mini window, where the handoff hands the take over.
-      if (_miniWindowReady)
-        PlayerBarButton(
-          icon: DsIcons.pictureInPicture,
-          label: t.player.pipOn,
-          onPressed: () => unawaited(_enterMiniWindow()),
-        ),
-    ];
-  }
-
-  /// The top row's verbs: the picture and window words — the speed, the
-  /// danmaku's pair, the way the picture fills the screen.
-  List<Widget> _barTopActions(Translations t, {required bool visible, required bool has, required bool loading}) {
-    final handle = _handle;
-    final presentation = ref.watch(roomPresentationProvider);
-    final windowFullscreen = presentation == PresentationMode.windowFullscreen;
-    return [
-      // The speed as a chip that says what it would set — a number a viewer
-      // chose is a state worth reading, not only a menu to open.
-      DsMenuAnchor(
-        semanticLabel: t.player.speed,
-        align: DsAlign.end,
-        items: [
-          for (final value in kPreviewRates)
-            DsMenuItem(
-              label: Text(playerRateLabel(value)),
-              checked: value == _rate,
-              onPressed: () => unawaited(_setRate(value)),
-            ),
-        ],
-        builder: (context, controller, _) => PlayerBarButton(
-          icon: DsIcons.timer,
-          label: playerRateLabel(_rate),
-          selected: _rate != 1,
-          onPressed: handle == null ? null : controller.toggle,
-        ),
-      ),
-      // The flying danmaku's switch beside the gear that opens its settings —
-      // the pair the room's bar draws at the reading end. Without a sidecar
-      // the switch stays in place but out of reach, and says why.
-      _danmakuBarCluster(t, has: has, visible: visible, loading: loading),
-      // The window's own verbs: the in-app fullscreen where a desktop can
-      // fill its window, and the system fullscreen whose button doubles as
-      // the way back out of whichever mode is active.
+      // The window's own verbs at the row's end, the room bar's pair: the
+      // in-app fullscreen where a desktop can fill its window, and the
+      // system fullscreen whose button doubles as the way back out of
+      // whichever mode is active. The sound-only mode and the replay switch
+      // read in the more menu, where the quieter verbs live.
       if (_desktop)
         PlayerBarButton(
-          icon: windowFullscreen ? DsIcons.copy : DsIcons.square,
+          // The window's own shape with the arrows that say which way it
+          // goes — the pair every player's bar wears.
+          icon: windowFullscreen ? DsIcons.squareShrinkUpLeftDownRight : DsIcons.squareExpandUpRightDownLeft,
           label: windowFullscreen ? t.player.windowFullscreenOff : t.player.windowFullscreenOn,
           selected: windowFullscreen,
           onPressed: handle == null ? null : () => unawaited(_toggleWindowFullscreen()),
@@ -1792,36 +1896,6 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
         onPressed: handle == null ? null : () => unawaited(_toggleFullscreen()),
       ),
     ];
-  }
-
-  /// The flying danmaku's pair — the on/off glyph the room's bar draws, and
-  /// the gear that opens its settings — the same SVG marks the room bar
-  /// serves, so the two players read as one app's controls. Without a
-  /// sidecar the switch stays in place but out of reach, and says why.
-  Widget _danmakuBarCluster(Translations t, {required bool has, required bool visible, required bool loading}) {
-    final on = has && visible;
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      spacing: DsSpace.s4,
-      children: [
-        PlayerBarButton(
-          iconAsset: on ? 'assets/icons/danmaku-on.svg' : 'assets/icons/danmaku-off.svg',
-          label: loading
-              ? t.common.previewDanmakuLoading
-              : has
-              ? (visible ? t.common.danmakuOff : t.common.danmakuOn)
-              : t.common.previewDanmakuOff,
-          onPressed: has
-              ? () => unawaited(ref.read(playbackSettingsProvider.notifier).setDanmakuVisible(value: !visible))
-              : null,
-        ),
-        PlayerBarButton(
-          iconAsset: 'assets/icons/danmaku-settings.svg',
-          label: t.settings.navDanmaku,
-          onPressed: _openDanmakuSettings,
-        ),
-      ],
-    );
   }
 
   /// Whether this host offers the in-app window-fullscreen button: a desktop

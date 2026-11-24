@@ -32,7 +32,6 @@ import 'package:pure_live/modules/huya/controller/huya_video.dart';
 import 'package:pure_live/modules/huya/controller/huya_video_playback.dart';
 import 'package:pure_live/modules/live/archive/archive_progress.dart';
 import 'package:pure_live/modules/live/room/page/chat_splitter.dart' show ChatSplitter;
-import 'package:pure_live/modules/live/room/panels/room_panel.dart' show showRoomSleepTimer;
 import 'package:pure_live/modules/live/room/player/sleep_timer.dart' show SleepTimerController, sleepTimerProvider;
 import 'package:pure_live/modules/vod/widgets/vod_picture_gestures.dart' show VodPictureGestures, VodTapSide;
 import 'package:pure_live/modules/vod/widgets/vod_player_chrome.dart' show VodGestureKind, VodGestureTip, VodSeekBar;
@@ -65,11 +64,17 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
   HuyaVideoPlaybackController? _controller;
   final GlobalKey _qualityAnchor = GlobalKey();
   final GlobalKey _speedAnchor = GlobalKey();
+  final GlobalKey _listAnchor = GlobalKey();
   final GlobalKey _barAnchor = GlobalKey();
 
-  /// The bar panel standing now (quality, speed); a tap anywhere else puts
-  /// it away.
+  /// The bar panel standing now (quality, speed, list); a tap anywhere else
+  /// puts it away.
   String? _openPanel;
+
+  /// The watching lock, the room's own rule: locked, the strip, the bar and
+  /// the picture's gestures all stand down, and the unlock pill on the
+  /// picture's right edge is the only thing left to press.
+  bool _locked = false;
   bool _disposed = false;
   bool _startFailed = false;
 
@@ -150,6 +155,9 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
     ref.listenManual(roomPresentationProvider, (_, next) => _presentationMode = next, fireImmediately: true);
     // The sleep timer must stop this video, not some global notion of one.
     _sleepTimerNotifier = ref.read(sleepTimerProvider.notifier);
+    // A timer armed with no player alive (the settings' ASMR dialog) dies
+    // here: this page owns the fire now and inherits no leftover.
+    Timer.run(() => _sleepTimerNotifier.start(null));
     _sleepTimerNotifier.onFire_ = _onSleepFire;
     _kernel = ref.read(playerKernelProvider);
     WidgetsBinding.instance.addObserver(this);
@@ -205,6 +213,9 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
         session: handle,
         detail: detail,
         progress: ArchiveProgress(),
+        // The module's own volume: what huya's player starts on, not what
+        // the room or the channel left behind.
+        initialVolume: ref.read(modulePlaybackSettingsProvider(PlayerModule.huya)).volume,
       );
       _bind(handle);
       // A playing mini window belongs to the video the viewer just left; a
@@ -457,6 +468,8 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
   /// The overlay bar's clock: a pointer awake or a paused video holds it, an
   /// idle one settles it after the station's own seconds, whose zero is 常显.
   void _wake() {
+    // A hover landing after dispose says nothing to a dead state.
+    if (!mounted) return;
     _hideTimer?.cancel();
     if (!_controlsVisible) setState(() => _controlsVisible = true);
     _scheduleHide();
@@ -471,6 +484,19 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
     }
   }
 
+  /// The watching lock: taking it puts the panels away first, and locked the
+  /// strip, the bar and the gestures stand down until the unlock pill says
+  /// otherwise — the room's and the channel's own rule.
+  void _toggleLock() {
+    if (!_locked && _openPanel != null) setState(() => _openPanel = null);
+    setState(() => _locked = !_locked);
+    if (_locked) {
+      _hideTimer?.cancel();
+      return;
+    }
+    _wake();
+  }
+
   /// Whether this display is the TV form factor: its chrome never hides on
   /// idle, the room's keepControls rule — the remote's focus walk is the
   /// only way through the bar, and a bar that folds under a focused button
@@ -478,11 +504,14 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
   bool get _isTv => ref.read(platformRuntimeProvider).environment.runtime.formFactor == FormFactor.tv;
 
   void _scheduleHide() {
+    // The tracker still walks the regions a leaving page owned: its exit
+    // lands here after dispose, and a dead state reads no store.
+    if (!mounted) return;
     _hideTimer?.cancel();
     // The TV's chrome never hides on idle (see _isTv).
     if (_isTv) return;
     if (!(_transport?.isPlaying ?? false)) return;
-    final seconds = ref.read(playbackSettingsProvider).controlsAutoHideSeconds;
+    final seconds = ref.read(modulePlaybackSettingsProvider(PlayerModule.huya)).controlsAutoHideSeconds;
     // The setting's zero is 常显: the bar never hides on idle while the
     // video plays.
     if (seconds <= 0) return;
@@ -630,6 +659,8 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
     if (handle == null) return;
     if (_muted) setState(() => _muted = false);
     await handle.setVolume(value);
+    // The module remembers it: the next huya video opens here.
+    unawaited(ref.read(modulePlaybackSettingsProvider(PlayerModule.huya).notifier).setVolume(value));
   }
 
   @override
@@ -874,7 +905,9 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
     final handle = _handle;
     final playing = _transport?.isPlaying ?? false;
     _syncScreenWake(playing && ref.watch(keepScreenOnProvider));
-    final showBar = _controlsVisible || !playing;
+    // Locked, nothing rides the picture: the unlock pill on the right edge
+    // is the whole chrome, the room's own rule.
+    final showBar = !_locked && (_controlsVisible || !playing);
     return ClipRRect(
       borderRadius: BorderRadius.circular(immersive ? 0 : theme.radii.overlay),
       child: ColoredBox(
@@ -893,7 +926,7 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
                   if (handle != null) MediaPlayerView(handle: handle),
                   Positioned.fill(
                     child: VodPictureGestures(
-                      enabled: controller != null,
+                      enabled: controller != null && !_locked,
                       onTap: _toggleControls,
                       onDoubleTap: _onDoubleTap,
                       onScrub: _onScrub,
@@ -937,6 +970,45 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
                       start: 0,
                       end: 0,
                       child: _strip(context, detail, immersive: immersive),
+                    ),
+                  // The picture's right edge, the room column's shape: the
+                  // frame's copy above the download — the picture's own
+                  // actions one thumb from the frame's side.
+                  // The picture's right edge (the room's lock column): the
+                  // frame copy above the lock. Locked, the unlock pill is
+                  // the only thing drawn, whatever the page does next; the
+                  // download lives in the more container now.
+                  if (showBar || _locked)
+                    PositionedDirectional(
+                      end: DsSpace.s12,
+                      top: 0,
+                      bottom: 0,
+                      child: Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          spacing: DsSpace.s8,
+                          children: [
+                            if (!_locked && (_handle?.canCaptureScreenshot ?? false))
+                              PlayerGlassPill(
+                                child: PlayerBarButton(
+                                  icon: DsIcons.camera,
+                                  label: context.t.player.screenshot,
+                                  onPressed: () {
+                                    _wake();
+                                    unawaited(_screenshot());
+                                  },
+                                ),
+                              ),
+                            PlayerGlassPill(
+                              child: PlayerBarButton(
+                                icon: _locked ? DsIcons.unlock : DsIcons.lock,
+                                label: _locked ? context.t.room.unlockControls : context.t.room.lockControls,
+                                onPressed: _toggleLock,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   if (showBar)
                     PositionedDirectional(
@@ -1009,6 +1081,62 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
                                   },
                                 ),
                             ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  // The related list's own panel: the bar's list chip hangs
+                  // it over the picture, and a pick replaces the picture —
+                  // the page's rail and this panel read one provider.
+                  if (showBar && _openPanel == 'list')
+                    Positioned.fill(
+                      child: PlayerPanelHost(
+                        anchorKey: _listAnchor,
+                        barKey: _barAnchor,
+                        width: 260,
+                        child: MouseRegion(
+                          onEnter: (_) => _hideTimer?.cancel(),
+                          onExit: (_) => _scheduleHide(),
+                          child: Builder(
+                            builder: (context) {
+                              final related = ref.watch(huyaRelatedProvider(widget.id));
+                              final videos = related.value ?? const <HuyaVideo>[];
+                              return PlayerOverlayPanel(
+                                title: t.huya.related,
+                                children: [
+                                  if (related.hasError)
+                                    PlayerPanelOption(
+                                      label: t.huya.relatedEmpty,
+                                      selected: false,
+                                      onPressed: () => ref.invalidate(huyaRelatedProvider(widget.id)),
+                                    )
+                                  else if (videos.isEmpty)
+                                    Padding(
+                                      padding: const EdgeInsetsDirectional.symmetric(
+                                        horizontal: DsSpace.s12,
+                                        vertical: DsSpace.s6,
+                                      ),
+                                      child: Text(
+                                        t.huya.relatedEmpty,
+                                        style: DsTheme.of(
+                                          context,
+                                        ).typography.caption.copyWith(color: OnVideoColors.inkSubtle),
+                                      ),
+                                    )
+                                  else
+                                    for (final video in videos)
+                                      PlayerPanelOption(
+                                        label: video.title,
+                                        detail: video.duration > Duration.zero ? vodDurationText(video.duration) : null,
+                                        selected: video.id == widget.id,
+                                        onPressed: () {
+                                          setState(() => _openPanel = null);
+                                          _openRelated(video.id);
+                                        },
+                                      ),
+                                ],
+                              );
+                            },
                           ),
                         ),
                       ),
@@ -1122,27 +1250,10 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
     final theme = DsTheme.of(context);
     final presentation = ref.watch(roomPresentationProvider);
     final pipAvailable = _handle != null && ref.read(roomPresentationProvider.notifier).pipAvailable;
+    // The cluster keeps the where-to verbs and the more door in one glass
+    // pill — the room's own single form, never two pills drifting apart.
+    // The frame's copy lives on the picture's right edge with the lock.
     final actions = <Widget>[
-      // The video hands itself to the app-wide download queue; the rendition
-      // being watched is the one the task asks for.
-      if (detail?.video case final video?)
-        PlayerBarButton(
-          icon: DsIcons.download,
-          label: t.player.download,
-          onPressed: () {
-            _wake();
-            unawaited(_startDownload(video));
-          },
-        ),
-      if (_handle?.canCaptureScreenshot ?? false)
-        PlayerBarButton(
-          icon: DsIcons.camera,
-          label: t.player.screenshot,
-          onPressed: () {
-            _wake();
-            unawaited(_screenshot());
-          },
-        ),
       // In the small window the leading pill is the way back, so the pill
       // here would be the same verb twice.
       if (pipAvailable && presentation != PresentationMode.pip)
@@ -1154,9 +1265,9 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
             unawaited(_togglePip());
           },
         ),
-      // The mini window rides the cluster as the fourth destination — keep
-      // the frame, download it, copy it, shrink it to a corner of the app.
-      if (_miniWindowReady)
+      // The compact window is a settings-governed verb: off, the cluster
+      // carries no 小窗 chip at all.
+      if (_miniWindowReady && ref.watch(playbackSettingsProvider.select((settings) => settings.floatWindow)))
         PlayerBarButton(
           icon: DsIcons.appWindow,
           label: t.common.miniWindow,
@@ -1166,53 +1277,55 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
           },
         ),
     ];
-    final actionPill = actions.isEmpty
-        ? const SizedBox.shrink()
-        : PlayerGlassPill(
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              spacing: PlayerBarTier.tvOf(context) ? DsSpace.s8 : DsSpace.s4,
-              children: actions,
-            ),
-          );
-    final morePill = PlayerGlassPill(
-      child: PlayerBarButton(
-        icon: DsIcons.ellipsisVertical,
-        label: t.common.more,
-        onPressed: () {
-          _wake();
-          unawaited(
-            showPlayerMoreContainer(
-              context,
-              content: (context, {required labeled}) => _HuyaMoreContent(labeled: labeled),
-            ),
-          );
-        },
-      ),
-    );
-    final titleText = Flexible(
-      child: Text(
-        detail?.video.title ?? t.common.moduleHuya,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: theme.typography.bodyStrong.copyWith(color: OnVideoColors.foreground),
+    final clusterPill = PlayerGlassPill(
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        spacing: PlayerBarTier.tvOf(context) ? DsSpace.s8 : DsSpace.s4,
+        children: [
+          ...actions,
+          PlayerBarButton(
+            icon: DsIcons.ellipsisVertical,
+            label: t.common.more,
+            onPressed: () {
+              _wake();
+              unawaited(
+                showPlayerMoreContainer(
+                  context,
+                  content: (context, {required labeled}) => _HuyaMoreContent(
+                    labeled: labeled,
+                    // The download's home since the lock took the edge:
+                    // the rendition being watched is the one the task asks
+                    // for.
+                    onDownload: switch (detail?.video) {
+                      final video? => () => unawaited(_startDownload(video)),
+                      _ => null,
+                    },
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
       ),
     );
     if (!immersive) {
-      final backPill = PlayerGlassPill(
-        child: PlayerBarButton(
-          icon: DsIcons.arrowLeft,
-          label: t.common.back,
-          onPressed: () {
-            _wake();
-            if (Navigator.of(context).canPop()) Navigator.of(context).pop();
-          },
-        ),
-      );
       return Container(
         padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s8, DsSpace.s8, DsSpace.s12, DsSpace.s20),
         decoration: BoxDecoration(gradient: OnVideoColors.shade(edge: VerticalDirection.up)),
-        child: Row(spacing: DsSpace.s8, children: [backPill, titleText, const Spacer(), actionPill, morePill]),
+        child: Row(
+          spacing: DsSpace.s8,
+          children: [
+            PlayerCapsuleHead(
+              title: detail?.video.title ?? t.common.moduleHuya,
+              onBack: () {
+                _wake();
+                if (Navigator.of(context).canPop()) Navigator.of(context).pop();
+              },
+            ),
+            const Spacer(),
+            clusterPill,
+          ],
+        ),
       );
     }
     return Container(
@@ -1235,7 +1348,7 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
                     },
                   )
                 : PlayerBarButton(
-                    icon: DsIcons.minimize2,
+                    icon: DsIcons.minimize,
                     label: t.room.fullscreenOff,
                     autofocus: true,
                     onPressed: () => unawaited(_toggleFullscreen()),
@@ -1267,8 +1380,7 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
               ),
             ),
           ),
-          actionPill,
-          morePill,
+          clusterPill,
           // The small window's own close: done watching here means the window
           // goes, and the page stays where its host left it. A window that
           // cannot close carries no verb.
@@ -1300,103 +1412,148 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
     final handle = _handle;
     if (controller == null || handle == null) return const SizedBox(height: 56);
     final tv = PlayerBarTier.tvOf(context);
-    final compact = !tv && MediaQuery.sizeOf(context).width < kPlaybackCompactBreakpoint;
     final presentation = ref.watch(roomPresentationProvider);
     final playing = _transport?.isPlaying ?? false;
     final position = _transport?.position ?? Duration.zero;
     final total = controller.duration > Duration.zero ? controller.duration : Duration.zero;
-    final bar = Row(
-      spacing: tv ? DsSpace.s8 : DsSpace.s4,
-      children: [
-        PlayerBarButton(
-          icon: playing ? DsIcons.pause : DsIcons.play,
-          label: playing ? t.player.pause : t.player.play,
-          onPressed: () {
-            _wake();
-            unawaited(controller.togglePlayPause());
-          },
-        ),
-        // The bar owns the sound the way the live room's does: the mute
-        // button and the slider beside it, the slider speaking past a mute.
-        PlayerBarButton(
-          label: _muted ? t.player.unmute : t.player.mute,
-          icon: _muted ? DsIcons.volumeX : DsIcons.volume2,
-          onPressed: () {
-            _wake();
-            unawaited(_toggleMute());
-          },
-        ),
-        SizedBox(
-          width: compact ? 72 : 96,
-          child: DsSlider(
-            value: handle.volume,
-            style: const DsSliderStyle(
-              height: 24,
-              trackHeight: 4,
-              trackColor: OnVideoColors.track,
-              fillColor: OnVideoColors.foreground,
-              thumbColor: OnVideoColors.foreground,
-              thumbSize: 12,
+    // The bar's three groups under the shared rule: the transport with the
+    // window verbs on one line, the catalogues folding to their own line
+    // below — two rows at the narrow widths, never a horizontal scroll. The
+    // bar's own width is the ladder's ruler, the one every surface reads:
+    // the volume slider 96 px when the bar is roomy, 72 when it bends, and
+    // gone under 480, where the mute and the wheel still carry the sound.
+    final bar = LayoutBuilder(
+      builder: (context, barConstraints) {
+        final barWidth = barConstraints.maxWidth;
+        final volumeWidth = barWidth >= 720 ? 96.0 : (barWidth >= 480 ? 72.0 : null);
+        return PlayerBarRows(
+      // Two rows at every width: the transport on the first, the catalogue
+      // (quality, pace, the related list) along the bottom edge on the
+      // second — the pace never hides at the wide row's right end.
+      foldWidth: double.infinity,
+      gap: tv ? DsSpace.s8 : DsSpace.s4,
+      start: Row(
+        spacing: tv ? DsSpace.s8 : DsSpace.s4,
+        children: [
+          PlayerBarButton(
+            icon: playing ? DsIcons.pause : DsIcons.play,
+            label: playing ? t.player.pause : t.player.play,
+            onPressed: () {
+              _wake();
+              unawaited(controller.togglePlayPause());
+            },
+          ),
+          // The bar owns the sound the way the live room's does: the mute
+          // button and the slider beside it, the slider speaking past a mute.
+          PlayerBarButton(
+            label: _muted ? t.player.unmute : t.player.mute,
+            icon: _muted ? DsIcons.volumeX : DsIcons.volume2,
+            onPressed: () {
+              _wake();
+              unawaited(_toggleMute());
+            },
+          ),
+          if (volumeWidth != null)
+            SizedBox(
+              width: volumeWidth,
+              child: DsSlider(
+                value: handle.volume,
+                style: const DsSliderStyle(
+                  height: 24,
+                  trackHeight: 4,
+                  trackColor: OnVideoColors.track,
+                  fillColor: OnVideoColors.foreground,
+                  thumbColor: OnVideoColors.foreground,
+                  thumbSize: 12,
+                ),
+                onChanged: (value) {
+                  _wake();
+                  unawaited(_setVolume(value));
+                },
+                semanticLabel: t.player.volume,
+              ),
             ),
-            onChanged: (value) {
-              _wake();
-              unawaited(_setVolume(value));
-            },
-            semanticLabel: t.player.volume,
-          ),
-        ),
-        const Spacer(),
-        if (controller.qualities.length > 1)
+        ],
+      ),
+      middle: Row(
+        spacing: tv ? DsSpace.s8 : DsSpace.s4,
+        children: [
+          if (controller.qualities.length > 1)
+            PlayerBarChoice(
+              anchorKey: _qualityAnchor,
+              label: t.player.quality,
+              value:
+                  controller.qualities.where((item) => item.id == controller.qualityId).firstOrNull?.label ??
+                  t.player.quality,
+              icon: DsIcons.gauge,
+              selected: _openPanel == 'quality',
+              onPressed: () {
+                _wake();
+                setState(() => _openPanel = _openPanel == 'quality' ? null : 'quality');
+              },
+            ),
           PlayerBarChoice(
-            anchorKey: _qualityAnchor,
-            label: t.player.quality,
-            value:
-                controller.qualities.where((item) => item.id == controller.qualityId).firstOrNull?.label ??
-                t.player.quality,
-            icon: DsIcons.gauge,
-            selected: _openPanel == 'quality',
+            anchorKey: _speedAnchor,
+            label: t.player.speed,
+            value: playerRateLabel(controller.rate),
+            icon: DsIcons.timer,
+            selected: _openPanel == 'speed',
             onPressed: () {
               _wake();
-              setState(() => _openPanel = _openPanel == 'quality' ? null : 'quality');
+              setState(() => _openPanel = _openPanel == 'speed' ? null : 'speed');
             },
           ),
-        PlayerBarChoice(
-          anchorKey: _speedAnchor,
-          label: t.player.speed,
-          value: playerRateLabel(controller.rate),
-          icon: DsIcons.timer,
-          selected: _openPanel == 'speed',
-          onPressed: () {
-            _wake();
-            setState(() => _openPanel = _openPanel == 'speed' ? null : 'speed');
-          },
+          // The related list's chip: the same catalogue the page's rail
+          // reads, hung off the bar so a change of video never leaves the
+          // picture.
+          PlayerBarChoice(
+            anchorKey: _listAnchor,
+            label: t.huya.related,
+            value: controller.video.title.isEmpty ? t.huya.related : controller.video.title,
+            icon: DsIcons.listVideo,
+            selected: _openPanel == 'list',
+            onPressed: () {
+              _wake();
+              setState(() => _openPanel = _openPanel == 'list' ? null : 'list');
+            },
+          ),
+        ],
+      ),
+      end: Row(
+        spacing: tv ? DsSpace.s8 : DsSpace.s4,
+        children: [
+          // The window verbs, then the way out of the picture's box — the room
+          // bar's pair: the desktop's window-fullscreen first, then the system
+          // fullscreen the phone turns for. The window's own shape with the
+          // arrows that say which way it goes.
+          if (_desktop && presentation != PresentationMode.pip)
+            PlayerBarButton(
+              icon: presentation == PresentationMode.windowFullscreen
+                  ? DsIcons.squareShrinkUpLeftDownRight
+                  : DsIcons.squareExpandUpRightDownLeft,
+              label: presentation == PresentationMode.windowFullscreen
+                  ? t.player.windowFullscreenOff
+                  : t.player.windowFullscreenOn,
+              selected: presentation == PresentationMode.windowFullscreen,
+              onPressed: () {
+                _wake();
+                unawaited(_toggleWindowFullscreen());
+              },
+            ),
+          if (presentation != PresentationMode.pip)
+            PlayerBarButton(
+              icon: presentation == PresentationMode.fullscreen ? DsIcons.minimize : DsIcons.maximize,
+              label: presentation == PresentationMode.fullscreen ? t.room.fullscreenOff : t.room.fullscreenOn,
+              selected: presentation == PresentationMode.fullscreen,
+              onPressed: () {
+                _wake();
+                unawaited(_toggleFullscreen());
+              },
+            ),
+        ],
         ),
-        // The window verbs, then the way out of the picture's box — the room
-        // bar's pair: the desktop's window-fullscreen first, then the system
-        // fullscreen the phone turns for.
-        if (_desktop && presentation != PresentationMode.pip)
-          PlayerBarButton(
-            icon: presentation == PresentationMode.windowFullscreen ? DsIcons.copy : DsIcons.square,
-            label: presentation == PresentationMode.windowFullscreen
-                ? t.player.windowFullscreenOff
-                : t.player.windowFullscreenOn,
-            selected: presentation == PresentationMode.windowFullscreen,
-            onPressed: () {
-              _wake();
-              unawaited(_toggleWindowFullscreen());
-            },
-          ),
-        if (presentation != PresentationMode.pip)
-          PlayerBarButton(
-            icon: presentation == PresentationMode.fullscreen ? DsIcons.minimize : DsIcons.maximize,
-            label: presentation == PresentationMode.fullscreen ? t.room.fullscreenOff : t.room.fullscreenOn,
-            selected: presentation == PresentationMode.fullscreen,
-            onPressed: () {
-              _wake();
-              unawaited(_toggleFullscreen());
-            },
-          ),
-      ],
+        );
+      },
     );
     return PlayerControlBar(
       key: _barAnchor,
@@ -1412,11 +1569,12 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
             seekBar: VodSeekBar(
               position: position,
               duration: total,
+              buffered: _transport?.buffer.ranges ?? const [],
               coverUrl: controller.video.cover.isEmpty ? null : controller.video.cover,
               onSeek: (seconds) => unawaited(controller.seek(Duration(milliseconds: (seconds * 1000).round()))),
             ),
           ),
-          if (compact) SingleChildScrollView(scrollDirection: Axis.horizontal, child: bar) else bar,
+          bar,
         ],
       ),
     );
@@ -1690,15 +1848,21 @@ final class _ColumnDoor extends StatelessWidget {
 /// for: the timer that ends a long video by itself and the auto-hide pace,
 /// the setting the bar already obeys but no video surface could reach before.
 final class _HuyaMoreContent extends ConsumerWidget {
-  const _HuyaMoreContent({required this.labeled});
+  const _HuyaMoreContent({required this.labeled, this.onDownload});
 
   /// Whether the group labels show — the sheet keeps them on.
   final bool labeled;
 
+  /// Hands the video to the download queue; null hides the row.
+  final VoidCallback? onDownload;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
-    final settings = ref.watch(playbackSettingsProvider);
+    // The module's own settings: the pace and the timer this page reads and
+    // writes are huya's, not the room's.
+    final settings = ref.watch(modulePlaybackSettingsProvider(PlayerModule.huya));
+    final sleepMinutes = ref.watch(sleepTimerProvider).minutes;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -1709,27 +1873,51 @@ final class _HuyaMoreContent extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             spacing: DsSpace.s4,
             children: [
-              // A long video ends itself: the timer's panel reads the same
-              // choices the room's reads, and its fire pauses the video where
-              // it stands.
+              // The download's home since the lock took the edge: the
+              // rendition being watched is the one the task asks for.
+              if (onDownload != null)
+                PlayerMoreRow(
+                  label: t.player.download,
+                  leading: DsIcons.download,
+                  value: null,
+                  onTap: onDownload,
+                ),
+              // A long video ends itself: the choices stand in the row, the
+              // room's own ASMR panel stays with the room.
               PlayerMoreRow(
                 label: t.player.sleep,
-                value: t.player.sleepOff,
-                onTap: () => unawaited(showRoomSleepTimer(context)),
+                leading: DsIcons.timer,
+                value: null,
+                onTap: null,
+                trailing: PlayerMoreSeg<int>(
+                  values: const [0, 15, 30, 60, 90],
+                  labels: [
+                    t.player.sleepOff,
+                    asmrSleepDurationLabel(15),
+                    asmrSleepDurationLabel(30),
+                    asmrSleepDurationLabel(60),
+                    asmrSleepDurationLabel(90),
+                  ],
+                  current: sleepMinutes ?? 0,
+                  onPick: (value) => ref.read(sleepTimerProvider.notifier).start(value == 0 ? null : value),
+                ),
               ),
-              // The auto-hide pace: the reference's segments — 常显, then the
-              // four delays — the same setting and the same words the room's
-              // container reads.
+              // The auto-hide pace: the segments — 常显, then the four
+              // delays — written to huya's own store, not the room's.
               PlayerMoreRow(
                 label: t.settings.controlsAutoHide,
+                leading: DsIcons.clock,
                 value: null,
                 onTap: null,
                 trailing: PlayerMoreSeg(
                   values: const [0, 2, 4, 6, 10],
                   labels: [t.settings.controlsAutoHideAlways, '2s', '4s', '6s', '10s'],
                   current: settings.controlsAutoHideSeconds,
-                  onPick: (value) =>
-                      unawaited(ref.read(playbackSettingsProvider.notifier).setControlsAutoHideSeconds(value)),
+                  onPick: (value) => unawaited(
+                    ref.read(modulePlaybackSettingsProvider(PlayerModule.huya).notifier).setControlsAutoHideSeconds(
+                      value,
+                    ),
+                  ),
                 ),
               ),
             ],

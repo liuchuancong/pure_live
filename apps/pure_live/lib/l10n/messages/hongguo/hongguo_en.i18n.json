@@ -32,6 +32,7 @@
   "firstEpisode": "This is the first episode",
   "lastEpisode": "This is the last episode",
   "nextEpisode": "Next episode",
+  "previousEpisode": "Previous episode",
   "expand": "More",
   "collapse": "Less",
   "boardAll": "All",

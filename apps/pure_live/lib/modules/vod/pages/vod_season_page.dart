@@ -38,7 +38,7 @@ import 'package:pure_live/shared/player/on_video_colors.dart';
 import 'package:pure_live/shared/player/playback_layout.dart' show kPlaybackWideBreakpoint;
 import 'package:pure_live/shared/player/player_bar_choice.dart' show PlayerBarChoice;
 import 'package:pure_live/shared/player/player_bar_tier.dart' show PlayerBarButton, PlayerBarTier;
-import 'package:pure_live/shared/player/player_control_bar.dart' show PlayerControlBar;
+import 'package:pure_live/shared/player/player_control_bar.dart' show PlayerBarRows, PlayerControlBar;
 import 'package:pure_live/shared/player/player_overlay.dart'
     show PlayerGlassPill, PlayerOverlayPanel, PlayerPanelHost, PlayerPanelOption;
 import 'package:pure_live/shared/player/player_seek_layer.dart' show PlayerSeekLayer;
@@ -53,13 +53,17 @@ import 'package:pure_live/shared/shared.dart'
         HeroPlayDisc,
         LiveWindow,
         PlaybackLayout,
+        PlayerCapsuleHead,
         PlayerIdleProgress,
+        PlayerMoreRow,
         RoomCoverChip,
         SectionHeader,
         cachedImage,
         capturePlayerFrame,
         kPlaybackCompactBreakpoint,
         kRoomCoverScrim,
+        playerStatsVisibleProvider,
+        showPlayerMoreContainer,
         silencePlayer;
 import 'package:share_plus/share_plus.dart' show ShareParams, SharePlus;
 
@@ -97,12 +101,22 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
 
   /// The quality picker's box; the bar's panel language hangs from it.
   final GlobalKey _qualityAnchor = GlobalKey();
+  final GlobalKey _speedAnchor = GlobalKey();
 
   /// The bar's box; the panel host measures its card against it.
   final GlobalKey _barAnchor = GlobalKey();
 
+  /// The episodes catalogue's chip: the cluster's list button, whose panel
+  /// hangs centred above the pill.
+  final GlobalKey _episodesAnchor = GlobalKey();
+
   /// The bar panel standing now; a tap anywhere else puts it away.
   String? _openPanel;
+
+  /// The watching lock, the room's own rule: locked, the strip, the bar and
+  /// the picture's gestures all stand down, and the unlock pill on the
+  /// picture's right edge is the only thing left to press.
+  bool _locked = false;
 
   /// The pointer's answers: the chip a gesture left on the picture, the sound
   /// and the rate a drag or a hold is setting, and the bar's own patience. The
@@ -218,7 +232,7 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
     _qn = setting < _defaultQn ? _defaultQn : setting;
     // The sound and rate the picture starts with, and whether this display
     // will take a brightness write at all.
-    _volume = ref.read(playbackSettingsProvider.notifier).volume;
+    _volume = ref.read(modulePlaybackSettingsProvider(PlayerModule.vod)).volume;
     _speed = ref.read(vodPlaybackSettingsProvider).speed.value;
     // The background rule the video page plays by: the gate decides whether
     // leaving the app pauses this picture, and what resumes it.
@@ -564,6 +578,19 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
     }
   }
 
+  /// The watching lock: taking it puts the panels away first, and locked the
+  /// strip, the bar and the gestures stand down until the unlock pill says
+  /// otherwise — the room's and the channel's own rule.
+  void _toggleLock() {
+    if (!_locked && _openPanel != null) setState(() => _openPanel = null);
+    setState(() => _locked = !_locked);
+    if (_locked) {
+      _hideTimer?.cancel();
+      return;
+    }
+    _wake();
+  }
+
   /// A playing episode lets its bars down after a moment's rest; a paused one
   /// keeps them, because a stopped picture has nothing else to read.
   /// Whether this display is the TV form factor: its chrome never hides on
@@ -573,11 +600,18 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
   bool get _isTv => ref.read(platformRuntimeProvider).environment.runtime.formFactor == FormFactor.tv;
 
   void _scheduleHide() {
+    // The tracker still walks the regions a leaving page owned: its exit
+    // lands here after dispose, and a dead state reads no store.
+    if (!mounted) return;
     _hideTimer?.cancel();
     // The TV's chrome never hides on idle (see _isTv).
     if (_isTv) return;
     if (!(_transport?.isPlaying ?? false)) return;
-    _hideTimer = Timer(const Duration(seconds: 3), () {
+    // The viewer's own rest length, the setting every surface reads — its
+    // zero is 常显, the bar never hides on idle while the video plays.
+    final seconds = ref.read(modulePlaybackSettingsProvider(PlayerModule.vod)).controlsAutoHideSeconds;
+    if (seconds <= 0) return;
+    _hideTimer = Timer(Duration(seconds: seconds), () {
       if (mounted && (_transport?.isPlaying ?? false)) setState(() => _controlsVisible = false);
     });
   }
@@ -660,6 +694,8 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
     final handle = _handle;
     if (handle == null) return;
     setState(() => _volume = value);
+    // The module remembers it: the next episode opens here.
+    unawaited(ref.read(modulePlaybackSettingsProvider(PlayerModule.vod).notifier).setVolume(value));
     try {
       await handle.setVolume(value);
     } on Object {
@@ -1121,37 +1157,23 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
     unawaited(_openEpisode(episodes[position]));
   }
 
-  /// The picture verbs over the picture: the ladder's jump, the frame copy,
-  /// the two small windows — one pill, on every stage size this page draws.
+  /// The picture verbs over the picture: the two small windows, then the
+  /// more door — one pill, on every stage size this page draws. The frame
+  /// copy lives on the picture's right edge with the lock; the episode's
+  /// download lives in the more container now. The catalogues — the
+  /// episodes among them — live on the bar's middle row, where every
+  /// player keeps them; the strip carries only the window verbs.
   List<Widget> _pictureVerbs(Translations t) => [
-    if (_seasonDetail != null && _seasonDetail!.episodes.length > 1)
-      PlayerBarButton(
-        icon: DsIcons.listVideo,
-        label: t.vod.episodesJump,
-        onPressed: () {
-          _wake();
-          unawaited(_jumpEpisode());
-        },
-      ),
-    if (_handle?.canCaptureScreenshot ?? false)
-      PlayerBarButton(
-        icon: DsIcons.camera,
-        label: t.player.screenshot,
-        onPressed: () {
-          _wake();
-          unawaited(_screenshot());
-        },
-      ),
     if (_handle != null && ref.read(roomPresentationProvider.notifier).pipAvailable)
       PlayerBarButton(
-        iconAsset: 'assets/icons/pip.svg',
+        icon: DsIcons.pictureInPicture,
         label: t.player.pipOn,
         onPressed: () {
           _wake();
           unawaited(_togglePip());
         },
       ),
-    if (_pictureVerbsReady)
+    if (_pictureVerbsReady && ref.watch(playbackSettingsProvider.select((settings) => settings.floatWindow)))
       PlayerBarButton(
         icon: DsIcons.appWindow,
         label: t.common.miniWindow,
@@ -1160,7 +1182,75 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
           unawaited(_enterMiniWindow());
         },
       ),
+    PlayerBarButton(
+      icon: DsIcons.ellipsisVertical,
+      label: t.common.more,
+      onPressed: () {
+        _wake();
+        unawaited(
+          showPlayerMoreContainer(
+            context,
+            content: (context, {required labeled}) => _seasonMoreContent(context.t),
+          ),
+        );
+      },
+    ),
   ];
+
+  /// The more container's rows: the episode's download — the home it took
+  /// when the lock claimed the edge — and the stream's own numbers. The
+  /// StatefulBuilder is the panel's own redraw, so a download's percent and
+  /// the switch read fresh on every pick.
+  Widget _seasonMoreContent(Translations t) {
+    final handle = _handle;
+    return StatefulBuilder(
+      builder: (context, setPanel) {
+        final download = _episodeDownload(_episode);
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          spacing: DsSpace.s4,
+          children: [
+            PlayerMoreRow(
+              label: t.player.download,
+              leading: DsIcons.download,
+              value: switch (download) {
+                final task? when task.phase == VodDownloadPhase.running || task.phase == VodDownloadPhase.queued =>
+                  task.progress == null
+                      ? t.settings.downloadPercentUnknown
+                      : t.settings.downloadPercent(percent: '${(task.progress! * 100).round()}'),
+                _ => null,
+              },
+              onTap: (_episode?.cid ?? 0) <= 0
+                  ? null
+                  : () {
+                      Navigator.of(context).pop();
+                      _wake();
+                      unawaited(_startDownload());
+                    },
+            ),
+            PlayerMoreRow(
+              label: t.player.statsToggle,
+              leading: DsIcons.activity,
+              value: null,
+              onTap: handle == null
+                  ? null
+                  : () {
+                      ref.read(playerStatsVisibleProvider.notifier).toggle();
+                      setPanel(() {});
+                    },
+              trailing: DsSwitch(
+                value: ref.read(playerStatsVisibleProvider),
+                onChanged: (_) {
+                  ref.read(playerStatsVisibleProvider.notifier).toggle();
+                  setPanel(() {});
+                },
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1496,8 +1586,9 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
     final playing = transport?.isPlaying ?? false;
     // The bar follows the pointer: a tap on the picture puts it away while the
     // episode plays, and a stopped one keeps it, because a paused picture has nothing
-    // else to read.
-    final showBar = _controlsVisible || !playing;
+    // else to read. Locked, nothing rides the picture: the unlock pill on the
+    // right edge is the whole chrome, the room's own rule.
+    final showBar = !_locked && (_controlsVisible || !playing);
     final qualities = _play?.qualities ?? const <VodQuality>[];
     return ClipRRect(
       borderRadius: BorderRadius.circular(immersive || stageOnly ? 0 : theme.radii.overlay),
@@ -1519,7 +1610,7 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
               // episode faster until the finger lifts. The same shapes the archive
               // page answers with, from the same widget.
               VodPictureGestures(
-                enabled: handle != null,
+                enabled: handle != null && !_locked,
                 onTap: _toggleControls,
                 onDoubleTap: _doubleTapAt,
                 onScrub: _scrubBy,
@@ -1551,7 +1642,7 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
                     size: DsSize.sm,
                     semanticLabel: t.player.fullscreenOff,
                     onPressed: _toggleFullscreen,
-                    icon: const DsIcon(DsIcons.minimize2),
+                    icon: const DsIcon(DsIcons.minimize),
                   ),
                 ),
               // Immersive keeps the picture verbs too: the way out sits at
@@ -1564,7 +1655,10 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
                   end: DsSpace.s8,
                   child: SafeArea(
                     child: PlayerGlassPill(
-                      child: Row(mainAxisSize: MainAxisSize.min, children: _pictureVerbs(t)),
+                      child: KeyedSubtree(
+                        key: _episodesAnchor,
+                        child: Row(mainAxisSize: MainAxisSize.min, children: _pictureVerbs(t)),
+                      ),
                     ),
                   ),
                 ),
@@ -1585,6 +1679,43 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
                     ),
                   ),
                 ),
+              // The picture's right edge, the room column's shape: the
+              // frame's copy above the lock — take the shot, then hand the
+              // picture over to the lock. Locked, the unlock pill is the
+              // only thing drawn, whatever the page does next; the download
+              // lives in the more container now.
+              if ((immersive || stageOnly || showBar || _locked) && handle != null)
+                PositionedDirectional(
+                  end: DsSpace.s12,
+                  top: 0,
+                  bottom: 0,
+                  child: Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      spacing: DsSpace.s8,
+                      children: [
+                        if (!_locked && handle.canCaptureScreenshot)
+                          PlayerGlassPill(
+                            child: PlayerBarButton(
+                              icon: DsIcons.camera,
+                              label: t.player.screenshot,
+                              onPressed: () {
+                                _wake();
+                                unawaited(_screenshot());
+                              },
+                            ),
+                          ),
+                        PlayerGlassPill(
+                          child: PlayerBarButton(
+                            icon: _locked ? DsIcons.unlock : DsIcons.lock,
+                            label: _locked ? t.room.unlockControls : t.room.lockControls,
+                            onPressed: _toggleLock,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               // The page's head, over the picture: the way back and the
               // season's name, riding the same shade the archive strip wears.
               // The sideways stage-only body leads with its own pill, and
@@ -1600,37 +1731,19 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
                     child: Row(
                       spacing: DsSpace.s8,
                       children: [
-                        PlayerGlassPill(
-                          child: DsButton.icon(
-                            variant: DsButtonVariant.ghost,
-                            size: DsSize.sm,
-                            semanticLabel: t.common.back,
-                            style: const DsButtonStyle(
-                              foreground: OnVideoColors.foreground,
-                              background: Color(0x00000000),
-                            ),
-                            onPressed: () {
-                              _wake();
-                              if (Navigator.of(context).canPop()) Navigator.of(context).pop();
-                            },
-                            icon: const DsIcon(DsIcons.arrowLeft),
-                          ),
+                        PlayerCapsuleHead(
+                          title: ref.watch(vodSeasonDetailProvider(widget.seasonId)).value?.title ?? t.vod.opening,
+                          onBack: () {
+                            _wake();
+                            if (Navigator.of(context).canPop()) Navigator.of(context).pop();
+                          },
                         ),
-                        Flexible(
-                          child: Text(
-                            ref.watch(vodSeasonDetailProvider(widget.seasonId)).value?.title ?? t.vod.opening,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: theme.typography.bodyStrong.copyWith(color: OnVideoColors.foreground),
-                          ),
-                        ),
+                        const Spacer(),
                         // The picture verbs at the row's far end — the
                         // same cluster every player carries, sized for
                         // the stage that shows it.
                         if (handle != null)
-                          PlayerGlassPill(
-                            child: Row(mainAxisSize: MainAxisSize.min, children: _pictureVerbs(t)),
-                          ),
+                          PlayerGlassPill(child: Row(mainAxisSize: MainAxisSize.min, children: _pictureVerbs(t))),
                       ],
                     ),
                   ),
@@ -1643,7 +1756,9 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
                 ),
               // The bar away, the picture keeps one line at its foot: how far
               // the episode ran, and the strip that brings the bar back.
-              if (!showBar && playing && handle != null)
+              // Locked, the line stands down too — nothing reads as chrome
+              // but the unlock pill.
+              if (!showBar && playing && handle != null && !_locked)
                 PositionedDirectional(
                   bottom: 0,
                   start: 0,
@@ -1734,136 +1849,201 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
                         ),
                         // The bar's spacing and its buttons are the shared
                         // player's, so the season answers like the archive:
-                        // a press wakes the chrome, the steps sit beside
-                        // play, and the picture's menus keep their words.
-                        Row(
-                          spacing: PlayerBarTier.tvOf(context) ? DsSpace.s8 : DsSpace.s4,
-                          children: [
-                            // The steps between episodes, beside play: a season is
-                            // watched in both directions, and the shelf under the
-                            // picture keeps the jump to any one of them.
-                            if (_hasPreviousEpisode)
-                              PlayerBarButton(
-                                icon: DsIcons.skipBack,
-                                label: t.vod.previousPart,
-                                onPressed: () {
-                                  _wake();
-                                  _openSteppedEpisode(-1);
-                                },
-                              ),
-                            if (_hasNextEpisode)
-                              PlayerBarButton(
-                                icon: DsIcons.skipForward,
-                                label: t.vod.nextPart,
-                                onPressed: () {
-                                  _wake();
-                                  _openSteppedEpisode(1);
-                                },
-                              ),
-                            PlayerBarButton(
-                              icon: playing ? DsIcons.pause : DsIcons.play,
-                              label: playing ? t.player.pause : t.player.play,
-                              onPressed: handle == null
-                                  ? null
-                                  : () {
-                                      _wake();
-                                      unawaited(_togglePlay());
-                                    },
-                            ),
-                            // The volume the archive bar carries and this one
-                            // never grew: the pair, then the slider, exactly
-                            // where the archive keeps them.
-                            PlayerBarButton(
-                              icon: (handle?.muted ?? false) ? DsIcons.volumeX : DsIcons.volume2,
-                              label: (handle?.muted ?? false) ? t.player.unmute : t.player.mute,
-                              onPressed: handle == null
-                                  ? null
-                                  : () {
-                                      _wake();
-                                      unawaited(_toggleMute());
-                                    },
-                            ),
-                            SizedBox(
-                              width: 96,
-                              child: DsSlider(
-                                value: ((handle?.volume ?? _volume) * 100).clamp(0.0, 100.0),
-                                max: 100,
-                                style: const DsSliderStyle(
-                                  height: 24,
-                                  trackHeight: 4,
-                                  trackColor: OnVideoColors.track,
-                                  fillColor: OnVideoColors.foreground,
-                                  thumbColor: OnVideoColors.foreground,
-                                  thumbSize: 12,
-                                ),
-                                onChanged: handle == null
-                                    ? null
-                                    : (value) {
+                        // the transport with the way out on one line, the
+                        // catalogue folding to its own line below — the
+                        // session verbs (the download, the frame copy) live
+                        // in the picture's top pill now, not on this row.
+                        // The bar's own width is the volume ladder's ruler:
+                        // 96 px when it is roomy, 72 when it bends, and gone
+                        // under 480, where the mute and the wheel still speak.
+                        LayoutBuilder(
+                          builder: (context, barConstraints) {
+                            final barWidth = barConstraints.maxWidth;
+                            final volumeWidth = barWidth >= 720 ? 96.0 : (barWidth >= 480 ? 72.0 : null);
+                            return PlayerBarRows(
+                              // Two rows at every width: the transport, then
+                              // the catalogues along the picture's bottom
+                              // edge — the pace never hides at the wide
+                              // row's right end.
+                              foldWidth: double.infinity,
+                              gap: PlayerBarTier.tvOf(context) ? DsSpace.s8 : DsSpace.s4,
+                              start: Row(
+                                spacing: PlayerBarTier.tvOf(context) ? DsSpace.s8 : DsSpace.s4,
+                                children: [
+                                  PlayerBarButton(
+                                    icon: playing ? DsIcons.pause : DsIcons.play,
+                                    label: playing ? t.player.pause : t.player.play,
+                                    onPressed: handle == null
+                                        ? null
+                                        : () {
+                                            _wake();
+                                            unawaited(_togglePlay());
+                                          },
+                                  ),
+                                  // The steps between episodes, after play where
+                                  // every player keeps them: a season is watched
+                                  // in both directions, and the bar's catalogue
+                                  // row keeps the jump to any one of them.
+                                  if (_hasPreviousEpisode)
+                                    PlayerBarButton(
+                                      icon: DsIcons.skipBack,
+                                      label: t.vod.previousPart,
+                                      onPressed: () {
                                         _wake();
-                                        unawaited(_setVolume(value / 100));
+                                        _openSteppedEpisode(-1);
                                       },
-                                semanticLabel: t.player.volume,
-                              ),
-                            ),
-                            if (qualities.isNotEmpty)
-                              PlayerBarChoice(
-                                anchorKey: _qualityAnchor,
-                                label: t.player.quality,
-                                value: _qualityMenuLabel(t),
-                                icon: DsIcons.settings2,
-                                selected: _openPanel == 'quality',
-                                onPressed: () =>
-                                    setState(() => _openPanel = _openPanel == 'quality' ? null : 'quality'),
-                              ),
-                            PlayerBarButton(
-                              icon: DsIcons.download,
-                              label: t.player.download,
-                              onPressed: (episode?.cid ?? 0) <= 0
-                                  ? null
-                                  : () {
-                                      _wake();
-                                      unawaited(_startDownload());
-                                    },
-                            ),
-                            PlayerBarButton(
-                              icon: DsIcons.camera,
-                              label: t.player.screenshot,
-                              onPressed: handle == null ? null : () => unawaited(_screenshot()),
-                            ),
-                            if (!immersive)
-                              PlayerBarButton(
-                                icon: _presentationMode == PresentationMode.fullscreen
-                                    ? DsIcons.minimize
-                                    : DsIcons.maximize,
-                                label: _presentationMode == PresentationMode.fullscreen
-                                    ? t.player.fullscreenOff
-                                    : t.player.fullscreen,
-                                selected: _presentationMode == PresentationMode.fullscreen,
-                                onPressed: handle == null
-                                    ? null
-                                    : () {
+                                    ),
+                                  if (_hasNextEpisode)
+                                    PlayerBarButton(
+                                      icon: DsIcons.skipForward,
+                                      label: t.vod.nextPart,
+                                      onPressed: () {
                                         _wake();
-                                        _toggleFullscreen();
+                                        _openSteppedEpisode(1);
                                       },
+                                    ),
+                                  // The volume the archive bar carries and this one
+                                  // never grew: the pair, then the slider, exactly
+                                  // where the archive keeps them.
+                                  PlayerBarButton(
+                                    icon: (handle?.muted ?? false) ? DsIcons.volumeX : DsIcons.volume2,
+                                    label: (handle?.muted ?? false) ? t.player.unmute : t.player.mute,
+                                    onPressed: handle == null
+                                        ? null
+                                        : () {
+                                            _wake();
+                                            unawaited(_toggleMute());
+                                          },
+                                  ),
+                                  if (volumeWidth != null)
+                                    SizedBox(
+                                      width: volumeWidth,
+                                      child: DsSlider(
+                                        value: ((handle?.volume ?? _volume) * 100).clamp(0.0, 100.0),
+                                        max: 100,
+                                        style: const DsSliderStyle(
+                                          height: 24,
+                                          trackHeight: 4,
+                                          trackColor: OnVideoColors.track,
+                                          fillColor: OnVideoColors.foreground,
+                                          thumbColor: OnVideoColors.foreground,
+                                          thumbSize: 12,
+                                        ),
+                                        onChanged: handle == null
+                                            ? null
+                                            : (value) {
+                                                _wake();
+                                                unawaited(_setVolume(value / 100));
+                                              },
+                                        semanticLabel: t.player.volume,
+                                      ),
+                                    ),
+                                ],
                               ),
-                            if (_error != null)
-                              Expanded(
-                                child: Text(
-                                  _error!,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: theme.typography.caption.copyWith(color: theme.colors.danger.text),
-                                ),
+                              middle: Row(
+                                spacing: PlayerBarTier.tvOf(context) ? DsSpace.s8 : DsSpace.s4,
+                                children: [
+                                  if (qualities.isNotEmpty)
+                                    PlayerBarChoice(
+                                      anchorKey: _qualityAnchor,
+                                      label: t.player.quality,
+                                      value: _qualityMenuLabel(t),
+                                      icon: DsIcons.gauge,
+                                      selected: _openPanel == 'quality',
+                                      onPressed: () =>
+                                          setState(() => _openPanel = _openPanel == 'quality' ? null : 'quality'),
+                                    ),
+                                  // The pace, the button the keyboard's comma and
+                                  // period have always walked: the same ladder the
+                                  // vod page lists, now with a door of its own.
+                                  PlayerBarChoice(
+                                    anchorKey: _speedAnchor,
+                                    label: t.player.speed,
+                                    value: VodSpeedChoice.nearest(_speed).label,
+                                    icon: DsIcons.timer,
+                                    selected: _openPanel == 'speed',
+                                    onPressed: () =>
+                                        setState(() => _openPanel = _openPanel == 'speed' ? null : 'speed'),
+                                  ),
+                                  // The episodes catalogue, the bar's own
+                                  // catalogue row's list — where the archive
+                                  // keeps its parts and the station's page its
+                                  // related row. The catalogue rides the bar,
+                                  // so it shows and hides with it.
+                                  if (_seasonDetail != null && _seasonDetail!.episodes.length > 1)
+                                    PlayerBarChoice(
+                                      anchorKey: _episodesAnchor,
+                                      label: t.vod.episodes,
+                                      value: _episode == null ? t.vod.episodes : t.vod.episodeNo(index: _episode!.index),
+                                      icon: DsIcons.listVideo,
+                                      selected: _openPanel == 'episodes',
+                                      onPressed: () =>
+                                          setState(() => _openPanel = _openPanel == 'episodes' ? null : 'episodes'),
+                                    ),
+                                ],
                               ),
-                          ],
+                              end: Row(
+                                spacing: PlayerBarTier.tvOf(context) ? DsSpace.s8 : DsSpace.s4,
+                                children: [
+                                  // The window's own shape with the arrows that say
+                                  // which way it goes — the desktop verb, present in
+                                  // the immersive shell too, its pair beside it.
+                                  if (_desktop && _presentationMode != PresentationMode.pip)
+                                    PlayerBarButton(
+                                      icon: _presentationMode == PresentationMode.windowFullscreen
+                                          ? DsIcons.squareShrinkUpLeftDownRight
+                                          : DsIcons.squareExpandUpRightDownLeft,
+                                      label: _presentationMode == PresentationMode.windowFullscreen
+                                          ? t.player.windowFullscreenOff
+                                          : t.player.windowFullscreenOn,
+                                      selected: _presentationMode == PresentationMode.windowFullscreen,
+                                      onPressed: handle == null
+                                          ? null
+                                          : () {
+                                              _wake();
+                                              unawaited(
+                                                _presentationNotifier.toggleWindowFullscreen(handle.id),
+                                              );
+                                            },
+                                    ),
+                                  if (_presentationMode != PresentationMode.pip)
+                                    PlayerBarButton(
+                                      icon: _presentationMode == PresentationMode.fullscreen
+                                          ? DsIcons.minimize
+                                          : DsIcons.maximize,
+                                      label: _presentationMode == PresentationMode.fullscreen
+                                          ? t.player.fullscreenOff
+                                          : t.player.fullscreen,
+                                      selected: _presentationMode == PresentationMode.fullscreen,
+                                      onPressed: handle == null
+                                          ? null
+                                          : () {
+                                              _wake();
+                                              _toggleFullscreen();
+                                            },
+                                    ),
+                                ],
+                              ),
+                            );
+                          },
                         ),
+                        if (_error != null)
+                          Padding(
+                            padding: const EdgeInsetsDirectional.only(top: DsSpace.s4),
+                            child: Text(
+                              _error!,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.typography.caption.copyWith(color: theme.colors.danger.text),
+                            ),
+                          ),
                       ],
                     ),
                   ),
                 ),
               // The bar's pickers hang their cards over the picture: a tap
               // anywhere else closes whichever one stands.
-              if (showBar && _openPanel != null)
+              if (_openPanel != null)
                 Positioned.fill(
                   child: GestureDetector(
                     behavior: HitTestBehavior.opaque,
@@ -1894,6 +2074,65 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
                     ],
                   ),
                 ),
+              if (showBar && _openPanel == 'speed')
+                PlayerPanelHost(
+                  anchorKey: _speedAnchor,
+                  barKey: _barAnchor,
+                  width: 180,
+                  child: PlayerOverlayPanel(
+                    title: t.player.speed,
+                    children: [
+                      for (final choice in VodSpeedChoice.values)
+                        PlayerPanelOption(
+                          label: choice.label,
+                          selected: choice.value == _speed,
+                          onPressed: () {
+                            setState(() => _openPanel = null);
+                            unawaited(_setSpeed(choice.value));
+                          },
+                        ),
+                    ],
+                  ),
+                ),
+              // The episodes catalogue: the bar's list chip hangs it over
+              // the picture — one row per episode, the one playing lit, the
+              // number jump kept as the catalogue's own first row.
+              if (showBar && _openPanel == 'episodes')
+                PlayerPanelHost(
+                  anchorKey: _episodesAnchor,
+                  barKey: _barAnchor,
+                  width: 280,
+                  child: Builder(
+                    builder: (context) {
+                      final episodes = _seasonDetail?.episodes ?? const <VodEpisode>[];
+                      final current = _episode;
+                      return PlayerOverlayPanel(
+                        title: t.vod.episodes,
+                        children: [
+                          if (episodes.length > 1)
+                            PlayerPanelOption(
+                              label: t.vod.episodesJump,
+                              selected: false,
+                              onPressed: () {
+                                setState(() => _openPanel = null);
+                                unawaited(_jumpEpisode());
+                              },
+                            ),
+                          for (final episode in episodes)
+                            PlayerPanelOption(
+                              label: episode.title.isEmpty ? t.vod.episodeNo(index: episode.index) : episode.title,
+                              detail: episode.title.isEmpty ? null : t.vod.episodeNo(index: episode.index),
+                              selected: current != null && episode.id == current.id,
+                              onPressed: () {
+                                setState(() => _openPanel = null);
+                                unawaited(_openEpisode(episode));
+                              },
+                            ),
+                        ],
+                      );
+                    },
+                  ),
+                ),
             ],
           ),
         ),
@@ -1901,6 +2140,15 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
     );
   }
 }
+
+/// Whether this host offers the desktop-only window-fullscreen button — the
+/// room bar's own rule: the picture filling the app window while the window
+/// stays a window is a desktop shell's verb.
+bool get _desktop =>
+    !kIsWeb &&
+    (defaultTargetPlatform == TargetPlatform.windows ||
+        defaultTargetPlatform == TargetPlatform.macOS ||
+        defaultTargetPlatform == TargetPlatform.linux);
 
 /// One cinema season as the page opens with it: the mockup's poster head —
 /// the front at its own 3:4 with the score on its corner, and beside it the
