@@ -1711,6 +1711,9 @@ class Translations$hongguo$zh_CN {
 	/// zh-CN: '下一集'
 	String get nextEpisode => '下一集';
 
+	/// zh-CN: '上一集'
+	String get previousEpisode => '上一集';
+
 	/// zh-CN: '展开'
 	String get expand => '展开';
 
@@ -6760,6 +6763,12 @@ class Translations$room$zh_CN {
 	/// zh-CN: '弹幕'
 	String get danmakuList => '弹幕';
 
+	/// zh-CN: '弹幕列表'
+	String get danmakuListTitle => '弹幕列表';
+
+	/// zh-CN: '这条录播还没有弹幕'
+	String get danmakuListEmpty => '这条录播还没有弹幕';
+
 	/// zh-CN: '屏蔽'
 	String get block => '屏蔽';
 
@@ -10326,6 +10335,12 @@ class Translations$settings$zh_CN {
 
 	/// zh-CN: '离开房间时把画面留在可拖动的小窗。'
 	String get floatPlayDesc => '离开房间时把画面留在可拖动的小窗。';
+
+	/// zh-CN: '视频页小窗播放'
+	String get videoFloatWindow => '视频页小窗播放';
+
+	/// zh-CN: '在视频播放页的右上角显示「小窗」按钮'
+	String get videoFloatWindowDesc => '在视频播放页的右上角显示「小窗」按钮';
 
 	/// zh-CN: '小窗始终置顶'
 	String get windowsPipAlwaysOnTop => '小窗始终置顶';
@@ -14305,6 +14320,7 @@ extension on Translations {
 			'hongguo.firstEpisode' => '已经是第一集',
 			'hongguo.lastEpisode' => '已经是最后一集',
 			'hongguo.nextEpisode' => '下一集',
+			'hongguo.previousEpisode' => '上一集',
 			'hongguo.expand' => '展开',
 			'hongguo.collapse' => '收起',
 			'hongguo.boardAll' => '综合榜',
@@ -14655,9 +14671,9 @@ extension on Translations {
 			'iptv.zapperProgrammes' => '节目',
 			'iptv.zapperHint' => '方向键选择，确认键播放或回看，返回键收起。',
 			'iptv.zapperEmptyGroup' => '这个分组没有频道',
-			'iptv.lineCount' => ({required Object current, required Object total}) => '线路 ${current}/${total}',
 			_ => null,
 		} ?? switch (path) {
+			'iptv.lineCount' => ({required Object current, required Object total}) => '线路 ${current}/${total}',
 			'iptv.aspectLabel' => '画面比例',
 			'iptv.aspectAuto' => '默认',
 			'iptv.aspect16x9' => '16:9',
@@ -15169,9 +15185,9 @@ extension on Translations {
 			'music.lyricTranslation' => '显示翻译',
 			'music.lyricContent' => '歌词内容',
 			'music.lyricDisplay' => '歌词显示',
-			'music.lyricTiming' => '时间轴',
 			_ => null,
 		} ?? switch (path) {
+			'music.lyricTiming' => '时间轴',
 			'music.lyricTranslationDesc' => '歌词带翻译时一并显示。',
 			'music.lyricRomanization' => '显示音译',
 			'music.lyricRomanizationDesc' => '歌词带音译或罗马音时一并显示。',
@@ -15683,9 +15699,9 @@ extension on Translations {
 			'recorder.caCustomNotPem' => '这不是 PEM 文本的证书束（应包含 -----BEGIN CERTIFICATE-----）',
 			'recorder.caCustomPickFailed' => '读取证书文件失败',
 			'recorder.caCustomClear' => '恢复内置',
-			'recorder.caCustomCleared' => '已恢复使用内置根证书',
 			_ => null,
 		} ?? switch (path) {
+			'recorder.caCustomCleared' => '已恢复使用内置根证书',
 			'recorder.startNowBusyOther' => '另一个窗口正在录制这个房间',
 			'recorder.startNowCaFailed' => '自定义 CA 证书读不到，先重新选择或恢复内置',
 			'recorder.menuMore' => '更多操作',
@@ -15964,6 +15980,8 @@ extension on Translations {
 			'room.totalViewers' => '累计观看',
 			'room.startedAt' => ({required Object time}) => '${time} 开播',
 			'room.danmakuList' => '弹幕',
+			'room.danmakuListTitle' => '弹幕列表',
+			'room.danmakuListEmpty' => '这条录播还没有弹幕',
 			'room.block' => '屏蔽',
 			'room.openExternal' => '在平台打开',
 			'room.restrictionNeedsLogin' => '需要登录',
@@ -16195,11 +16213,11 @@ extension on Translations {
 			'settings.navQuality' => '画质',
 			'settings.navAudio' => '音频与音量',
 			'settings.navPicture' => '画面与浮窗',
+			_ => null,
+		} ?? switch (path) {
 			'settings.navFloatingWindow' => '小窗与画中画',
 			'settings.groupData' => '数据',
 			'settings.groupAbout' => '关于',
-			_ => null,
-		} ?? switch (path) {
 			'settings.groupIptv' => 'IPTV',
 			'settings.groupVod' => 'Bilibili 视频',
 			'settings.generalDescription' => '浏览、窗口与启动设置。',
@@ -16709,11 +16727,11 @@ extension on Translations {
 			'settings.hongguoDevice' => '设备',
 			'settings.navIptvBrowse' => '换台与显示',
 			'settings.iptvBrowseDescription' => '频道号、换台方向、时间和当前节目行怎么显示。',
+			_ => null,
+		} ?? switch (path) {
 			'settings.navIptvGroups' => '分组显示',
 			'settings.iptvGroupsDescription' => '决定哪些分组出现在频道列表和换台里。',
 			'settings.navDanmaku' => '弹幕',
-			_ => null,
-		} ?? switch (path) {
 			'settings.navMiniDanmaku' => '小窗弹幕',
 			'settings.navKernel' => '播放器内核',
 			'settings.navRecording' => '录制',
@@ -17151,6 +17169,8 @@ extension on Translations {
 			'settings.autoPipDesc' => '播放中离开应用时把画面留在系统小窗；需要悬浮窗权限。',
 			'settings.floatPlay' => '返回时悬浮播放',
 			'settings.floatPlayDesc' => '离开房间时把画面留在可拖动的小窗。',
+			'settings.videoFloatWindow' => '视频页小窗播放',
+			'settings.videoFloatWindowDesc' => '在视频播放页的右上角显示「小窗」按钮',
 			'settings.windowsPipAlwaysOnTop' => '小窗始终置顶',
 			'settings.windowsPipAlwaysOnTopDesc' => '小窗始终置顶。',
 			'settings.rememberPipPosition' => '记住小窗位置',
@@ -17221,13 +17241,13 @@ extension on Translations {
 			'settings.wallpaperCategoryCyberpunk' => '赛博朋克',
 			'settings.wallpaperCategoryPixelArt' => '像素艺术',
 			'settings.wallpaperCategoryArtwork' => '艺术画',
+			_ => null,
+		} ?? switch (path) {
 			'settings.wallpaperCategoryCityscape' => '城市景观',
 			'settings.wallpaperCategoryDigitalArt' => '数字艺术',
 			'settings.wallpaperCategoryFantasyArt' => '奇幻艺术',
 			'settings.wallpaperCategoryFinalFantasy' => '最终幻想',
 			'settings.tagManagement' => '标签管理',
-			_ => null,
-		} ?? switch (path) {
 			'settings.tagManagementDesc' => '自定义和管理直播间的过滤标签',
 			'settings.tagAdd' => '添加标签',
 			'settings.tagEdit' => '编辑标签',
@@ -17735,13 +17755,13 @@ extension on Translations {
 			'toolbox.linkDirectCopyDone' => '直链已复制',
 			'toolbox.linkDirectEmpty' => '这个房间暂时没有可用的直链',
 			'toolbox.linkDirectFailed' => '直链读取失败',
+			_ => null,
+		} ?? switch (path) {
 			'toolbox.nodeTestAll' => '全部测速',
 			'toolbox.nodeTest' => '测速',
 			'toolbox.nodeTesting' => '测速中',
 			'toolbox.nodeUntested' => '未测速',
 			'toolbox.nodeReachable' => '正常',
-			_ => null,
-		} ?? switch (path) {
 			'toolbox.nodeFailed' => '失败',
 			'toolbox.nodeNoSites' => '没有可测速的平台',
 			'toolbox.nodeHint' => '点「测速」检查这个平台。',

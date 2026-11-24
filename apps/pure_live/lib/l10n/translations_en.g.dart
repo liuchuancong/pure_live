@@ -655,6 +655,7 @@ class _Translations$hongguo$en extends Translations$hongguo$zh_CN {
 	@override String get firstEpisode => 'This is the first episode';
 	@override String get lastEpisode => 'This is the last episode';
 	@override String get nextEpisode => 'Next episode';
+	@override String get previousEpisode => 'Previous episode';
 	@override String get expand => 'More';
 	@override String get collapse => 'Less';
 	@override String get boardAll => 'All';
@@ -2398,6 +2399,8 @@ class _Translations$room$en extends Translations$room$zh_CN {
 	@override String get totalViewers => 'Total viewers';
 	@override String startedAt({required Object time}) => 'Started ${time}';
 	@override String get danmakuList => 'Danmaku';
+	@override String get danmakuListTitle => 'Danmaku list';
+	@override String get danmakuListEmpty => 'No danmaku yet for this recording';
 	@override String get block => 'Block';
 	@override String get openExternal => 'Open on the platform';
 	@override String get restrictionNeedsLogin => 'Sign-in required';
@@ -3599,6 +3602,8 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get autoPipDesc => 'Keep a playing room in a small window over the other apps when you leave; needs the "display over other apps" permission.';
 	@override String get floatPlay => 'Floating player on exit';
 	@override String get floatPlayDesc => 'Keeps the picture in a draggable mini window when you leave.';
+	@override String get videoFloatWindow => 'Mini window on video pages';
+	@override String get videoFloatWindowDesc => 'Show the mini-window button on video players';
 	@override String get windowsPipAlwaysOnTop => 'Keep the small window on top';
 	@override String get windowsPipAlwaysOnTopDesc => 'The mini window stays above others.';
 	@override String get rememberPipPosition => 'Remember the small window position';
@@ -5430,6 +5435,7 @@ extension on TranslationsEn {
 			'hongguo.firstEpisode' => 'This is the first episode',
 			'hongguo.lastEpisode' => 'This is the last episode',
 			'hongguo.nextEpisode' => 'Next episode',
+			'hongguo.previousEpisode' => 'Previous episode',
 			'hongguo.expand' => 'More',
 			'hongguo.collapse' => 'Less',
 			'hongguo.boardAll' => 'All',
@@ -5780,9 +5786,9 @@ extension on TranslationsEn {
 			'iptv.zapperProgrammes' => 'Programmes',
 			'iptv.zapperHint' => 'Arrow keys to move, OK to play or replay, back to close.',
 			'iptv.zapperEmptyGroup' => 'No channels in this group',
-			'iptv.lineCount' => ({required Object current, required Object total}) => 'Line ${current}/${total}',
 			_ => null,
 		} ?? switch (path) {
+			'iptv.lineCount' => ({required Object current, required Object total}) => 'Line ${current}/${total}',
 			'iptv.aspectLabel' => 'Aspect',
 			'iptv.aspectAuto' => 'Default',
 			'iptv.aspect16x9' => '16:9',
@@ -6294,9 +6300,9 @@ extension on TranslationsEn {
 			'music.lyricTranslation' => 'Show translation',
 			'music.lyricContent' => 'Lyric content',
 			'music.lyricDisplay' => 'Lyric display',
-			'music.lyricTiming' => 'Timing',
 			_ => null,
 		} ?? switch (path) {
+			'music.lyricTiming' => 'Timing',
 			'music.lyricTranslationDesc' => 'Show the translation when the lyric has one.',
 			'music.lyricRomanization' => 'Show romanization',
 			'music.lyricRomanizationDesc' => 'Show the romanization when the lyric has one.',
@@ -6808,9 +6814,9 @@ extension on TranslationsEn {
 			'recorder.caCustomPickFailed' => 'The certificate file could not be read',
 			'recorder.caCustomClear' => 'Use bundled',
 			'recorder.caCustomCleared' => 'Recording uses the bundled root store again',
-			'recorder.startNowBusyOther' => 'Another window is recording this room',
 			_ => null,
 		} ?? switch (path) {
+			'recorder.startNowBusyOther' => 'Another window is recording this room',
 			'recorder.startNowCaFailed' => 'The custom CA bundle cannot be read — pick it again or switch to the bundled store',
 			'recorder.stateSaved' => 'Saved',
 			'recorder.menuMore' => 'More actions',
@@ -7089,6 +7095,8 @@ extension on TranslationsEn {
 			'room.totalViewers' => 'Total viewers',
 			'room.startedAt' => ({required Object time}) => 'Started ${time}',
 			'room.danmakuList' => 'Danmaku',
+			'room.danmakuListTitle' => 'Danmaku list',
+			'room.danmakuListEmpty' => 'No danmaku yet for this recording',
 			'room.block' => 'Block',
 			'room.openExternal' => 'Open on the platform',
 			'room.restrictionNeedsLogin' => 'Sign-in required',
@@ -7320,11 +7328,11 @@ extension on TranslationsEn {
 			'settings.navQuality' => 'Quality',
 			'settings.navAudio' => 'Audio & volume',
 			'settings.navPicture' => 'Picture & floating',
+			_ => null,
+		} ?? switch (path) {
 			'settings.navFloatingWindow' => 'Floating window & PiP',
 			'settings.groupData' => 'Data',
 			'settings.groupAbout' => 'About',
-			_ => null,
-		} ?? switch (path) {
 			'settings.groupIptv' => 'IPTV',
 			'settings.groupVod' => 'Bilibili video',
 			'settings.generalDescription' => 'Browsing, window and startup pages.',
@@ -7834,11 +7842,11 @@ extension on TranslationsEn {
 			'settings.hongguoDevice' => 'Device',
 			'settings.navIptvBrowse' => 'Zapping and display',
 			'settings.iptvBrowseDescription' => 'How the channel number, the zap direction, the clock and the programme line are shown.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.navIptvGroups' => 'Group visibility',
 			'settings.iptvGroupsDescription' => 'Chooses which groups appear in the channel lists and the zapping.',
 			'settings.navDanmaku' => 'Danmaku',
-			_ => null,
-		} ?? switch (path) {
 			'settings.navMiniDanmaku' => 'Mini-window danmaku',
 			'settings.navKernel' => 'Player engine',
 			'settings.navRecording' => 'Recording',
@@ -8276,6 +8284,8 @@ extension on TranslationsEn {
 			'settings.autoPipDesc' => 'Keep a playing room in a small window over the other apps when you leave; needs the "display over other apps" permission.',
 			'settings.floatPlay' => 'Floating player on exit',
 			'settings.floatPlayDesc' => 'Keeps the picture in a draggable mini window when you leave.',
+			'settings.videoFloatWindow' => 'Mini window on video pages',
+			'settings.videoFloatWindowDesc' => 'Show the mini-window button on video players',
 			'settings.windowsPipAlwaysOnTop' => 'Keep the small window on top',
 			'settings.windowsPipAlwaysOnTopDesc' => 'The mini window stays above others.',
 			'settings.rememberPipPosition' => 'Remember the small window position',
@@ -8346,13 +8356,13 @@ extension on TranslationsEn {
 			'settings.wallpaperCategoryCyberpunk' => 'Cyberpunk',
 			'settings.wallpaperCategoryPixelArt' => 'Pixel Art',
 			'settings.wallpaperCategoryArtwork' => 'Artwork',
+			_ => null,
+		} ?? switch (path) {
 			'settings.wallpaperCategoryCityscape' => 'Cityscape',
 			'settings.wallpaperCategoryDigitalArt' => 'Digital Art',
 			'settings.wallpaperCategoryFantasyArt' => 'Fantasy Art',
 			'settings.wallpaperCategoryFinalFantasy' => 'Final Fantasy',
 			'settings.tagManagement' => 'Tag management',
-			_ => null,
-		} ?? switch (path) {
 			'settings.tagManagementDesc' => 'Customize and manage the tags rooms are filtered by',
 			'settings.tagAdd' => 'Add tag',
 			'settings.tagEdit' => 'Edit tag',
@@ -8860,13 +8870,13 @@ extension on TranslationsEn {
 			'toolbox.linkDirectCopyDone' => 'Stream link copied',
 			'toolbox.linkDirectEmpty' => 'No stream link is available for this room right now',
 			'toolbox.linkDirectFailed' => 'Could not read the stream links',
+			_ => null,
+		} ?? switch (path) {
 			'toolbox.nodeTestAll' => 'Test all',
 			'toolbox.nodeTest' => 'Test',
 			'toolbox.nodeTesting' => 'Testing',
 			'toolbox.nodeUntested' => 'Not tested',
 			'toolbox.nodeReachable' => 'Reachable',
-			_ => null,
-		} ?? switch (path) {
 			'toolbox.nodeFailed' => 'Failed',
 			'toolbox.nodeNoSites' => 'No platform can be tested',
 			'toolbox.nodeHint' => 'Run a check to test this platform.',
