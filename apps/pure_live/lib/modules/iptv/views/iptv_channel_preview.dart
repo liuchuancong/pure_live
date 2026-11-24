@@ -48,6 +48,9 @@ class _IptvChannelHoverPreviewState extends State<IptvChannelHoverPreview> {
   }
 
   void _exit() {
+    // The tracker walks the lost region's exit after dispose: a dead state
+    // must not reach the overlay controller.
+    if (!mounted) return;
     _pointerInside = false;
     _dwell?.cancel();
     _dwell = null;

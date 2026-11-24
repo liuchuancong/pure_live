@@ -587,6 +587,9 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
   }
 
   void _scheduleHide() {
+    // The tracker still walks the regions a leaving page owned: its exit
+    // lands here after dispose, and a dead state reads no store.
+    if (!mounted) return;
     _hideTimer?.cancel();
     if (_panelOpen || _danmakuSettingsOpen) return;
     if (!ref.read(roomProvider).playback.playing) return;

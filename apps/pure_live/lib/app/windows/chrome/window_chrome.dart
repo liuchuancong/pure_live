@@ -252,6 +252,9 @@ final class _WindowTopResizeBandState extends State<WindowTopResizeBand> {
   }
 
   void _refresh() {
+    // A window folding away still walks its strip's lost regions: the exit
+    // lands here after dispose, and a dead state reads no window.
+    if (!mounted) return;
     final sizable = _sizableNow;
     if (sizable != _sizable) setState(() => _sizable = sizable);
   }
