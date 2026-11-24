@@ -94,6 +94,8 @@
   "totalViewers": "累计观看",
   "startedAt": "{time} 开播",
   "danmakuList": "弹幕",
+  "danmakuListTitle": "弹幕列表",
+  "danmakuListEmpty": "这条录播还没有弹幕",
   "block": "屏蔽",
   "openExternal": "在平台打开",
   "restrictionNeedsLogin": "需要登录",

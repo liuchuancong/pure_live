@@ -3,6 +3,39 @@ import 'package:live_sites/live_sites.dart' show LiveMessage, LiveRetraction;
 import 'package:live_vod/live_vod.dart' show ArchiveQuality, ArchiveVideo;
 import 'package:media_core/media_core.dart' show PlayerHandle, PlayerHandlePlayback;
 
+/// One replay comment the list panel can show: its position in the
+/// recording, its words, and the colour the station gave it.
+final class ArchiveDanmakuLine {
+  /// Creates one line.
+  const ArchiveDanmakuLine({required this.at, required this.text, required this.color, required this.id});
+
+  /// The position in the recording the comment belongs to.
+  final Duration at;
+
+  /// The comment's words.
+  final String text;
+
+  /// The comment's colour, as an opaque 0xAARRGGBB value.
+  final int color;
+
+  /// The platform's comment id.
+  final String id;
+}
+
+/// The base class's stand-in revision: a history that never changes.
+final class _SilentRevision implements ValueListenable<int> {
+  const _SilentRevision();
+
+  @override
+  void addListener(VoidCallback listener) {}
+
+  @override
+  void removeListener(VoidCallback listener) {}
+
+  @override
+  int get value => 0;
+}
+
 /// The common control surface of official replay players. Platform resolution
 /// and progress stores remain independent; live playback is never reused as
 /// VOD. The session is the module player kernel's handle: a page attaches one
@@ -80,6 +113,14 @@ abstract class ArchivePlaybackController extends ChangeNotifier {
 
   /// Timeline clears after seeking.
   Stream<LiveRetraction> get retractions => const Stream.empty();
+
+  /// The comments delivered so far, in the recording's own order: the list
+  /// panel's lines. Empty until a source accumulates them.
+  List<ArchiveDanmakuLine> get danmakuHistory => const [];
+
+  /// Bumps whenever [danmakuHistory] changes, so a panel can listen without
+  /// the page rebuilding on every comment.
+  ValueListenable<int> get danmakuHistoryRevision => const _SilentRevision();
 
   /// Opens an official video id and optional position.
   Future<void> open(String id, {Duration? start});

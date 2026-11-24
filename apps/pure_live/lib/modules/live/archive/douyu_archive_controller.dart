@@ -1,5 +1,6 @@
 import 'dart:async' show Future, StreamController, StreamSubscription, TimeoutException, Timer, unawaited;
 
+import 'package:flutter/foundation.dart' show ValueListenable, ValueNotifier;
 import 'package:live_net/live_net.dart' show CancelToken, LiveHttp;
 import 'package:live_sites/live_sites.dart' show LiveMessage, LiveMessageColor, LiveMessageType, LiveRetraction;
 import 'package:live_vod/live_vod.dart'
@@ -106,6 +107,26 @@ final class DouyuArchiveController extends ArchivePlaybackController {
   @override
   Stream<LiveRetraction> get retractions => _retractions.stream;
 
+  /// The comments delivered so far, in the recording's order: the list
+  /// panel's lines. A backward seek re-delivers a stretch the list already
+  /// keeps, so the id is the dedup key; the oldest lines leave once the
+  /// walk outgrows [_danmakuHistoryLimit].
+  @override
+  List<ArchiveDanmakuLine> get danmakuHistory => _danmakuHistory;
+
+  /// Bumps on every history change, so a panel re-reads it without the
+  /// page rebuilding on each comment.
+  @override
+  ValueListenable<int> get danmakuHistoryRevision => _danmakuRevision;
+
+  /// The list's memory cap: a hours-long recording's comments stay bounded
+  /// like the flying layer's own queues do.
+  static const int _danmakuHistoryLimit = 2000;
+
+  final List<ArchiveDanmakuLine> _danmakuHistory = <ArchiveDanmakuLine>[];
+  final Set<String> _danmakuSeen = <String>{};
+  final ValueNotifier<int> _danmakuRevision = ValueNotifier<int>(0);
+
   final StreamController<LiveMessage> _messages = StreamController.broadcast();
   final StreamController<LiveRetraction> _retractions = StreamController.broadcast();
   DouyuVodTimeline? _timeline;
@@ -144,6 +165,14 @@ final class DouyuArchiveController extends ArchivePlaybackController {
     final cancel = _cancel = CancelToken();
     _timeline?.dispose();
     _timeline = null;
+    // Another recording's comments are another list: a re-open of the same
+    // recording (a retry, a rendition walk) keeps the lines it gathered.
+    final currentId = video?.id;
+    if (currentId != null && currentId != id) {
+      _danmakuHistory.clear();
+      _danmakuSeen.clear();
+      _danmakuRevision.value++;
+    }
     _retractions.add(LiveRetraction.of(all: true));
     _ready = false;
     _pending = null;
@@ -441,6 +470,7 @@ final class DouyuArchiveController extends ArchivePlaybackController {
 
   void _emit(VodDanmaku message) {
     if (_disposed || !danmakuVisible) return;
+    _keepLine(message);
     _messages.add(
       LiveMessage.of(
         type: LiveMessageType.chat,
@@ -450,6 +480,25 @@ final class DouyuArchiveController extends ArchivePlaybackController {
         color: LiveMessageColor((message.color >> 16) & 255, (message.color >> 8) & 255, message.color & 255),
       ),
     );
+  }
+
+  /// Remembers one delivered comment with its own position, the list
+  /// panel's line. A backward seek re-delivers a stretch the list already
+  /// holds — the id answers for the dedup — and an outgrown list releases
+  /// its oldest lines together with their ids.
+  void _keepLine(VodDanmaku message) {
+    if (!_danmakuSeen.add(message.id)) return;
+    _danmakuHistory.add(
+      ArchiveDanmakuLine(at: message.progress, text: message.text, color: message.color | 0xFF000000, id: message.id),
+    );
+    final overflow = _danmakuHistory.length - _danmakuHistoryLimit;
+    if (overflow > 0) {
+      for (var i = 0; i < overflow; i++) {
+        _danmakuSeen.remove(_danmakuHistory[i].id);
+      }
+      _danmakuHistory.removeRange(0, overflow);
+    }
+    _danmakuRevision.value++;
   }
 
   @override
@@ -464,6 +513,7 @@ final class DouyuArchiveController extends ArchivePlaybackController {
     unawaited(_states?.cancel());
     unawaited(_messages.close());
     unawaited(_retractions.close());
+    _danmakuRevision.dispose();
     _retirement = Future.wait<void>([saved, if (ownsSession) session.dispose()]).then((_) {});
     unawaited(_retirement);
     super.dispose();

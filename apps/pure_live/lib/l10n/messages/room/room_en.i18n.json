@@ -94,6 +94,8 @@
   "totalViewers": "Total viewers",
   "startedAt": "Started {time}",
   "danmakuList": "Danmaku",
+  "danmakuListTitle": "Danmaku list",
+  "danmakuListEmpty": "No danmaku yet for this recording",
   "block": "Block",
   "openExternal": "Open on the platform",
   "restrictionNeedsLogin": "Sign-in required",

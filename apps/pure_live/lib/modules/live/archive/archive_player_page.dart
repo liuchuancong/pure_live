@@ -39,11 +39,12 @@ import 'package:pure_live/modules/live/archive/archive_replay_download.dart'
 import 'package:pure_live/modules/live/archive/douyu_archive_controller.dart';
 import 'package:pure_live/modules/live/archive/huya_archive_controller.dart';
 import 'package:pure_live/modules/live/archive/soop_archive_controller.dart';
-import 'package:pure_live/modules/live/room/panels/room_panel.dart' show showRoomSleepTimer;
 import 'package:pure_live/modules/live/room/player/sleep_timer.dart' show SleepTimerController, sleepTimerProvider;
 import 'package:pure_live/modules/vod/widgets/vod_picture_gestures.dart' show VodPictureGestures, VodTapSide;
 import 'package:pure_live/modules/vod/widgets/vod_player_chrome.dart' show VodGestureKind, VodGestureTip, VodSeekBar;
 import 'package:pure_live/modules/vod/widgets/vod_widgets.dart' show vodDurationText;
+import 'package:pure_live/shared/player/player_danmaku_list_panel.dart';
+import 'package:pure_live/shared/player/player_danmaku_quick_controls.dart';
 import 'package:pure_live/shared/shared.dart';
 
 /// A recording's player: the kernel's own handle over the archive
@@ -104,12 +105,19 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> wit
   bool _controlsVisible = false;
   Timer? _hideTimer;
 
+  /// The watching lock, the room's own rule: locked, the strip, the bar and
+  /// the picture's gestures all stand down, and the unlock pill on the
+  /// picture's right edge is the only thing left to press.
+  bool _locked = false;
+
   /// The immersive parts catalogue: the chip it hangs from, the bar it
   /// floats above, and whether it stands open.
   final GlobalKey _partsAnchor = GlobalKey();
   final GlobalKey _barAnchor = GlobalKey();
   final GlobalKey _qualityAnchor = GlobalKey();
   final GlobalKey _speedAnchor = GlobalKey();
+  final GlobalKey _danmakuListAnchor = GlobalKey();
+  final GlobalKey _danmakuSettingsAnchor = GlobalKey();
   bool _partsOpen = false;
 
   /// The bar panel standing now (quality, speed); a tap anywhere else puts
@@ -118,6 +126,10 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> wit
 
   /// The page's own mute, the bar button's state; the slider speaks past it.
   bool _muted = false;
+
+  /// The module write a volume drag is waiting to settle into: a drag
+  /// speaks many ticks and the store needs the last word, not every word.
+  Timer? _volumeSave;
 
   /// What the last gesture did, in the chip over the picture.
   VodGestureKind? _tipKind;
@@ -188,6 +200,9 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> wit
     ref.listenManual(roomPresentationProvider, (_, next) => _presentationMode = next, fireImmediately: true);
     // The sleep timer must stop this recording, not some global notion of one.
     _sleepTimerNotifier = ref.read(sleepTimerProvider.notifier);
+    // A timer armed with no player alive (the settings' ASMR dialog) dies
+    // here: this page owns the fire now and inherits no leftover.
+    Timer.run(() => _sleepTimerNotifier.start(null));
     _sleepTimerNotifier.onFire_ = _onSleepFire;
     _kernel = ref.read(playerKernelProvider);
     WidgetsBinding.instance.addObserver(this);
@@ -248,9 +263,16 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> wit
           progress: ArchiveProgress(),
           cookie: _soopCookie(),
           ownsSession: false,
+          initialVolume: ref.read(modulePlaybackSettingsProvider(PlayerModule.archive)).volume,
         );
       } else if (huya != null) {
-        _controller = HuyaArchiveController(http: http, session: handle, video: huya, progress: ArchiveProgress());
+        _controller = HuyaArchiveController(
+          http: http,
+          session: handle,
+          video: huya,
+          progress: ArchiveProgress(),
+          initialVolume: ref.read(modulePlaybackSettingsProvider(PlayerModule.archive)).volume,
+        );
       } else if (douyu != null) {
         _controller = DouyuArchiveController(
           http: http,
@@ -258,6 +280,7 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> wit
           video: douyu,
           progress: ArchiveProgress(),
           cookie: _douyuCookie(),
+          initialVolume: ref.read(modulePlaybackSettingsProvider(PlayerModule.archive)).volume,
         );
       }
       if (_controller == null) return;
@@ -315,6 +338,9 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> wit
     _messagesSub = controller.messages.listen((message) {
       if (_disposed || message.text.isEmpty) return;
       final color = message.effectiveColor;
+      // Items carry no type: the engine's classic form on the record —
+      // enter at the right edge, scroll left — the recording's comments are
+      // the playback's own motion, never a pinned lane.
       _barrage.send(
         BarrageItem(
           content: message.text,
@@ -363,6 +389,8 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> wit
     _tipTimer?.cancel();
     _hideTimer?.cancel();
     _keySeekTimer?.cancel();
+    // A pending save reads `ref`, which is dead by now.
+    _volumeSave?.cancel();
     // The awake lock is the app's global: the sibling players release it on
     // the way out, and a page that leaves it held keeps the screen on until
     // some other player happens to drop it.
@@ -560,6 +588,8 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> wit
   /// it, an idle one settles it after the station's own seconds, whose zero
   /// is 常显.
   void _wake() {
+    // A hover landing after dispose says nothing to a dead state.
+    if (!mounted) return;
     _hideTimer?.cancel();
     if (!_controlsVisible) setState(() => _controlsVisible = true);
     _scheduleHide();
@@ -574,6 +604,19 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> wit
     }
   }
 
+  /// The watching lock: taking it puts the panels away first, and locked the
+  /// strip, the bar and the gestures stand down until the unlock pill says
+  /// otherwise — the room's and the channel's own rule.
+  void _toggleLock() {
+    if (!_locked && _partsOpen) setState(() => _partsOpen = false);
+    setState(() => _locked = !_locked);
+    if (_locked) {
+      _hideTimer?.cancel();
+      return;
+    }
+    _wake();
+  }
+
   /// Whether this display is the TV form factor: its chrome never hides on
   /// idle, the room's keepControls rule — the remote's focus walk is the
   /// only way through the bar, and a bar that folds under a focused button
@@ -581,11 +624,14 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> wit
   bool get _isTv => ref.read(platformRuntimeProvider).environment.runtime.formFactor == FormFactor.tv;
 
   void _scheduleHide() {
+    // The tracker still walks the regions a leaving page owned: its exit
+    // lands here after dispose, and a dead state reads no store.
+    if (!mounted) return;
     _hideTimer?.cancel();
     // The TV's chrome never hides on idle (see _isTv).
     if (_isTv) return;
     if (_partsOpen || !(_transport?.isPlaying ?? false)) return;
-    final seconds = ref.read(playbackSettingsProvider).controlsAutoHideSeconds;
+    final seconds = ref.read(modulePlaybackSettingsProvider(PlayerModule.archive)).controlsAutoHideSeconds;
     // The setting's zero is 常显: the chrome never hides on idle while the
     // recording plays.
     if (seconds <= 0) return;
@@ -777,6 +823,18 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> wit
     if (handle == null) return;
     if (_muted) setState(() => _muted = false);
     await handle.setVolume(value);
+    // The module remembers it: the next recording opens here. A drag lands
+    // its first word at once — leaving mid-drag still remembers roughly
+    // here — then waits out the ticks and writes where the drag settled.
+    final save = _volumeSave;
+    if (save == null) {
+      unawaited(ref.read(modulePlaybackSettingsProvider(PlayerModule.archive).notifier).setVolume(value));
+    }
+    _volumeSave?.cancel();
+    _volumeSave = Timer(const Duration(milliseconds: 800), () {
+      _volumeSave = null;
+      unawaited(ref.read(modulePlaybackSettingsProvider(PlayerModule.archive).notifier).setVolume(value));
+    });
   }
 
   @override
@@ -948,7 +1006,9 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> wit
     final danmakuFps = ref.watch(danmakuEffectiveFpsProvider);
     final playing = _transport?.isPlaying ?? false;
     _syncScreenWake(playing && ref.watch(keepScreenOnProvider));
-    final showBar = _controlsVisible || !playing;
+    // Locked, nothing rides the picture: the unlock pill on the right edge
+    // is the whole chrome, the room's own rule.
+    final showBar = !_locked && (_controlsVisible || !playing);
     return MouseRegion(
       onHover: (_) => _wake(),
       onExit: (_) => _scheduleHide(),
@@ -990,7 +1050,7 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> wit
               if (controller != null)
                 Positioned.fill(
                   child: VodPictureGestures(
-                    enabled: handle != null,
+                    enabled: handle != null && !_locked,
                     onTap: _toggleControls,
                     onDoubleTap: _onDoubleTap,
                     onScrub: _onScrub,
@@ -1024,6 +1084,43 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> wit
                 ),
               if (showBar)
                 PositionedDirectional(top: 0, start: 0, end: 0, child: _strip(context, name, immersive: immersive)),
+              // The picture's right edge, the room column's shape: the
+              // frame's copy above the lock — take the shot, then hand the
+              // picture over to the lock. Locked, the unlock pill is the
+              // only thing drawn, whatever the page does next; the download
+              // lives in the more container now.
+              if (showBar || _locked)
+                PositionedDirectional(
+                  end: DsSpace.s12,
+                  top: 0,
+                  bottom: 0,
+                  child: Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      spacing: DsSpace.s8,
+                      children: [
+                        if (!_locked && (_handle?.canCaptureScreenshot ?? false))
+                          PlayerGlassPill(
+                            child: PlayerBarButton(
+                              icon: DsIcons.camera,
+                              label: context.t.player.screenshot,
+                              onPressed: () {
+                                _wake();
+                                unawaited(_screenshot());
+                              },
+                            ),
+                          ),
+                        PlayerGlassPill(
+                          child: PlayerBarButton(
+                            icon: _locked ? DsIcons.unlock : DsIcons.lock,
+                            label: _locked ? context.t.room.unlockControls : context.t.room.lockControls,
+                            onPressed: _toggleLock,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               if (showBar)
                 PositionedDirectional(
                   bottom: 0,
@@ -1114,6 +1211,70 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> wit
                     ),
                   ),
                 ),
+              // The danmaku list, the comments against the clock: a row's
+              // tap seeks the picture there, the panel closing with it.
+              if (showBar && _openPanel == 'danmakuList' && controller != null)
+                Positioned.fill(
+                  child: PlayerPanelHost(
+                    anchorKey: _danmakuListAnchor,
+                    barKey: _barAnchor,
+                    width: 300,
+                    child: MouseRegion(
+                      onEnter: (_) => _hideTimer?.cancel(),
+                      onExit: (_) => _scheduleHide(),
+                      // The list breathes with the controller's own
+                      // revision: a comment landing re-reads the history
+                      // without the page rebuilding.
+                      child: ValueListenableBuilder<int>(
+                        valueListenable: controller.danmakuHistoryRevision,
+                        builder: (context, _, _) => PlayerDanmakuListPanel(
+                          lines: [
+                            for (final line in controller.danmakuHistory)
+                              (at: line.at, text: line.text, color: line.color),
+                          ],
+                          onSeek: (at) {
+                            setState(() => _openPanel = null);
+                            unawaited(controller.seek(at));
+                          },
+                          title: context.t.room.danmakuListTitle,
+                          empty: context.t.room.danmakuListEmpty,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              // The danmaku quick panel, the room bar's gear card: the four
+              // sliders and the way to the advanced settings.
+              if (showBar && _openPanel == 'danmaku')
+                Positioned.fill(
+                  child: PlayerPanelHost(
+                    anchorKey: _danmakuSettingsAnchor,
+                    barKey: _barAnchor,
+                    width: 280,
+                    child: MouseRegion(
+                      onEnter: (_) => _hideTimer?.cancel(),
+                      onExit: (_) => _scheduleHide(),
+                      child: PlayerOverlayPanel(
+                        title: context.t.settings.navDanmaku,
+                        width: 280,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(DsSpace.s12, 0, DsSpace.s12, DsSpace.s6),
+                            child: PlayerDanmakuQuickControls(
+                              onWake: _wake,
+                              onAdvanced: () {
+                                setState(() => _openPanel = null);
+                                unawaited(
+                                  context.push(SettingsSectionRoute(section: SettingsSection.danmaku.name).location),
+                                );
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
             ],
           );
         },
@@ -1130,16 +1291,11 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> wit
     final theme = DsTheme.of(context);
     final presentation = ref.watch(roomPresentationProvider);
     final pipAvailable = _handle != null && ref.read(roomPresentationProvider.notifier).pipAvailable;
+    // The cluster keeps the where-to verbs: the small window and, behind the
+    // ⋯, the quieter ones. The frame's copy and the download live on the
+    // picture's right edge now — the picture's actions in one column — so
+    // the pill carries no second copy.
     final actions = <Widget>[
-      if (_handle?.canCaptureScreenshot ?? false)
-        PlayerBarButton(
-          icon: DsIcons.camera,
-          label: t.player.screenshot,
-          onPressed: () {
-            _wake();
-            unawaited(_screenshot());
-          },
-        ),
       // In the small window the leading pill is the way back, so the pill
       // here would be the same verb twice.
       if (pipAvailable && presentation != PresentationMode.pip)
@@ -1151,25 +1307,10 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> wit
             unawaited(_togglePip());
           },
         ),
-      // The replay rides the destination cluster too: the walking rendition
-      // fetched to the finished-videos folder. A download under way says its
-      // own percent and takes the press as the way to stop it.
-      if (_handle?.source != null)
-        PlayerBarButton(
-          icon: _downloadProgress == null ? DsIcons.download : DsIcons.squareStop,
-          label: _downloadProgress == null
-              ? t.player.download
-              : t.settings.downloadPercent(percent: '${(_downloadProgress! * 100).round()}'),
-          onPressed: _downloadProgress == null
-              ? () {
-                  _wake();
-                  unawaited(_startDownload());
-                }
-              : _cancelDownload,
-        ),
-      // The mini window is the cluster's third destination: keep the frame,
-      // copy it, shrink it to a corner of the app.
-      if (_miniWindowReady)
+      // The mini window is the cluster's other destination: keep the frame,
+      // copy it, shrink it to a corner of the app. Settings-governed: off,
+      // the cluster carries no chip at all.
+      if (_miniWindowReady && ref.watch(playbackSettingsProvider.select((settings) => settings.floatWindow)))
         PlayerBarButton(
           icon: DsIcons.appWindow,
           label: t.common.miniWindow,
@@ -1179,62 +1320,125 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> wit
           },
         ),
     ];
-    final actionPill = actions.isEmpty
-        ? const SizedBox.shrink()
-        : PlayerGlassPill(
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              spacing: PlayerBarTier.tvOf(context) ? DsSpace.s8 : DsSpace.s4,
-              children: actions,
-            ),
-          );
-    final morePill = PlayerGlassPill(
-      child: DsMenuAnchor(
-        semanticLabel: t.common.more,
-        align: DsAlign.end,
-        items: [
-          // A long recording ends itself: the timer's panel reads the same
-          // choices the room's reads, and its fire pauses the walk where it
-          // stands.
-          DsMenuItem(
-            leading: const DsIcon(DsIcons.timer),
-            label: Text(t.player.sleep),
-            onPressed: () => unawaited(showRoomSleepTimer(context)),
+    // The session verbs and the more door share one pill, the room cluster's
+    // shape: the frame's copy, the download, the floating windows, then the
+    // ⋯ that opens the shared more container — the panel that is a side
+    // sheet on a wide window and a bottom sheet on a narrow one — carrying
+    // the quieter verbs: the stream's own numbers and the sleep timer.
+    final clusterPill = PlayerGlassPill(
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        spacing: PlayerBarTier.tvOf(context) ? DsSpace.s8 : DsSpace.s4,
+        children: [
+          ...actions,
+          PlayerBarButton(
+            icon: DsIcons.ellipsisVertical,
+            label: t.common.more,
+            onPressed: () {
+              _wake();
+              unawaited(
+                showPlayerMoreContainer(
+                  context,
+                  // The StatefulBuilder is the panel's own redraw: a pick
+                  // flips the provider synchronously and the panel reads it
+                  // again, so the switch never waits for the page's rebuild
+                  // to look flipped.
+                  content: (context, {required labeled}) => StatefulBuilder(
+                    builder: (context, setPanel) => Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      spacing: DsSpace.s4,
+                      children: [
+                        // The download's home since the lock took the edge:
+                        // the walking rendition fetched to the finished-videos
+                        // folder. A download under way says its own percent
+                        // and takes the press as the way to stop it.
+                        if (_handle?.source != null)
+                          PlayerMoreRow(
+                            label: t.player.download,
+                            leading: DsIcons.download,
+                            value: _downloadProgress == null
+                                ? null
+                                : t.settings.downloadPercent(percent: '${(_downloadProgress! * 100).round()}'),
+                            onTap: _downloadProgress == null
+                                ? () {
+                                    Navigator.of(context).pop();
+                                    unawaited(_startDownload());
+                                  }
+                                : () {
+                                    Navigator.of(context).pop();
+                                    _cancelDownload();
+                                  },
+                          ),
+                        PlayerMoreRow(
+                          label: t.player.statsToggle,
+                          leading: DsIcons.activity,
+                          value: null,
+                          onTap: _handle == null
+                              ? null
+                              : () {
+                                  ref.read(playerStatsVisibleProvider.notifier).toggle();
+                                  setPanel(() {});
+                                },
+                          trailing: DsSwitch(
+                            value: ref.read(playerStatsVisibleProvider),
+                            onChanged: (_) {
+                              ref.read(playerStatsVisibleProvider.notifier).toggle();
+                              setPanel(() {});
+                            },
+                          ),
+                        ),
+                        // A long recording ends itself: the choices stand in
+                        // the row, writing the shared session timer — the
+                        // room's ASMR panel stays with the room.
+                        PlayerMoreRow(
+                          label: t.player.sleep,
+                          leading: DsIcons.timer,
+                          value: null,
+                          onTap: null,
+                          trailing: PlayerMoreSeg<int>(
+                            values: const [0, 15, 30, 60, 90],
+                            labels: [
+                              t.player.sleepOff,
+                              asmrSleepDurationLabel(15),
+                              asmrSleepDurationLabel(30),
+                              asmrSleepDurationLabel(60),
+                              asmrSleepDurationLabel(90),
+                            ],
+                            current: ref.read(sleepTimerProvider).minutes ?? 0,
+                            onPick: (value) {
+                              ref.read(sleepTimerProvider.notifier).start(value == 0 ? null : value);
+                              setPanel(() {});
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
           ),
         ],
-        builder: (context, controller, _) => PlayerBarButton(
-          icon: DsIcons.ellipsisVertical,
-          label: t.common.more,
-          onPressed: () {
-            _wake();
-            controller.toggle();
-          },
-        ),
-      ),
-    );
-    final titleText = Flexible(
-      child: Text(
-        name,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: theme.typography.bodyStrong.copyWith(color: OnVideoColors.foreground),
       ),
     );
     if (!immersive) {
-      final backPill = PlayerGlassPill(
-        child: PlayerBarButton(
-          icon: DsIcons.arrowLeft,
-          label: t.common.back,
-          onPressed: () {
-            _wake();
-            if (Navigator.of(context).canPop()) Navigator.of(context).pop();
-          },
-        ),
-      );
       return Container(
         padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s8, DsSpace.s8, DsSpace.s12, DsSpace.s20),
         decoration: BoxDecoration(gradient: OnVideoColors.shade(edge: VerticalDirection.up)),
-        child: Row(spacing: DsSpace.s8, children: [backPill, titleText, const Spacer(), actionPill, morePill]),
+        child: Row(
+          spacing: DsSpace.s8,
+          children: [
+            PlayerCapsuleHead(
+              title: name,
+              onBack: () {
+                _wake();
+                if (Navigator.of(context).canPop()) Navigator.of(context).pop();
+              },
+            ),
+            const Spacer(),
+            clusterPill,
+          ],
+        ),
       );
     }
     return Container(
@@ -1257,7 +1461,7 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> wit
                     },
                   )
                 : PlayerBarButton(
-                    icon: DsIcons.minimize2,
+                    icon: DsIcons.minimize,
                     label: t.room.fullscreenOff,
                     autofocus: true,
                     onPressed: () => unawaited(_toggleFullscreen()),
@@ -1289,8 +1493,7 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> wit
               ),
             ),
           ),
-          actionPill,
-          morePill,
+          clusterPill,
           // The small window's own close: done watching here means the window
           // goes, and the page stays where its host left it. A window that
           // cannot close carries no verb.
@@ -1322,141 +1525,189 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> wit
     final handle = _handle;
     if (controller == null || handle == null) return const SizedBox(height: 56);
     final tv = PlayerBarTier.tvOf(context);
-    final compact = !tv && MediaQuery.sizeOf(context).width < kPlaybackCompactBreakpoint;
     final presentation = ref.watch(roomPresentationProvider);
     final playing = _transport?.isPlaying ?? false;
     final position = _transport?.position ?? Duration.zero;
     final total = controller.duration > Duration.zero ? controller.duration : Duration.zero;
-    final bar = Row(
-      spacing: tv ? DsSpace.s8 : DsSpace.s4,
-      children: [
-        // The bar's first control and a TV's landing focus: the remote
-        // reaches play before anything else.
-        PlayerBarButton(
-          icon: playing ? DsIcons.pause : DsIcons.play,
-          label: playing ? t.player.pause : t.player.play,
-          autofocus: tv,
-          onPressed: () {
-            _wake();
-            unawaited(controller.togglePlayPause());
-          },
-        ),
-        // The bar owns the sound the way the live room's does: the mute
-        // button and the slider beside it, the slider speaking past a mute.
-        PlayerBarButton(
-          label: _muted ? t.player.unmute : t.player.mute,
-          icon: _muted ? DsIcons.volumeX : DsIcons.volume2,
-          onPressed: () {
-            _wake();
-            unawaited(_toggleMute());
-          },
-        ),
-        SizedBox(
-          width: compact ? 72 : 96,
-          child: DsSlider(
-            value: handle.volume,
-            style: const DsSliderStyle(
-              height: 24,
-              trackHeight: 4,
-              trackColor: OnVideoColors.track,
-              fillColor: OnVideoColors.foreground,
-              thumbColor: OnVideoColors.foreground,
-              thumbSize: 12,
+    // The bar's three groups under the shared rule: the transport with the
+    // window verbs on one line, the catalogues (the comments' trio, the
+    // renditions, the speed, the parts) folding to their own line below —
+    // two rows at the narrow widths, never a horizontal scroll. The bar's
+    // own width is the ladder's ruler, the one every surface reads: the
+    // volume slider 96 px when the bar is roomy, 72 when it bends, and gone
+    // under 480, where the mute and the picture's vertical drag still carry
+    // the sound.
+    final bar = LayoutBuilder(
+      builder: (context, barConstraints) {
+        final barWidth = barConstraints.maxWidth;
+        final volumeWidth = barWidth >= 720 ? 96.0 : (barWidth >= 480 ? 72.0 : null);
+        return PlayerBarRows(
+      // Two rows at every width — the transport row, then the catalogue row
+      // (the pace among them) along the picture's bottom edge, left-aligned,
+      // so the pace never hides at the wide row's right end.
+      foldWidth: double.infinity,
+      gap: tv ? DsSpace.s8 : DsSpace.s4,
+      start: Row(
+        spacing: tv ? DsSpace.s8 : DsSpace.s4,
+        children: [
+          // The bar's first control and a TV's landing focus: the remote
+          // reaches play before anything else.
+          PlayerBarButton(
+            icon: playing ? DsIcons.pause : DsIcons.play,
+            label: playing ? t.player.pause : t.player.play,
+            autofocus: tv,
+            onPressed: () {
+              _wake();
+              unawaited(controller.togglePlayPause());
+            },
+          ),
+          // The bar owns the sound the way the live room's does: the mute
+          // button and the slider beside it, the slider speaking past a mute.
+          PlayerBarButton(
+            label: _muted ? t.player.unmute : t.player.mute,
+            icon: _muted ? DsIcons.volumeX : DsIcons.volume2,
+            onPressed: () {
+              _wake();
+              unawaited(_toggleMute());
+            },
+          ),
+          if (volumeWidth case final width?)
+            SizedBox(
+              width: width,
+              child: DsSlider(
+              value: handle.volume,
+              style: const DsSliderStyle(
+                height: 24,
+                trackHeight: 4,
+                trackColor: OnVideoColors.track,
+                fillColor: OnVideoColors.foreground,
+                thumbColor: OnVideoColors.foreground,
+                thumbSize: 12,
+              ),
+              onChanged: (value) {
+                _wake();
+                unawaited(_setVolume(value));
+              },
+              semanticLabel: t.player.volume,
             ),
-            onChanged: (value) {
-              _wake();
-              unawaited(_setVolume(value));
-            },
-            semanticLabel: t.player.volume,
-          ),
-        ),
-        const Spacer(),
-        if (controller.supportsDanmaku) ...[
-          PlayerBarButton(
-            iconAsset: controller.danmakuVisible ? 'assets/icons/danmaku-on.svg' : 'assets/icons/danmaku-off.svg',
-            label: controller.danmakuVisible ? t.common.danmakuOff : t.common.danmakuOn,
-            onPressed: () {
-              _wake();
-              controller.toggleDanmaku();
-            },
-          ),
-          // The danmaku's style is the app's own store, so the tuning lives
-          // in the settings pane — the way the vod page's gear reaches it.
-          PlayerBarButton(
-            iconAsset: 'assets/icons/danmaku-settings.svg',
-            label: t.settings.navDanmaku,
-            onPressed: () {
-              _wake();
-              unawaited(context.push(SettingsSectionRoute(section: SettingsSection.danmaku.name).location));
-            },
           ),
         ],
-        if (controller.qualities.length > 1)
-          PlayerBarChoice(
-            anchorKey: _qualityAnchor,
-            label: t.room.replayQuality,
-            value:
-                controller.qualities.where((item) => item.id == controller.qualityId).firstOrNull?.label ??
-                t.room.replayQuality,
-            icon: DsIcons.gauge,
-            selected: _openPanel == 'quality',
-            onPressed: () {
-              _wake();
-              setState(() => _openPanel = _openPanel == 'quality' ? null : 'quality');
-            },
-          ),
-        PlayerBarChoice(
-          anchorKey: _speedAnchor,
-          label: t.player.speed,
-          value: playerRateLabel(controller.rate),
-          icon: DsIcons.timer,
-          selected: _openPanel == 'speed',
-          onPressed: () {
-            _wake();
-            setState(() => _openPanel = _openPanel == 'speed' ? null : 'speed');
-          },
-        ),
-        // The immersive surface has no parts row under the picture — the
-        // catalogue on the bar is the only way to another part there.
-        if (partsOnBar && controller.segments.length > 1)
-          KeyedSubtree(
-            key: _partsAnchor,
-            child: PlayerBarButton(
-              icon: DsIcons.listVideo,
-              label: _currentPartLabel(controller),
-              selected: _partsOpen,
+      ),
+      middle: Row(
+        spacing: tv ? DsSpace.s8 : DsSpace.s4,
+        children: [
+          if (controller.supportsDanmaku) ...[
+            PlayerBarButton(
+              iconAsset: controller.danmakuVisible ? 'assets/icons/danmaku-on.svg' : 'assets/icons/danmaku-off.svg',
+              label: controller.danmakuVisible ? t.common.danmakuOff : t.common.danmakuOn,
               onPressed: () {
                 _wake();
-                setState(() => _partsOpen = !_partsOpen);
+                controller.toggleDanmaku();
               },
             ),
-          ),
-        // The window verbs, then the way out of the picture's box — the room
-        // bar's pair: the desktop's window-fullscreen first, then the system
-        // fullscreen the phone turns for.
-        if (_desktop && presentation != PresentationMode.pip)
-          PlayerBarButton(
-            icon: presentation == PresentationMode.windowFullscreen ? DsIcons.copy : DsIcons.square,
-            label: presentation == PresentationMode.windowFullscreen
-                ? t.player.windowFullscreenOff
-                : t.player.windowFullscreenOn,
-            selected: presentation == PresentationMode.windowFullscreen,
+            // The recording's comments as a catalogue: the list reads
+            // against the clock, a line's tap seeking to its moment.
+            PlayerBarButton(
+              key: _danmakuListAnchor,
+              iconAsset: 'assets/icons/danmaku.svg',
+              label: t.room.danmakuListTitle,
+              selected: _openPanel == 'danmakuList',
+              onPressed: () {
+                _wake();
+                setState(() => _openPanel = _openPanel == 'danmakuList' ? null : 'danmakuList');
+              },
+            ),
+            // The gear the room bar wears: the quick sliders beside the
+            // picture, the full settings behind the advanced row.
+            PlayerBarButton(
+              key: _danmakuSettingsAnchor,
+              iconAsset: 'assets/icons/danmaku-settings.svg',
+              label: t.settings.navDanmaku,
+              selected: _openPanel == 'danmaku',
+              onPressed: () {
+                _wake();
+                setState(() => _openPanel = _openPanel == 'danmaku' ? null : 'danmaku');
+              },
+            ),
+          ],
+          if (controller.qualities.length > 1)
+            PlayerBarChoice(
+              anchorKey: _qualityAnchor,
+              label: t.room.replayQuality,
+              value:
+                  controller.qualities.where((item) => item.id == controller.qualityId).firstOrNull?.label ??
+                  t.room.replayQuality,
+              icon: DsIcons.gauge,
+              selected: _openPanel == 'quality',
+              onPressed: () {
+                _wake();
+                setState(() => _openPanel = _openPanel == 'quality' ? null : 'quality');
+              },
+            ),
+          PlayerBarChoice(
+            anchorKey: _speedAnchor,
+            label: t.player.speed,
+            value: playerRateLabel(controller.rate),
+            icon: DsIcons.timer,
+            selected: _openPanel == 'speed',
             onPressed: () {
               _wake();
-              unawaited(_toggleWindowFullscreen());
+              setState(() => _openPanel = _openPanel == 'speed' ? null : 'speed');
             },
           ),
-        if (presentation != PresentationMode.pip)
-          PlayerBarButton(
-            icon: presentation == PresentationMode.fullscreen ? DsIcons.minimize : DsIcons.maximize,
-            label: presentation == PresentationMode.fullscreen ? t.room.fullscreenOff : t.room.fullscreenOn,
-            selected: presentation == PresentationMode.fullscreen,
-            onPressed: () {
-              _wake();
-              unawaited(_toggleFullscreen());
-            },
-          ),
-      ],
+          // The immersive surface has no parts row under the picture — the
+          // catalogue on the bar is the only way to another part there.
+          if (partsOnBar && controller.segments.length > 1)
+            KeyedSubtree(
+              key: _partsAnchor,
+              child: PlayerBarButton(
+                icon: DsIcons.listVideo,
+                label: _currentPartLabel(controller),
+                selected: _partsOpen,
+                onPressed: () {
+                  _wake();
+                  setState(() => _partsOpen = !_partsOpen);
+                },
+              ),
+            ),
+        ],
+      ),
+      end: Row(
+        spacing: tv ? DsSpace.s8 : DsSpace.s4,
+        children: [
+          // The window verbs, then the way out of the picture's box — the room
+          // bar's pair: the desktop's window-fullscreen first, then the system
+          // fullscreen the phone turns for. The window's own shape with the
+          // arrows that say which way it goes — the same pair the room bar
+          // wears.
+          if (_desktop && presentation != PresentationMode.pip)
+            PlayerBarButton(
+              icon: presentation == PresentationMode.windowFullscreen
+                  ? DsIcons.squareShrinkUpLeftDownRight
+                  : DsIcons.squareExpandUpRightDownLeft,
+              label: presentation == PresentationMode.windowFullscreen
+                  ? t.player.windowFullscreenOff
+                  : t.player.windowFullscreenOn,
+              selected: presentation == PresentationMode.windowFullscreen,
+              onPressed: () {
+                _wake();
+                unawaited(_toggleWindowFullscreen());
+              },
+            ),
+          if (presentation != PresentationMode.pip)
+            PlayerBarButton(
+              icon: presentation == PresentationMode.fullscreen ? DsIcons.minimize : DsIcons.maximize,
+              label: presentation == PresentationMode.fullscreen ? t.room.fullscreenOff : t.room.fullscreenOn,
+              selected: presentation == PresentationMode.fullscreen,
+              onPressed: () {
+                _wake();
+                unawaited(_toggleFullscreen());
+              },
+            ),
+        ],
+        ),
+        );
+      },
     );
     return PlayerControlBar(
       child: Column(
@@ -1471,10 +1722,11 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> wit
             seekBar: VodSeekBar(
               position: position,
               duration: total,
+              buffered: _transport?.buffer.ranges ?? const [],
               onSeek: (seconds) => unawaited(controller.seek(Duration(milliseconds: (seconds * 1000).round()))),
             ),
           ),
-          if (compact) SingleChildScrollView(scrollDirection: Axis.horizontal, child: bar) else bar,
+          bar,
         ],
       ),
     );
