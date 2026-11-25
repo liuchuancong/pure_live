@@ -227,6 +227,12 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
   MpvAudioPlayerAdapter? _sessionAdapter;
   bool _localMuted = false;
   int _muteGeneration = 0;
+  double _desiredVolume = 1;
+  double _desiredRate = 1;
+  bool _volumePending = false;
+  bool _ratePending = false;
+  String? _pendingSeekKey;
+  Duration _pendingSeekPosition = Duration.zero;
 
   bool get _effectivelyMuted => _localMuted || ref.read(playbackSettingsProvider).globalMute;
 
@@ -244,6 +250,8 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
     ref.watch(selectedModuleProvider);
     _module = ref.read(selectedModuleProvider);
     final settings = ref.read(musicPlaybackSettingsProvider);
+    _desiredVolume = settings.volume;
+    _desiredRate = settings.playbackRate;
     final lyricSettings = ref.read(musicLyricsSettingsProvider);
     _progressStore = ref.read(musicProgressStoreProvider);
     _positions = _progressStore.read();
@@ -284,7 +292,7 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
       ),
       // Music is the one player that keeps going after the app is backgrounded:
       // the kernel's own policy would pause it with every other player.
-      playerConfig: const PlayerConfig(pauseWhenBackgrounded: false),
+      playerConfig: PlayerConfig(pauseWhenBackgrounded: false, volume: settings.volume, muted: _effectivelyMuted),
     );
     _audio.setLyricOffset(Duration(milliseconds: lyricSettings.lyricOffsetMs));
     unawaited(_applyMute());
@@ -404,6 +412,8 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
         _eqPending = true;
         _pitchPending = true;
         _devicePending = true;
+        _volumePending = true;
+        _ratePending = true;
       }
       // The engine handle appears with the first track; a sound effect chosen
       // before that waited for exactly this moment.
@@ -418,6 +428,21 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
       if (_devicePending && next.track != null) {
         _devicePending = false;
         _applyAudioDevice();
+      }
+      if (next.track != null && (_volumePending || _ratePending)) {
+        _volumePending = false;
+        _ratePending = false;
+        unawaited(_applyEnginePrefs());
+      }
+      final pendingSeekKey = _pendingSeekKey;
+      if (next.track != null &&
+          pendingSeekKey != null &&
+          pendingSeekKey == musicTrackKey(next.track!) &&
+          next.duration > Duration.zero) {
+        _pendingSeekKey = null;
+        final position = _pendingSeekPosition;
+        _pendingSeekPosition = Duration.zero;
+        unawaited(_audio.seek(position));
       }
       _publishEngineSession(next);
       // Android 13+ hides the media notification without this permission; ask
@@ -456,7 +481,7 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
       unawaited(
         ref
             .read(musicPlaybackSettingsProvider.notifier)
-            .setVolume(_audio.state.volume.clamp(0.0, 1.0))
+            .setVolume(_desiredVolume.clamp(0.0, 1.0))
             .catchError((Object _) {}),
       );
       _flushProgress();
@@ -887,7 +912,11 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
   }
 
   /// Plays the queue entry at [index].
-  Future<void> playAt(int index) => _pick(index);
+  Future<void> playAt(int index) {
+    _queueEpoch++;
+    _pendingSeekKey = null;
+    return _pick(index);
+  }
 
   /// Picks an in-queue entry, applying the played-list rule: with the
   /// auto-clean setting on, random mode rebuilds the shuffle so every song
@@ -921,24 +950,37 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
   }
 
   /// Puts [track] right after the current one.
-  Future<void> playNext(audio.MusicTrack track) => _audio.playTrack(track, insertNext: true);
+  Future<void> playNext(audio.MusicTrack track) {
+    _queueEpoch++;
+    _pendingSeekKey = null;
+    return _audio.playTrack(track, insertNext: true);
+  }
 
   Future<void> toggle() async {
+    _queueEpoch++;
+    _pendingSeekKey = null;
     await _audio.toggle();
     _holdSound();
   }
 
   Future<void> next() async {
+    _queueEpoch++;
+    _pendingSeekKey = null;
     await _audio.next();
     _holdSound();
   }
 
   Future<void> previous() async {
+    _queueEpoch++;
+    _pendingSeekKey = null;
     await _audio.previous();
     _holdSound();
   }
 
-  Future<void> seek(Duration position) => _audio.seek(position);
+  Future<void> seek(Duration position) {
+    _pendingSeekKey = null;
+    return _audio.seek(position);
+  }
 
   /// The volume's preference write trails the drag: the engine hears every
   /// step at once, and the store lands one write when the drag settles —
@@ -947,13 +989,23 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
   Timer? _volumeSave;
 
   Future<void> setVolume(double volume) async {
-    await _audio.setVolume(volume);
-    _volumeSave?.cancel();
     final clamped = volume.clamp(0.0, 1.0);
+    _desiredVolume = clamped;
+    await _audio.setVolume(clamped);
+    _volumeSave?.cancel();
     _volumeSave = Timer(const Duration(milliseconds: 300), () {
       _volumeSave = null;
       unawaited(ref.read(musicPlaybackSettingsProvider.notifier).setVolume(clamped));
     });
+  }
+
+  Future<void> _applyEnginePrefs() async {
+    try {
+      await _audio.setVolume(_desiredVolume);
+      await _audio.setRate(_desiredRate);
+    } on Object {
+      // A rebuilt engine may disappear while its preferences are replayed.
+    }
   }
 
   Future<void> _applyMute() async {
@@ -978,6 +1030,7 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
   }
 
   Future<void> setRate(double rate) async {
+    _desiredRate = rate;
     await _audio.setRate(rate);
     await ref.read(musicPlaybackSettingsProvider.notifier).setPlaybackRate(rate);
   }
@@ -1463,7 +1516,11 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
         seekTo = Duration(milliseconds: saved);
       }
     }
-    if (seekTo > Duration.zero) await _audio.seek(seekTo);
+    if (seekTo > Duration.zero) {
+      _pendingSeekKey = musicTrackKey(snapshot.tracks[restoreIndex]);
+      _pendingSeekPosition = seekTo;
+      await _audio.seek(seekTo);
+    }
     if (epoch != _queueEpoch || !ref.mounted) return;
     await _audio.play();
     _holdSound();

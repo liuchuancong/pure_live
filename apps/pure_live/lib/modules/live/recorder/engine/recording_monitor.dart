@@ -427,7 +427,13 @@ final class RecordingLiveMonitor {
         try {
           // `current`, not the sweep's opening snapshot: the platform read
           // can take seconds, and an edit landing in between must survive.
-          await engine.start(current, stream.line, room: stream.room, danmaku: site.capability<LiveDanmakuProvider>());
+          await engine.start(
+            current,
+            stream.line,
+            room: stream.room,
+            danmaku: site.capability<LiveDanmakuProvider>(),
+            requireEnabled: true,
+          );
         } on Object catch (error, stack) {
           appLog
               .forCategory('recorder.monitor')

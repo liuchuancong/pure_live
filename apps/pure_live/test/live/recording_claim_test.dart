@@ -10,6 +10,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:pure_live/modules/live/recorder/engine/recording_claim.dart';
+import 'package:pure_live/modules/live/recorder/engine/recording_finalize_lock.dart';
 
 void main() {
   late Directory folder;
@@ -44,5 +45,21 @@ void main() {
 
     await releaseRecordingClaim(other);
     await releaseRecordingClaim(null);
+  });
+
+  test('a finalize marker survives probes so every window locks the same file', () async {
+    final first = await acquireFinalizeLock(folder);
+    expect(first, isNotNull);
+    expect(await hasLiveFinalizeLock(folder), isTrue);
+
+    await releaseFinalizeLock(first, folder);
+    final marker = File('${folder.path}${Platform.pathSeparator}$kFinalizeLockName');
+    expect(marker.existsSync(), isTrue);
+    expect(await hasLiveFinalizeLock(folder), isFalse);
+    expect(marker.existsSync(), isTrue);
+
+    final again = await acquireFinalizeLock(folder);
+    expect(again, isNotNull);
+    await releaseFinalizeLock(again, folder);
   });
 }

@@ -572,7 +572,13 @@ final class RecorderEngine {
   /// their referer — and [_refreshTake] re-mints the address from the room
   /// every time FFmpeg has to open the source again. Returns null when the
   /// capture began, and the engine's own words when it did not.
-  Future<String?> start(RecordingTask task, LivePlayLine line, {LiveRoom? room, LiveDanmakuProvider? danmaku}) async {
+  Future<String?> start(
+    RecordingTask task,
+    LivePlayLine line, {
+    LiveRoom? room,
+    LiveDanmakuProvider? danmaku,
+    bool requireEnabled = false,
+  }) async {
     if (_sessions.containsKey(task.id)) return 'already recording';
     // The permission prompt belongs to the action that needs it.
     unawaited(requestUserNotificationPermission());
@@ -612,13 +618,22 @@ final class RecorderEngine {
     final claim = await acquireRecordingClaim(_ref.read(appPathsProvider).recordingClaims, task.id);
     if (claim == null) return 'recording-busy';
 
+    final startedAt = DateTime.now().toUtc();
+    final RecordingTask? sessionTask;
     try {
-      await repo.save(task.copyWith(state: RecordingTaskState.stopped, startedAt: DateTime.now().toUtc()));
+      sessionTask = await repo.beginSession(
+        task.id,
+        expectedStartedAt: task.startedAt,
+        startedAt: startedAt,
+        requireEnabled: requireEnabled,
+      );
     } on Object {
-      // A store that cannot take the stub must not keep the claim: the task
-      // would read as busy to this same process for the rest of its life.
       await releaseRecordingClaim(claim);
       rethrow;
+    }
+    if (sessionTask == null) {
+      await releaseRecordingClaim(claim);
+      return 'recording-busy';
     }
     final backend = FfmpegRecordingBackend(
       outputDirectory: root,
@@ -660,7 +675,7 @@ final class RecorderEngine {
     final session = _LiveRecording(
       manager: manager,
       backend: backend,
-      task: task,
+      task: sessionTask,
       capBytes: settings.maxSizeMb * 1024 * 1024,
       root: root,
       take: take,
@@ -702,7 +717,7 @@ final class RecorderEngine {
       await repo.setEnded(
         task.id,
         RecordingTaskState.failed,
-        expectedStartedAt: task.startedAt,
+        expectedStartedAt: sessionTask.startedAt,
         errorText: _errorOf(error),
       );
       await releaseRecordingClaim(session.claim);
@@ -719,11 +734,14 @@ final class RecorderEngine {
     }
 
     try {
-      await repo.setRunning(
+      final running = await repo.setRunning(
         task.id,
         takeDirectory: root,
         container: settings.container == RecordingFileContainer.mp4 ? 'mp4' : 'ts',
+        expectedStartedAt: sessionTask.startedAt,
+        startedAt: sessionTask.startedAt,
       );
+      if (!running) throw StateError('the recording session was replaced');
     } on Object catch (error, stack) {
       // The capture is live, but the store cannot carry it: the row would
       // stay a stub — no progress, no size cap, no disk watermark, no state
@@ -736,7 +754,7 @@ final class RecorderEngine {
         await repo.setEnded(
           task.id,
           RecordingTaskState.failed,
-          expectedStartedAt: task.startedAt,
+          expectedStartedAt: sessionTask.startedAt,
           errorText: _errorOf(error),
         );
       } on Object {

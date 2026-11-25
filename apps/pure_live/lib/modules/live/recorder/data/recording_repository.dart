@@ -55,6 +55,43 @@ final class RecordingTaskRepository {
     await save(RecordingTask.fromJson(stored).copyWith(enabled: enabled));
   }
 
+  /// Starts a new session on the expected row without replacing subscription
+  /// settings that may have changed while the engine prepared its capture.
+  Future<RecordingTask?> beginSession(
+    String id, {
+    required DateTime expectedStartedAt,
+    required DateTime startedAt,
+    bool requireEnabled = false,
+  }) async {
+    final stored = store.get(id);
+    if (stored == null) return null;
+    final task = RecordingTask.fromJson(stored);
+    if (!task.startedAt.isAtSameMomentAs(expectedStartedAt) || (requireEnabled && !task.enabled)) return null;
+    final started = RecordingTask(
+      id: task.id,
+      platform: task.platform,
+      roomId: task.roomId,
+      roomTitle: task.roomTitle,
+      quality: task.quality,
+      enabled: task.enabled,
+      checkSeconds: task.checkSeconds,
+      checkBackoff: task.checkBackoff,
+      maxCheckSeconds: task.maxCheckSeconds,
+      anchorName: task.anchorName,
+      anchorAvatarUrl: task.anchorAvatarUrl,
+      coverUrl: task.coverUrl,
+      state: RecordingTaskState.stopped,
+      startedAt: startedAt,
+      scheduleEnabled: task.scheduleEnabled,
+      scheduleDays: task.scheduleDays,
+      scheduleStartMinutes: task.scheduleStartMinutes,
+      scheduleEndMinutes: task.scheduleEndMinutes,
+      stopAtWindowEnd: task.stopAtWindowEnd,
+    );
+    await save(started);
+    return started;
+  }
+
   /// Marks the task behind [id] as recording: a new session starts now, and
   /// the last one's facts (file, size, error) are cleared with it. A task
   /// never stored is a no-op — the engine adds its stub first.
@@ -62,10 +99,17 @@ final class RecordingTaskRepository {
   /// [takeDirectory] is the folder the capture writes into, stored from the
   /// first byte: a process that dies mid-take leaves a row that still names
   /// where its segments are, so the next start can finish them.
-  Future<void> setRunning(String id, {String? takeDirectory, String? container}) async {
+  Future<bool> setRunning(
+    String id, {
+    String? takeDirectory,
+    String? container,
+    DateTime? expectedStartedAt,
+    DateTime? startedAt,
+  }) async {
     final stored = store.get(id);
-    if (stored == null) return;
+    if (stored == null) return false;
     final task = RecordingTask.fromJson(stored);
+    if (expectedStartedAt != null && !task.startedAt.isAtSameMomentAs(expectedStartedAt)) return false;
     await save(
       RecordingTask(
         id: task.id,
@@ -74,12 +118,15 @@ final class RecordingTaskRepository {
         roomTitle: task.roomTitle,
         quality: task.quality,
         enabled: task.enabled,
+        checkSeconds: task.checkSeconds,
+        checkBackoff: task.checkBackoff,
+        maxCheckSeconds: task.maxCheckSeconds,
         anchorName: task.anchorName,
         anchorAvatarUrl: task.anchorAvatarUrl,
         coverUrl: task.coverUrl,
         container: container ?? task.container,
         state: RecordingTaskState.recording,
-        startedAt: DateTime.now().toUtc(),
+        startedAt: startedAt ?? DateTime.now().toUtc(),
         filePath: takeDirectory,
         scheduleEnabled: task.scheduleEnabled,
         scheduleDays: task.scheduleDays,
@@ -88,6 +135,7 @@ final class RecordingTaskRepository {
         stopAtWindowEnd: task.stopAtWindowEnd,
       ),
     );
+    return true;
   }
 
   /// Marks the expected session behind [id] as ended in [state], stamping the
@@ -364,10 +412,22 @@ class RecordingTasksController extends Notifier<RecordingTasksState> {
   }
 
   /// Marks the task behind [id] as recording (a new session starts).
-  Future<void> setRunning(String id, {String? takeDirectory, String? container}) async {
+  Future<bool> setRunning(
+    String id, {
+    String? takeDirectory,
+    String? container,
+    DateTime? expectedStartedAt,
+    DateTime? startedAt,
+  }) async {
     final repository = ref.read(recordingRepositoryProvider).value;
-    if (repository == null) return;
-    await repository.setRunning(id, takeDirectory: takeDirectory, container: container);
+    if (repository == null) return false;
+    return await repository.setRunning(
+      id,
+      takeDirectory: takeDirectory,
+      container: container,
+      expectedStartedAt: expectedStartedAt,
+      startedAt: startedAt,
+    );
   }
 
   /// Turns the watch switch of the task behind [id] on or off.

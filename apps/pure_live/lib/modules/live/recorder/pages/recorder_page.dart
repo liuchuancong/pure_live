@@ -815,7 +815,7 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
       // still hold the chat sidecars and the archived segments.
       onDeleted: (item) async {
         final row = ref.read(recordingTasksProvider).tasks.where((task) => task.id == item.id).firstOrNull;
-        if (row == null) return;
+        if (row == null || !taskOwnsFile(row, item.path)) return;
         // The row keeps naming the take's folder, so 打开文件夹 still works
         // on what is left in it.
         if (row.state == RecordingTaskState.stopped) {

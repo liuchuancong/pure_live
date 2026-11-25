@@ -141,6 +141,62 @@ void main() {
     expect(task.postProcessing, isFalse);
   });
 
+  test('a prepared session preserves settings changed after the start snapshot', () async {
+    final repo = RecordingTaskRepository(_MemoryStore());
+    await repo.save(_task(startedAt: first));
+    final changed = repo
+        .taskById('bili:1')!
+        .copyWith(enabled: false, scheduleEnabled: false, scheduleStartMinutes: 600, warning: 'join-failed');
+    await repo.save(changed);
+
+    final started = await repo.beginSession('bili:1', expectedStartedAt: first, startedAt: second);
+
+    expect(started, isNotNull);
+    expect(started!.enabled, isFalse);
+    expect(started.scheduleEnabled, isFalse);
+    expect(started.scheduleStartMinutes, 600);
+    expect(started.startedAt, second);
+    expect(started.filePath, isNull);
+    expect(started.bytes, 0);
+    expect(started.warning, '');
+    expect(started.postProcessing, isFalse);
+  });
+
+  test('automatic start stands down when the subscription was paused or replaced', () async {
+    final repo = RecordingTaskRepository(_MemoryStore());
+    await repo.save(_task(startedAt: first).copyWith(enabled: false));
+
+    expect(
+      await repo.beginSession('bili:1', expectedStartedAt: first, startedAt: second, requireEnabled: true),
+      isNull,
+    );
+    expect(repo.taskById('bili:1')!.startedAt, first);
+
+    await repo.save(_task(startedAt: first, state: RecordingTaskState.recording));
+    await repo.save(_task(startedAt: second, state: RecordingTaskState.recording));
+    expect(await repo.beginSession('bili:1', expectedStartedAt: first, startedAt: second), isNull);
+    expect(repo.taskById('bili:1')!.startedAt, second);
+  });
+
+  test('the running transition keeps the prepared session identity', () async {
+    final repo = RecordingTaskRepository(_MemoryStore());
+    await repo.save(_task(startedAt: first).copyWith(checkSeconds: 90, checkBackoff: false, maxCheckSeconds: 1800));
+    await repo.beginSession('bili:1', expectedStartedAt: first, startedAt: second);
+
+    expect(await repo.setRunning('bili:1', expectedStartedAt: first, startedAt: first), isFalse);
+    expect(repo.taskById('bili:1')!.state, RecordingTaskState.stopped);
+    expect(
+      await repo.setRunning('bili:1', takeDirectory: r'D:\rec\take_b', expectedStartedAt: second, startedAt: second),
+      isTrue,
+    );
+    final running = repo.taskById('bili:1')!;
+    expect(running.startedAt, second);
+    expect(running.filePath, r'D:\rec\take_b');
+    expect(running.checkSeconds, 90);
+    expect(running.checkBackoff, isFalse);
+    expect(running.maxCheckSeconds, 1800);
+  });
+
   test('post-processing begins only for an ended take of the expected session', () async {
     final repo = RecordingTaskRepository(_MemoryStore());
     await repo.save(_task(startedAt: first));

@@ -13,7 +13,8 @@ const String kFinalizeLockName = '.pure_live_finalizing.lock';
 /// Takes an exclusive lock on [root]'s finalize marker.
 ///
 /// Returns null when another process holds the lock. The handle must be kept
-/// open until [releaseFinalizeLock]; the marker is removed when it closes.
+/// open until [releaseFinalizeLock]; the marker stays on disk so another open
+/// always refers to the same locked file.
 Future<RandomAccessFile?> acquireFinalizeLock(Directory root) async {
   try {
     await root.create(recursive: true);
@@ -35,7 +36,9 @@ Future<RandomAccessFile?> acquireFinalizeLock(Directory root) async {
   }
 }
 
-/// Releases [handle] and removes the marker under [root].
+/// Releases [handle]. The marker deliberately remains on disk: deleting an
+/// unlocked path would let a later window lock a different inode while another
+/// process is still between its unlock and close.
 Future<void> releaseFinalizeLock(RandomAccessFile? handle, Directory root) async {
   if (handle != null) {
     try {
@@ -49,12 +52,6 @@ Future<void> releaseFinalizeLock(RandomAccessFile? handle, Directory root) async
       // A handle that cannot close owns nothing else.
     }
   }
-  try {
-    final marker = File(p.join(root.path, kFinalizeLockName));
-    if (marker.existsSync()) marker.deleteSync();
-  } on FileSystemException {
-    // A marker that cannot be removed is retried by stale recovery.
-  }
 }
 
 /// Whether another process holds [root]'s finalize lock.
@@ -67,11 +64,9 @@ Future<bool> hasLiveFinalizeLock(Directory root) async {
   final marker = File(p.join(root.path, kFinalizeLockName));
   if (!marker.existsSync()) return false;
   RandomAccessFile? handle;
-  var acquired = false;
   try {
     handle = await marker.open(mode: FileMode.append);
     await handle.lock();
-    acquired = true;
     return false;
   } on Object {
     return true;
@@ -86,13 +81,6 @@ Future<bool> hasLiveFinalizeLock(Directory root) async {
         await handle.close();
       } on Object {
         // Closing a probe that never locked is harmless.
-      }
-    }
-    if (acquired) {
-      try {
-        if (marker.existsSync()) marker.deleteSync();
-      } on FileSystemException {
-        // The stale marker stays for the next probe; the status is already clear.
       }
     }
   }

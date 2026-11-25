@@ -150,7 +150,7 @@ class MusicDownloadsViewState extends ConsumerState<MusicDownloadsView> {
     // One stat per row per queue shape, not one per tick: the same song answers
     // through its badge, its verb and its menu.
     final fingerprint =
-        '\$directory|\$_recheck|${[for (final task in tasks) '${task.id}:${task.status.index}:${task.outputPath}'].join(',')}';
+        '$directory|$_recheck|${[for (final task in tasks) '${task.id}:${task.status.index}:${task.outputPath}'].join(',')}';
     if (fingerprint != _missingFingerprint) {
       _missingFingerprint = fingerprint;
       _missingCache = {for (final task in shown) task.id: _musicFileMissing(task)};
