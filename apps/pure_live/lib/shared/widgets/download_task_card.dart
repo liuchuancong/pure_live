@@ -231,12 +231,12 @@ String downloadEtaText(Duration eta) {
   return '${eta.inSeconds}s';
 }
 
-/// One download task's row — the shape every manager's queue wears: the task
-/// at the head, its state as a badge beside the rendition it plays at, the
-/// facts it can state under that, its progress as a line while it moves, and
-/// at the end the one verb its state allows beside the menu with the rest.
-/// Every queue on screen pressing this one shape is what makes the app's
-/// download pages read as one surface.
+/// One download task's row — the shape every manager's queue wears: the
+/// optional cover and task name at the head, the rendition under the name,
+/// the state as a badge beside the facts it can state, its progress as a line
+/// while it moves, and at the end the one verb its state allows beside the
+/// menu with the rest. Every queue on screen pressing this one shape is what
+/// makes the app's download pages read as one surface.
 final class DownloadTaskCard extends StatelessWidget {
   /// The row for [title], standing at [phase], stating [caption].
   const DownloadTaskCard({
@@ -311,17 +311,26 @@ final class DownloadTaskCard extends StatelessWidget {
           Row(
             spacing: DsSpace.s8,
             children: [
-              Container(
-                width: 8,
-                height: 8,
-                decoration: BoxDecoration(color: _phaseSignal(colors), shape: BoxShape.circle),
-              ),
+              ?leading,
               Expanded(
-                child: Text(
-                  title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.typography.body.copyWith(color: colors.text),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  spacing: DsSpace.s4,
+                  children: [
+                    Text(
+                      title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.typography.body.copyWith(color: colors.text),
+                    ),
+                    if (meta case final rendition?)
+                      Text(
+                        rendition,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.typography.caption.copyWith(color: colors.textMuted),
+                      ),
+                  ],
                 ),
               ),
               if (actions != null) downloadRowVerb(context, phase, actions!, playable: playable),
@@ -351,6 +360,7 @@ final class DownloadTaskCard extends StatelessWidget {
           Row(
             spacing: DsSpace.s8,
             children: [
+              downloadRowBadge(context, phase, label: badgeLabel),
               if (showProgress)
                 Expanded(
                   child: DsProgressBar(
@@ -374,16 +384,6 @@ final class DownloadTaskCard extends StatelessWidget {
       ),
     );
   }
-
-  /// The row's state dot: the vivid mark the status palette keeps for dots,
-  /// in the color the phase's badge would wear.
-  Color _phaseSignal(DsColors colors) => switch (phase) {
-    DownloadRowPhase.running || DownloadRowPhase.processing => colors.info.signal,
-    DownloadRowPhase.queued || DownloadRowPhase.cancelled => colors.neutral.signal,
-    DownloadRowPhase.paused => colors.warning.signal,
-    DownloadRowPhase.failed || DownloadRowPhase.missing => colors.danger.signal,
-    DownloadRowPhase.done => colors.success.signal,
-  };
 }
 
 /// One archive block's head, the shape vod's parts and hongguo's episodes

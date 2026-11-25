@@ -37,7 +37,14 @@ class ImageBackgroundView extends StatelessWidget {
       if (config.letterboxBlurSigma case final sigma? when sigma > 0)
         blurBackground(
           sigma: sigma,
-          child: Image(image: provider, fit: BoxFit.cover, gaplessPlayback: true),
+          child: Image(
+            image: provider,
+            fit: BoxFit.cover,
+            alignment: config.alignment,
+            gaplessPlayback: true,
+            frameBuilder: _frameBuilder,
+            errorBuilder: _errorBuilder,
+          ),
         ),
       blurBackground(
         sigma: config.blurSigma,

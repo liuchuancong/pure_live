@@ -156,7 +156,7 @@ final class DownloadQueueHeader extends StatelessWidget {
               ),
             ),
             search,
-            if (onSettings != null)
+            if (onSettings != null && settingsLabel != null)
               DsButton.icon(
                 variant: DsButtonVariant.ghost,
                 size: DsSize.sm,
@@ -164,7 +164,7 @@ final class DownloadQueueHeader extends StatelessWidget {
                 icon: const DsIcon(DsIcons.settings),
                 semanticLabel: settingsLabel!,
               ),
-            overflow,
+            if (!compact) overflow,
           ],
         ),
         if (compact && live.isNotEmpty)

@@ -340,3 +340,12 @@ Windows 窗口全屏入口（第十五轮改）：播放行「全屏｜窗口全
   - **验证**：本轮 Read/Edit 的 Dart 文件完成单文件格式化；`dart analyze lib test` **No issues found**；录制、finalize 锁和音乐设置聚焦回归 **23/23** 通过；App `flutter test --no-pub` 全量 **1267/1267** 通过（03:45，退出码 0）。`git diff --check` 本轮路径无空白错误。
   - **平台/主题与限制**：修复沿用现有 desen_ui、主题与响应式分支，未改导航或设置结构。未构建 APK/桌面产物、未截图、未运行 UI、未做真实音频、多窗口 finalize、TV、触控或读屏验收；自动验证完成时尚未提交、推送，后续提交状态以 Git 历史为准。
   - **剩余候选**：录像库对活动/后处理临时目录的删除门控、音乐冷恢复下载的 URL 解析续期、跨窗口音乐缓存 `.part` 清理，以及 IPTV 浮窗音频所有权/句柄释放仍需后续取证。
+
+- 2026-11-26：第六十一轮（共享下载 UI 与背景失败态收口）⇒
+  - **下载卡片契约**：`DownloadTaskCard` 开始渲染已有的 `leading`、`meta`、`badgeLabel`，并用共享 `downloadRowBadge` 替换仅依赖颜色的 8px 状态点；标题、清晰度、状态、进度与行尾动作保持同一卡片层级，四个下载管理器无需重复实现。
+  - **窄屏队列头**：compact 只保留带文字的「更多」动作面板，宽屏才显示图标溢出菜单，消除同一组队列动词的两个入口；设置按钮同时要求回调与可访问标签，避免空标签断言。
+  - **背景失败态**：letterbox 模糊副本与主图共用 frame/error builder，并遵循调用方 alignment；图片加载失败时模糊层也显示配置的 placeholder/fallback，不再绕过失败处理。
+  - **配置/状态与文件**：无新增持久化配置、Slang key、主题 token 或新文件；仅修改 `download_task_card.dart`、`download_workspace.dart` 与 `image_background_view.dart`，保留其他并行未提交改动。
+  - **验证**：三个 Dart 文件完成单文件格式化；App 与 `live_uikit_background` 的 `dart analyze lib test` 均 **No issues found**；背景包 **38/38**、App `flutter test --no-pub` 全量 **1267/1267** 通过（03:46，退出码 0）；`git diff --check` 本轮路径无空白错误。
+  - **平台/主题与限制**：沿用现有 desen_ui、主题与响应式分支，未改导航或设置结构。未构建 APK/桌面产物、未截图、未运行 UI，未做窄屏/大字体、TV、触控或读屏视觉验收；自动验证完成时尚未提交、推送，后续提交状态以 Git 历史为准。
+  - **剩余候选**：壳层窄屏动作溢出、平板设置导航双模式、设置缩窄丢 section、字体目录错误态、横屏聊天遮挡顶栏、竖屏全屏安全区、PiP 裁剪规划不一致，以及红果移除确认/IPTV 长源名仍需后续核实；相关页面已有并行改动，本轮未覆盖。
