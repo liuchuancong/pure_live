@@ -43,11 +43,16 @@ final class _GuideChapterState extends State<GuideChapter> {
     final theme = DsTheme.of(context);
     return DsListSection(
       children: [
-        DsListRow(
-          leading: DsIcon(widget.icon),
-          title: Text(widget.title, style: theme.typography.bodyStrong),
-          trailing: DsIcon(_open ? DsIcons.chevronUp : DsIcons.chevronDown, size: 16),
-          onPressed: () => setState(() => _open = !_open),
+        MergeSemantics(
+          child: Semantics(
+            expanded: _open,
+            child: DsListRow(
+              leading: DsIcon(widget.icon),
+              title: Text(widget.title, style: theme.typography.bodyStrong),
+              trailing: DsIcon(_open ? DsIcons.chevronUp : DsIcons.chevronDown, size: 16),
+              onPressed: () => setState(() => _open = !_open),
+            ),
+          ),
         ),
         if (_open)
           Padding(

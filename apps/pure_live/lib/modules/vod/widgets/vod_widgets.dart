@@ -116,29 +116,34 @@ final class VodRailDoor extends StatelessWidget {
       end: 0,
       child: DsTooltip(
         message: label,
-        child: MouseRegion(
-          cursor: SystemMouseCursors.click,
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: onOpen,
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                color: colors.surface.withValues(alpha: 0.92),
-                border: BorderDirectional(start: BorderSide(color: colors.border)),
-              ),
-              child: SizedBox(
-                width: 28,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  spacing: DsSpace.s8,
-                  children: [
-                    DsIcon(DsIcons.chevronLeft, size: theme.sizes.iconSm, color: colors.textMuted),
-                    RotatedBox(
-                      quarterTurns: 1,
-                      child: Text(label, style: theme.typography.caption.copyWith(color: colors.textMuted)),
-                    ),
-                  ],
-                ),
+        child: DsPressable(
+          onPressed: onOpen,
+          semanticLabel: label,
+          minTapTarget: 44,
+          builder: (context, states, child) => DsFocusRing(
+            focused: states.contains(WidgetState.focused),
+            child: SizedBox(
+              width: 44,
+              child: Align(alignment: AlignmentDirectional.centerEnd, child: child),
+            ),
+          ),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: colors.surface.withValues(alpha: 0.92),
+              border: BorderDirectional(start: BorderSide(color: colors.border)),
+            ),
+            child: SizedBox(
+              width: 28,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                spacing: DsSpace.s8,
+                children: [
+                  DsIcon(DsIcons.chevronLeft, size: theme.sizes.iconSm, color: colors.textMuted),
+                  RotatedBox(
+                    quarterTurns: 1,
+                    child: Text(label, style: theme.typography.caption.copyWith(color: colors.textMuted)),
+                  ),
+                ],
               ),
             ),
           ),

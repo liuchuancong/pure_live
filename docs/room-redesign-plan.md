@@ -349,3 +349,14 @@ Windows 窗口全屏入口（第十五轮改）：播放行「全屏｜窗口全
   - **验证**：三个 Dart 文件完成单文件格式化；App 与 `live_uikit_background` 的 `dart analyze lib test` 均 **No issues found**；背景包 **38/38**、App `flutter test --no-pub` 全量 **1267/1267** 通过（03:46，退出码 0）；`git diff --check` 本轮路径无空白错误。
   - **平台/主题与限制**：沿用现有 desen_ui、主题与响应式分支，未改导航或设置结构。未构建 APK/桌面产物、未截图、未运行 UI，未做窄屏/大字体、TV、触控或读屏视觉验收；自动验证完成时尚未提交、推送，后续提交状态以 Git 历史为准。
   - **剩余候选**：壳层窄屏动作溢出、平板设置导航双模式、设置缩窄丢 section、字体目录错误态、横屏聊天遮挡顶栏、竖屏全屏安全区、PiP 裁剪规划不一致，以及红果移除确认/IPTV 长源名仍需后续核实；相关页面已有并行改动，本轮未覆盖。
+
+- 2026-11-26：第六十二轮（长标题、抽屉可达性与设置异常态收口）⇒
+  - **直播详情**：房间标题取消三行省略，`AppPanel` 的滚动区现在可以完整阅读长标题，不再把关键房间信息截断。
+  - **VOD 抽屉**：边缘抽屉门改用 `DsPressable`，保留 28px 视觉 tab 的同时提供 44px 命中区、按钮语义、键盘 Enter/Space 激活和焦点环。
+  - **指南章节**：折叠行合并语义并发布当前 `expanded` 状态，读屏可以区分展开与收起，原有点击和箭头视觉不变。
+  - **平板设置导航**：设置路由镜像 AppShell 的 `isTabletSized` 判定；手机/平板启用侧栏壳时不再叠加 stacked 分类页，TV 与窄桌面保持原分支。
+  - **字体目录异常态**：中文/Google 目录失败时使用 `DsTable.errorView` 显示刷新失败和重试，不再伪装成无结果或继续展示旧行；重试只失效当前目录 provider。
+  - **配置/状态与文件**：无新增持久化配置、Slang key、主题 token 或依赖；仅修改 `room_details.dart`、`vod_widgets.dart`、`guide_chapter.dart`、`settings_navigation.dart` 和 `font_manager_page.dart`，保留其他并行未提交改动。
+  - **验证**：五个 Dart 文件完成局部格式化并撤回无关格式差异；App `dart analyze lib test` **No issues found**；`flutter test --no-pub` 全量 **1267/1267** 通过（03:17，退出码 0）；`git diff --check` 本轮路径无空白错误，仅既有 CRLF 替换提示。
+  - **平台/主题与限制**：改动沿用现有 desen_ui、主题 token 和响应式分支，覆盖桌面、平板、手机与 TV 的导航判定，不区分浅色/深色/自定义主题。未构建 APK/桌面产物、未截图、未运行 UI，未做真实键盘、TV、触控、大字体或读屏验收；这些行为目前只有源码核对、静态分析和全量自动测试证据。
+  - **剩余候选**：横屏聊天对非 TV 顶栏的 `endInset`、竖屏全屏 SafeArea、PiP 控件宽度与顺序规划、IPTV 窄屏长源名、红果移除确认、虎牙同构抽屉门及设置缩窄丢 section 仍需后续取证；相关文件已有并行改动，本轮未覆盖。

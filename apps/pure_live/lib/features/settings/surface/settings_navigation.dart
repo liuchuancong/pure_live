@@ -7,7 +7,7 @@ import 'package:live_platform/live_platform.dart' show FormFactor;
 
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/settings/surface/settings_sections.dart';
-import 'package:pure_live/shared/shared.dart' show NavigationItem, kBottomBarBreakpoint;
+import 'package:pure_live/shared/shared.dart' show NavigationItem, isTabletSized, kBottomBarBreakpoint;
 
 /// Whether settings navigate as a stack of their own — the categories page,
 /// then the category's sections, then a section — rather than swapping the
@@ -19,8 +19,11 @@ import 'package:pure_live/shared/shared.dart' show NavigationItem, kBottomBarBre
 /// desktop shell, so it keeps the pane.
 bool settingsStacksRoutes(BuildContext context, {required FormFactor formFactor, required bool desktopProfile}) {
   if (formFactor == FormFactor.tv) return false;
+  final size = MediaQuery.sizeOf(context);
+  final tablet = (formFactor == FormFactor.phone || formFactor == FormFactor.tablet) && isTabletSized(size);
+  if (tablet) return false;
   if (!desktopProfile) return true;
-  return MediaQuery.sizeOf(context).width < kBottomBarBreakpoint.breakpoint;
+  return size.width < kBottomBarBreakpoint.breakpoint;
 }
 
 /// Opens [section] as the surface's page. Its category comes from the

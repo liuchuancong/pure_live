@@ -326,8 +326,11 @@ final class _FontManagerPageState extends ConsumerState<FontManagerPage> {
     final chinese = _script != _Script.google;
     final catalog = (chinese ? freeCatalog.value : googleCatalog.value) ?? const <FontEntry>[];
     final loading = chinese ? freeCatalog.isLoading : googleCatalog.isLoading;
-    final rows = _sorted(_entries(catalog, store));
-    final allCount = chinese
+    final catalogError = chinese ? freeCatalog.hasError : googleCatalog.hasError;
+    final rows = _sorted(_entries(catalogError ? const <FontEntry>[] : catalog, store));
+    final allCount = catalogError
+        ? 0
+        : chinese
         ? [
             for (final entry in [...kBundledFontEntries, ...?freeCatalog.value])
               if (_script != _Script.local || _isLocallyAvailable(entry, store)) entry,
@@ -400,6 +403,24 @@ final class _FontManagerPageState extends ConsumerState<FontManagerPage> {
                           onRowPressed: (entry) => unawaited(_openDetails(entry, family: family)),
                           showRowMenuButton: true,
                           rowMenuBuilder: (context, entry) => _rowMenu(context, entry, family: family),
+                          errorView: catalogError
+                              ? Center(
+                                  child: DsEmptyState(
+                                    icon: const DsIcon(DsIcons.cloudOff),
+                                    title: Text(t.common.refreshFailed),
+                                    actions: [
+                                      DsButton(
+                                        variant: DsButtonVariant.secondary,
+                                        size: DsSize.sm,
+                                        onPressed: () => ref.invalidate(
+                                          chinese ? freeFontCatalogProvider : googleFontCatalogProvider,
+                                        ),
+                                        child: Text(t.common.retry),
+                                      ),
+                                    ],
+                                  ),
+                                )
+                              : null,
                           emptyView: Center(
                             child: DsEmptyState(
                               icon: const DsIcon(DsIcons.search),

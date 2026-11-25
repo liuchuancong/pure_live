@@ -124,12 +124,7 @@ final class _RoomTitle extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
-    return Text(
-      title,
-      maxLines: 3,
-      overflow: TextOverflow.ellipsis,
-      style: theme.typography.heading.copyWith(color: colors.text),
-    );
+    return Text(title, style: theme.typography.heading.copyWith(color: colors.text));
   }
 }
 
