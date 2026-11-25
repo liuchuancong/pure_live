@@ -3,13 +3,25 @@ import 'dart:io' show Directory, File, FileLock, FileMode, FileSystemException, 
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:live_platform/live_platform.dart' show PlatformBootstrap;
 import 'package:live_storage/live_storage.dart';
 import 'package:path/path.dart' as p;
+import 'package:pure_live/app/providers/boot/storage_providers.dart' show appPathsProvider;
+import 'package:pure_live/app/providers/settings/storage_folder_provider.dart' show AppFolders, StorageFolder;
+import 'package:pure_live/infrastructure/infrastructure.dart' show AppPaths, StoragePaths;
 import 'package:pure_live/modules/hongguo/controller/hongguo_downloads.dart';
 import 'package:pure_live/modules/hongguo/controller/hongguo_settings.dart' show HongguoQualityChoice;
 
 void main() {
+  late Directory storageRoot;
+  late AppPaths appPaths;
+
   setUpAll(() async {
+    storageRoot = await Directory.systemTemp.createTemp('pure-live-hongguo-paths-');
+    final runtime = PlatformBootstrap.init(appNamespace: 'pure_live', debug: true);
+    appPaths = AppPaths(
+      await StoragePaths.resolve(environment: runtime.environment, dataDirOverride: storageRoot.path),
+    );
     // The same memory-only storage the other provider tests use.
     await StorageStores.openInMemory();
     await StoragePrefs.init();
@@ -19,6 +31,7 @@ void main() {
     // The queue persists under hongguo.downloads; clear it so another suite
     // reading this store starts empty.
     await StoragePrefs.setString(kHongguoDownloadsKey, '');
+    await storageRoot.delete(recursive: true);
   });
 
   HongguoDownloadItem item(String id, {HongguoDownloadPhase phase = HongguoDownloadPhase.queued, int received = 0}) {
@@ -269,6 +282,133 @@ void main() {
     final fourth = ProviderContainer();
     addTearDown(fourth.dispose);
     expect(fourth.read(hongguoDownloadRetryDelayProvider), 10);
+  });
+
+  test('a stranded merge verifies a temporary copy and keeps an occupied final name', () async {
+    final root = await Directory.systemTemp.createTemp('pure-live-hongguo-merge-');
+    addTearDown(() => root.delete(recursive: true));
+    final oldFolder = await Directory(p.join(root.path, 'old')).create();
+    final into = await Directory(p.join(root.path, 'short_dramas')).create();
+    const name = '剧名 - EP1 第一话.mp4';
+    final source = File(p.join(oldFolder.path, name));
+    await source.writeAsBytes(List<int>.generate(200000, (index) => index % 251));
+    final occupied = File(p.join(into.path, name));
+    await occupied.writeAsString('keep');
+    final stored = item(
+      '7100001:1',
+      phase: HongguoDownloadPhase.done,
+      received: 100,
+    ).copyWith(filePath: source.path, fileName: name);
+    await StoragePrefs.setString(kHongguoDownloadsKey, jsonEncode([stored.toJson()]));
+    final container = ProviderContainer(
+      overrides: [
+        appPathsProvider.overrideWithValue(AppFolders(appPaths, {StorageFolder.shortDramas: into.path})),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    final result = await container.read(hongguoDownloadsProvider.notifier).mergeStranded([stored]);
+
+    expect(result, (moved: 1, failed: 0));
+    expect(source.existsSync(), isFalse);
+    expect(await occupied.readAsString(), 'keep');
+    final target = File(p.join(into.path, '剧名 - EP1 第一话_2.mp4'));
+    expect(target.existsSync(), isTrue);
+    expect(await target.length(), 200000);
+    final task = container.read(hongguoDownloadsProvider).single;
+    expect(task.filePath, target.path);
+    final persisted = jsonDecode(StoragePrefs.getString(kHongguoDownloadsKey) ?? '[]') as List;
+    expect((persisted.single as Map)['filePath'], target.path);
+    expect(await into.list().where((entry) => p.basename(entry.path).startsWith('.')).toList(), isEmpty);
+  });
+
+  test('a failed stranded copy leaves neither a final nor a temporary file', () async {
+    final root = await Directory.systemTemp.createTemp('pure-live-hongguo-merge-failed-');
+    addTearDown(() => root.delete(recursive: true));
+    final into = await Directory(p.join(root.path, 'short_dramas')).create();
+    final source = await Directory(p.join(root.path, 'not-a-file.mp4')).create();
+    final stored = item(
+      '7100001:1',
+      phase: HongguoDownloadPhase.done,
+      received: 100,
+    ).copyWith(filePath: source.path, fileName: 'not-a-file.mp4');
+    await StoragePrefs.setString(kHongguoDownloadsKey, jsonEncode([stored.toJson()]));
+    final container = ProviderContainer(
+      overrides: [
+        appPathsProvider.overrideWithValue(AppFolders(appPaths, {StorageFolder.shortDramas: into.path})),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    final result = await container.read(hongguoDownloadsProvider.notifier).mergeStranded([stored]);
+
+    expect(result, (moved: 0, failed: 1));
+    expect(source.existsSync(), isTrue);
+    expect(await into.list().toList(), isEmpty);
+    expect(container.read(hongguoDownloadsProvider).single.filePath, source.path);
+  });
+
+  test('a cancelled stranded merge keeps the source and removes its temporary', () async {
+    final root = await Directory.systemTemp.createTemp('pure-live-hongguo-merge-cancel-');
+    addTearDown(() => root.delete(recursive: true));
+    final source = File(p.join(root.path, 'episode.mp4'));
+    await source.writeAsString('complete');
+    final into = await Directory(p.join(root.path, 'short_dramas')).create();
+    final stored = item(
+      '7100001:1',
+      phase: HongguoDownloadPhase.done,
+      received: 8,
+    ).copyWith(filePath: source.path, fileName: 'episode.mp4');
+    await StoragePrefs.setString(kHongguoDownloadsKey, jsonEncode([stored.toJson()]));
+    final container = ProviderContainer(
+      overrides: [
+        appPathsProvider.overrideWithValue(AppFolders(appPaths, {StorageFolder.shortDramas: into.path})),
+      ],
+    );
+    addTearDown(container.dispose);
+    var cancelled = false;
+
+    final result = await container
+        .read(hongguoDownloadsProvider.notifier)
+        .mergeStranded([stored], onProgress: (_, _, _) => cancelled = true, cancelled: () => cancelled);
+
+    expect(result, (moved: 0, failed: 0));
+    expect(await source.readAsString(), 'complete');
+    expect(await into.list().toList(), isEmpty);
+  });
+
+  test('a removal requested during a stranded merge waits for its committed path', () async {
+    final root = await Directory.systemTemp.createTemp('pure-live-hongguo-merge-remove-');
+    addTearDown(() => root.delete(recursive: true));
+    final source = File(p.join(root.path, 'episode.mp4'));
+    await source.writeAsString('complete');
+    final into = await Directory(p.join(root.path, 'short_dramas')).create();
+    final stored = item(
+      '7100001:1',
+      phase: HongguoDownloadPhase.done,
+      received: 8,
+    ).copyWith(filePath: source.path, fileName: 'episode.mp4');
+    await StoragePrefs.setString(kHongguoDownloadsKey, jsonEncode([stored.toJson()]));
+    final container = ProviderContainer(
+      overrides: [
+        appPathsProvider.overrideWithValue(AppFolders(appPaths, {StorageFolder.shortDramas: into.path})),
+      ],
+    );
+    addTearDown(container.dispose);
+    final controller = container.read(hongguoDownloadsProvider.notifier);
+    late Future<void> removal;
+
+    final result = await controller.mergeStranded(
+      [stored],
+      onProgress: (done, _, _) {
+        if (done == 0) removal = controller.remove(stored.id);
+      },
+    );
+    await removal;
+
+    expect(result, (moved: 1, failed: 0));
+    expect(container.read(hongguoDownloadsProvider), isEmpty);
+    expect(await File(p.join(into.path, 'episode.mp4')).readAsString(), 'complete');
   });
 
   test("a task's progress reads its share, or nothing when the size is unknown", () {

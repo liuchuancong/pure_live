@@ -256,6 +256,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
   /// The episode a covered route paused, kept apart from the background gate.
   PlayerId? _routePausedHandleId;
   Future<void>? _routePause;
+  int _routePauseGeneration = 0;
 
   // Captured while the page is alive; `ref` is refused by the time dispose
   // runs, and the leaving page must still exit its presentation mode and
@@ -383,35 +384,40 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
   /// under it.
   @override
   void didPushNext() {
+    final generation = ++_routePauseGeneration;
     final handle = _handle;
     if (handle == null || _routePausedHandleId != null || !(_transport?.isPlaying ?? false)) return;
     _routePausedHandleId = handle.id;
     _routePause = handle.pause().catchError((Object _) {
-      _routePausedHandleId = null;
+      if (_routePauseGeneration == generation) _routePausedHandleId = null;
     });
   }
 
   @override
   void didPopNext() {
+    final generation = ++_routePauseGeneration;
     final pausedHandleId = _routePausedHandleId;
     final pause = _routePause;
     final handle = _handle;
     _routePausedHandleId = null;
     _routePause = null;
     if (pausedHandleId == null || handle == null || handle.id != pausedHandleId) return;
-    unawaited(_resumeAfterRoute(handle, pause));
+    unawaited(_resumeAfterRoute(handle, pause, generation));
   }
 
-  Future<void> _resumeAfterRoute(PlayerHandle handle, Future<void>? pause) async {
+  Future<void> _resumeAfterRoute(PlayerHandle handle, Future<void>? pause, int generation) async {
     try {
       await pause;
     } on Object {
       return;
     }
-    if (!mounted || _disposed || _handle?.id != handle.id || _sleepStopped) return;
+    if (!mounted || _disposed || generation != _routePauseGeneration || _handle?.id != handle.id || _sleepStopped) {
+      return;
+    }
     if (handle.state.hasError || !handle.state.canPlay || (_transport?.isPlaying ?? false)) return;
     try {
       await handle.play();
+      if (generation != _routePauseGeneration) await handle.pause();
     } on Object {
       // Returning to the page does not turn a refused play into a page failure.
     }
@@ -441,6 +447,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
   @override
   void dispose() {
     _disposed = true;
+    _routePauseGeneration++;
     ref.read(audioArbiterProvider.notifier).release(AudioOwner(AudioOwnerKind.audiobook, 'hongguo:${widget.seriesId}'));
     _backgroundGate?.dispose();
     _backgroundGate = null;
@@ -593,7 +600,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
       final handle =
           existing ??
           await _kernel.create(
-            config: const PlayerConfig(name: 'hongguo'),
+            config: PlayerConfig(name: 'hongguo', volume: _volume, muted: _effectivelyMuted),
             preferredBackend: ref.read(playerKernelBackendProvider).id,
           );
       if (!mounted || _disposed) {
@@ -614,6 +621,8 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
       // Kept only if it is directly reachable: the loopback proxy's token
       // address belongs to this device and must never be handed to a TV.
       _playUrl = url;
+      await handle.setVolume(_volume);
+      await handle.setMute(muted: _effectivelyMuted);
       await handle.open(
         PlayerSource.of(
           id: SourceId('hongguo:${widget.seriesId}:${episode.vid}:${DateTime.now().microsecondsSinceEpoch}'),
@@ -885,6 +894,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
   Future<void> _stopForSleep() async {
     _sleepStopped = true;
     _backgroundPausedHandle = null;
+    _routePauseGeneration++;
     _routePausedHandleId = null;
     _routePause = null;
     _sleep.cancel();

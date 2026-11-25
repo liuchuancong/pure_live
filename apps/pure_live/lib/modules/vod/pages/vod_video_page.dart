@@ -284,6 +284,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
   /// The replay a covered route paused, kept apart from the background gate.
   PlayerId? _routePausedHandleId;
   Future<void>? _routePause;
+  int _routePauseGeneration = 0;
 
   // Captured while the page is alive; `ref` is refused by the time dispose
   // runs, and the leaving page must still exit its presentation mode and
@@ -418,35 +419,44 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
   /// picture pauses rather than playing under it.
   @override
   void didPushNext() {
+    final generation = ++_routePauseGeneration;
     final handle = _playableHandle;
     if (handle == null || _routePausedHandleId != null || !(_transport?.isPlaying ?? false)) return;
     _routePausedHandleId = handle.id;
     _routePause = handle.pause().catchError((Object _) {
-      _routePausedHandleId = null;
+      if (_routePauseGeneration == generation) _routePausedHandleId = null;
     });
   }
 
   @override
   void didPopNext() {
+    final generation = ++_routePauseGeneration;
     final pausedHandleId = _routePausedHandleId;
     final pause = _routePause;
     final handle = _playableHandle;
     _routePausedHandleId = null;
     _routePause = null;
     if (pausedHandleId == null || handle == null || handle.id != pausedHandleId) return;
-    unawaited(_resumeAfterRoute(handle, pause));
+    unawaited(_resumeAfterRoute(handle, pause, generation));
   }
 
-  Future<void> _resumeAfterRoute(PlayerHandle handle, Future<void>? pause) async {
+  Future<void> _resumeAfterRoute(PlayerHandle handle, Future<void>? pause, int generation) async {
     try {
       await pause;
     } on Object {
       return;
     }
-    if (!mounted || _disposed || _playableHandle?.id != handle.id || _sleepStopped) return;
+    if (!mounted ||
+        _disposed ||
+        generation != _routePauseGeneration ||
+        _playableHandle?.id != handle.id ||
+        _sleepStopped) {
+      return;
+    }
     if (handle.state.hasError || !handle.state.canPlay || (_transport?.isPlaying ?? false)) return;
     try {
       await handle.play();
+      if (generation != _routePauseGeneration) await handle.pause();
     } on Object {
       // Returning to the page does not turn a refused play into a page failure.
     }
@@ -476,6 +486,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
   @override
   void dispose() {
     _disposed = true;
+    _routePauseGeneration++;
     ref.read(audioArbiterProvider.notifier).release(AudioOwner(AudioOwnerKind.vod, 'vod-video:${widget.bvid}'));
     unawaited(_screenAwake.disable().catchError((Object _) {}));
     _saveProgress(force: true);
@@ -640,6 +651,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
       _openedIdentity = null;
       _openedGeneration = 0;
       _backgroundPausedHandle = null;
+      _routePauseGeneration++;
       _routePausedHandleId = null;
       _routePause = null;
       _clearTransportSubscriptions();
@@ -703,7 +715,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
         }
         if (!_isCurrentGeneration(generation)) return;
         final handle = await kernel.create(
-          config: const PlayerConfig(name: 'vod'),
+          config: PlayerConfig(name: 'vod', volume: _volume, muted: _effectivelyMuted),
           preferredBackend: ref.read(playerKernelBackendProvider).id,
         );
         if (!_isCurrentGeneration(generation)) {
@@ -730,6 +742,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
         _openedLabel = vodQualityLabel(info, _openedQn) ?? info.quality;
         final dash = vodDashSourceOf(info, maxQuality: want);
         _holdSound();
+        await handle.setVolume(_volume);
         await handle.setMute(muted: _effectivelyMuted);
         if (!_isCurrentGeneration(generation)) return;
         if (dash != null) {
@@ -1461,6 +1474,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
   void _onSleepFire() {
     _sleepStopped = true;
     _backgroundPausedHandle = null;
+    _routePauseGeneration++;
     _routePausedHandleId = null;
     _routePause = null;
     unawaited(_playableHandle?.pause() ?? Future<void>.value());

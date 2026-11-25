@@ -144,6 +144,7 @@ final class HuyaVideoPlaybackController extends ArchivePlaybackController {
       qualityId = selected.id;
       _pending = resume > Duration.zero ? resume : null;
       _lastSaved = resume;
+      await session.setVolume(volume);
       await session.open(_source(selected), autoPlay: true);
       if (!_current(generation)) return;
       await session.setVolume(volume);
@@ -228,6 +229,7 @@ final class HuyaVideoPlaybackController extends ArchivePlaybackController {
     try {
       final source = await _refresh(generation);
       if (!_current(generation)) return;
+      await session.setVolume(volume);
       await session.open(source, autoPlay: true);
       if (!_current(generation)) return;
       await session.setVolume(volume);
@@ -303,6 +305,7 @@ final class HuyaVideoPlaybackController extends ArchivePlaybackController {
     try {
       final source = await _refresh(generation);
       if (!current()) return;
+      await session.setVolume(volume);
       await session.open(source, autoPlay: true);
       if (!current()) return;
       await session.setVolume(volume);

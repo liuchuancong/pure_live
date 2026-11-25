@@ -58,7 +58,8 @@ final class HuyaVideoPlayerPage extends ConsumerStatefulWidget {
   ConsumerState<HuyaVideoPlayerPage> createState() => _HuyaVideoPlayerPageState();
 }
 
-final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage> with WidgetsBindingObserver {
+final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
+    with RouteAware, WidgetsBindingObserver {
   PlayerHandle? _handle;
   PlayerKernel? _kernel;
   HuyaVideoPlaybackController? _controller;
@@ -85,6 +86,9 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
 
   /// The page's own mute, the bar button's state; the slider speaks past it.
   bool _muted = false;
+  bool _globalMute = false;
+
+  bool get _effectivelyMuted => _muted || _globalMute;
 
   /// What the last gesture did, in the chip over the picture.
   VodGestureKind? _tipKind;
@@ -125,6 +129,14 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
   BackgroundPlaybackGate? _backgroundGate;
   PlayerId? _backgroundPausedHandleId;
 
+  /// The route that covered a playing replay, and the pause it asked for.
+  /// Fullscreen and PiP are presentation modes, not routes, so they never
+  /// enter this gate.
+  RouteObserver<ModalRoute<void>>? _routeObserver;
+  PlayerId? _routePausedHandleId;
+  Future<void>? _routePause;
+  int _routePauseGeneration = 0;
+
   // Captured while the page is alive; `ref` is refused by the time dispose
   // runs, and the leaving page must still exit its presentation mode.
   late final RoomPresentationController _presentationNotifier;
@@ -160,6 +172,7 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
     Timer.run(() => _sleepTimerNotifier.start(null));
     _sleepTimerNotifier.onFire_ = _onSleepFire;
     _kernel = ref.read(playerKernelProvider);
+    _globalMute = ref.read(playbackSettingsProvider).globalMute;
     WidgetsBinding.instance.addObserver(this);
     _backgroundGate = BackgroundPlaybackGate(
       backgroundEnabled: () => ref.read(playbackSettingsProvider).backgroundPlay,
@@ -188,6 +201,58 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
     });
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    if (route is ModalRoute<void>) {
+      final observer = ref.read(routeObserverProvider);
+      _routeObserver = observer;
+      observer.subscribe(this, route);
+    }
+  }
+
+  @override
+  void didPushNext() {
+    final generation = ++_routePauseGeneration;
+    final handle = _handle;
+    if (handle == null || _routePausedHandleId != null || !(_transport?.isPlaying ?? false)) return;
+    _routePausedHandleId = handle.id;
+    _routePause = handle.pause().catchError((Object _) {
+      if (_routePauseGeneration == generation) _routePausedHandleId = null;
+    });
+  }
+
+  @override
+  void didPopNext() {
+    final generation = ++_routePauseGeneration;
+    final pausedHandleId = _routePausedHandleId;
+    final pause = _routePause;
+    final handle = _handle;
+    _routePausedHandleId = null;
+    _routePause = null;
+    if (pausedHandleId == null || handle == null || handle.id != pausedHandleId) return;
+    unawaited(_resumeAfterRoute(handle, pause, generation));
+  }
+
+  Future<void> _resumeAfterRoute(PlayerHandle handle, Future<void>? pause, int generation) async {
+    try {
+      await pause;
+    } on Object {
+      return;
+    }
+    if (!mounted || _disposed || generation != _routePauseGeneration || _handle?.id != handle.id) {
+      return;
+    }
+    if (handle.state.hasError || !handle.state.canPlay || (_transport?.isPlaying ?? false)) return;
+    try {
+      await handle.play();
+      if (generation != _routePauseGeneration) await handle.pause();
+    } on Object {
+      // The route's return does not turn a refused play into a page failure.
+    }
+  }
+
   /// Attaches the kernel's handle, builds the video's controller over it and
   /// opens where the viewer last stopped.
   Future<void> _start() async {
@@ -197,8 +262,9 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
     try {
       final detail = await ref.read(huyaVideoDetailProvider(widget.id).future);
       if (_disposed) return;
+      final volume = ref.read(modulePlaybackSettingsProvider(PlayerModule.huya)).volume;
       final handle = await kernel.create(
-        config: const PlayerConfig(name: 'huya'),
+        config: PlayerConfig(name: 'huya', volume: volume, muted: _effectivelyMuted),
         preferredBackend: ref.read(playerKernelBackendProvider).id,
       );
       if (_disposed) {
@@ -208,6 +274,7 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
       }
       _handle = handle;
       _holdSound();
+      await handle.setMute(muted: _effectivelyMuted).catchError((Object _) {});
       _controller = HuyaVideoPlaybackController(
         api: ref.read(huyaVideoApiProvider),
         session: handle,
@@ -215,7 +282,7 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
         progress: ArchiveProgress(),
         // The module's own volume: what huya's player starts on, not what
         // the room or the channel left behind.
-        initialVolume: ref.read(modulePlaybackSettingsProvider(PlayerModule.huya)).volume,
+        initialVolume: volume,
       );
       _bind(handle);
       // A playing mini window belongs to the video the viewer just left; a
@@ -270,6 +337,7 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
   @override
   void dispose() {
     _disposed = true;
+    _routePauseGeneration++;
     ref.read(audioArbiterProvider.notifier).release(AudioOwner(AudioOwnerKind.vod, 'huya-video:${widget.id}'));
     _tipTimer?.cancel();
     _hideTimer?.cancel();
@@ -297,6 +365,7 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
     unawaited(retirement);
     unawaited(_transportSub?.cancel() ?? Future<void>.value());
     unawaited(_geometrySub?.cancel() ?? Future<void>.value());
+    _routeObserver?.unsubscribe(this);
     WidgetsBinding.instance.removeObserver(this);
     _backgroundGate?.dispose();
     _backgroundGate = null;
@@ -533,6 +602,9 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
   /// The sleep timer's end: the video pauses where it stands, said with the
   /// room's own toast.
   void _onSleepFire() {
+    _routePauseGeneration++;
+    _routePausedHandleId = null;
+    _routePause = null;
     unawaited(_handle?.pause() ?? Future<void>.value());
     if (mounted) showDsToast(context: context, title: context.t.player.sleepDone);
   }

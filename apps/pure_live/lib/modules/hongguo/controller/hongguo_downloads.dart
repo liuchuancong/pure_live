@@ -1,4 +1,4 @@
-import 'dart:async' show Timer, unawaited;
+import 'dart:async' show StreamIterator, Timer, unawaited;
 import 'dart:convert' show jsonDecode, jsonEncode;
 import 'dart:io' show Directory, File, FileMode, FileSystemException, HttpClient, HttpException, IOSink;
 
@@ -392,6 +392,10 @@ final class _Stopped implements Exception {
   const _Stopped();
 }
 
+final class _MergeCancelled implements Exception {
+  const _MergeCancelled();
+}
+
 /// The station's download queue: the rows kept for the next run, and the
 /// lanes that fetch them.
 ///
@@ -409,7 +413,9 @@ final class HongguoDownloadsController extends Notifier<List<HongguoDownloadItem
   final Map<String, Object> _generations = {};
   final Map<String, bool> _deleteFiles = {};
   final Set<String> _dropping = {};
+  final Set<String> _pendingDrops = {};
   final Set<String> _enqueuing = {};
+  Future<void> _mergeQueue = Future<void>.value();
 
   @override
   List<HongguoDownloadItem> build() {
@@ -421,6 +427,7 @@ final class HongguoDownloadsController extends Notifier<List<HongguoDownloadItem
       ..addAll({for (final item in _items) item.id: Object()});
     _deleteFiles.clear();
     _dropping.clear();
+    _pendingDrops.clear();
     // A run the previous session left mid-flight keeps its bytes, paused.
     for (var index = 0; index < _items.length; index++) {
       if (_items[index].phase == HongguoDownloadPhase.running) {
@@ -456,6 +463,7 @@ final class HongguoDownloadsController extends Notifier<List<HongguoDownloadItem
   }) async {
     final existing = _items.where((item) => item.id == vid).firstOrNull;
     if (_enqueuing.contains(vid) ||
+        _pendingDrops.contains(vid) ||
         _dropping.contains(vid) ||
         (existing != null && existing.phase != HongguoDownloadPhase.failed)) {
       return (outcome: HongguoDownloadEnqueue.duplicate, error: null);
@@ -486,7 +494,9 @@ final class HongguoDownloadsController extends Notifier<List<HongguoDownloadItem
       if (existing != null && !_items.contains(existing)) {
         return (outcome: HongguoDownloadEnqueue.duplicate, error: null);
       }
-      if (_dropping.contains(vid)) return (outcome: HongguoDownloadEnqueue.duplicate, error: null);
+      if (_dropping.contains(vid) || _pendingDrops.contains(vid)) {
+        return (outcome: HongguoDownloadEnqueue.duplicate, error: null);
+      }
       if (existing != null) {
         _items[_items.indexOf(existing)] = item;
       } else {
@@ -511,7 +521,9 @@ final class HongguoDownloadsController extends Notifier<List<HongguoDownloadItem
 
   Future<void> pause(String id) async {
     final item = _items.where((row) => row.id == id).firstOrNull;
-    if (item == null || _dropping.contains(id) || _stops[id] == _HongguoStop.drop) return;
+    if (item == null || _dropping.contains(id) || _pendingDrops.contains(id) || _stops[id] == _HongguoStop.drop) {
+      return;
+    }
     _retryTimers.remove(id)?.cancel();
     switch (item.phase) {
       case HongguoDownloadPhase.running:
@@ -529,7 +541,7 @@ final class HongguoDownloadsController extends Notifier<List<HongguoDownloadItem
   /// written stay and a range request carries on from there.
   Future<void> resume(String id) async {
     final item = _items.where((row) => row.id == id).firstOrNull;
-    if (item == null || _dropping.contains(id)) return;
+    if (item == null || _dropping.contains(id) || _pendingDrops.contains(id)) return;
     if (item.phase != HongguoDownloadPhase.paused && item.phase != HongguoDownloadPhase.failed) return;
     _retryTimers.remove(id)?.cancel();
     _replace(item.copyWith(phase: HongguoDownloadPhase.queued, attempts: 0, speed: 0));
@@ -541,20 +553,29 @@ final class HongguoDownloadsController extends Notifier<List<HongguoDownloadItem
   /// its file unless [deleteFile] says otherwise.
   Future<void> remove(String id, {bool deleteFile = false}) async {
     final item = _items.where((row) => row.id == id).firstOrNull;
-    if (item == null || _dropping.contains(id)) return;
+    if (item == null || _dropping.contains(id) || _pendingDrops.contains(id)) return;
     if (item.phase == HongguoDownloadPhase.running) {
       _deleteFiles[id] = (_deleteFiles[id] ?? false) || deleteFile;
       _stops[id] = _HongguoStop.drop;
       _clients[id]?.close(force: true);
       return;
     }
-    await _drop(item, deleteFile: deleteFile);
+    _pendingDrops.add(id);
+    try {
+      await _mergeQueue;
+      final current = _items.where((row) => row.id == id).firstOrNull;
+      if (current != null) await _drop(current, deleteFile: deleteFile);
+    } finally {
+      _pendingDrops.remove(id);
+    }
   }
 
   Future<void> pauseAll() async {
     var stopped = false;
     for (final item in _items) {
-      if (_dropping.contains(item.id) || _stops[item.id] == _HongguoStop.drop) continue;
+      if (_dropping.contains(item.id) || _pendingDrops.contains(item.id) || _stops[item.id] == _HongguoStop.drop) {
+        continue;
+      }
       switch (item.phase) {
         case HongguoDownloadPhase.queued:
           _replace(item.copyWith(phase: HongguoDownloadPhase.paused));
@@ -575,6 +596,7 @@ final class HongguoDownloadsController extends Notifier<List<HongguoDownloadItem
     for (var index = 0; index < _items.length; index++) {
       final item = _items[index];
       if (!_dropping.contains(item.id) &&
+          !_pendingDrops.contains(item.id) &&
           (item.phase == HongguoDownloadPhase.paused || item.phase == HongguoDownloadPhase.failed)) {
         _retryTimers.remove(item.id)?.cancel();
         _items[index] = item.copyWith(phase: HongguoDownloadPhase.queued, attempts: 0, speed: 0);
@@ -587,13 +609,17 @@ final class HongguoDownloadsController extends Notifier<List<HongguoDownloadItem
 
   /// Drops the finished rows; their files stay.
   Future<void> clearFinished() async {
+    await _mergeQueue;
     for (final item in _items) {
-      if (item.phase == HongguoDownloadPhase.done && !_dropping.contains(item.id)) {
+      if (item.phase == HongguoDownloadPhase.done && !_dropping.contains(item.id) && !_pendingDrops.contains(item.id)) {
         _generations.remove(item.id);
         _deleteFiles.remove(item.id);
       }
     }
-    _items.removeWhere((item) => item.phase == HongguoDownloadPhase.done && !_dropping.contains(item.id));
+    _items.removeWhere(
+      (item) =>
+          item.phase == HongguoDownloadPhase.done && !_dropping.contains(item.id) && !_pendingDrops.contains(item.id),
+    );
     _publish();
     await _persist();
   }
@@ -618,14 +644,20 @@ final class HongguoDownloadsController extends Notifier<List<HongguoDownloadItem
   /// Brings the finished rows in [stranded] under the folder the viewer uses
   /// for dramas, and rewrites each row to the place its file landed.
   ///
-  /// One file at a time, each result persisted the moment it lands: a merge
-  /// interrupted halfway leaves the rows it moved pointing at the new folder
-  /// and the rows it never reached pointing at the old one, and both are true.
-  /// The source is deleted only after the copy's byte count matches what the
-  /// source held — a move that fails leaves the file exactly where it was, with
-  /// its row still naming it, which is why this verb is the viewer's call and
-  /// never something the app does on its own.
+  /// A verified temporary copy is renamed into a free final name before the
+  /// source is let go. Queue deletions wait for the whole merge, so a row cannot
+  /// be removed while its new path is being committed.
   Future<({int moved, int failed})> mergeStranded(
+    List<HongguoDownloadItem> stranded, {
+    void Function(int done, int total, String name)? onProgress,
+    bool Function()? cancelled,
+  }) {
+    final result = _mergeQueue.then((_) => _mergeStranded(stranded, onProgress: onProgress, cancelled: cancelled));
+    _mergeQueue = result.then<void>((_) {}, onError: (Object _, StackTrace _) {});
+    return result;
+  }
+
+  Future<({int moved, int failed})> _mergeStranded(
     List<HongguoDownloadItem> stranded, {
     void Function(int done, int total, String name)? onProgress,
     bool Function()? cancelled,
@@ -640,39 +672,120 @@ final class HongguoDownloadsController extends Notifier<List<HongguoDownloadItem
       final generation = _generations[item.id];
       // A row removed or replaced while this run was going no longer owns this
       // move; its old file must not rewrite the newer task's path.
-      if (generation == null || !_isCurrent(item.id, generation) || _dropping.contains(item.id)) continue;
+      if (generation == null ||
+          !_isCurrent(item.id, generation) ||
+          _dropping.contains(item.id) ||
+          _pendingDrops.contains(item.id)) {
+        continue;
+      }
       final name = p.basename(item.filePath);
       onProgress?.call(index, stranded.length, name);
+      File? temporary;
       try {
+        if (cancelled != null && cancelled()) break;
         final source = File(item.filePath);
-        final target = hongguoFreeDownloadFile(into, name);
-        try {
-          await source.rename(target.path);
-        } on FileSystemException {
-          // Another volume: the rename cannot link, so copy, prove, then let go.
-          await source.copy(target.path);
-          if (await source.length() != await target.length()) {
-            await target.delete();
-            failed++;
-            continue;
-          }
-          await source.delete();
+        temporary = await _mergeTemporary(into, name);
+        await _copyMergeSource(source, temporary, cancelled);
+        if (cancelled != null && cancelled()) throw const _MergeCancelled();
+        if (!await _sameFileContents(source, temporary)) {
+          throw const FileSystemException('The merged copy does not match the source');
         }
+        if (!_isCurrent(item.id, generation) || _dropping.contains(item.id)) continue;
+        final target = await _commitMergeTemporary(temporary, into, name);
+        temporary = null;
         if (!_isCurrent(item.id, generation) || _dropping.contains(item.id)) {
-          if (!await _delete(target)) failed++;
+          if (_deleteFiles[item.id] == true && !await _delete(target)) failed++;
           continue;
         }
         _replace(item.copyWith(filePath: target.path, fileName: p.basename(target.path), error: item.error));
-        await _persist();
+        // The new path must be durable before the only old copy is removed.
+        await _persist(throwOnFailure: true);
+        if (!await _delete(source)) {
+          appLog
+              .forCategory('hongguo.download')
+              .warning('merged source could not be removed', fields: {'path': source.path});
+          failed++;
+          continue;
+        }
         moved++;
+      } on _MergeCancelled {
+        break;
       } on Object {
-        // The file stayed where it was and the row still names it: say so in
-        // the count rather than pretend the queue moved.
+        // Before commit the source and row are untouched; after a persistence
+        // failure both copies remain so a restart still has a valid source.
         failed++;
+      } finally {
+        if (temporary != null) await _delete(temporary);
       }
     }
     onProgress?.call(stranded.length, stranded.length, '');
     return (moved: moved, failed: failed);
+  }
+
+  static Future<File> _mergeTemporary(Directory into, String name) async {
+    final stamp = DateTime.now().microsecondsSinceEpoch;
+    for (var index = 0; ; index++) {
+      final file = File(p.join(into.path, '.${p.basenameWithoutExtension(name)}_${stamp}_$index.merge-part'));
+      try {
+        await file.create(exclusive: true);
+        return file;
+      } on FileSystemException {
+        if (!file.existsSync()) rethrow;
+        // A stale temporary with the same stamp gets the next suffix.
+      }
+    }
+  }
+
+  static Future<void> _copyMergeSource(File source, File temporary, bool Function()? cancelled) async {
+    final sink = temporary.openWrite();
+    try {
+      await for (final chunk in source.openRead()) {
+        if (cancelled != null && cancelled()) throw const _MergeCancelled();
+        sink.add(chunk);
+      }
+      await sink.flush();
+      await sink.close();
+    } on Object {
+      try {
+        await sink.close();
+      } on Object {
+        // The temporary file is removed by the merge's finally block.
+      }
+      rethrow;
+    }
+  }
+
+  static Future<bool> _sameFileContents(File first, File second) async {
+    if (await first.length() != await second.length()) return false;
+    final left = StreamIterator(first.openRead());
+    final right = StreamIterator(second.openRead());
+    try {
+      while (await left.moveNext()) {
+        final chunk = left.current;
+        if (!await right.moveNext() || right.current.length != chunk.length) return false;
+        final other = right.current;
+        for (var index = 0; index < chunk.length; index++) {
+          if (chunk[index] != other[index]) return false;
+        }
+      }
+      return !await right.moveNext();
+    } finally {
+      await left.cancel();
+      await right.cancel();
+    }
+  }
+
+  static Future<File> _commitMergeTemporary(File temporary, Directory into, String name) async {
+    for (var attempt = 0; attempt < 3; attempt++) {
+      final target = hongguoFreeDownloadFile(into, name);
+      try {
+        await temporary.rename(target.path);
+        return target;
+      } on FileSystemException {
+        if (!target.existsSync()) rethrow;
+      }
+    }
+    throw const FileSystemException('Cannot choose a free merged file name');
   }
 
   /// Whether [path] sits under [folder] — the test that decides a row is
@@ -685,6 +798,7 @@ final class HongguoDownloadsController extends Notifier<List<HongguoDownloadItem
 
   /// Removes a part file, and a finished task's file when asked.
   Future<void> _drop(HongguoDownloadItem item, {bool deleteFile = false, Object? generation}) async {
+    await _mergeQueue;
     final id = item.id;
     final token = generation ?? _generations[id];
     if (token == null || !_dropping.add(id)) return;
@@ -744,7 +858,9 @@ final class HongguoDownloadsController extends Notifier<List<HongguoDownloadItem
     var lanes = ref.read(hongguoDownloadSettingsProvider);
     for (final item in _items) {
       if (lanes <= 0) break;
-      if (item.phase != HongguoDownloadPhase.queued || _dropping.contains(item.id)) continue;
+      if (item.phase != HongguoDownloadPhase.queued || _dropping.contains(item.id) || _pendingDrops.contains(item.id)) {
+        continue;
+      }
       lanes--;
       unawaited(_run(item.id));
     }
@@ -755,7 +871,12 @@ final class HongguoDownloadsController extends Notifier<List<HongguoDownloadItem
   /// every quarter second.
   Future<void> _run(String id) async {
     final found = _items.where((row) => row.id == id).firstOrNull;
-    if (found == null || found.phase != HongguoDownloadPhase.queued || _dropping.contains(id)) return;
+    if (found == null ||
+        found.phase != HongguoDownloadPhase.queued ||
+        _dropping.contains(id) ||
+        _pendingDrops.contains(id)) {
+      return;
+    }
     final generation = _generations.putIfAbsent(id, Object.new);
     var item = found.copyWith(phase: HongguoDownloadPhase.running);
     _replace(item);
@@ -976,10 +1097,11 @@ final class HongguoDownloadsController extends Notifier<List<HongguoDownloadItem
     state = List.unmodifiable(_items);
   }
 
-  Future<void> _persist() async {
+  Future<void> _persist({bool throwOnFailure = false}) async {
     try {
       await StoragePrefs.setString(kHongguoDownloadsKey, jsonEncode([for (final item in _items) item.toJson()]));
     } on Object {
+      if (throwOnFailure) rethrow;
       // A preference; a closed store loses it.
     }
   }
