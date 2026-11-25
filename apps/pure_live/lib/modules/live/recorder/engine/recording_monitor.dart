@@ -83,7 +83,7 @@ final class RecordingLiveMonitor {
         final probe = await acquireRecordingClaim(claims, task.id);
         if (probe == null) continue;
         try {
-          await repository.setEnded(task.id, RecordingTaskState.stopped);
+          await repository.setEnded(task.id, RecordingTaskState.stopped, expectedStartedAt: task.startedAt);
         } finally {
           await releaseRecordingClaim(probe);
         }
@@ -93,7 +93,7 @@ final class RecordingLiveMonitor {
         // collides with it.
         final stopped = repository.taskById(task.id) ?? task;
         if (stopped.takeDirectory.isNotEmpty) await engine.retryFinalize(stopped);
-        if (!resume) continue;
+        if (!resume || task.isIptv) continue;
         final settled = repository.taskById(task.id) ?? stopped;
         await repository.save(settled.copyWith(state: RecordingTaskState.waiting));
         resumed = true;
@@ -151,7 +151,7 @@ final class RecordingLiveMonitor {
   /// re-arm the clock.
   static String _monitorKey(RecordingTasksState state) => [
     for (final task in state.tasks)
-      if (task.isArmed || task.scheduleEnabled)
+      if (!task.isIptv && (task.isArmed || task.scheduleEnabled))
         [
           task.id,
           task.enabled,
@@ -177,6 +177,7 @@ final class RecordingLiveMonitor {
   bool get _shouldRun {
     final polling = _ref.read(recordingSettingsProvider).schedule.pollingEnabled;
     for (final task in _ref.read(recordingTasksProvider).tasks) {
+      if (task.isIptv) continue;
       if (polling && task.isArmed && task.isWithinSchedule(DateTime.now())) return true;
       if (!task.scheduleEnabled) continue;
       if (task.state == RecordingTaskState.recording && task.stopAtWindowEnd) return true;
@@ -206,8 +207,9 @@ final class RecordingLiveMonitor {
         .tasks
         .any(
           (task) =>
-              (task.isArmed && task.isWithinSchedule(now)) ||
-              (task.state == RecordingTaskState.recording && task.stopAtWindowEnd),
+              !task.isIptv &&
+              ((task.isArmed && task.isWithinSchedule(now)) ||
+                  (task.state == RecordingTaskState.recording && task.stopAtWindowEnd)),
         );
     if (busy) {
       // The clock wakes for the fastest armed room; each room still waits its
@@ -215,7 +217,7 @@ final class RecordingLiveMonitor {
       final fastest = _ref
           .read(recordingTasksProvider)
           .tasks
-          .where((task) => task.isArmed && task.isWithinSchedule(now))
+          .where((task) => !task.isIptv && task.isArmed && task.isWithinSchedule(now))
           .fold<int>(15, (value, task) => math.min(value, task.checkSeconds));
       final tick = math.min(15, math.max(5, fastest));
       _timer = Timer.periodic(Duration(seconds: tick), (_) => unawaited(_tick()));
@@ -226,6 +228,7 @@ final class RecordingLiveMonitor {
       DateTime? next;
       if (polling) {
         for (final task in _ref.read(recordingTasksProvider).tasks) {
+          if (task.isIptv) continue;
           final candidate = task.nextWindowStart(now);
           if (candidate == null) continue;
           if (next == null || candidate.isBefore(next)) next = candidate;
@@ -265,7 +268,7 @@ final class RecordingLiveMonitor {
   Future<void> _stopExpired(DateTime now) async {
     final engine = _ref.read(recorderEngineProvider);
     for (final task in _ref.read(recordingTasksProvider).tasks) {
-      if (!task.scheduleEnabled || !task.stopAtWindowEnd) continue;
+      if (task.isIptv || !task.scheduleEnabled || !task.stopAtWindowEnd) continue;
       if (!engine.isRecording(task.id)) continue;
       if (task.isWithinSchedule(now)) continue;
       try {
@@ -333,7 +336,10 @@ final class RecordingLiveMonitor {
     try {
       final now = DateTime.now();
       final engine = _ref.read(recorderEngineProvider);
-      final tasks = _ref.read(recordingTasksProvider).tasks;
+      final tasks = [
+        for (final task in _ref.read(recordingTasksProvider).tasks)
+          if (!task.isIptv) task,
+      ];
       await _stopExpired(now);
 
       final settings = _ref.read(recordingSettingsProvider);

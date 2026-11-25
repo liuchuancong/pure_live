@@ -90,11 +90,13 @@ final class RecordingTaskRepository {
     );
   }
 
-  /// Marks the task behind [id] as ended in [state], stamping the end and
-  /// what the session left behind. A task never stored is a no-op.
-  Future<void> setEnded(
+  /// Marks the expected session behind [id] as ended in [state], stamping the
+  /// end and what that session left behind. A newer take owns the row after a
+  /// restart, so a late end from the previous one is refused.
+  Future<bool> setEnded(
     String id,
     RecordingTaskState state, {
+    required DateTime expectedStartedAt,
     String? filePath,
     int? bytes,
     int? durationMs,
@@ -103,8 +105,9 @@ final class RecordingTaskRepository {
     String? warning,
   }) async {
     final stored = store.get(id);
-    if (stored == null) return;
+    if (stored == null) return false;
     final task = RecordingTask.fromJson(stored);
+    if (!task.startedAt.isAtSameMomentAs(expectedStartedAt)) return false;
     await save(
       task.copyWith(
         state: state,
@@ -118,6 +121,7 @@ final class RecordingTaskRepository {
         warning: warning,
       ),
     );
+    return true;
   }
 
   /// Marks an ended task as being finished again, for a post-recording step
@@ -221,10 +225,11 @@ final class RecordingTaskRepository {
 
   /// Puts the running session's [bytes] and media time on the task without
   /// touching its state or start: the engine's progress line, written on its
-  /// own clock. A task never stored is a no-op.
+  /// own clock. A missing task, an ended take or a newer session is a no-op.
   Future<void> setProgress(
     String id,
     int bytes, {
+    required DateTime expectedStartedAt,
     int durationMs = 0,
     int? segments,
     double? liveFps,
@@ -232,8 +237,10 @@ final class RecordingTaskRepository {
   }) async {
     final stored = store.get(id);
     if (stored == null) return;
+    final task = RecordingTask.fromJson(stored);
+    if (!task.isRunning || !task.startedAt.isAtSameMomentAs(expectedStartedAt)) return;
     await save(
-      RecordingTask.fromJson(stored).copyWith(
+      task.copyWith(
         bytes: bytes,
         durationMs: durationMs,
         segments: segments,
@@ -372,12 +379,20 @@ class RecordingTasksController extends Notifier<RecordingTasksState> {
 
   /// Marks the task behind [id] as ended with its file saved; [warning] is
   /// the post-recording note the card shows under it.
-  Future<void> setStopped(String id, {String? filePath, int? bytes, String? errorText, String? warning}) async {
+  Future<void> setStopped(
+    String id, {
+    required DateTime expectedStartedAt,
+    String? filePath,
+    int? bytes,
+    String? errorText,
+    String? warning,
+  }) async {
     final repository = ref.read(recordingRepositoryProvider).value;
     if (repository == null) return;
     await repository.setEnded(
       id,
       RecordingTaskState.stopped,
+      expectedStartedAt: expectedStartedAt,
       filePath: filePath,
       bytes: bytes,
       errorText: errorText,
@@ -386,10 +401,23 @@ class RecordingTasksController extends Notifier<RecordingTasksState> {
   }
 
   /// Marks the task behind [id] as failed (its session ended in an error).
-  Future<void> setFailed(String id, {String? filePath, int? bytes, String? errorText}) async {
+  Future<void> setFailed(
+    String id, {
+    required DateTime expectedStartedAt,
+    String? filePath,
+    int? bytes,
+    String? errorText,
+  }) async {
     final repository = ref.read(recordingRepositoryProvider).value;
     if (repository == null) return;
-    await repository.setEnded(id, RecordingTaskState.failed, filePath: filePath, bytes: bytes, errorText: errorText);
+    await repository.setEnded(
+      id,
+      RecordingTaskState.failed,
+      expectedStartedAt: expectedStartedAt,
+      filePath: filePath,
+      bytes: bytes,
+      errorText: errorText,
+    );
   }
 
   /// Records the take's probed resolution and frame rate.
@@ -420,6 +448,7 @@ class RecordingTasksController extends Notifier<RecordingTasksState> {
   Future<void> setProgress(
     String id,
     int bytes, {
+    required DateTime expectedStartedAt,
     int durationMs = 0,
     int? segments,
     double? liveFps,
@@ -430,6 +459,7 @@ class RecordingTasksController extends Notifier<RecordingTasksState> {
     await repository.setProgress(
       id,
       bytes,
+      expectedStartedAt: expectedStartedAt,
       durationMs: durationMs,
       segments: segments,
       liveFps: liveFps,

@@ -1,12 +1,14 @@
 import 'dart:io' show Directory, File;
 import 'dart:typed_data' show Uint8List;
 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:live_net/live_net.dart' show LiveHttp, LiveRequest, LiveResponse, LiveStreamedResponse;
 import 'package:media_core_audio/media_core_audio.dart' as audio;
 import 'package:pure_live/modules/music/controller/library/music_comments.dart' show MusicComment;
 import 'package:pure_live/modules/music/controller/sources/music_audio_cache.dart';
 import 'package:pure_live/modules/music/controller/sources/music_comment_source.dart';
+import 'package:pure_live/modules/music/widgets/music_lyric_panel.dart' show musicLyricTrackKey;
 
 /// The audio cache's own ledger and the comment row helpers: a key that
 /// strips what a filename cannot hold, a partial file that only becomes a
@@ -23,6 +25,17 @@ void main() {
       expect(MusicAudioCacheKey.of(track, null), 'kw_977AB_auto');
       expect(MusicAudioCacheKey.fileOf('kw_977_auto'), 'kw_977_auto.audio');
       expect(MusicAudioCacheKey.partOf('kw_977_auto'), 'kw_977_auto.audio.part');
+    });
+  });
+
+  group('the lyric track key', () {
+    test('the same id on different platforms is a different lyric request', () {
+      final first = musicLyricTrackKey(_track());
+      final second = musicLyricTrackKey(_track(sourceId: 'wy'));
+      expect(first, 'kw:977');
+      expect(second, 'wy:977');
+      expect(second, isNot(first));
+      expect(musicLyricTrackKey(null), isNull);
     });
   });
 
@@ -166,6 +179,16 @@ void main() {
     CachedTrackSource wearing({bool cacheOff = false}) =>
         CachedTrackSource(inner, environment: () => cacheOff ? null : (directory: root, limitMb: 8, http: http));
 
+    Future<Directory> directoryWithAudio(String prefix, Map<String, int> sizes) async {
+      final directory = await root.createTemp(prefix);
+      final cacheDir = Directory('${directory.path}/music-audio');
+      await cacheDir.create(recursive: true);
+      for (final entry in sizes.entries) {
+        await File('${cacheDir.path}/${entry.key}.audio').writeAsBytes(List.filled(entry.value, 1));
+      }
+      return directory;
+    }
+
     test('a cache that is off rides straight through', () async {
       final source = audio.TrackSource(uri: Uri.parse('https://cdn.example/x.mp3'));
       inner.answer = source;
@@ -216,6 +239,102 @@ void main() {
       final again = await wearing().resolveTrackSource(_track(), quality: audio.MusicQuality.k128);
       expect(again.isLocal, isTrue);
       expect(again.uri.isScheme('file'), isTrue);
+    });
+
+    test('a moved cache directory is read instead of the previous root', () async {
+      Future<Directory> directoryWithBytes(int size) async {
+        final directory = await root.createTemp('cache-move');
+        final cacheDir = Directory('${directory.path}/music-audio');
+        await cacheDir.create(recursive: true);
+        await File('${cacheDir.path}/kw_977_128k.audio').writeAsBytes(List.filled(size, 1));
+        return directory;
+      }
+
+      final first = await directoryWithBytes(3);
+      final second = await directoryWithBytes(7);
+      var directory = first;
+      final wrapped = CachedTrackSource(inner, environment: () => (directory: directory, limitMb: 8, http: http));
+      await wrapped.resolveTrackSource(_track(), quality: audio.MusicQuality.k128);
+      directory = second;
+      final moved = await wrapped.resolveTrackSource(_track(), quality: audio.MusicQuality.k128);
+      expect(File.fromUri(moved.uri).readAsBytesSync(), hasLength(7));
+      expect(inner.resolves, 0);
+    });
+
+    test('registered sources share one usage ledger and one clear', () async {
+      final directory = await directoryWithAudio('cache-shared', {'kw_977_auto': 3, 'wy_42_auto': 7});
+      final box = MusicAudioCacheBox();
+      addTearDown(box.disarm);
+      MusicCacheEnvironment? environment() => (directory: directory, limitMb: 8, http: http);
+      final first = box.register(inner, environment: environment);
+      final second = box.register(inner, environment: environment);
+
+      final firstHit = await first.resolveTrackSource(_track());
+      final secondHit = await second.resolveTrackSource(_track(id: '42', sourceId: 'wy'));
+      expect(firstHit.isLocal, isTrue);
+      expect(secondHit.isLocal, isTrue);
+      expect(inner.resolves, 0);
+      // Ten bytes, not twenty: both sources resolved the same directory and
+      // capacity to one MusicAudioCache rather than loading private indexes.
+      expect(await box.usageBytes(), 10);
+
+      await box.clear();
+      expect(await box.usageBytes(), 0);
+      expect(File('${directory.path}/music-audio/kw_977_auto.audio').existsSync(), isFalse);
+      expect(File('${directory.path}/music-audio/wy_42_auto.audio').existsSync(), isFalse);
+    });
+
+    test('disarming one window box leaves the other window sources intact', () async {
+      final directory = await directoryWithAudio('cache-isolated', {'kw_977_auto': 3});
+      final left = ProviderContainer();
+      final right = ProviderContainer();
+      addTearDown(left.dispose);
+      addTearDown(right.dispose);
+      MusicCacheEnvironment? environment() => (directory: directory, limitMb: 8, http: http);
+      final leftBox = left.read(musicAudioCacheBoxProvider);
+      final rightBox = right.read(musicAudioCacheBoxProvider);
+      leftBox.register(inner, environment: environment);
+      final rightSource = rightBox.register(inner, environment: environment);
+      expect(await leftBox.usageBytes(), 3);
+      expect(await rightBox.usageBytes(), 3);
+
+      leftBox.disarm();
+      expect(await leftBox.usageBytes(), isNull);
+      await leftBox.clear();
+      expect(await rightBox.usageBytes(), 3);
+      expect(File('${directory.path}/music-audio/kw_977_auto.audio').existsSync(), isTrue);
+      expect((await rightSource.resolveTrackSource(_track())).isLocal, isTrue);
+      expect(inner.resolves, 0);
+    });
+
+    test('the settings box follows the active sources and belongs to one window scope', () async {
+      Future<CachedTrackSource> sourceWithBytes(int size) async {
+        final directory = await root.createTemp('cache-window');
+        final cacheDir = Directory('${directory.path}/music-audio');
+        await cacheDir.create(recursive: true);
+        await File('${cacheDir.path}/kw_977_auto.audio').writeAsBytes(List.filled(size, 1));
+        return CachedTrackSource(inner, environment: () => (directory: directory, limitMb: 8, http: http));
+      }
+
+      final first = await sourceWithBytes(3);
+      final second = await sourceWithBytes(7);
+      final left = ProviderContainer();
+      final right = ProviderContainer();
+      addTearDown(left.dispose);
+      addTearDown(right.dispose);
+      final leftBox = left.read(musicAudioCacheBoxProvider);
+      final rightBox = right.read(musicAudioCacheBoxProvider);
+
+      leftBox.wearing = first;
+      expect(await leftBox.usageBytes(), 3);
+      leftBox.wearing = second;
+      expect(await leftBox.usageBytes(), 7);
+      rightBox.wearing = first;
+      expect(await rightBox.usageBytes(), 3);
+
+      leftBox.disarm();
+      expect(await leftBox.usageBytes(), isNull);
+      expect(await rightBox.usageBytes(), 3);
     });
   });
 }

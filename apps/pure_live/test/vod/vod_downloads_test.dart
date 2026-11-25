@@ -1,8 +1,11 @@
 import 'dart:convert' show jsonDecode, jsonEncode;
+import 'dart:io' show Directory, File, FileLock, FileMode, FileSystemException;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:live_storage/live_storage.dart';
+import 'package:path/path.dart' as p;
+import 'package:pure_live/modules/vod/controller/vod_download.dart' show freeDownloadFile;
 import 'package:pure_live/modules/vod/controller/vod_downloads.dart';
 import 'package:pure_live/modules/vod/controller/vod_settings.dart' show VodQualityChoice;
 
@@ -64,6 +67,58 @@ void main() {
     expect(tasks.first.phase, VodDownloadPhase.paused);
     expect(tasks.first.received, 30);
     expect(tasks.last.phase, VodDownloadPhase.done);
+  });
+
+  test('a failed file delete keeps the task record', () async {
+    final folder = await Directory.systemTemp.createTemp('pure-live-vod-delete-');
+    final file = File('${folder.path}/locked.mp4');
+    await file.writeAsString('keep');
+    final lock = await file.open(mode: FileMode.write);
+    // The explicit mode documents the Windows delete fixture.
+    // ignore: avoid_redundant_argument_values
+    await lock.lock(FileLock.exclusive);
+    addTearDown(() async {
+      await lock.close();
+      await folder.delete(recursive: true);
+    });
+    final blocked = item('BV1test:9001', phase: VodDownloadPhase.done, received: 100);
+    await StoragePrefs.setString(kVodDownloadsKey, jsonEncode([blocked.toJson()..['filePath'] = file.path]));
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+
+    await expectLater(
+      container.read(vodDownloadsProvider.notifier).remove(blocked.id, deleteFile: true),
+      throwsA(isA<FileSystemException>()),
+    );
+
+    expect(container.read(vodDownloadsProvider).single.id, blocked.id);
+  });
+
+  test('a concurrent remove and clear cannot race the locked delete', () async {
+    final folder = await Directory.systemTemp.createTemp('pure-live-vod-remove-race-');
+    final file = File(p.join(folder.path, 'locked.mp4'));
+    await file.writeAsString('keep');
+    final lock = await file.open(mode: FileMode.write);
+    // Windows needs an explicit mode for this locked-delete fixture.
+    // ignore: avoid_redundant_argument_values
+    await lock.lock(FileLock.exclusive);
+    addTearDown(() async {
+      await lock.close();
+      await folder.delete(recursive: true);
+    });
+    final blocked = item('BV1test:9001', phase: VodDownloadPhase.done, received: 100);
+    await StoragePrefs.setString(kVodDownloadsKey, jsonEncode([blocked.toJson()..['filePath'] = file.path]));
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+    final controller = container.read(vodDownloadsProvider.notifier);
+
+    final first = controller.remove(blocked.id, deleteFile: true);
+    final second = controller.remove(blocked.id, deleteFile: true);
+    await controller.clearFinished();
+
+    await expectLater(first, throwsA(isA<FileSystemException>()));
+    await second;
+    expect(container.read(vodDownloadsProvider).single.id, blocked.id);
   });
 
   test('clearFinished keeps the unfinished rows', () async {
@@ -156,5 +211,15 @@ void main() {
     final tasks = [item('BV1test:9001', phase: VodDownloadPhase.running)];
     expect(vodDownloadOf(tasks, 'BV1test', 9001), same(tasks.single));
     expect(vodDownloadOf(tasks, 'BV1test', 1234), isNull);
+  });
+
+  test('a paused part reserves its finished file name', () async {
+    final folder = await Directory.systemTemp.createTemp('pure-live-vod-name-');
+    addTearDown(() => folder.delete(recursive: true));
+    await File(p.join(folder.path, '标题.mp4.part')).writeAsString('partial');
+
+    final target = freeDownloadFile(folder, '标题.mp4');
+
+    expect(target.path, p.join(folder.path, '标题_2.mp4'));
   });
 }

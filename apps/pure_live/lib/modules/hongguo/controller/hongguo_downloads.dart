@@ -406,12 +406,21 @@ final class HongguoDownloadsController extends Notifier<List<HongguoDownloadItem
   final Map<String, HttpClient> _clients = {};
   final Map<String, _HongguoStop> _stops = {};
   final Map<String, Timer> _retryTimers = {};
+  final Map<String, Object> _generations = {};
+  final Map<String, bool> _deleteFiles = {};
+  final Set<String> _dropping = {};
+  final Set<String> _enqueuing = {};
 
   @override
   List<HongguoDownloadItem> build() {
     _items
       ..clear()
       ..addAll(_readTasks());
+    _generations
+      ..clear()
+      ..addAll({for (final item in _items) item.id: Object()});
+    _deleteFiles.clear();
+    _dropping.clear();
     // A run the previous session left mid-flight keeps its bytes, paused.
     for (var index = 0; index < _items.length; index++) {
       if (_items[index].phase == HongguoDownloadPhase.running) {
@@ -446,9 +455,12 @@ final class HongguoDownloadsController extends Notifier<List<HongguoDownloadItem
     String cover = '',
   }) async {
     final existing = _items.where((item) => item.id == vid).firstOrNull;
-    if (existing != null && existing.phase != HongguoDownloadPhase.failed) {
+    if (_enqueuing.contains(vid) ||
+        _dropping.contains(vid) ||
+        (existing != null && existing.phase != HongguoDownloadPhase.failed)) {
       return (outcome: HongguoDownloadEnqueue.duplicate, error: null);
     }
+    _enqueuing.add(vid);
     try {
       final directory = ref.read(appPathsProvider).shortDramas;
       // Made here rather than trusted to boot: the folder row can name a path
@@ -471,11 +483,17 @@ final class HongguoDownloadsController extends Notifier<List<HongguoDownloadItem
         phase: HongguoDownloadPhase.queued,
         stamp: DateTime.now().millisecondsSinceEpoch,
       );
+      if (existing != null && !_items.contains(existing)) {
+        return (outcome: HongguoDownloadEnqueue.duplicate, error: null);
+      }
+      if (_dropping.contains(vid)) return (outcome: HongguoDownloadEnqueue.duplicate, error: null);
       if (existing != null) {
         _items[_items.indexOf(existing)] = item;
       } else {
         _items.add(item);
       }
+      _generations[vid] = Object();
+      _deleteFiles.remove(vid);
       _publish();
       await _persist();
       _pump();
@@ -483,6 +501,8 @@ final class HongguoDownloadsController extends Notifier<List<HongguoDownloadItem
     } on Object catch (failure) {
       appLog.forCategory('hongguo.download').warning('download step failed', fields: {'error': '$failure'});
       return (outcome: HongguoDownloadEnqueue.failed, error: '$failure');
+    } finally {
+      _enqueuing.remove(vid);
     }
   }
 
@@ -491,7 +511,7 @@ final class HongguoDownloadsController extends Notifier<List<HongguoDownloadItem
 
   Future<void> pause(String id) async {
     final item = _items.where((row) => row.id == id).firstOrNull;
-    if (item == null) return;
+    if (item == null || _dropping.contains(id) || _stops[id] == _HongguoStop.drop) return;
     _retryTimers.remove(id)?.cancel();
     switch (item.phase) {
       case HongguoDownloadPhase.running:
@@ -509,7 +529,7 @@ final class HongguoDownloadsController extends Notifier<List<HongguoDownloadItem
   /// written stay and a range request carries on from there.
   Future<void> resume(String id) async {
     final item = _items.where((row) => row.id == id).firstOrNull;
-    if (item == null) return;
+    if (item == null || _dropping.contains(id)) return;
     if (item.phase != HongguoDownloadPhase.paused && item.phase != HongguoDownloadPhase.failed) return;
     _retryTimers.remove(id)?.cancel();
     _replace(item.copyWith(phase: HongguoDownloadPhase.queued, attempts: 0, speed: 0));
@@ -521,8 +541,9 @@ final class HongguoDownloadsController extends Notifier<List<HongguoDownloadItem
   /// its file unless [deleteFile] says otherwise.
   Future<void> remove(String id, {bool deleteFile = false}) async {
     final item = _items.where((row) => row.id == id).firstOrNull;
-    if (item == null) return;
+    if (item == null || _dropping.contains(id)) return;
     if (item.phase == HongguoDownloadPhase.running) {
+      _deleteFiles[id] = (_deleteFiles[id] ?? false) || deleteFile;
       _stops[id] = _HongguoStop.drop;
       _clients[id]?.close(force: true);
       return;
@@ -533,6 +554,7 @@ final class HongguoDownloadsController extends Notifier<List<HongguoDownloadItem
   Future<void> pauseAll() async {
     var stopped = false;
     for (final item in _items) {
+      if (_dropping.contains(item.id) || _stops[item.id] == _HongguoStop.drop) continue;
       switch (item.phase) {
         case HongguoDownloadPhase.queued:
           _replace(item.copyWith(phase: HongguoDownloadPhase.paused));
@@ -552,7 +574,8 @@ final class HongguoDownloadsController extends Notifier<List<HongguoDownloadItem
   Future<void> resumeAll() async {
     for (var index = 0; index < _items.length; index++) {
       final item = _items[index];
-      if (item.phase == HongguoDownloadPhase.paused || item.phase == HongguoDownloadPhase.failed) {
+      if (!_dropping.contains(item.id) &&
+          (item.phase == HongguoDownloadPhase.paused || item.phase == HongguoDownloadPhase.failed)) {
         _retryTimers.remove(item.id)?.cancel();
         _items[index] = item.copyWith(phase: HongguoDownloadPhase.queued, attempts: 0, speed: 0);
       }
@@ -564,7 +587,13 @@ final class HongguoDownloadsController extends Notifier<List<HongguoDownloadItem
 
   /// Drops the finished rows; their files stay.
   Future<void> clearFinished() async {
-    _items.removeWhere((item) => item.phase == HongguoDownloadPhase.done);
+    for (final item in _items) {
+      if (item.phase == HongguoDownloadPhase.done && !_dropping.contains(item.id)) {
+        _generations.remove(item.id);
+        _deleteFiles.remove(item.id);
+      }
+    }
+    _items.removeWhere((item) => item.phase == HongguoDownloadPhase.done && !_dropping.contains(item.id));
     _publish();
     await _persist();
   }
@@ -608,10 +637,10 @@ final class HongguoDownloadsController extends Notifier<List<HongguoDownloadItem
     for (var index = 0; index < stranded.length; index++) {
       if (cancelled != null && cancelled()) break;
       final item = stranded[index];
-      // A row the viewer removed while this run was going has no pointer left to
-      // update: leave its file where it is rather than move it somewhere nothing
-      // names.
-      if (!_items.any((row) => row.id == item.id)) continue;
+      final generation = _generations[item.id];
+      // A row removed or replaced while this run was going no longer owns this
+      // move; its old file must not rewrite the newer task's path.
+      if (generation == null || !_isCurrent(item.id, generation) || _dropping.contains(item.id)) continue;
       final name = p.basename(item.filePath);
       onProgress?.call(index, stranded.length, name);
       try {
@@ -628,6 +657,10 @@ final class HongguoDownloadsController extends Notifier<List<HongguoDownloadItem
             continue;
           }
           await source.delete();
+        }
+        if (!_isCurrent(item.id, generation) || _dropping.contains(item.id)) {
+          if (!await _delete(target)) failed++;
+          continue;
         }
         _replace(item.copyWith(filePath: target.path, fileName: p.basename(target.path), error: item.error));
         await _persist();
@@ -651,22 +684,39 @@ final class HongguoDownloadsController extends Notifier<List<HongguoDownloadItem
   }
 
   /// Removes a part file, and a finished task's file when asked.
-  Future<void> _drop(HongguoDownloadItem item, {bool deleteFile = false}) async {
-    _retryTimers.remove(item.id)?.cancel();
-    _items.removeWhere((row) => row.id == item.id);
-    _publish();
-    await _delete(File('${item.filePath}.part'));
-    if (deleteFile && item.phase == HongguoDownloadPhase.done) {
-      await _delete(File(item.filePath));
+  Future<void> _drop(HongguoDownloadItem item, {bool deleteFile = false, Object? generation}) async {
+    final id = item.id;
+    final token = generation ?? _generations[id];
+    if (token == null || !_dropping.add(id)) return;
+    try {
+      _retryTimers.remove(id)?.cancel();
+      if (!await _delete(File('${item.filePath}.part'))) {
+        throw FileSystemException('Cannot remove download part', item.filePath);
+      }
+      if (!_isCurrent(id, token)) return;
+      final current = _items.where((row) => row.id == id).firstOrNull;
+      if (deleteFile && current?.phase == HongguoDownloadPhase.done && !await _delete(File(current!.filePath))) {
+        throw FileSystemException('Cannot remove downloaded video', current.filePath);
+      }
+      if (!_isCurrent(id, token)) return;
+      _items.removeWhere((row) => row.id == id);
+      _generations.remove(id);
+      _deleteFiles.remove(id);
+      _publish();
+      await _persist();
+    } finally {
+      _dropping.remove(id);
     }
-    await _persist();
   }
 
-  static Future<void> _delete(File file) async {
+  bool _isCurrent(String id, Object generation) => identical(_generations[id], generation);
+
+  static Future<bool> _delete(File file) async {
     try {
       if (file.existsSync()) await file.delete();
-    } on Object {
-      // A part file the system still holds is left for the cleaner.
+      return true;
+    } on FileSystemException {
+      return false;
     }
   }
 
@@ -694,7 +744,7 @@ final class HongguoDownloadsController extends Notifier<List<HongguoDownloadItem
     var lanes = ref.read(hongguoDownloadSettingsProvider);
     for (final item in _items) {
       if (lanes <= 0) break;
-      if (item.phase != HongguoDownloadPhase.queued) continue;
+      if (item.phase != HongguoDownloadPhase.queued || _dropping.contains(item.id)) continue;
       lanes--;
       unawaited(_run(item.id));
     }
@@ -705,7 +755,8 @@ final class HongguoDownloadsController extends Notifier<List<HongguoDownloadItem
   /// every quarter second.
   Future<void> _run(String id) async {
     final found = _items.where((row) => row.id == id).firstOrNull;
-    if (found == null || found.phase != HongguoDownloadPhase.queued) return;
+    if (found == null || found.phase != HongguoDownloadPhase.queued || _dropping.contains(id)) return;
+    final generation = _generations.putIfAbsent(id, Object.new);
     var item = found.copyWith(phase: HongguoDownloadPhase.running);
     _replace(item);
 
@@ -753,10 +804,6 @@ final class HongguoDownloadsController extends Notifier<List<HongguoDownloadItem
         }
       }
       received = written;
-      sink = scratch.openWrite(mode: written > 0 ? FileMode.append : FileMode.write);
-      // The sink's own future reports a failed write; observing it keeps the
-      // failure here instead of as an unattributed uncaught error.
-      unawaited(sink.done.catchError((Object _) {}));
       // The proxy answers at most eight mebibytes a response and names the
       // whole file in its Content-Range, so the run keeps asking for what
       // is left until every byte is home.
@@ -765,18 +812,39 @@ final class HongguoDownloadsController extends Notifier<List<HongguoDownloadItem
       var speed = 0;
       var lastTick = DateTime.now().millisecondsSinceEpoch;
       var total = 0;
+      IOSink? responseSink;
       while (!stopped) {
         final request = await client.getUrl(Uri.parse(proxyUrl));
         if (received > 0) request.headers.set('range', 'bytes=$received-');
         final response = await request.close();
-        if (response.statusCode < 200 || response.statusCode >= 300) {
-          throw HttpException('HTTP ${response.statusCode}');
+        if (received > 0 && response.statusCode == 416) {
+          await response.drain<void>();
+          await responseSink?.close();
+          responseSink = null;
+          sink = null;
+          await scratch.delete();
+          received = 0;
+          throw const HttpException('HTTP 416');
         }
-        final contentRange = response.headers.value('content-range') ?? '';
-        final match = RegExp(r'bytes (\d+)-(\d+)/(\d+)').firstMatch(contentRange);
-        total = match == null
-            ? (received > 0 ? received + response.contentLength : response.contentLength)
-            : int.tryParse(match.group(3) ?? '') ?? 0;
+        final transfer = hongguoDownloadTransfer(
+          written: received,
+          statusCode: response.statusCode,
+          contentRange: response.headers.value('content-range') ?? '',
+          contentLength: response.contentLength,
+        );
+        if (!transfer.append) {
+          await responseSink?.close();
+          responseSink = null;
+          sink = null;
+          await scratch.delete();
+          received = 0;
+        }
+        total = transfer.total;
+        responseSink ??= scratch.openWrite(mode: transfer.append ? FileMode.append : FileMode.write);
+        sink = responseSink;
+        // The sink's own future reports a failed write; observing it keeps the
+        // failure here instead of as an unattributed uncaught error.
+        unawaited(sink.done.catchError((Object _) {}));
         item = item.copyWith(received: received, total: total);
         _replace(item);
         await for (final chunk in response) {
@@ -803,26 +871,32 @@ final class HongguoDownloadsController extends Notifier<List<HongguoDownloadItem
         if (stopped) break;
         if (total <= 0 || received >= total) break;
       }
-      await sink.flush();
-      await sink.close();
-      sink = null;
+      if (_stops.containsKey(id)) throw const _Stopped();
       if (stopped) return;
+      final completedSink = sink;
+      if (completedSink == null) throw const HttpException('download produced no response');
+      await completedSink.flush();
+      await completedSink.close();
+      sink = null;
+      if (_stops.containsKey(id)) throw const _Stopped();
       if (total > 0 && received < total) {
         throw HttpException('the stream ended ${total - received} bytes short');
       }
+      if (_stops.containsKey(id)) throw const _Stopped();
       final target = File(item.filePath);
       await _delete(target);
+      if (_stops.containsKey(id)) throw const _Stopped();
       await scratch.rename(target.path);
+      if (_stops.containsKey(id)) throw const _Stopped();
       _replace(item.copyWith(received: received, speed: 0, phase: HongguoDownloadPhase.done));
     } on Object catch (error) {
       appLog.forCategory('hongguo.download').error('download write failed', fields: {'error': '$error'});
-      if (error is! _Stopped && !stopped) {
+      if (_isCurrent(id, generation) && error is! _Stopped && !stopped) {
         item = item.copyWith(received: received, speed: 0, phase: HongguoDownloadPhase.failed, error: '$error');
         _replace(item);
         _scheduleRetry(item.id);
       }
     } finally {
-      _clients.remove(id);
       client?.close(force: true);
       if (sink != null) {
         try {
@@ -838,16 +912,26 @@ final class HongguoDownloadsController extends Notifier<List<HongguoDownloadItem
           // The proxy's entries end with its own lifetime anyway.
         }
       }
-      final stop = _stops.remove(id);
-      if (stop == _HongguoStop.drop) {
-        await _drop(item);
-      } else {
-        if (stop == _HongguoStop.pause) {
-          item = item.copyWith(received: received, speed: 0, phase: HongguoDownloadPhase.paused);
-          _replace(item);
+      if (_isCurrent(id, generation)) {
+        _clients.remove(id);
+        final stop = _stops.remove(id);
+        if (stop == _HongguoStop.drop) {
+          try {
+            await _drop(item, deleteFile: _deleteFiles.remove(id) ?? false, generation: generation);
+          } on Object catch (error) {
+            if (_isCurrent(id, generation)) {
+              _replace(item.copyWith(phase: HongguoDownloadPhase.failed, speed: 0, error: '$error'));
+            }
+          }
+        } else {
+          _deleteFiles.remove(id);
+          if (stop == _HongguoStop.pause) {
+            item = item.copyWith(received: received, speed: 0, phase: HongguoDownloadPhase.paused);
+            _replace(item);
+          }
+          await _persist();
+          _pump();
         }
-        await _persist();
-        _pump();
       }
     }
   }
@@ -955,8 +1039,33 @@ File hongguoFreeDownloadFile(Directory folder, String name) {
   final base = p.basenameWithoutExtension(name);
   final extension = p.extension(name);
   var file = File(p.join(folder.path, name));
-  for (var index = 2; file.existsSync(); index++) {
+  for (var index = 2; file.existsSync() || File('${file.path}.part').existsSync(); index++) {
     file = File(p.join(folder.path, '${base}_$index$extension'));
   }
   return file;
+}
+
+/// How a response continues the bytes already in a `.part` file.
+typedef HongguoDownloadTransfer = ({int offset, int total, bool append});
+
+/// Validates a resume before any bytes are appended. A server that ignores
+/// Range answers 200 and must replace the part, never extend it.
+HongguoDownloadTransfer hongguoDownloadTransfer({
+  required int written,
+  required int statusCode,
+  required String contentRange,
+  required int contentLength,
+}) {
+  final match = RegExp(r'^bytes (\d+)-(\d+)/(\d+)$').firstMatch(contentRange.trim());
+  if (statusCode == 206) {
+    final start = int.tryParse(match?.group(1) ?? '');
+    final end = int.tryParse(match?.group(2) ?? '');
+    final total = int.tryParse(match?.group(3) ?? '');
+    if (start == null || start != written || end == null || total == null || end < start || end >= total) {
+      throw const HttpException('invalid download range response');
+    }
+    return (offset: written, total: total, append: true);
+  }
+  if (statusCode < 200 || statusCode >= 300) throw HttpException('HTTP $statusCode');
+  return (offset: 0, total: contentLength > 0 ? contentLength : 0, append: false);
 }

@@ -231,3 +231,91 @@ Windows 窗口全屏入口（第十五轮改）：播放行「全屏｜窗口全
   - **O5 完成**：① **统计浮层摘 `handle!`**（audit-24）——挂载加 `handle != null` 守卫（开关留着等引擎回来）；② 发送字数上限 100+计数器（audit-16，DsTextField maxLength）；③ 发送失败 toast 带平台原因（audit-23，description 参数）；④ 聊天 tab 持久化（audit-20，`danmaku.chatTab` 存名读名，未知名回弹幕 tab）。
   - **O6 完成**：① **更多面板补弹幕开关行**（audit-11，DsSwitch 读同一 danmakuVisible，条宽 <320 弹幕簇消失时仍有路径）；② **audit-25 评估不修**：表情收集 O(n) 受 200+60 行上限与每帧批处理双重钳制（room_controller 811-828 帧合并），最坏 ~15.6k 轻量字符串操作/秒，无感知收益，增量缓存属无收益抽象——记录依据后关闭；③ **audit-12 维持记账**（窗内拾取器宿主另立任务，历轮已定）。
   - 验证：每包 room 作用域 analyze → 全量 lib+test analyze **0 issues**（六包终态复跑亦绿）；dart format 仅触碰本轮 18 个文件（3 changed）；slang 重生成两轮（room+settings 键增删）。**未做/归用户**：运行时验收（竖屏全屏进出/拉穿/返回键、断连横条、PiP 条截屏隐藏、帮助表、礼物开关、定时剩余、静音/音量跨面回显）；测试构建归用户。**本轮未提交。**
+
+- 2026-11-25：第五十轮（用户确认在当前工作区实施「直播 UI 优化 + 全屏修复」统一方案，三批落地）⇒
+  - **房间信息层级**：新增 `room/page/room_facts.dart`，标题玻璃条、沉浸胶囊展开态与紧凑信息条共用「观看·已播」；已播计时收进单一秒级 `Timer`，compact 旧 `_WatchedClock` 与 hero 旧 `_roomClock` 删除，避免同屏重复计时。标题保持单行省略，胶囊按「标题 / 事实 / 分享·详情」分层。
+  - **手机竖屏与横持**：竖屏沉浸删除视频区浮聊，恢复滚动弹幕，完整聊天改临时抽屉并补可见聊天入口；横持沉浸补 280px 可收起聊天列，打开时顶条/控制条同步预留末端空间；常规窄窗横屏增加 420px 舞台地板，放不下聊天列时改用底部面板，不再把视频挤成窄条。
+  - **控制条与更多面板**：正常态刷新=「重新打开房间」，错误态播放位=「重试」且隐藏重复刷新；全屏图标/文案/selected 同时识别页面竖屏全屏与系统全屏。更多面板补「播放统计」tile，handle 未就绪时禁用，不复制底条已有截图/录制/PiP 动词。
+  - **聊天与小窗身份**：已连接但无发送能力的房间保留只读说明，不再整条消失；桌面应用小窗标题合并主播名与房间标题，同名不重复。
+  - **全屏与键盘/TV**：F、屏幕全屏钮、双击、自动全屏按画幅路由（竖屏流→页面竖屏全屏，横屏流→系统全屏）；F11 固定系统全屏。新增 `toggleFullscreenResult` 保留旧 `Future<void>` API，房间请求失败时 toast 反馈；系统全屏传顶部/底部安全区。Escape 顺序=面板/聊天 → 退出呈现 → 离开房间；TV Up/Down 增加 primary-focus 守卫，按钮/滑块聚焦时不再误触换房；面板开启期间自动隐藏守卫保留。
+  - **列表与回放状态**：关注分区仓库/监听异常进入可重试错误态；多窗选房只监听当前历史/关注来源；关闭离线过滤后，主播结果可恢复显示离线主播；回放分P/普通面板开启或暂停时控制条不自动隐藏，Escape 先关面板。
+  - **清理与文案**：零引用 `room_chat_overlay.dart` 与对应测试删除，barrel 同步移除；Slang 增 `chatViewOnly`、`fullscreenFailed`、`shortcutSystemFullscreen`（中英）并重生成三份 translations。无新增持久化配置；聊天/全屏/错误均为页面或运行时状态，播放统计与既有设置 provider 共用。
+  - **多平台/主题**：布局覆盖桌面宽窗、窄桌面窗、手机竖屏、手机横持、竖屏全屏、系统全屏、窗口全屏、桌面小窗与 TV 焦点路径；颜色/间距/字体继续走 desen_ui 与现有主题 token，舞台保持深色。均为静态实现核对，未声称真机视觉通过。
+  - **验证**：`dart run slang` 成功；仅格式化本轮单文件；`dart analyze lib` **No issues found**；受影响既有测试 **72/72 通过**（布局/底部面板/聊天/关注分区/多窗/搜索/回放）；目标路径 `git diff --check` 无空白错误。**未构建 APK/桌面产物、未截图、未运行 UI，运行时视觉与交互验收归用户。**
+  - **限制与归属**：Windows `multiview_desktop` 的全屏状态及进入前窗口状态属进程全局，多窗互相影响需上游包修复，本轮未改 Pub cache。共享工作树既有并行改动全部保留；本轮未提交、未推送。
+
+- 2026-11-25：第五十一轮（下载/播放器关联缺口 + IPTV 录制分离 + IPTV 全屏）⇒
+  - **录制作用域**：共享 `RecorderEngine`、任务仓库和 `recordings` 根目录不变；`RecorderPage` 新增 `RecordingPageScope.live/iptv`，任务、统计、状态筛选、当前 tab、停止全部、预览列表和文件库均按作用域读取。IPTV 页不再显示开播检测、排程编辑、立即开录、直播间搜索或进入直播间；来源动作改为查找频道并打开 `/iptvPlay`，缺失频道有提示。直播列表排除 IPTV，IPTV 文件库只读 `iptv` 分树。
+  - **模型与监控**：`RecordingTask.isIptv` 统一识别 `iptv:<channelId>`；IPTV 的停止态显示「已保存」而不是直播订阅的「已暂停」。监控器的排程、武装、窗口结束与 tick 快照排除 IPTV；中断恢复仍结算/重试合并 IPTV 文件，但不会把它重新武装成直播等待任务。
+  - **录像库**：`RecorderLibraryPane` 支持 `platforms/excludedPlatforms/filterByPlatform` 与独立空状态说明；IPTV 不显示直播平台筛选，文件卡的来源动词改为「打开频道」。IPTV 设置组补共享录制设置，录制页设置入口不再落到不存在的 section。
+  - **IPTV 全屏**：系统全屏与窗口全屏时，`AppLayout` 直接用不透明黑色 `PageSurface` 承载播放器，移除 AppShell、侧栏、标题栏、手机 AppBar/底栏；`IptvPage` 同时绕过三栏浏览器，只返回嵌入舞台。`_withBoard` 在非 normal 呈现只保留舞台。IPTV 模块内容使用稳定 `GlobalKey` 跨根重挂载，离开 IPTV 时更换 key；退出全屏可恢复原频道选择、三栏页面和同一播放器实例，而不是重建流。TV 根返回仍保留退出确认。
+  - **下载/播放器**：共享 PIP chrome 隐藏时增加 `ExcludeFocus`，与既有 `IgnorePointer`、`ExcludeSemantics` 一起移出焦点/指针/语义树；虎牙下载的移除记录和删除文件统一走现有破坏性确认弹窗，复用 Slang 文案。
+  - **配置/状态**：无新增持久化配置；录制页 scope、tab family、过滤/分页和页面 key 属运行时状态。Slang 新增 IPTV 录制空状态与外部播放器中英文案并重生成；磁盘布局、录制 ID 和共享引擎均未改。
+  - **多平台/主题**：全屏改造覆盖桌面、窄桌面、手机、TV 的 AppShell 祖先链；录制页沿用现有宽工具栏/窄屏页头动作、分页和 desen_ui 主题组件。颜色/字体/间距仍走现有主题 token，全屏舞台为黑色。仅做静态实现核对，未声称真机视觉通过。
+  - **验证**：`dart run slang` 成功；仅格式化本轮单文件；`dart analyze lib` **No issues found**；录制/监控相关模型、路径、预览、排程、仓库、虎牙下载、浮动播放器与房间布局/控制条既有测试 **78/78 通过**；`git diff --check` 无空白错误（仅 CRLF 提示）。**未构建 APK/桌面产物、未截图、未运行 UI；GlobalKey 重挂载后的实际连续播放、退出全屏布局恢复及多平台交互仍须用户运行时验收。**
+  - **归属**：共享工作树既有并行改动全部保留；本轮未提交、未推送，未改 Pub cache。
+
+- 2026-11-25：第五十二轮（虎牙关闭仍有声音 + Bilibili DASH 无声）⇒
+  - **虎牙退出根因**：页面与浮动窗口虽然调用 `silencePlayer`，但 `PlayerHandle.dispose` 同步清掉 source/backend guard 后，排队的 `setVolume` 会被跳过；旧 open/play 仍占命令队列时，真实后端可能继续出声。共享 `PlayerAdapter` 新增 `silenceNow` 契约，`PlayerHandle.dispose` 在进入 runtime dispose 队列前直接调用，500ms 超时后继续释放；media_kit/mpv 用 native `set-property volume 0` 与 `pause true` 绕过 Dart command lock。其他继承 `PlayerAdapterBase` 的后端获得 volume=0 + pause 默认实现。
+  - **Bilibili 根因**：应用层已正确生成 video/audio `CompositeMediaSource`；media_kit/mpv 原实现只向 `audio-files` 列表选项追加 URL，并未把音轨挂入已经打开的当前文件。改为运行时 `audio-add`，首条外部音轨 `select`、后续音轨 `auto`，避免后续 Dolby/高码率音轨抢走首选；请求头、音视频对齐和外部音轨存在性诊断保留，单条失败仍记录且不杀主视频。
+  - **配置/状态**：无新增持久化配置；`silenceNow` 是播放器适配器生命周期契约，不是用户设置。未改应用层音量、全局静音、模块仲裁、Media3 原生 composite 或录制配置。
+  - **文件**：本地 media_core 的 adapter contract/base、PlayerHandle、fake adapter 与两项测试；media_core_media_kit 的 adapter 与命令测试，共 8 文件。PureLive 侧只回填本台账，应用代码无需新增页面级释放补丁。
+  - **验证**：media_core 与 media_core_media_kit `flutter analyze` 均 **No issues found**；PureLive `dart analyze lib` **No issues found**；media_core 全量 **2668/2668**、media_kit 全量 **30/30**、PureLive 播放器/浮动窗/虎牙/VOD 聚焦回归 **28/28** 通过；两仓 `git diff --check` 通过（PureLive 仅既有 CRLF 提示）。
+  - **平台/主题与限制**：修复覆盖共享释放链及 media_kit/mpv 的 Windows、macOS、Linux、Android、iOS 路径；不涉及 UI 或主题。未构建、未截图、未运行 UI，未亲耳验证虎牙关闭瞬间静音、Bilibili 外部音轨选择/同步及移动端 Media3 行为；这些运行时验收仍归用户。共享工作树既有并行改动全部保留；未改 Pub cache，未提交、未推送。
+
+- 2026-11-25：第五十三轮（整体产品 UI/功能/性能审计，待确认）⇒
+  - **范围**：共享 AppShell/设置/播放器、直播/房间/回放、IPTV、Bilibili、虎牙、红果、音乐、下载与录制；实际对照 `E:/study/newBV-main/newBV-main`、`E:/study/webtv-main/webtv-main`、`E:/study/lx-music-desktop-master/lx-music-desktop-master`。
+  - **结果**：44 项可定位发现（2 blocker / 21 major / 21 minor），聚类为 8 个机会点。最高优先级为 PGC 切集失败沿用旧 handle、录像库批量删除无确认、IPTV 当前频道状态分叉、嵌套路由/音乐音频仲裁、红果回环地址投屏、音乐中等宽度双栏溢出。
+  - **方案**：阶段 0 正确性与数据安全；阶段 1 共享 UI 基础与主路径；阶段 2 下载/录制任务中心；阶段 3 性能与可访问性。保留单一 AppShell、模块沙盒、PiP/悬浮窗/多画面、回放弹幕与 live/iptv 录制分域，不重排直播设置。
+  - **产物**：`spark-output/context/audit.json`、`spark-output/audit/pure-live-product-audit.md`、`spark-output/dashboard.html` 与本台账。未修改业务代码；JSON 计数与 dashboard 注入已程序化校验。
+  - **限制**：仅静态源码与参考代码审查，未构建、测试、截图或运行 UI；性能结论为重建范围风险，真实帧率、TV 焦点、音频、投屏与横竖屏行为仍待运行时验收。等待用户确认实施范围。
+
+- 2026-11-26：第五十四轮（全产品优化阶段 0–3 实施）⇒
+  - **正确性与数据安全**：修复 PGC 切集时旧播放器继续播放、请求等待与失败清理竞态；VOD/虎牙/红果的休眠停止意图跨后台和路由返回保留，显式播放才恢复。虎牙关闭的排队静音改由 media_core 的 `silenceNow` 在释放前立即停声；Bilibili DASH 外部音轨改走 mpv 运行时 `audio-add`。下载在解析前同步预留任务身份，先删文件再移除记录，文件删除失败保留任务并提示；批量暂停覆盖 queued/running。红果回环投屏安全禁用，未引入局域网代理。
+  - **共享 UI 与主路径**：沿用单一 AppShell、既有模块导航和 desen_ui；优化直播间信息层级、聊天遮挡/窄横屏舞台、刷新/重试、统计、只读聊天、全屏与返回/Escape/TV 焦点；IPTV 系统全屏改为纯播放器根，不再携带侧栏或三列祖先；音乐播放页按高度和剩余宽度切换歌词/封面。隐藏播放器控件同时退出 pointer、semantics 和 focus 树；共享控制条、选择条、seek 层、悬浮窗和回放页统一动作与可访问名称。
+  - **任务与资产管理**：回放下载从页面生命周期移到窗口/container 级，离开回放页不自动取消；仅支持当前会话持续，拒绝 AES、fMP4 map 和 byte-range playlist。录像库补批量删除确认、文件/房间/站点搜索、当前任务文件保护；录制父页只订阅结构投影，任务卡独立订阅完整进度。`RecordingLibraryController` 仅在任务结算信号变化时扫描磁盘。IPTV/live 录制仍共享引擎和仓库，任务、筛选、统计、预览、动作与磁盘分树严格分域。
+  - **性能**：多窗父层只看选中/静音/房间结构投影，单格、选中控制条和工具栏按需订阅；单格 transport 更新不重建兄弟格或整墙。音乐下载队列、多窗选房、当前房间录制文件、录像库按日行改为 lazy builder；录像库一次分组和汇总；音乐下载在筛选/计数/构建间复用文件缺失缓存，避免每个进度 tick 重复 stat。音乐在线歌单父层只订阅当前曲目，IPTV 最近页移除逐行 EPG 订阅。
+  - **无障碍**：`MediaBarButton` 将 selected 传入共享 pressable 语义；移动端抽屉关注角标使用关注数量文案；壳内页面搜索补表单语义名称。新增共享播放器语义回归。静态检查确认共享 PIP/overlay 隐藏状态已退出焦点与语义树。
+  - **配置/状态**：未新增持久化播放器配置；录制 scope、窗口级回放任务、结构投影与列表缓存属运行时状态。播放器内核/实例仍按模块隔离，主题/语言/外观/共享播放偏好仍全局。用户可见文案继续走 Slang；生成文件已同步。磁盘录制目录和任务 ID 规则不变。
+  - **文件范围**：应用层涉及共享 layouts/player/settings、直播/房间/多窗/录制/回放、IPTV、VOD、虎牙、红果、音乐及其测试；`packages/live_vod` 补 Bilibili 外部音轨选择信息。本地 media_core、media_core_media_kit、media_core_audio 在仓外修复释放静音、外部音轨、音乐 mute 保持和下载删除安全。共享工作树其他未提交改动保留，未读取凭据或 Pub cache，未提交、未推送。
+  - **多平台与主题**：逻辑与响应式覆盖桌面、平板、手机和 TV 分支；IPTV 全屏替换 AppShell 祖先；窄屏页级动作交壳层头部，宽屏保留工具栏。UI 使用现有主题 token 和浅/深/自定义主题链。多窗、全屏 reparent、音频后端、TV D-pad、触控和读屏实际效果仍需对应设备验收，不能由静态分析代替。
+  - **验证**：`dart analyze lib` 与 `dart analyze test` 均 **No issues found**；回放 4/4、录制 provider 2/2、设置搜索 9/9、下载聚焦 28/28、音乐 provider/playback 13/13、VOD/虎牙/红果播放 30/30、IPTV/录制 40/40、多窗与录制 11/11、共享播放器语义 1/1 均通过；media_core 2668/2668、media_core_media_kit 30/30、media_core_audio 下载/后台 23/23 已通过，相关两包 `flutter analyze` 通过；`live_vod` `dart analyze` 与全量 **69/69** 通过；App `flutter test --no-pub` 全量 **1241/1241** 通过（03:57，退出码 0；运行期有既有 drift 多数据库调试警告，无失败）。`git diff --check` 仅既有 CRLF 提示。
+  - **未完成与限制**：回放进程重启恢复和断点续传未实现；跨模块统一任务中心、全部 secondary surface/细粒度订阅、TV/触控/读屏全矩阵未完成；红果局域网代理有意延后。未构建 APK/桌面产物、未截图、未运行 UI、未做真实音频与设备视觉验收。页面 builder 化的主要行为由静态分析和既有聚焦测试覆盖，不宣称完整运行时回归。
+
+- 2026-11-26：第五十五轮（继续审查与竞态收口）⇒
+  - **IPTV 首态**：首次加载且无缓存时显示既有骨架；只有无可用数据的错误才显示失败与重试，刷新失败但仍有旧库时继续展示可用内容，与指南/最近页一致。
+  - **播放器离页静音**：共享 `silencePlayer` 先走适配器即时 `silenceNow`，再排队暂停，避免慢 open 堵住命令队列时音频跨页面继续播放；`PlayerHandle` 暴露即时静音 API，并在 dispose 清空 guard 后复用同一私有实现。清理了共享 helper 的重复暂停。
+  - **小窗替换**：关闭回调归具体 State 所有，旧视图 dispose 只在仍是当前所有者时清空静态槽位，防止 supersede 后误删新窗口回调。
+  - **录制时钟**：页面与详情按运行状态启停局部秒级 builder，时长和码率随墙钟刷新；不再依赖相同 child 实例触发重建，也不持续刷新父结构投影。
+  - **回放完成竞态**：所有字节已写入后，以 `sink.close()` 成功作为提交点；最终关闭期间取消不再删除完整成品，传输阶段取消仍删除半文件。
+  - **直播候选绑定**：media_core_live 在 open 前按 sweep 身份发布 staged handle，房间去掉按 URI 轮询同窗口全部句柄的旧逻辑，改用代次校验的直接回调；正式接管仍只发生在验证提交。
+  - **配置/状态与文件**：无新增持久化配置、Slang key 或主题 token；改动集中在 PureLive 的 IPTV 页、共享播放器、录制页、回放下载、房间控制器及对应测试，以及仓外 media_core/media_core_live 的句柄、sweep、fake 与回归测试。保留其他并行未提交改动。
+  - **验证**：PureLive `dart analyze lib`/`dart analyze test`、media_core 与 media_core_live `dart analyze lib test` 均 **No issues found**；聚焦回归 App **31/31**、media_core **6/6**、media_core_live **19/19** 通过；全量 media_core **2669/2669**、media_core_live **58/58**、App **1242/1242** 通过（最终 App 03:33，退出码 0）。两仓 `git diff --check` 无空白错误，PureLive 仅四条既有 CRLF 提示。
+  - **平台/主题与限制**：首态骨架沿用现有 desen_ui 与主题链；生命周期修复覆盖共享播放器调用面，不区分桌面、平板、手机或 TV。未构建 APK/桌面产物、未截图、未运行 UI、未做真实音频、TV/触控/读屏及多窗口视觉验收；回放断点续传与进程重启恢复仍未实现。本轮未提交、未推送。
+
+- 2026-11-26：第五十六轮（请求代次、下载一致性与音乐窗口状态收口）⇒
+  - **播放请求代次**：直播间连续切换清晰度时，旧解析、ingest、open 与 staged 回调不能覆盖新选择；过期 ingest 只关闭自己的 relay。IPTV 的 `engine_release_pending` 重试在延迟前后均校验请求代次。VOD/红果的路由暂停记录绑定具体 handle，返回时不会恢复已替换的播放器；三个播放页 F11 统一走窗口全屏。
+  - **下载与录制**：红果续传仅接受起点正确的 206，服务器忽略 Range 返回 200 时截断重下；最终 `sink.close()` 成功才是提交点。VOD/红果成品文件名占用同时检查 `.part`。录制进度和磁盘空间检查在异步等待后复核 session 身份与 `startedAt`，旧场次迟到结果不能停止或覆盖新场次。
+  - **播放器音频**：Bilibili 首选外部音轨的加载、选中或超时失败进入统一错误流，可选语言音轨仍 best-effort。红果切集/离页、IPTV 频道页、多窗格、房间/IPTV 预览和壁纸预览统一使用即时 `silencePlayer`，消除慢 open 队列期间的漏声窗口。
+  - **下载列表性能**：VOD 下载页按任务 id、阶段、路径和目录缓存文件存在性，进度 tick 不再反复 stat；缺失成品的播放按钮禁用。音乐「仅可播放」筛选和播放队列同样排除已删除文件。
+  - **音乐状态**：歌词面板改用 `sourceId + trackId` 身份，跨平台同 ID 不再复用旧 State。音频缓存盒从进程单例改为窗口级 Riverpod provider，设置页与当前播放来源共享同一实例；模块重建替换来源、离开时解除引用，目录或容量变化时重建缓存，加载期间环境变化不会安装过期实例。红果排队中的打开请求完整保留续播、恢复、降级和自动播放参数。
+  - **配置/状态与文件**：无新增持久化配置、Slang key 或主题 token；请求代次、窗口缓存盒和文件状态缓存均属运行时状态。改动涉及直播房间/多窗/录制、IPTV、VOD、虎牙、红果、音乐、共享预览和对应测试；仓外 media_core_media_kit 补充外部音轨统一错误路径。保留其他并行未提交改动。
+  - **验证**：PureLive `dart analyze lib`/`dart analyze test` 均 **No issues found**；音乐缓存 **15/15**、下载/录制聚焦 **47/47**、直播/多窗/红果/IPTV 聚焦 **80/80** 通过；App `flutter test --no-pub` 全量 **1248/1248** 通过（最终 03:44，退出码 0）。media_core_media_kit `dart analyze lib` 无问题，适配器测试 **20/20** 通过。`git diff --check` 仅既有 CRLF 提示。
+  - **平台/主题与限制**：修复沿用现有 desen_ui、主题与响应式分支，未改导航或设置结构。未构建 APK/桌面产物、未截图、未运行 UI、未做真实音频、TV/触控/读屏及多窗口视觉验收；桌面歌词恢复、宽屏设置 section 同步和极窄屏歌单动作仍待后续有证据时处理。本轮未提交、未推送。
+
+- 2026-11-26：第五十七轮（只读复查）⇒
+  - **上轮闭环**：即时静音、请求代次、红果续传、文件名占用、录制进度/空间身份、VOD 文件状态缓存和窗口级缓存盒均有实现与调用；本轮未修改业务代码。
+  - **确认遗漏**：录制 `_endAs` 先释放 claim 再无身份校验写 `setEnded`，同 ID 新场次可被旧结束写入覆盖；VOD/红果/虎牙 `_drop` 删除期间允许同 ID 重入，旧删除可按 ID 删掉新任务；运行中「删除并删文件」的意图未传给最终 drop，且停止后的本地 `stopped` 标记存在时间差，可能留下孤儿成品。
+  - **音乐与播放器**：多个 `CachedTrackSource` 各自持有同目录缓存索引，但设置盒只保存最后一个，usage/clear 漏算漏删；歌词面板监听、加载参数与完成保护仍用裸 track.id；桌面歌词恢复与首轨恢复并发，存在冷启动时序缺口。VOD/虎牙/红果 autoplay 在音量/静音恢复前启动，存在短暂默认音量窗口。
+  - **性能与界面**：三个 VOD/红果播放页直接 watch 完整下载队列，其他任务进度 tick 仍会重建播放页；transport tick 直接触发根 State 重建。IPTV 最近/指南的窄屏页级动作仍在页内固定行；空库进入指南无导入出口。音乐下载宽屏设置同时开 pane 并 push 子页。
+  - **排除与边界**：五个播放页 dispose 中 `ref.read` 在框架 unmount 流程仍可读取，不构成已确认清理中断；IPTV 自动回退后的实际 sourceIndex 同步缺少仓外证据，不列已确认缺陷；本轮未运行 analyze/test/build，未截图或做设备验收，也未提交、未推送。上述发现只作为下一轮修复候选，不代表已经修复。
+
+- 2026-11-26：第五十八轮（录制场次身份、下载删除与播放订阅收口）⇒
+  - **录制旧场次隔离**：`setEnded`/`setStopped`/`setFailed` 强制校验 `expectedStartedAt`，监控、引擎、录制页、录像库和房间录制页全部传入当前场次身份；旧结束、失败和迟到进度不能覆盖同 ID 新场次。`_endAs` 在 recording claim 仍持有时提交结束状态，finalize 锁覆盖 take 改名、最终路径、后处理状态提交和 backend 关闭。
+  - **下载删除一致性**：VOD/红果/虎牙队列引入任务代次、删除锁和运行中删文件意图；删除、暂停、恢复、排队调度和清理完成项均拒绝删除中任务。旧 run 只关闭自己的 client/sink，不再消费新 run 的停止标记或写入失败状态；最终关闭与改名前后检查停止意图，运行中「删除并删文件」会传到最终 drop。红果 stranded 合并在移动前后复核代次，失效结果不能回写新任务路径。
+  - **音乐状态收口**：同目录、同容量的多个 `CachedTrackSource` 共享一个缓存与实时索引，usage/clear 去重；窗口级缓存盒 disarm 会清空来源并使在途加载失效，不影响另一窗口。歌词监听、请求和完成保护统一使用 `sourceId:trackId` 复合身份与请求代次；桌面歌词等待首轨状态真正发布后仅尝试恢复一次。
+  - **播放性能与窄屏流程**：VOD 视频页、季页和红果播放页只 `.select` 当前分P/集数的下载投影，其他任务进度不再重建整页；完成/失败提示改用 `ref.listen`。IPTV 最近与指南在页宽 `<720` 时把页级动作发布到 AppShell 头部，宽屏保持原工具栏；指南空库补回播放列表导入和节目单导入入口。
+  - **配置/状态与文件**：无新增持久化配置、Slang key、主题 token 或新文件；代次、删除意图、缓存盒和歌词代际均为运行时状态。修改 `recording_repository.dart`、`recorder_engine.dart`、`recording_monitor.dart`、录制页/录像库/房间录制页、三个下载控制器、`music_audio_cache.dart`、`music_playback.dart`、`music_lyric_panel.dart`、VOD 视频/季页、红果播放页、IPTV 最近/指南页，以及录制、三个下载和音乐缓存回归测试；保留其他并行未提交改动。
+  - **验证**：本轮 Read/Edit 的 22 个 Dart 文件完成单文件格式化；`dart analyze lib test` **No issues found**；录制、VOD/红果/虎牙下载和音乐缓存聚焦回归 **60/60** 通过；App `flutter test --no-pub` 全量 **1255/1255** 通过（04:01，退出码 0）。`git diff --check` 无空白错误，仅四条既有 CRLF 替换提示。
+  - **平台/主题与限制**：沿用现有 desen_ui、主题和响应式分支，未改导航或设置结构；IPTV 仅调整窄屏动作归属，宽屏布局不变。未构建 APK/桌面产物、未截图、未运行 UI、未做真实音频、多窗口、TV、触控或读屏验收；自动验证完成时尚未提交、推送，后续提交状态以 Git 历史为准。
+  - **剩余候选**：后台播放 gate 快速切换恢复竞态、红果/VOD/虎牙 autoplay 早于音量/静音恢复，以及红果 stranded 合并 copy 中途异常时的目标文件清理仍待后续取证；桌面歌词冷启动恢复与窄屏动作仅有静态/自动测试验证，仍需真机确认。

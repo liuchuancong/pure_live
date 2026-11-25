@@ -1,8 +1,10 @@
 import 'dart:convert' show jsonDecode, jsonEncode;
+import 'dart:io' show Directory, File, FileLock, FileMode, FileSystemException, HttpException;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:live_storage/live_storage.dart';
+import 'package:path/path.dart' as p;
 import 'package:pure_live/modules/hongguo/controller/hongguo_downloads.dart';
 import 'package:pure_live/modules/hongguo/controller/hongguo_settings.dart' show HongguoQualityChoice;
 
@@ -72,6 +74,58 @@ void main() {
     expect(tasks.last.phase, HongguoDownloadPhase.done);
   });
 
+  test('a failed file delete keeps the task record', () async {
+    final folder = await Directory.systemTemp.createTemp('pure-live-hongguo-delete-');
+    final file = File('${folder.path}/locked.mp4');
+    await file.writeAsString('keep');
+    final lock = await file.open(mode: FileMode.write);
+    // The explicit mode documents the Windows delete fixture.
+    // ignore: avoid_redundant_argument_values
+    await lock.lock(FileLock.exclusive);
+    addTearDown(() async {
+      await lock.close();
+      await folder.delete(recursive: true);
+    });
+    final blocked = item('7100001:1', phase: HongguoDownloadPhase.done, received: 100);
+    await StoragePrefs.setString(kHongguoDownloadsKey, jsonEncode([blocked.toJson()..['filePath'] = file.path]));
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+
+    await expectLater(
+      container.read(hongguoDownloadsProvider.notifier).remove(blocked.id, deleteFile: true),
+      throwsA(isA<FileSystemException>()),
+    );
+
+    expect(container.read(hongguoDownloadsProvider).single.id, blocked.id);
+  });
+
+  test('a concurrent remove and clear cannot race the locked delete', () async {
+    final folder = await Directory.systemTemp.createTemp('pure-live-hongguo-remove-race-');
+    final file = File(p.join(folder.path, 'locked.mp4'));
+    await file.writeAsString('keep');
+    final lock = await file.open(mode: FileMode.write);
+    // Windows needs an explicit mode for this locked-delete fixture.
+    // ignore: avoid_redundant_argument_values
+    await lock.lock(FileLock.exclusive);
+    addTearDown(() async {
+      await lock.close();
+      await folder.delete(recursive: true);
+    });
+    final blocked = item('7100001:1', phase: HongguoDownloadPhase.done, received: 100);
+    await StoragePrefs.setString(kHongguoDownloadsKey, jsonEncode([blocked.toJson()..['filePath'] = file.path]));
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+    final controller = container.read(hongguoDownloadsProvider.notifier);
+
+    final first = controller.remove(blocked.id, deleteFile: true);
+    final second = controller.remove(blocked.id, deleteFile: true);
+    await controller.clearFinished();
+
+    await expectLater(first, throwsA(isA<FileSystemException>()));
+    await second;
+    expect(container.read(hongguoDownloadsProvider).single.id, blocked.id);
+  });
+
   test('clearFinished keeps the unfinished rows', () async {
     await StoragePrefs.setString(
       kHongguoDownloadsKey,
@@ -132,6 +186,37 @@ void main() {
     expect(hongguoDownloadFileName(title: '单集', part: '正片'), '单集.mp4');
     // Windows' reserved characters never reach the file system.
     expect(hongguoDownloadFileName(title: '剧:名/上', part: '第一话', index: 2, parts: 12), '剧 名 上 - EP2 第一话.mp4');
+  });
+
+  test('a resume appends only when the response starts at the bytes already written', () {
+    final resumed = hongguoDownloadTransfer(
+      written: 40,
+      statusCode: 206,
+      contentRange: 'bytes 40-99/100',
+      contentLength: 60,
+    );
+    expect(resumed, (offset: 40, total: 100, append: true));
+
+    final restarted = hongguoDownloadTransfer(written: 40, statusCode: 200, contentRange: '', contentLength: 100);
+    expect(restarted, (offset: 0, total: 100, append: false));
+    expect(
+      () => hongguoDownloadTransfer(written: 40, statusCode: 206, contentRange: 'bytes 0-99/100', contentLength: 100),
+      throwsA(isA<HttpException>()),
+    );
+    expect(
+      () => hongguoDownloadTransfer(written: 40, statusCode: 206, contentRange: '', contentLength: 60),
+      throwsA(isA<HttpException>()),
+    );
+  });
+
+  test('a paused part reserves its finished file name', () async {
+    final folder = await Directory.systemTemp.createTemp('pure-live-hongguo-name-');
+    addTearDown(() => folder.delete(recursive: true));
+    await File(p.join(folder.path, '剧名 - EP1 第一话.mp4.part')).writeAsString('partial');
+
+    final target = hongguoFreeDownloadFile(folder, '剧名 - EP1 第一话.mp4');
+
+    expect(target.path, p.join(folder.path, '剧名 - EP1 第一话_2.mp4'));
   });
 
   test('the retry count defaults to off, follows its setting and rejects the extremes', () async {

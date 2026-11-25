@@ -294,7 +294,9 @@ final class _RoomRecordTabState extends ConsumerState<RoomRecordTab> with Single
                   label: Text(t.room.autoRecordOn),
                   description: Text(
                     waiting
-                        ? t.room.autoRecordArmed(seconds: ref.watch(recordingSettingsProvider).schedule.liveCheckSeconds)
+                        ? t.room.autoRecordArmed(
+                            seconds: ref.watch(recordingSettingsProvider).schedule.liveCheckSeconds,
+                          )
                         : t.room.autoRecordHint,
                   ),
                 ),
@@ -410,15 +412,14 @@ final class _RoomRecordTabState extends ConsumerState<RoomRecordTab> with Single
               ? Center(
                   child: DsEmptyState(icon: const DsIcon(DsIcons.video), title: Text(t.room.roomRecordTakesEmpty)),
                 )
-              : ListView(
+              : ListView.builder(
                   padding: const EdgeInsets.fromLTRB(DsSpace.s16, DsSpace.s4, DsSpace.s16, DsSpace.s16),
-                  children: [
-                    for (final take in takes)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: DsSpace.s8),
-                        child: _takeCard(take, takes),
-                      ),
-                  ],
+                  itemCount: takes.length,
+                  itemBuilder: (context, index) => Padding(
+                    key: ValueKey(takes[index].filePath ?? takes[index].folder),
+                    padding: const EdgeInsets.only(bottom: DsSpace.s8),
+                    child: _takeCard(takes[index], takes),
+                  ),
                 ),
         ),
       ],
@@ -434,11 +435,7 @@ final class _RoomRecordTabState extends ConsumerState<RoomRecordTab> with Single
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
     final bytes = take.bytes > 0 ? formatRecordingBytes(take.bytes) : null;
-    final meta = [
-      _platformName(take.platformId),
-      ?bytes,
-      formatRecordingMoment(take.takenAt),
-    ].join(' · ');
+    final meta = [_platformName(take.platformId), ?bytes, formatRecordingMoment(take.takenAt)].join(' · ');
     final length = take.duration == null ? null : formatRecordingDuration(take.duration!);
     return DsCard(
       onPressed: () =>
@@ -570,7 +567,13 @@ final class _RoomRecordTabState extends ConsumerState<RoomRecordTab> with Single
     if (row != null) {
       final store = ref.read(recordingTasksProvider.notifier);
       if (row.state == RecordingTaskState.stopped) {
-        await store.setStopped(row.id, filePath: row.takeDirectory, bytes: 0, warning: kRecordingFileDeletedWarning);
+        await store.setStopped(
+          row.id,
+          expectedStartedAt: row.startedAt,
+          filePath: row.takeDirectory,
+          bytes: 0,
+          warning: kRecordingFileDeletedWarning,
+        );
       } else {
         await store.add(row.copyWith(filePath: row.takeDirectory, bytes: 0));
       }

@@ -7,6 +7,8 @@ import 'package:go_router/go_router.dart' show GoRouterHelper;
 import 'package:live_iptv/live_iptv.dart';
 import 'package:pure_live/app/app.dart' show RouteNames;
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/layouts/page_head_actions.dart' show publishPageHeadActions;
+import 'package:pure_live/layouts/page_layout_scope.dart' show PageLayoutScope;
 import 'package:pure_live/modules/iptv/controllers/iptv_browse_settings.dart'
     show IptvBrowseSettings, iptvBrowseSettingsProvider;
 import 'package:pure_live/modules/iptv/controllers/iptv_controller.dart' show iptvLibraryProvider;
@@ -15,7 +17,8 @@ import 'package:pure_live/modules/iptv/controllers/iptv_recent.dart';
 import 'package:pure_live/modules/iptv/views/iptv_group_rail.dart';
 import 'package:pure_live/modules/iptv/views/iptv_guide_panel.dart' show iptvStartOfDay;
 import 'package:pure_live/modules/iptv/views/iptv_panels.dart' show IptvChannelLogo, IptvNowCell, IptvOnAirEqualizer;
-import 'package:pure_live/shared/shared.dart' show LiveWindow, ModulePageHead, SectionHeader, SkeletonRows;
+import 'package:pure_live/shared/shared.dart'
+    show LiveWindow, ModulePageHead, NavigationItem, SectionHeader, SkeletonRows;
 import 'package:pure_live/shared/widgets/app_dialog.dart';
 
 /// One watched channel and the record that says when.
@@ -132,35 +135,38 @@ final class _IptvRecentPageState extends ConsumerState<IptvRecentPage> {
     // Skipped whole when the module's 正在播出 switch is off — a guide read is
     // not work to do for a line nobody asked to see.
     final moment = DateTime.now();
+    // One page-level read: sliver row builders compare against this id instead
+    // of installing a provider subscription for every visible history row.
+    final nowPlayingId = ref.watch(iptvNowPlayingProvider);
     final slots = library == null || !browse.showProgrammeLine
         ? const <String, IptvProgrammeSlot>{}
         : {for (final row in shown) row.channel.id: library.programmeSlot(row.channel, now: moment)};
+    final narrow = PageLayoutScope.isNarrow(context);
+    final actions = <Widget>[
+      // One group in the archive is nothing to choose; the rows would
+      // only be narrowed to the list they already are.
+      if (filter.groups.length > 1) IptvGroupEntry(filter: filter, onSelect: (group) => setState(() => _group = group)),
+      if (rows.isNotEmpty)
+        DsButton(
+          variant: DsButtonVariant.dangerSoft,
+          size: DsSize.sm,
+          onPressed: () => unawaited(_clear(context, ref)),
+          leading: const DsIcon(DsIcons.trash2, size: 16),
+          child: Text(t.iptv.recentClear),
+        ),
+    ];
+    if (narrow) publishPageHeadActions(context, ref, NavigationItem.iptvRecent, actions);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // The page's head is the module's shared one: the title over the count
-        // of records the open filter makes, with the group's entry and the
-        // clearing at its end. The same row holds on a narrow window — the
-        // verbs no longer travel to the shell's own head.
+        // The page keeps its verbs on a wide head; a narrow head publishes
+        // them to the shell, in the same group-then-clear order.
         Padding(
           padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s4),
           child: ModulePageHead(
             title: t.iptv.recentTitle,
             description: t.iptv.recentRecords(count: shown.length),
-            actions: [
-              // One group in the archive is nothing to choose; the rows would
-              // only be narrowed to the list they already are.
-              if (filter.groups.length > 1)
-                IptvGroupEntry(filter: filter, onSelect: (group) => setState(() => _group = group)),
-              if (rows.isNotEmpty)
-                DsButton(
-                  variant: DsButtonVariant.dangerSoft,
-                  size: DsSize.sm,
-                  onPressed: () => unawaited(_clear(context, ref)),
-                  leading: const DsIcon(DsIcons.trash2, size: 16),
-                  child: Text(t.iptv.recentClear),
-                ),
-            ],
+            actions: narrow ? const <Widget>[] : actions,
           ),
         ),
         Expanded(
@@ -211,7 +217,7 @@ final class _IptvRecentPageState extends ConsumerState<IptvRecentPage> {
                             section.rows[index],
                             browse,
                             slots,
-                            onAir: ref.watch(iptvNowPlayingProvider) == section.rows[index].channel.id,
+                            onAir: nowPlayingId == section.rows[index].channel.id,
                             nameGroup: filter.selectedGroup == null,
                             // 今天 and 昨天 name the very day the rows
                             // happened on, so their rows only owe the clock;

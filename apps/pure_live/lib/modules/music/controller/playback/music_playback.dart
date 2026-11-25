@@ -25,6 +25,7 @@ import 'package:pure_live/app/app.dart'
 import 'package:pure_live/app/logging/app_log.dart' show appLog;
 import 'package:pure_live/app/providers/boot/storage_providers.dart' show appPathsProvider;
 import 'package:pure_live/app/providers/network/network_providers.dart' show networkFactoryProvider;
+import 'package:pure_live/features/settings/playback/playback_settings_providers.dart' show playbackSettingsProvider;
 import 'package:pure_live/modules/music/controller/library/music_dislikes.dart' show musicDislikesProvider;
 import 'package:pure_live/modules/music/controller/library/music_library.dart'
     show musicRecentProvider, musicTrackFromJson, musicTrackKey, musicTrackToJson;
@@ -40,7 +41,7 @@ import 'package:pure_live/modules/music/controller/playback/eq/music_eq_engine_e
 import 'package:pure_live/modules/music/controller/playback/music_playback_settings.dart'
     show MusicQuality, musicPlaybackSettingsProvider;
 import 'package:pure_live/modules/music/controller/sources/music_audio_cache.dart'
-    show CachedTrackSource, MusicAudioCacheBox;
+    show CachedTrackSource, musicAudioCacheBoxProvider;
 import 'package:pure_live/shared/shared.dart' show AppModule;
 
 /// The preference the last queue is kept under, so 打开时继续播放 has
@@ -74,7 +75,14 @@ final class MusicQueueStore {
       if (entries is! List) return null;
       final tracks = [for (final entry in entries) ?musicTrackFromJson(entry)];
       if (tracks.isEmpty) return null;
-      final index = ((json['index'] as num?)?.toInt() ?? 0).clamp(0, tracks.length - 1);
+      final storedIndex = (json['index'] as num?)?.toInt() ?? 0;
+      final currentKey = json['current'] is String ? json['current'] as String : null;
+      // The current identity survives a shortened or partly damaged queue. If
+      // it was deleted, the first remaining track is the only legal restart.
+      final currentIndex = currentKey == null ? -1 : tracks.indexWhere((track) => musicTrackKey(track) == currentKey);
+      final index = currentKey != null
+          ? (currentIndex >= 0 ? currentIndex : 0)
+          : (storedIndex >= 0 && storedIndex < tracks.length ? storedIndex : 0);
       final mode = audio.PlayModeX.fromName(json['mode'] as String?);
       return (tracks: tracks, index: index, mode: mode);
     } on Object {
@@ -90,6 +98,7 @@ final class MusicQueueStore {
         jsonEncode({
           'index': index,
           'mode': mode.name,
+          'current': index >= 0 && index < tracks.length ? musicTrackKey(tracks[index]) : null,
           'tracks': [for (final track in tracks) musicTrackToJson(track)],
         }),
       );
@@ -192,12 +201,16 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
   late final MusicProgressStore _progressStore;
   StreamSubscription<audio.AudioPlaybackState>? _states;
   audio.DesktopLyricController? _desktopLyric;
+  bool _desktopRestoreAttempted = false;
   StreamSubscription<bool>? _desktopVisibleChanges;
   StreamSubscription<bool>? _desktopLockChanges;
   audio.MusicBackgroundBinding? _background;
   String? _recentTrack;
   String? _savedTrack;
+  int _savedIndex = -1;
   int _savedLength = -1;
+  audio.PlayMode? _savedMode;
+  Future<void> _queueWrites = Future<void>.value();
   bool _askedNotifications = false;
   Map<String, int> _positions = const <String, int>{};
   String? _progressTrackKey;
@@ -212,6 +225,10 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
   String? _sessionTrackKey;
   bool _engineSessionBound = false;
   MpvAudioPlayerAdapter? _sessionAdapter;
+  bool _localMuted = false;
+  int _muteGeneration = 0;
+
+  bool get _effectivelyMuted => _localMuted || ref.read(playbackSettingsProvider).globalMute;
 
   /// The module this controller was built for: only the music module's own
   /// instance records a resume point or restarts the queue; the idle
@@ -230,7 +247,24 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
     final lyricSettings = ref.read(musicLyricsSettingsProvider);
     _progressStore = ref.read(musicProgressStoreProvider);
     _positions = _progressStore.read();
-    final wearing = <CachedTrackSource>[];
+    final cacheBox = ref.read(musicAudioCacheBoxProvider);
+    final wearing = <CachedTrackSource>[
+      // Every online source enters through the same window-scoped registry;
+      // the box shares one directory+capacity ledger across all of them.
+      for (final source in ref.read(musicSourceListProvider))
+        cacheBox.register(
+          source,
+          environment: () {
+            final limit = ref.read(musicPlaybackSettingsProvider).audioCacheLimitMb;
+            if (limit <= 0) return null;
+            return (
+              directory: ref.read(appPathsProvider).cacheRoot,
+              limitMb: limit,
+              http: ref.read(networkFactoryProvider).create(profile: ClientProfile.api),
+            );
+          },
+        ),
+    ];
     _audio = audio.AudioPlaybackController(
       ref.read(playerKernelProvider),
       // The local source is registered for its sidecar lyric reader: a local
@@ -238,23 +272,7 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
       registry: audio.MusicSourceRegistry([
         // The online sources wear the audio cache: a song heard once plays
         // from disk, and the copy rides the app's own transport.
-        for (final source in ref.read(musicSourceListProvider))
-          () {
-            final cached = CachedTrackSource(
-              source,
-              environment: () {
-                final limit = ref.read(musicPlaybackSettingsProvider).audioCacheLimitMb;
-                if (limit <= 0) return null;
-                return (
-                  directory: ref.read(appPathsProvider).cacheRoot,
-                  limitMb: limit,
-                  http: ref.read(networkFactoryProvider).create(profile: ClientProfile.api),
-                );
-              },
-            );
-            wearing.add(cached);
-            return cached;
-          }(),
+        ...wearing,
         audio.LocalMusicSource(roots: const []),
       ]),
       config: audio.AudioPlaybackConfig(
@@ -269,8 +287,10 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
       playerConfig: const PlayerConfig(pauseWhenBackgrounded: false),
     );
     _audio.setLyricOffset(Duration(milliseconds: lyricSettings.lyricOffsetMs));
-    // The settings' cache rows read the same cache the resolves use.
-    wearing.forEach(MusicAudioCacheBox.instance.arm);
+    unawaited(_applyMute());
+    ref.listen(playbackSettingsProvider.select((settings) => settings.globalMute), (_, _) {
+      unawaited(_applyMute());
+    });
     // The app arms the OS surfaces once at boot; a live driver lets the music
     // player publish its queue to the notification, lock screen or MPRIS. A
     // boot that lost that race (or failed once) is retried here, because a
@@ -362,6 +382,12 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
     _states = _audio.stateStream.listen((next) {
       if (!ref.mounted) return;
       state = next;
+      // Queue restoration publishes its first track asynchronously. Waiting
+      // for that real state closes the race with the desktop lyric restore.
+      if (_module == AppModule.music && next.track != null) unawaited(_restoreDesktopLyric());
+      // Every engine path — controls, OS media commands, auto-advance, sleep,
+      // errors and arbiter hushes — meets the same sound-ownership lifecycle.
+      _holdSound(playing: next.playing);
       _follow(next);
       _trackProgress(next);
       _skipDislikedIfNeeded(next);
@@ -402,6 +428,9 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
       }
     });
     ref.onDispose(() {
+      cacheBox.disarm();
+      // Disposal stops the engine without relying on a final state event.
+      _releaseSound();
       unawaited(_sessionCommands?.cancel() ?? Future<void>.value());
       _sessionCommands = null;
       // Leave the interruption for the controller the module builds on its
@@ -444,13 +473,9 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
     _applyEq(ref.read(musicEqProvider));
     _applyPitchCorrection(ref.read(musicPlaybackSettingsProvider).preservesPitch);
     _applyAudioDevice();
-    // Only the music module's instance resumes: the idle one built while
-    // another module is on screen stays silent.
+    // Only the music module's instance resumes. Its first published track
+    // also restores the desktop lyric overlay, rather than racing the queue.
     if (_module == AppModule.music) unawaited(_restore());
-    // The lyric window is the process's one native overlay; only the music
-    // module's instance restores it, so an idle controller built beside
-    // another module never claims it.
-    if (_module == AppModule.music) unawaited(_restoreDesktopLyric());
     return _audio.state;
   }
 
@@ -771,14 +796,19 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
   /// prompts: the permission round trip belongs to [toggleDesktopLyric], and a
   /// restored overlay that cannot draw simply stays hidden.
   Future<void> _restoreDesktopLyric() async {
+    if (_desktopRestoreAttempted || _desktopLyric != null || !ref.mounted || _module != AppModule.music) return;
     if (!ref.read(musicDesktopLyricsSettingsProvider).desktopLyrics) return;
     // A window with no song under it is noise; the lyric overlay follows the
     // first track, and the explicit toggle shows it without one.
     if (_audio.state.track == null) return;
+    // State ticks can call here repeatedly while permission is pending. One
+    // attempt owns the restore; _desktopController also reuses any controller
+    // an explicit toggle created in the meantime.
+    _desktopRestoreAttempted = true;
     try {
       final desktop = _desktopController();
       if (!await desktop.hasPermission()) return;
-      if (!ref.mounted) return;
+      if (!ref.mounted || !ref.read(musicDesktopLyricsSettingsProvider).desktopLyrics) return;
       await desktop.show();
     } on Object {
       // No overlay window on this platform.
@@ -816,6 +846,7 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
     }
 
     await _audio.setQueue(incoming, startIndex: index);
+    _holdSound();
   }
 
   /// Plays [track], adding it to the queue when it is not there yet.
@@ -840,12 +871,19 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
 
   void _holdSound({bool? playing}) {
     final arbiter = ref.read(audioArbiterProvider.notifier);
-    final isPlaying = playing ?? ref.read(musicPlayerProvider).playing;
+    final isPlaying = playing ?? _audio.state.playing;
     if (isPlaying) {
+      // The arbiter table is the source of truth: a displaced owner may claim
+      // again on resume, while repeated position states never duplicate a hold.
+      if (arbiter.state.containsKey(_soundOwner)) return;
       unawaited(arbiter.claim(_soundOwner, () => Future<void>.value(_audio.pause())));
     } else {
-      arbiter.release(_soundOwner);
+      _releaseSound();
     }
+  }
+
+  void _releaseSound() {
+    ref.read(audioArbiterProvider.notifier).release(_soundOwner);
   }
 
   /// Plays the queue entry at [index].
@@ -857,6 +895,7 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
   Future<void> _pick(int index) async {
     if (ref.read(musicPlaybackSettingsProvider).autoCleanPlayedList && _audio.queue.mode == audio.PlayMode.random) {
       await _audio.setQueue(_audio.queue.tracks, startIndex: index);
+      _holdSound();
       return;
     }
 
@@ -917,7 +956,26 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
     });
   }
 
-  Future<void> setMuted({required bool muted}) => _audio.setMute(muted: muted);
+  Future<void> _applyMute() async {
+    if (!ref.mounted) return;
+    final generation = ++_muteGeneration;
+    final muted = _effectivelyMuted;
+    try {
+      await _audio.setMute(muted: muted);
+    } on Object {
+      // A refused mute does not make the current song unplayable.
+      return;
+    }
+    if (ref.mounted && generation != _muteGeneration) unawaited(_applyMute());
+  }
+
+  Future<void> setMuted({required bool muted}) async {
+    _localMuted = muted;
+    if (!muted && ref.read(playbackSettingsProvider).globalMute) {
+      unawaited(ref.read(playbackSettingsProvider.notifier).setGlobalMute(value: false));
+    }
+    await _applyMute();
+  }
 
   Future<void> setRate(double rate) async {
     await _audio.setRate(rate);
@@ -938,7 +996,10 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
   }
 
   /// Drops the queue entry at [index].
-  Future<void> removeAt(int index) => _audio.removeAt(index);
+  Future<void> removeAt(int index) async {
+    await _audio.removeAt(index);
+    await _saveQueue();
+  }
 
   /// Moves a queue entry; the playing song keeps playing wherever it lands.
   Future<void> moveInQueue(int from, int to) async {
@@ -947,10 +1008,14 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
     // snapshot compares equal to the last one; the revision is what tells a
     // queue view the order changed.
     if (ref.mounted) ref.read(musicQueueRevisionProvider.notifier).bump();
+    await _saveQueue();
   }
 
   /// Empties the queue and stops.
-  Future<void> clearQueue() => _audio.clearQueue();
+  Future<void> clearQueue() async {
+    await _audio.clearQueue();
+    await _saveQueue();
+  }
 
   void setMode(audio.PlayMode mode) => _audio.setPlayMode(mode);
 
@@ -1115,9 +1180,15 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
       _recentTrack = track.id;
       unawaited(ref.read(musicRecentProvider.notifier).record(track));
     }
-    if (track?.id != _savedTrack || next.queueLength != _savedLength) {
-      _savedTrack = track?.id;
+    final trackKey = track == null ? null : musicTrackKey(track);
+    if (trackKey != _savedTrack ||
+        next.index != _savedIndex ||
+        next.queueLength != _savedLength ||
+        next.mode != _savedMode) {
+      _savedTrack = trackKey;
+      _savedIndex = next.index;
       _savedLength = next.queueLength;
+      _savedMode = next.mode;
       unawaited(_saveQueue());
     }
     if (track != null) _applyLyricOverride(track);
@@ -1134,8 +1205,16 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
     _audio.setLyricOverride(track, const audio.LrcParser().parse(text));
   }
 
-  Future<void> _saveQueue() async {
-    await ref.read(musicQueueStoreProvider).write(_audio.queue.tracks, _audio.queue.index, _audio.queue.mode);
+  Future<void> _saveQueue() {
+    final store = ref.read(musicQueueStoreProvider);
+    final tracks = List<audio.MusicTrack>.of(_audio.queue.tracks);
+    final index = _audio.queue.index;
+    final mode = _audio.queue.mode;
+    // Capture each mutation now and land writes in that order; an older slow
+    // preference write must not overwrite a newer reorder or mode.
+    final write = _queueWrites.then((_) => store.write(tracks, index, mode));
+    _queueWrites = write;
+    return write;
   }
 
   /// Below this a stop is "the song was just opened", not a place to resume.
@@ -1346,6 +1425,7 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
   Future<void> _restorePlaybackPrefs() async {
     final settings = ref.read(musicPlaybackSettingsProvider);
     if (settings.volume != 1) await _audio.setVolume(settings.volume);
+    await _applyMute();
     if (settings.playbackRate != 1) await _audio.setRate(settings.playbackRate);
   }
 
@@ -1364,16 +1444,21 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
     final snapshot = ref.read(musicQueueStoreProvider).read();
     if (snapshot == null || !ref.mounted) return;
     final epoch = _queueEpoch;
-    await _audio.setQueue(snapshot.tracks, startIndex: snapshot.index, autoPlay: false);
+    final restoreIndex = snapshot.index >= 0 && snapshot.index < snapshot.tracks.length ? snapshot.index : 0;
+    await _audio.setQueue(snapshot.tracks, startIndex: restoreIndex, autoPlay: false);
     // The viewer picked something while the snapshot was loading: theirs
     // stands, the restore's remaining steps would only talk over it.
     if (epoch != _queueEpoch || !ref.mounted) return;
     // The mode is the viewer's own pick, not a default: sequential is
     // what a fresh queue already is, so only the rest needs the word.
     if (snapshot.mode != audio.PlayMode.list) _audio.setPlayMode(snapshot.mode);
+    // Persist the legal selection and mode (and the current identity for old
+    // snapshots), never a cursor whose item was removed from the new queue.
+    await _saveQueue();
+    if (epoch != _queueEpoch || !ref.mounted) return;
     var seekTo = interrupted ? position : Duration.zero;
     if (!interrupted && settings.rememberProgress) {
-      final saved = _positions[musicTrackKey(snapshot.tracks[snapshot.index])];
+      final saved = _positions[musicTrackKey(snapshot.tracks[restoreIndex])];
       if (saved != null && saved >= _minResumeMs) {
         seekTo = Duration(milliseconds: saved);
       }
@@ -1381,6 +1466,7 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
     if (seekTo > Duration.zero) await _audio.seek(seekTo);
     if (epoch != _queueEpoch || !ref.mounted) return;
     await _audio.play();
+    _holdSound();
   }
 }
 

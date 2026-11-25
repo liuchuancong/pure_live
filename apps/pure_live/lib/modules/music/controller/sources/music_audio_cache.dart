@@ -1,6 +1,7 @@
 import 'dart:async' show unawaited;
 import 'dart:io' show Directory, File, FileSystemException, Platform;
 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_net/live_net.dart' show CancelToken, LiveHttp, LiveRequest;
 import 'package:media_core_audio/media_core_audio.dart' as audio;
 import 'package:pure_live/app/logging/app_log.dart' show appLog;
@@ -217,9 +218,14 @@ final class DirectoryMusicCacheFiles implements MusicCacheFiles {
 /// disk, and a resolve that reached the network is written into the cache
 /// while it plays. Heard-once songs then survive their CDN link expiring.
 final class CachedTrackSource extends audio.MusicSource {
-  /// Wraps [inner] with the cache; [environment] read fresh on every
-  /// resolve, and a null (no folder, limit 0) leaves the cache off.
-  CachedTrackSource(this.inner, {required this.environment});
+  /// Wraps [inner] with a cache box of its own; [environment] is read fresh on
+  /// every resolve, and a null (no folder, limit 0) leaves the cache off.
+  CachedTrackSource(audio.MusicSource inner, {required MusicCacheEnvironment? Function() environment})
+    : this._(inner, environment: environment, box: MusicAudioCacheBox());
+
+  CachedTrackSource._(this.inner, {required this.environment, required MusicAudioCacheBox box}) : _box = box {
+    box._sources.add(this);
+  }
 
   /// The platform source the calls ride on.
   final audio.MusicSource inner;
@@ -227,32 +233,11 @@ final class CachedTrackSource extends audio.MusicSource {
   /// The cache's host facts, read per resolve.
   final MusicCacheEnvironment? Function() environment;
 
-  Future<MusicAudioCache?>? _loading;
-  MusicAudioCache? _loaded;
-  int _loadedLimitMb = -1;
+  final MusicAudioCacheBox _box;
 
-  /// The cache for the environment in force, rebuilt when the limit moves;
-  /// null when the cache is off.
-  Future<MusicAudioCache?> _cacheNow() {
-    final env = environment();
-    if (env == null || env.limitMb <= 0) return Future<MusicAudioCache?>.value();
-    if (_loaded != null && _loadedLimitMb == env.limitMb) return Future<MusicAudioCache?>.value(_loaded);
-    return _loading ??= () async {
-      try {
-        final files = DirectoryMusicCacheFiles(Directory('${env.directory.path}${Platform.pathSeparator}music-audio'));
-        final cache = MusicAudioCache(files, maxBytes: env.limitMb * 1024 * 1024);
-        await files.root.create(recursive: true);
-        await cache.load();
-        _loaded = cache;
-        _loadedLimitMb = env.limitMb;
-        return cache;
-      } on Object {
-        return null;
-      } finally {
-        _loading = null;
-      }
-    }();
-  }
+  /// The box resolves one cache per directory and capacity, shared by every
+  /// source registered in this window.
+  Future<MusicAudioCache?> _cacheNow() => _box._cacheFor(this);
 
   @override
   String get id => inner.id;
@@ -348,29 +333,123 @@ final class CachedTrackSource extends audio.MusicSource {
       inner.catalogItems(catalog, page: page);
 }
 
-/// The process's one audio cache, once the playback wiring has armed it:
-/// the settings read the usage and clear it. Null until a music module
-/// with a usable folder ran.
+/// The window's audio-cache box. Playback arms it with the sources it actually
+/// resolves through, and the settings page reads and clears that same cache.
+final musicAudioCacheBoxProvider = Provider<MusicAudioCacheBox>((ref) {
+  final box = MusicAudioCacheBox();
+  ref.onDispose(box.disarm);
+  return box;
+});
+
+typedef _MusicAudioCacheIdentity = ({String directory, int limitMb});
+
 final class MusicAudioCacheBox {
-  MusicAudioCacheBox._();
+  MusicAudioCacheBox();
 
-  /// The one box.
-  static final MusicAudioCacheBox instance = MusicAudioCacheBox._();
-
+  final Set<CachedTrackSource> _sources = {};
+  final Map<_MusicAudioCacheIdentity, MusicAudioCache> _caches = {};
+  final Map<_MusicAudioCacheIdentity, Future<MusicAudioCache?>?> _loading = {};
+  final Map<_MusicAudioCacheIdentity, int> _generations = {};
   CachedTrackSource? _wearing;
 
-  /// Arms the box with the first decorated source the playback builds.
-  void arm(CachedTrackSource wearing) => _wearing ??= wearing;
+  /// The last source assigned through the legacy single-source interface.
+  /// Playback uses [register], which accounts for every registered source.
+  CachedTrackSource? get wearing => _wearing;
 
-  /// Bytes the cache holds, or null while it is off.
-  Future<int?> usageBytes() async {
-    final cache = await _wearing?._cacheNow();
-    return cache?.totalBytes;
+  /// Keeps the old settings/test seam: assigning selects that source for
+  /// usage and clear, while registration still retains the whole collection.
+  set wearing(CachedTrackSource? source) {
+    if (source == null) {
+      _wearing = null;
+      return;
+    }
+    _sources.add(source);
+    _wearing = source;
   }
 
-  /// Empties the cache.
+  /// The one playback assembly entry: decorates [inner] and registers it in
+  /// this window's box, so all platforms resolve through the same ledger.
+  CachedTrackSource register(audio.MusicSource inner, {required MusicCacheEnvironment? Function() environment}) =>
+      CachedTrackSource._(inner, environment: environment, box: this);
+
+  Iterable<CachedTrackSource> get _accountedSources => _wearing == null ? _sources : [_wearing!];
+
+  static _MusicAudioCacheIdentity _identity(MusicCacheEnvironment environment) =>
+      (directory: environment.directory.path, limitMb: environment.limitMb);
+
+  Future<MusicAudioCache?> _cacheFor(CachedTrackSource source) {
+    if (!_sources.contains(source)) return Future<MusicAudioCache?>.value();
+    final environment = source.environment();
+    if (environment == null || environment.limitMb <= 0) return Future<MusicAudioCache?>.value();
+    final identity = _identity(environment);
+    final loaded = _caches[identity];
+    if (loaded != null) return Future<MusicAudioCache?>.value(loaded);
+    final pending = _loading[identity];
+    if (pending != null) return pending;
+
+    final generation = (_generations[identity] ?? 0) + 1;
+    _generations[identity] = generation;
+    final loading = () async {
+      try {
+        final files = DirectoryMusicCacheFiles(
+          Directory('${environment.directory.path}${Platform.pathSeparator}music-audio'),
+        );
+        final cache = MusicAudioCache(files, maxBytes: environment.limitMb * 1024 * 1024);
+        await files.root.create(recursive: true);
+        await cache.load();
+        final current = source.environment();
+        if (!_sources.contains(source) ||
+            generation != (_generations[identity] ?? 0) ||
+            current == null ||
+            current.limitMb <= 0 ||
+            _identity(current) != identity) {
+          return null;
+        }
+        _caches[identity] = cache;
+        return cache;
+      } on Object {
+        return null;
+      } finally {
+        if (generation == (_generations[identity] ?? 0)) _loading[identity] = null;
+      }
+    }();
+    _loading[identity] = loading;
+    return loading;
+  }
+
+  /// Releases every playback source and cached ledger when this window's
+  /// scope goes away. In-flight loads cannot publish into the disarmed box.
+  void disarm() {
+    _sources.clear();
+    _wearing = null;
+    _caches.clear();
+    for (final identity in _loading.keys) {
+      _generations[identity] = (_generations[identity] ?? 0) + 1;
+    }
+    _loading.clear();
+  }
+
+  /// Bytes all registered sources' caches hold, counting a shared ledger once;
+  /// null while no source has an active cache.
+  Future<int?> usageBytes() async {
+    final caches = <MusicAudioCache>{};
+    for (final source in _accountedSources.toList()) {
+      final cache = await _cacheFor(source);
+      if (cache != null && _sources.contains(source)) caches.add(cache);
+    }
+    if (caches.isEmpty) return null;
+    return caches.fold<int>(0, (sum, cache) => sum + cache.totalBytes);
+  }
+
+  /// Empties every accounted source's cache, clearing a shared ledger once.
   Future<void> clear() async {
-    final cache = await _wearing?._cacheNow();
-    await cache?.clear();
+    final caches = <MusicAudioCache>{};
+    for (final source in _accountedSources.toList()) {
+      final cache = await _cacheFor(source);
+      if (cache != null && _sources.contains(source)) caches.add(cache);
+    }
+    for (final cache in caches) {
+      await cache.clear();
+    }
   }
 }

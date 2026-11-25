@@ -11,6 +11,9 @@ import 'package:pure_live/modules/music/controller/lyric/music_lyric_settings.da
 import 'package:pure_live/modules/music/controller/playback/music_playback.dart' show musicPlayerProvider;
 import 'package:pure_live/modules/music/widgets/music_widgets.dart' show musicDurationText;
 
+/// The panel's internal lyric identity: platforms may reuse a track id.
+String? musicLyricTrackKey(audio.MusicTrack? track) => track == null ? null : '${track.sourceId}:${track.id}';
+
 /// The lyric panel: the current line highlighted, the panel following the
 /// song. Unsynchronized lyrics (plain text from the lookup) scroll freely and
 /// never highlight, because there is no position to highlight.
@@ -38,9 +41,10 @@ final class MusicLyricsPanelState extends ConsumerState<MusicLyricsPanel> {
 
   final ScrollController _scroll = ScrollController();
   audio.LyricDocument? _document;
-  String? _loadedTrack;
+  String? _loadedTrackKey;
   int _loadedOffset = 0;
   int _loadedRevision = 0;
+  int _loadGeneration = 0;
   int _active = -1;
 
   /// The read's refusal, shown with a retry instead of a spinner that would
@@ -65,21 +69,23 @@ final class MusicLyricsPanelState extends ConsumerState<MusicLyricsPanel> {
 
   @override
   void dispose() {
+    _loadGeneration++;
     _resume?.cancel();
     _scroll.dispose();
     super.dispose();
   }
 
-  Future<void> _load(String trackId) async {
+  Future<void> _load(String trackKey) async {
+    final generation = ++_loadGeneration;
     try {
       final document = await ref.read(musicPlayerProvider.notifier).loadLyric();
-      if (!mounted || trackId != _loadedTrack) return;
+      if (!mounted || generation != _loadGeneration || trackKey != _loadedTrackKey) return;
       setState(() {
         _document = document;
         _failure = null;
       });
     } on Object catch (failure) {
-      if (!mounted || trackId != _loadedTrack) return;
+      if (!mounted || generation != _loadGeneration || trackKey != _loadedTrackKey) return;
       setState(() => _failure = '$failure');
     }
   }
@@ -202,8 +208,10 @@ final class MusicLyricsPanelState extends ConsumerState<MusicLyricsPanel> {
     // decide what is loaded. The position tick reaches in through the
     // listener below (the singing line) and the singing row's own watch
     // (the sweep), so the column rebuilds once per song, not once per tick.
-    final (trackId, offset, revision) = ref.watch(
-      musicPlayerProvider.select((state) => (state.track?.id, state.lyricOffset.inMilliseconds, state.lyricRevision)),
+    final (trackKey, offset, revision) = ref.watch(
+      musicPlayerProvider.select(
+        (state) => (musicLyricTrackKey(state.track), state.lyricOffset.inMilliseconds, state.lyricRevision),
+      ),
     );
     final settings = ref.watch(musicLyricsSettingsProvider);
     final scale = settings.lyricFontScale / 100;
@@ -213,8 +221,8 @@ final class MusicLyricsPanelState extends ConsumerState<MusicLyricsPanel> {
       MusicLyricAlignment.center => (Alignment.center, CrossAxisAlignment.center, TextAlign.center),
       MusicLyricAlignment.right => (Alignment.centerRight, CrossAxisAlignment.end, TextAlign.right),
     };
-    if (trackId != _loadedTrack || offset != _loadedOffset || revision != _loadedRevision) {
-      _loadedTrack = trackId;
+    if (trackKey != _loadedTrackKey || offset != _loadedOffset || revision != _loadedRevision) {
+      _loadedTrackKey = trackKey;
       _loadedOffset = offset;
       _loadedRevision = revision;
       _document = null;
@@ -222,7 +230,11 @@ final class MusicLyricsPanelState extends ConsumerState<MusicLyricsPanel> {
       _active = -1;
       _resume?.cancel();
       _scrubbing = false;
-      if (trackId != null) unawaited(_load(trackId));
+      if (trackKey != null) {
+        unawaited(_load(trackKey));
+      } else {
+        _loadGeneration++;
+      }
     }
     // The singing line moves off the tick without rebuilding the column:
     // this listen fires per tick but only carries the line (and its reveal)
@@ -280,7 +292,7 @@ final class MusicLyricsPanelState extends ConsumerState<MusicLyricsPanel> {
                             DsButton(
                               variant: DsButtonVariant.secondary,
                               size: DsSize.sm,
-                              onPressed: trackId == null ? null : () => unawaited(_load(trackId)),
+                              onPressed: trackKey == null ? null : () => unawaited(_load(trackKey)),
                               child: Text(t.common.retry),
                             ),
                           ],
@@ -311,6 +323,9 @@ final class MusicLyricsPanelState extends ConsumerState<MusicLyricsPanel> {
                           itemBuilder: (context, index) => _LyricLine(
                             line: lines[index],
                             current: index == _active,
+                            // How far the line sits from the singing one; a
+                            // document without a clock has no singing line.
+                            distance: _active < 0 ? 0 : (index - _active).abs(),
                             synchronized: document.isSynchronized,
                             settings: settings,
                             scale: scale,
@@ -342,13 +357,15 @@ final class MusicLyricsPanelState extends ConsumerState<MusicLyricsPanel> {
 
 /// One lyric line in the panel: the words, their secondary lines, the
 /// singing line's sweep, and the row's answer to the pointer. The dimming
-/// lives here, in one place: a resting row walks to full ink on hover —
-/// the answer the words themselves give — because the full-width fill the
-/// rows used to carry read as a grey box lying across the panel.
+/// lives here, in one place: a line reads quieter the further it sits from
+/// the singing one, and walks to full ink on hover — the answer the words
+/// themselves give — because the full-width fill the rows used to carry read
+/// as a grey box lying across the panel.
 final class _LyricLine extends StatefulWidget {
   const _LyricLine({
     required this.line,
     required this.current,
+    required this.distance,
     required this.synchronized,
     required this.settings,
     required this.scale,
@@ -361,7 +378,17 @@ final class _LyricLine extends StatefulWidget {
 
   final audio.LyricLine line;
   final bool current;
+
+  /// How many lines away this one sits from the singing line: 0 for the
+  /// singing line itself, 1 for its neighbours, and so on.
+  final int distance;
+
   final bool synchronized;
+
+  /// How much ink a line keeps by its distance from the singing one: the
+  /// singing line in full, each line further away a step quieter, down to a
+  /// floor that still lets it be read.
+  static const List<double> _inkByDistance = [1.0, 0.56, 0.44, 0.33, 0.24];
   final MusicLyricsSettings settings;
   final double scale;
   final Alignment alignment;
@@ -425,7 +452,9 @@ final class _LyricLineState extends State<_LyricLine> {
 
     // The sung part rides ahead of the unsung one across the active line —
     // the sweep the word-level timeline affords, read off the line's own
-    // progress so plain LRC sweeps too. An interlude's ♪ does not sweep.
+    // progress so plain LRC sweeps too. The words not yet sung stay on the
+    // line at a share of its ink rather than vanishing: the line reads whole
+    // and the sweep tells how far it has come. An interlude's ♪ does not sweep.
     Widget core;
     if (!widget.synchronized || !widget.current) {
       core = Align(alignment: widget.alignment, child: body(lineText));
@@ -438,12 +467,13 @@ final class _LyricLineState extends State<_LyricLine> {
             final progress = widget.document.positionAt(position).lineProgress;
             final sweep = text.isNotEmpty && progress > 0.02 && progress < 0.98 ? progress : null;
             if (sweep == null) return body(lineText);
+            const unsung = Color(0x99FFFFFF);
             return body(
               ShaderMask(
                 shaderCallback: (bounds) => LinearGradient(
                   begin: AlignmentDirectional.centerStart,
                   end: AlignmentDirectional.centerEnd,
-                  colors: const [Colors.white, Colors.white, Colors.black, Colors.black],
+                  colors: const [Colors.white, Colors.white, unsung, unsung],
                   stops: [0.0, sweep, sweep, 1.0],
                 ).createShader(bounds),
                 blendMode: BlendMode.dstIn,
@@ -467,7 +497,7 @@ final class _LyricLineState extends State<_LyricLine> {
         ),
       );
     }
-    // The hover answers with the ink itself — a resting row walks to full
+    // The hover answers with the ink itself — a quiet line walks to full
     // strength — and the whole row is the press: a synchronized line is a
     // seek target.
     return DsPressable(
@@ -478,8 +508,10 @@ final class _LyricLineState extends State<_LyricLine> {
         child: MouseRegion(
           cursor: SystemMouseCursors.click,
           child: AnimatedOpacity(
-            opacity: widget.current || states.contains(WidgetState.hovered) ? 1.0 : 0.52,
-            duration: const Duration(milliseconds: 150),
+            opacity: widget.current || states.contains(WidgetState.hovered)
+                ? 1.0
+                : _LyricLine._inkByDistance[widget.distance.clamp(0, _LyricLine._inkByDistance.length - 1)],
+            duration: const Duration(milliseconds: 260),
             child: child,
           ),
         ),

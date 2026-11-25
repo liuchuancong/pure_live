@@ -7,6 +7,8 @@ import 'package:go_router/go_router.dart' show GoRouterHelper;
 import 'package:live_iptv/live_iptv.dart';
 import 'package:pure_live/app/app.dart' show RouteNames;
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/layouts/page_head_actions.dart' show publishPageHeadActions;
+import 'package:pure_live/layouts/page_layout_scope.dart' show PageLayoutScope;
 import 'package:pure_live/layouts/tv/tv_input_field.dart' show TvInputField;
 import 'package:pure_live/modules/iptv/controllers/iptv_browse_settings.dart' show iptvBrowseSettingsProvider;
 import 'package:pure_live/modules/iptv/controllers/iptv_controller.dart';
@@ -15,10 +17,10 @@ import 'package:pure_live/modules/iptv/controllers/iptv_recent.dart' show iptvRe
 import 'package:pure_live/modules/iptv/controllers/iptv_sources_controller.dart' show iptvSourcesProvider;
 import 'package:pure_live/modules/iptv/views/iptv_group_rail.dart';
 import 'package:pure_live/modules/iptv/views/iptv_guide_panel.dart' show IptvGuideRow, iptvDayLabel, iptvStartOfDay;
-import 'package:pure_live/modules/iptv/views/iptv_import_dialog.dart' show runIptvGuideImport;
+import 'package:pure_live/modules/iptv/views/iptv_import_dialog.dart' show runIptvGuideImport, runIptvPlaylistImport;
 import 'package:pure_live/modules/iptv/views/iptv_panels.dart' show IptvChannelLogo, IptvIconAction, IptvPlaylistMenu;
 import 'package:pure_live/modules/iptv/views/iptv_reminders_panel.dart' show showIptvReminders;
-import 'package:pure_live/shared/shared.dart' show LiveWindow, ModulePageHead, SkeletonRows;
+import 'package:pure_live/shared/shared.dart' show LiveWindow, ModulePageHead, NavigationItem, SkeletonRows;
 
 /// Where the guide page pays for a group column of its own beside the picker.
 /// The channel page takes its column at [LiveWindow.expanded] because the table
@@ -221,34 +223,35 @@ final class _IptvGuidePageState extends ConsumerState<IptvGuidePage> {
     // one stands.
     final coverage = t.iptv.channelCount(count: channels.length);
     final activeGuide = epg.sources.where((source) => source.id == epg.activeId).firstOrNull;
+    final narrow = PageLayoutScope.isNarrow(context);
+    final actions = <Widget>[
+      DsButton.icon(
+        variant: DsButtonVariant.secondary,
+        size: DsSize.sm,
+        semanticLabel: t.iptv.remindersTitle,
+        onPressed: () => unawaited(showIptvReminders(context)),
+        icon: const DsIcon(DsIcons.bell),
+      ),
+      _DayStepper(
+        label: iptvDayLabel(t, _day, now),
+        isToday: _day == iptvStartOfDay(now),
+        onPrevious: () => _stepDay(-1),
+        onNext: () => _stepDay(1),
+        onToday: () => setState(() => _day = iptvStartOfDay(DateTime.now())),
+      ),
+    ];
+    if (narrow) publishPageHeadActions(context, ref, NavigationItem.iptvGuide, actions);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // The page's head is the module's shared one: the title, the guide it
-        // reads over the count the picker walks, and the day's verbs at its
-        // end — the steps and the way back to today, moved up from the panel
-        // head so the day is walked from the one line above both panes.
+        // The page's head keeps its guide source, coverage and day verbs on a
+        // wide window; a narrow head gives the day controls to the shell.
         Padding(
           padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s4),
           child: ModulePageHead(
             title: t.iptv.guideTitle,
             description: activeGuide == null ? coverage : '${activeGuide.name} · $coverage',
-            actions: [
-              DsButton.icon(
-                variant: DsButtonVariant.secondary,
-                size: DsSize.sm,
-                semanticLabel: t.iptv.remindersTitle,
-                onPressed: () => unawaited(showIptvReminders(context)),
-                icon: const DsIcon(DsIcons.bell),
-              ),
-              _DayStepper(
-                label: iptvDayLabel(t, _day, now),
-                isToday: _day == iptvStartOfDay(now),
-                onPrevious: () => _stepDay(-1),
-                onNext: () => _stepDay(1),
-                onToday: () => setState(() => _day = iptvStartOfDay(DateTime.now())),
-              ),
-            ],
+            actions: narrow ? const <Widget>[] : actions,
           ),
         ),
         Expanded(
@@ -659,6 +662,21 @@ final class _SchedulePanel extends ConsumerWidget {
             icon: const DsIcon(DsIcons.calendarClock),
             title: Text(emptyNote ?? t.iptv.emptyTitle),
             description: emptyNote == null ? Text(t.iptv.emptyDescription) : null,
+            actions: emptyNote == null
+                ? [
+                    DsButton(
+                      onPressed: () => unawaited(runIptvPlaylistImport(context)),
+                      leading: const DsIcon(DsIcons.plus, size: 16),
+                      child: Text(t.iptv.emptyStartImportAction),
+                    ),
+                    DsButton(
+                      variant: DsButtonVariant.secondary,
+                      onPressed: () => unawaited(runIptvGuideImport(context)),
+                      leading: const DsIcon(DsIcons.calendarClock, size: 16),
+                      child: Text(t.iptv.importGuide),
+                    ),
+                  ]
+                : const <Widget>[],
           ),
         ),
       );

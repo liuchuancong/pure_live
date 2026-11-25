@@ -93,24 +93,28 @@ final class _MemoryStore implements JsonStore {
   }
 }
 
-RecordingTask _task({required DateTime startedAt, RecordingTaskState state = RecordingTaskState.stopped}) =>
-    RecordingTask(
-      id: 'bili:1',
-      platform: 'bili',
-      roomId: '1',
-      roomTitle: '房间',
-      quality: '原画',
-      state: state,
-      startedAt: startedAt,
-      filePath: r'D:\rec\take_a',
-      bytes: 100,
-      durationMs: 1000,
-      scheduleEnabled: true,
-      scheduleDays: const [1, 3, 5],
-      scheduleStartMinutes: 1260,
-      scheduleEndMinutes: 1320,
-      stopAtWindowEnd: true,
-    );
+RecordingTask _task({
+  required DateTime startedAt,
+  RecordingTaskState state = RecordingTaskState.stopped,
+  int bytes = 100,
+  int durationMs = 1000,
+}) => RecordingTask(
+  id: 'bili:1',
+  platform: 'bili',
+  roomId: '1',
+  roomTitle: '房间',
+  quality: '原画',
+  state: state,
+  startedAt: startedAt,
+  filePath: r'D:\rec\take_a',
+  bytes: bytes,
+  durationMs: durationMs,
+  scheduleEnabled: true,
+  scheduleDays: const [1, 3, 5],
+  scheduleStartMinutes: 1260,
+  scheduleEndMinutes: 1320,
+  stopAtWindowEnd: true,
+);
 
 void main() {
   final first = DateTime.utc(2026, 10, 31, 12);
@@ -190,13 +194,49 @@ void main() {
     final repo = RecordingTaskRepository(_MemoryStore());
     await repo.save(_task(startedAt: first, state: RecordingTaskState.recording));
 
-    await repo.setProgress('bili:1', 4096, durationMs: 9000);
+    await repo.setProgress('bili:1', 4096, expectedStartedAt: first, durationMs: 9000);
 
     final task = repo.taskById('bili:1')!;
     expect(task.bytes, 4096);
     expect(task.durationMs, 9000);
     expect(task.state, RecordingTaskState.recording, reason: 'a ticking capture has not ended');
     expect(task.startedAt, first);
+  });
+
+  test('late progress cannot overwrite a newer take or an ended one', () async {
+    final repo = RecordingTaskRepository(_MemoryStore());
+    await repo.save(_task(startedAt: first, state: RecordingTaskState.recording));
+    await repo.save(_task(startedAt: second, state: RecordingTaskState.recording, bytes: 200, durationMs: 0));
+
+    await repo.setProgress('bili:1', 999, expectedStartedAt: first, durationMs: 9000);
+    expect(repo.taskById('bili:1')!.bytes, 200);
+    expect(repo.taskById('bili:1')!.durationMs, 0);
+
+    await repo.setEnded('bili:1', RecordingTaskState.stopped, expectedStartedAt: second, bytes: 300);
+    await repo.setProgress('bili:1', 999, expectedStartedAt: second, durationMs: 9000);
+    expect(repo.taskById('bili:1')!.bytes, 300);
+    expect(repo.taskById('bili:1')!.durationMs, 0);
+  });
+
+  test('a late end cannot overwrite a newer take', () async {
+    final repo = RecordingTaskRepository(_MemoryStore());
+    await repo.save(_task(startedAt: second, state: RecordingTaskState.recording, bytes: 200));
+
+    expect(
+      await repo.setEnded(
+        'bili:1',
+        RecordingTaskState.stopped,
+        expectedStartedAt: first,
+        filePath: r'D:\rec\take_a\take.mp4',
+        bytes: 999,
+      ),
+      isFalse,
+    );
+    final task = repo.taskById('bili:1')!;
+    expect(task.state, RecordingTaskState.recording);
+    expect(task.startedAt, second);
+    expect(task.bytes, 200);
+    expect(task.filePath, r'D:\rec\take_a');
   });
 
   test('an ended take reports its verdict and keeps the path it was given', () async {
@@ -206,6 +246,7 @@ void main() {
     await repo.setEnded(
       'bili:1',
       RecordingTaskState.stopped,
+      expectedStartedAt: first,
       filePath: r'D:\rec\take_a\take.mp4',
       bytes: 2048,
       durationMs: 3000,

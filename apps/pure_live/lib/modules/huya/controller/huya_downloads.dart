@@ -1,6 +1,6 @@
 import 'dart:async' show Timer, unawaited;
 import 'dart:convert' show jsonDecode, jsonEncode;
-import 'dart:io' show Directory, File, FileMode, HttpClient, HttpException, IOSink;
+import 'dart:io' show Directory, File, FileMode, FileSystemException, HttpClient, HttpException, IOSink;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_storage/live_storage.dart' show StoragePrefs;
@@ -168,6 +168,10 @@ final class HuyaDownloadsController extends Notifier<List<HuyaDownloadItem>> {
   final List<HuyaDownloadItem> _items = [];
   final Map<String, HttpClient> _clients = {};
   final Map<String, _HuyaStop> _stops = {};
+  final Map<String, Object> _generations = {};
+  final Map<String, bool> _deleteFiles = {};
+  final Set<String> _dropping = {};
+  final Set<String> _enqueuing = {};
   Timer? _persistTimer;
 
   @override
@@ -175,6 +179,11 @@ final class HuyaDownloadsController extends Notifier<List<HuyaDownloadItem>> {
     _items
       ..clear()
       ..addAll(_readTasks());
+    _generations
+      ..clear()
+      ..addAll({for (final item in _items) item.videoId: Object()});
+    _deleteFiles.clear();
+    _dropping.clear();
     // A run the previous session left mid-flight keeps its bytes, paused.
     for (var index = 0; index < _items.length; index++) {
       if (_items[index].phase == HuyaDownloadPhase.running) {
@@ -201,9 +210,12 @@ final class HuyaDownloadsController extends Notifier<List<HuyaDownloadItem>> {
     String cover = '',
   }) async {
     final existing = _items.where((item) => item.videoId == videoId).firstOrNull;
-    if (existing != null && existing.phase != HuyaDownloadPhase.failed) {
+    if (_enqueuing.contains(videoId) ||
+        _dropping.contains(videoId) ||
+        (existing != null && existing.phase != HuyaDownloadPhase.failed)) {
       return (outcome: HuyaDownloadEnqueue.duplicate, error: null);
     }
+    _enqueuing.add(videoId);
     try {
       final detail = await ref.read(huyaVideoApiProvider).detail(videoId);
       final directory = ref.read(appPathsProvider).videos;
@@ -226,17 +238,25 @@ final class HuyaDownloadsController extends Notifier<List<HuyaDownloadItem>> {
         stamp: DateTime.now().millisecondsSinceEpoch,
         cover: cover,
       );
+      if (existing != null && !_items.contains(existing)) {
+        return (outcome: HuyaDownloadEnqueue.duplicate, error: null);
+      }
+      if (_dropping.contains(videoId)) return (outcome: HuyaDownloadEnqueue.duplicate, error: null);
       if (existing != null) {
         _items[_items.indexOf(existing)] = item;
       } else {
         _items.add(item);
       }
+      _generations[videoId] = Object();
+      _deleteFiles.remove(videoId);
       _publish();
       await _persist();
       _pump();
       return (outcome: HuyaDownloadEnqueue.queued, error: null);
     } on Object catch (failure) {
       return (outcome: HuyaDownloadEnqueue.failed, error: '$failure');
+    } finally {
+      _enqueuing.remove(videoId);
     }
   }
 
@@ -254,7 +274,7 @@ final class HuyaDownloadsController extends Notifier<List<HuyaDownloadItem>> {
 
   Future<void> pause(String videoId) async {
     final item = _items.where((row) => row.videoId == videoId).firstOrNull;
-    if (item == null) return;
+    if (item == null || _dropping.contains(videoId) || _stops[videoId] == _HuyaStop.drop) return;
     switch (item.phase) {
       case HuyaDownloadPhase.running:
         _stops[videoId] = _HuyaStop.pause;
@@ -271,7 +291,7 @@ final class HuyaDownloadsController extends Notifier<List<HuyaDownloadItem>> {
   /// written stay and a range request carries on from there.
   Future<void> resume(String videoId) async {
     final item = _items.where((row) => row.videoId == videoId).firstOrNull;
-    if (item == null) return;
+    if (item == null || _dropping.contains(videoId)) return;
     if (item.phase != HuyaDownloadPhase.paused && item.phase != HuyaDownloadPhase.failed) return;
     _replace(item.copyWith(phase: HuyaDownloadPhase.queued, speed: 0));
     await _persist();
@@ -282,8 +302,9 @@ final class HuyaDownloadsController extends Notifier<List<HuyaDownloadItem>> {
   /// its file unless [deleteFile] says otherwise.
   Future<void> remove(String videoId, {bool deleteFile = false}) async {
     final item = _items.where((row) => row.videoId == videoId).firstOrNull;
-    if (item == null) return;
+    if (item == null || _dropping.contains(videoId)) return;
     if (item.phase == HuyaDownloadPhase.running) {
+      _deleteFiles[videoId] = (_deleteFiles[videoId] ?? false) || deleteFile;
       _stops[videoId] = _HuyaStop.drop;
       _clients[videoId]?.close(force: true);
       return;
@@ -291,28 +312,84 @@ final class HuyaDownloadsController extends Notifier<List<HuyaDownloadItem>> {
     await _drop(item, deleteFile: deleteFile);
   }
 
-  /// Drops the finished rows; their files stay.
-  Future<void> clearFinished() async {
-    _items.removeWhere((item) => item.phase == HuyaDownloadPhase.done);
-    _publish();
-    await _persist();
-  }
-
-  Future<void> _drop(HuyaDownloadItem item, {bool deleteFile = false}) async {
-    _items.removeWhere((row) => row.videoId == item.videoId);
-    _publish();
-    await _delete(File('${item.filePath}.part'));
-    if (deleteFile && item.phase == HuyaDownloadPhase.done) {
-      await _delete(File(item.filePath));
+  Future<void> pauseAll() async {
+    var stopped = false;
+    for (final item in _items) {
+      if (_dropping.contains(item.videoId) || _stops[item.videoId] == _HuyaStop.drop) continue;
+      switch (item.phase) {
+        case HuyaDownloadPhase.queued:
+          _replace(item.copyWith(phase: HuyaDownloadPhase.paused, speed: 0));
+        case HuyaDownloadPhase.running:
+          _stops[item.videoId] = _HuyaStop.pause;
+          _clients[item.videoId]?.close(force: true);
+          stopped = true;
+        case HuyaDownloadPhase.paused || HuyaDownloadPhase.done || HuyaDownloadPhase.failed:
+          break;
+      }
     }
     await _persist();
+    if (stopped) _publish();
   }
 
-  static Future<void> _delete(File file) async {
+  /// Resumes every paused and failed task.
+  Future<void> resumeAll() async {
+    for (var index = 0; index < _items.length; index++) {
+      final item = _items[index];
+      if (!_dropping.contains(item.videoId) &&
+          (item.phase == HuyaDownloadPhase.paused || item.phase == HuyaDownloadPhase.failed)) {
+        _items[index] = item.copyWith(phase: HuyaDownloadPhase.queued, speed: 0);
+      }
+    }
+    _publish();
+    await _persist();
+    _pump();
+  }
+
+  /// Drops the finished rows; their files stay.
+  Future<void> clearFinished() async {
+    for (final item in _items) {
+      if (item.phase == HuyaDownloadPhase.done && !_dropping.contains(item.videoId)) {
+        _generations.remove(item.videoId);
+        _deleteFiles.remove(item.videoId);
+      }
+    }
+    _items.removeWhere((item) => item.phase == HuyaDownloadPhase.done && !_dropping.contains(item.videoId));
+    _publish();
+    await _persist();
+  }
+
+  Future<void> _drop(HuyaDownloadItem item, {bool deleteFile = false, Object? generation}) async {
+    final id = item.videoId;
+    final token = generation ?? _generations[id];
+    if (token == null || !_dropping.add(id)) return;
+    try {
+      if (!await _delete(File('${item.filePath}.part'))) {
+        throw FileSystemException('Cannot remove download part', item.filePath);
+      }
+      if (!_isCurrent(id, token)) return;
+      final current = _items.where((row) => row.videoId == id).firstOrNull;
+      if (deleteFile && current?.phase == HuyaDownloadPhase.done && !await _delete(File(current!.filePath))) {
+        throw FileSystemException('Cannot remove downloaded video', current.filePath);
+      }
+      if (!_isCurrent(id, token)) return;
+      _items.removeWhere((row) => row.videoId == id);
+      _generations.remove(id);
+      _deleteFiles.remove(id);
+      _publish();
+      await _persist();
+    } finally {
+      _dropping.remove(id);
+    }
+  }
+
+  bool _isCurrent(String id, Object generation) => identical(_generations[id], generation);
+
+  static Future<bool> _delete(File file) async {
     try {
       if (file.existsSync()) await file.delete();
-    } on Object {
-      // A part file the system still holds is left for the cleaner.
+      return true;
+    } on FileSystemException {
+      return false;
     }
   }
 
@@ -320,7 +397,7 @@ final class HuyaDownloadsController extends Notifier<List<HuyaDownloadItem>> {
   void _pump() {
     if (!ref.mounted) return;
     for (final item in _items) {
-      if (item.phase != HuyaDownloadPhase.queued) continue;
+      if (item.phase != HuyaDownloadPhase.queued || _dropping.contains(item.videoId)) continue;
       unawaited(_run(item.videoId));
       break;
     }
@@ -330,7 +407,8 @@ final class HuyaDownloadsController extends Notifier<List<HuyaDownloadItem>> {
   /// a range request, and the row kept in step every quarter second.
   Future<void> _run(String videoId) async {
     final found = _items.where((row) => row.videoId == videoId).firstOrNull;
-    if (found == null || found.phase != HuyaDownloadPhase.queued) return;
+    if (found == null || found.phase != HuyaDownloadPhase.queued || _dropping.contains(videoId)) return;
+    final generation = _generations.putIfAbsent(videoId, Object.new);
     var item = found.copyWith(phase: HuyaDownloadPhase.running);
     _replace(item);
 
@@ -410,22 +488,25 @@ final class HuyaDownloadsController extends Notifier<List<HuyaDownloadItem>> {
       await sink.flush();
       await sink.close();
       sink = null;
+      if (_stops.containsKey(videoId)) throw const _HuyaStopped();
       if (stopped) return;
       // A stream that ends early with a polite close is not a finished
       // file: the row must not claim done over bytes it never received.
       if (total > 0 && received < total) {
         throw HttpException('transfer ended at $received of $total bytes');
       }
+      if (_stops.containsKey(videoId)) throw const _HuyaStopped();
       final target = File(item.filePath);
       await _delete(target);
+      if (_stops.containsKey(videoId)) throw const _HuyaStopped();
       await scratch.rename(target.path);
+      if (_stops.containsKey(videoId)) throw const _HuyaStopped();
       _replace(item.copyWith(received: received, speed: 0, phase: HuyaDownloadPhase.done));
     } on Object catch (error) {
-      if (error is! _HuyaStopped && !stopped) {
+      if (_isCurrent(videoId, generation) && error is! _HuyaStopped && !stopped) {
         _replace(item.copyWith(received: received, speed: 0, phase: HuyaDownloadPhase.failed, error: '$error'));
       }
     } finally {
-      _clients.remove(videoId);
       client?.close(force: true);
       if (sink != null) {
         try {
@@ -434,15 +515,25 @@ final class HuyaDownloadsController extends Notifier<List<HuyaDownloadItem>> {
           // The socket is gone; the bytes written are already on disk.
         }
       }
-      final stop = _stops.remove(videoId);
-      if (stop == _HuyaStop.drop) {
-        await _drop(item);
-      } else {
-        if (stop == _HuyaStop.pause) {
-          _replace(item.copyWith(received: received, speed: 0, phase: HuyaDownloadPhase.paused));
+      if (_isCurrent(videoId, generation)) {
+        _clients.remove(videoId);
+        final stop = _stops.remove(videoId);
+        if (stop == _HuyaStop.drop) {
+          try {
+            await _drop(item, deleteFile: _deleteFiles.remove(videoId) ?? false, generation: generation);
+          } on Object catch (error) {
+            if (_isCurrent(videoId, generation)) {
+              _replace(item.copyWith(phase: HuyaDownloadPhase.failed, speed: 0, error: '$error'));
+            }
+          }
+        } else {
+          _deleteFiles.remove(videoId);
+          if (stop == _HuyaStop.pause) {
+            _replace(item.copyWith(received: received, speed: 0, phase: HuyaDownloadPhase.paused));
+          }
+          await _persist();
+          _pump();
         }
-        await _persist();
-        _pump();
       }
     }
   }

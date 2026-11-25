@@ -3,10 +3,12 @@
 // the network half needs a live station and stays out of these.
 
 import 'dart:convert' show jsonDecode, jsonEncode;
+import 'dart:io' show Directory, File, FileLock, FileMode, FileSystemException;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:live_storage/live_storage.dart' show StoragePrefs;
+import 'package:path/path.dart' as p;
 import 'package:pure_live/modules/huya/controller/huya_downloads.dart';
 
 HuyaDownloadItem _item(String id, HuyaDownloadPhase phase) => HuyaDownloadItem(
@@ -64,6 +66,63 @@ void main() {
     await container.read(huyaDownloadsProvider.notifier).remove('gone');
     expect(container.read(huyaDownloadsProvider), isEmpty);
     expect(StoragePrefs.getString(kHuyaDownloadsKey), jsonEncode(<Object?>[]));
+  });
+
+  test('a failed file delete keeps the task record', () async {
+    final folder = await Directory.systemTemp.createTemp('pure-live-huya-delete-');
+    final file = File('${folder.path}/locked.mp4');
+    await file.writeAsString('keep');
+    final lock = await file.open(mode: FileMode.write);
+    // The explicit mode documents the Windows delete fixture.
+    // ignore: avoid_redundant_argument_values
+    await lock.lock(FileLock.exclusive);
+    addTearDown(() async {
+      await lock.close();
+      await folder.delete(recursive: true);
+    });
+    final blocked = _item('gone', HuyaDownloadPhase.done).toJson()..['filePath'] = file.path;
+    final container = await _container([HuyaDownloadItem.fromJson(blocked)]);
+
+    await expectLater(
+      container.read(huyaDownloadsProvider.notifier).remove('gone', deleteFile: true),
+      throwsA(isA<FileSystemException>()),
+    );
+
+    expect(container.read(huyaDownloadsProvider).single.videoId, 'gone');
+  });
+
+  test('a concurrent remove and clear cannot race the locked delete', () async {
+    final folder = await Directory.systemTemp.createTemp('pure-live-huya-remove-race-');
+    final file = File(p.join(folder.path, 'locked.mp4'));
+    await file.writeAsString('keep');
+    final lock = await file.open(mode: FileMode.write);
+    // Windows needs an explicit mode for this locked-delete fixture.
+    // ignore: avoid_redundant_argument_values
+    await lock.lock(FileLock.exclusive);
+    addTearDown(() async {
+      await lock.close();
+      await folder.delete(recursive: true);
+    });
+    final blocked = _item('gone', HuyaDownloadPhase.done).toJson()..['filePath'] = file.path;
+    final container = await _container([HuyaDownloadItem.fromJson(blocked)]);
+    final controller = container.read(huyaDownloadsProvider.notifier);
+
+    final first = controller.remove('gone', deleteFile: true);
+    final second = controller.remove('gone', deleteFile: true);
+    await controller.clearFinished();
+
+    await expectLater(first, throwsA(isA<FileSystemException>()));
+    await second;
+    expect(container.read(huyaDownloadsProvider).single.videoId, 'gone');
+  });
+
+  test('pauseAll also parks tasks waiting for a lane', () async {
+    final container = await _container([
+      _item('queued', HuyaDownloadPhase.queued),
+      _item('parked', HuyaDownloadPhase.paused),
+    ]);
+    await container.read(huyaDownloadsProvider.notifier).pauseAll();
+    expect(container.read(huyaDownloadsProvider).map((item) => item.phase), everyElement(HuyaDownloadPhase.paused));
   });
 
   test('a store the reader cannot parse starts the queue empty', () async {

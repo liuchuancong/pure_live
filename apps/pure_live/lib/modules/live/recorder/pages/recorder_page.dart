@@ -4,8 +4,10 @@ import 'dart:math' as math;
 
 import 'package:desen_ui/desen_ui.dart';
 import 'package:file_picker/file_picker.dart' show FilePicker, FileType;
+import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show ProviderFamily;
 import 'package:go_router/go_router.dart' show GoRouterHelper;
 import 'package:live_cache/live_cache.dart' show ImageCachePolicies;
 import 'package:live_sites/live_sites.dart' show LiveAudienceMetricType, LiveDanmakuProvider, LiveRoom;
@@ -18,6 +20,7 @@ import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/layouts/page_head_actions.dart';
 import 'package:pure_live/layouts/page_layout_scope.dart';
+import 'package:pure_live/modules/iptv/controllers/iptv_controller.dart' show iptvLibraryProvider;
 import 'package:pure_live/modules/live/favorites/favorites.dart';
 import 'package:pure_live/modules/live/history/history.dart';
 import 'package:pure_live/modules/live/recorder/data/recorder_library_filter.dart' show scopeLibraryTakes;
@@ -36,18 +39,20 @@ import 'package:pure_live/modules/live/recorder/pages/recorder_library_pane.dart
 import 'package:pure_live/modules/live/search/room_search_picker.dart' show showRoomSearchPicker;
 import 'package:pure_live/shared/shared.dart';
 
-/// The recording centre (the reference's recorder page): five status
-/// filters with their counts — All / Recording / Waiting / Saved / Failed — each a
-/// full-width task list with a per-row menu, and a filter-specific empty
-/// state.
+/// The recording centre: live subscriptions and channel recordings share the
+/// engine but own separate scoped task lists, status filters and file trees.
 ///
 /// The tasks come from the FFmpeg engine the room page starts
 /// (`media_core_recording_ffmpeg`), through the store's own transitions:
 /// a running capture updates its bytes and ends into saved or failed, and
 /// the menu stops a session without deleting its files.
+enum RecordingPageScope { live, iptv }
+
 final class RecorderPage extends ConsumerStatefulWidget {
   /// The recording centre page.
-  const RecorderPage({super.key});
+  const RecorderPage({this.scope = RecordingPageScope.live, super.key});
+
+  final RecordingPageScope scope;
 
   @override
   ConsumerState<RecorderPage> createState() => _RecorderPageState();
@@ -55,23 +60,21 @@ final class RecorderPage extends ConsumerStatefulWidget {
 
 /// The status a task is filtered by; `saved` is the model's `stopped`
 /// state (its file was kept), under the word the page uses.
-/// The task filter. It stops at 失败 on purpose: a saved recording is no
-/// longer a row in a task list but a file in the library below, where every
-/// take of a room shows rather than only the last one the store kept a row for.
+/// Live keeps waiting and paused subscriptions; IPTV keeps settled channel
+/// rows under 已保存 until their files are managed in the scoped library.
 enum _RecorderFilter {
   all,
   recording,
   waiting,
   paused,
+  saved,
   failed;
 
+  List<_RecorderFilter> forScope(RecordingPageScope scope) =>
+      scope == RecordingPageScope.live ? [all, recording, waiting, paused, failed] : [all, recording, saved, failed];
+
   /// Whether [task] belongs under this filter.
-  ///
-  /// The list is subscriptions: a room stays under 等待 even after its last
-  /// take was saved, because the live check keeps watching it. 已暂停 is the
-  /// room whose switch is off, and 失败 is a watched room whose last take
-  /// could not be made.
-  bool matches(RecordingTask task) => switch (this) {
+  bool matches(RecorderTaskStructure task) => switch (this) {
     all => true,
     recording => task.state == RecordingTaskState.recording || task.postProcessing,
     waiting =>
@@ -79,13 +82,14 @@ enum _RecorderFilter {
           !task.postProcessing &&
           task.state != RecordingTaskState.recording &&
           task.state != RecordingTaskState.failed,
-    paused => !task.enabled,
-    failed => task.enabled && task.state == RecordingTaskState.failed,
+    paused => !task.enabled && !task.isIptv,
+    saved => task.isIptv && task.state == RecordingTaskState.stopped && !task.postProcessing,
+    failed => task.state == RecordingTaskState.failed,
   };
 
   /// The section's icon.
   DsIconData get icon => switch (this) {
-    all || recording => DsIcons.disc3,
+    all || recording || saved => DsIcons.disc3,
     waiting => DsIcons.clock,
     paused => DsIcons.pause,
     failed => DsIcons.circleAlert,
@@ -107,25 +111,98 @@ final recorderJoinedRoomsProvider = Provider<Map<String, LiveRoom>>((ref) {
   };
 });
 
-/// The tasks the page owns, IPTV's half cut away.
-final recorderLiveTasksProvider = Provider<List<RecordingTask>>(
-  (ref) => [
-    for (final task in ref.watch(recordingTasksProvider).tasks)
-      if (task.platform != kIptvRecordingPlatform) task,
-  ],
-);
+/// The tasks one recording centre owns.
+final ProviderFamily<List<RecordingTask>, RecordingPageScope> recorderScopedTasksProvider =
+    Provider.family<List<RecordingTask>, RecordingPageScope>((ref, scope) {
+      return [
+        for (final task in ref.watch(recordingTasksProvider).tasks)
+          if (task.isIptv == (scope == RecordingPageScope.iptv)) task,
+      ];
+    });
 
 /// The live rows under the centre's platform filter.
-final recorderListedTasksProvider = Provider<List<RecordingTask>>((ref) {
-  final tasks = ref.watch(recorderLiveTasksProvider);
-  final platformFilter = ref.watch(recorderPlatformFilterProvider);
-  return platformFilter == kAllPlatforms
-      ? tasks
-      : [
-          for (final task in tasks)
-            if (task.platform == platformFilter) task,
-        ];
+final recorderLiveTasksProvider = Provider<List<RecordingTask>>(
+  (ref) => ref.watch(recorderScopedTasksProvider(RecordingPageScope.live)),
+);
+
+final ProviderFamily<List<RecordingTask>, RecordingPageScope> recorderScopedListedTasksProvider =
+    Provider.family<List<RecordingTask>, RecordingPageScope>((ref, scope) {
+      final tasks = ref.watch(recorderScopedTasksProvider(scope));
+      if (scope == RecordingPageScope.iptv) return tasks;
+      final platformFilter = ref.watch(recorderPlatformFilterProvider);
+      return platformFilter == kAllPlatforms
+          ? tasks
+          : [
+              for (final task in tasks)
+                if (task.platform == platformFilter) task,
+            ];
+    });
+
+/// The live rows under the centre's platform filter.
+final recorderListedTasksProvider = Provider<List<RecordingTask>>(
+  (ref) => ref.watch(recorderScopedListedTasksProvider(RecordingPageScope.live)),
+);
+
+/// The task facts the centre's filters, counts and ordering depend on.
+///
+/// Progress and media statistics stay out so a capture's frequent writes only
+/// rebuild the card that displays them.
+typedef RecorderTaskStructure = ({
+  String id,
+  String platform,
+  DateTime startedAt,
+  RecordingTaskState state,
+  bool postProcessing,
+  bool enabled,
+  bool isIptv,
+  RecordingDisplayState display,
 });
+
+RecorderTaskStructure _structureOf(RecordingTask task) => (
+  id: task.id,
+  platform: task.platform,
+  startedAt: task.startedAt,
+  state: task.state,
+  postProcessing: task.postProcessing,
+  enabled: task.enabled,
+  isIptv: task.isIptv,
+  display: RecordingDisplayState.of(task),
+);
+
+final _recorderStructureCache = Expando<List<RecorderTaskStructure>>();
+final _recorderListedStructureCache = Expando<List<RecorderTaskStructure>>();
+
+/// The structural task rows one recording centre owns.
+final ProviderFamily<List<RecorderTaskStructure>, RecordingPageScope> recorderScopedTaskStructuresProvider =
+    Provider.family<List<RecorderTaskStructure>, RecordingPageScope>((ref, scope) {
+      final tasks = ref.watch(recordingTasksProvider).tasks;
+      final next = <RecorderTaskStructure>[
+        for (final task in tasks)
+          if (task.isIptv == (scope == RecordingPageScope.iptv)) _structureOf(task),
+      ];
+      final previous = _recorderStructureCache[scope];
+      if (previous != null && listEquals(previous, next)) return previous;
+      _recorderStructureCache[scope] = next;
+      return next;
+    });
+
+/// The structural live rows under the centre's platform filter.
+final ProviderFamily<List<RecorderTaskStructure>, RecordingPageScope> recorderScopedListedTaskStructuresProvider =
+    Provider.family<List<RecorderTaskStructure>, RecordingPageScope>((ref, scope) {
+      final tasks = ref.watch(recorderScopedTaskStructuresProvider(scope));
+      if (scope == RecordingPageScope.iptv) return tasks;
+      final platformFilter = ref.watch(recorderPlatformFilterProvider);
+      final next = platformFilter == kAllPlatforms
+          ? tasks
+          : <RecorderTaskStructure>[
+              for (final task in tasks)
+                if (task.platform == platformFilter) task,
+            ];
+      final previous = _recorderListedStructureCache[scope];
+      if (previous != null && listEquals(previous, next)) return previous;
+      _recorderListedStructureCache[scope] = next;
+      return next;
+    });
 
 final class _RecorderPageState extends ConsumerState<RecorderPage> {
   _RecorderFilter _filter = _RecorderFilter.all;
@@ -136,9 +213,14 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
   /// The task list's shown page; a filter change starts it again.
   int _taskPage = 1;
 
+  List<_RecorderFilter> get _filters => _filter.forScope(widget.scope);
+
+  RecorderCenterTab get _tab => ref.watch(recorderCenterTabProvider(widget.scope.name));
+
   @override
   void initState() {
     super.initState();
+    if (widget.scope != RecordingPageScope.live) return;
     // The toolbar's word opens the room search picker over this page: a
     // room found there becomes a task. The listener catches a word handed
     // while the page is showing; the post-frame take catches one handed as
@@ -147,7 +229,17 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) => _takeHandoff());
   }
 
+  @override
+  void didUpdateWidget(RecorderPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.scope != widget.scope) {
+      _filter = _RecorderFilter.all;
+      _taskPage = 1;
+    }
+  }
+
   void _takeHandoff() {
+    if (widget.scope != RecordingPageScope.live) return;
     final word = ref.read(recorderSearchHandoffProvider.notifier).take();
     if (word == null || word.isEmpty || !mounted) return;
     unawaited(showRoomSearchPicker(context, query: word, title: context.t.recorder.searchHint, onPick: _addFromSearch));
@@ -259,24 +351,22 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
     final t = context.t;
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
-    final rooms = ref.watch(recorderJoinedRoomsProvider);
-    // Live's own rows, IPTV's half already cut away: 停止全部 would stop
-    // channels, a chip's count would include rows no card shows, and 进入直播间
-    // has no channel behind an IPTV take. One platform cuts both lists —
-    // the subscriptions here and the files pane below — through the
-    // centre's own filter.
-    final liveTasks = ref.watch(recorderLiveTasksProvider);
+    final live = widget.scope == RecordingPageScope.live;
+    final centerTab = _tab;
+    final rooms = live ? ref.watch(recorderJoinedRoomsProvider) : const <String, LiveRoom>{};
+    // Progress writes belong to the task cards. The files tab must not watch
+    // the ticking task list: its tree already refreshes on settled changes.
+    final scopedTasks = centerTab == RecorderCenterTab.tasks
+        ? ref.watch(recorderScopedTaskStructuresProvider(widget.scope))
+        : const <RecorderTaskStructure>[];
     final platformFilter = ref.watch(recorderPlatformFilterProvider);
-    final listed = ref.watch(recorderListedTasksProvider);
-    final taskPlatforms = recorderPlatformsOf(liveTasks.map((task) => task.platform), _platformName);
-    final counts = <_RecorderFilter, int>{
-      for (final filter in _RecorderFilter.values) filter: listed.where(filter.matches).length,
-    };
-    // The two groups the whole-list actions work on: what the engine is
-    // writing now, and the rows a session already settled — a take still being
-    // joined and a room still being watched belong to neither.
+    final listed = centerTab == RecorderCenterTab.tasks
+        ? ref.watch(recorderScopedListedTaskStructuresProvider(widget.scope))
+        : const <RecorderTaskStructure>[];
+    final taskPlatforms = recorderPlatformsOf(scopedTasks.map((task) => task.platform), _platformName);
+    final counts = <_RecorderFilter, int>{for (final filter in _filters) filter: listed.where(filter.matches).length};
     final recording = [
-      for (final task in liveTasks)
+      for (final task in scopedTasks)
         if (task.state == RecordingTaskState.recording) task,
     ];
     // What the page still owns as a task: a capture running, a room waiting to
@@ -302,7 +392,7 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
         _taskPage = 1;
       }),
       tabs: [
-        for (final filter in _RecorderFilter.values)
+        for (final filter in _filters)
           DsTab(value: filter, label: Text(_filterLabel(t, filter)), count: counts[filter] ?? 0),
       ],
     );
@@ -311,14 +401,16 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
     // it lists.
     final scopedLibraryTakes = scopeLibraryTakes(
       ref.watch(recordingLibraryProvider).value ?? const <RecordingTake>[],
-      excluded: const {kIptvRecordingPlatform},
+      platforms: live ? const {} : const {kIptvRecordingPlatform},
+      excluded: live ? const {kIptvRecordingPlatform} : const {},
     );
-    final libraryTakes = platformFilter == kAllPlatforms
-        ? scopedLibraryTakes
-        : [
-            for (final take in scopedLibraryTakes)
-              if (take.platformId == platformFilter) take,
-          ];
+    final libraryQuery = centerTab == RecorderCenterTab.files ? ref.watch(recorderLibrarySearchProvider) : '';
+    final libraryTakes = [
+      for (final take in scopedLibraryTakes)
+        if ((!live || platformFilter == kAllPlatforms || take.platformId == platformFilter) &&
+            recordingTakeMatchesQuery(take, libraryQuery, _platformName))
+          take,
+    ];
     final filePlatforms = recorderPlatformsOf(scopedLibraryTakes.map((take) => take.platformId), _platformName);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -330,16 +422,21 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
           // them, so they belong to the page switch rather than to a second
           // band below it.
           child: () {
-            final files = ref.watch(recorderCenterTabProvider) == RecorderCenterTab.files;
+            final tab = _tab;
+            final files = tab == RecorderCenterTab.files;
             final switchRow = DsSegmentedControl<RecorderCenterTab>(
-              value: ref.watch(recorderCenterTabProvider),
-              onChanged: (value) => ref.read(recorderCenterTabProvider.notifier).set(value),
+              value: tab,
+              onChanged: (value) => ref.read(recorderCenterTabProvider(widget.scope.name).notifier).set(value),
               segments: [
                 DsSegment(value: RecorderCenterTab.tasks, label: Text(t.recorder.tabTasks)),
                 DsSegment(value: RecorderCenterTab.files, label: Text(t.recorder.tabFiles)),
               ],
             );
-            final toolbar = RecorderLibraryToolbar(platforms: filePlatforms, nameOf: _platformName);
+            final toolbar = RecorderLibraryToolbar(
+              platforms: filePlatforms,
+              nameOf: _platformName,
+              showPlatformFilter: live,
+            );
             final settingsButton = DsButton(
               variant: DsButtonVariant.secondary,
               size: DsSize.sm,
@@ -358,14 +455,15 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
                   onPressed: _openSettings,
                   icon: const DsIcon(DsIcons.settings, size: 16),
                 ),
-                if (files) RecorderLibraryToolbarMore(platforms: filePlatforms, nameOf: _platformName),
+                if (files)
+                  RecorderLibraryToolbarMore(platforms: filePlatforms, nameOf: _platformName, showPlatformFilter: live),
               ]);
               return Row(spacing: DsSpace.s8, children: [switchRow]);
             }
             return Row(spacing: DsSpace.s8, children: [switchRow, const Spacer(), if (files) toolbar, settingsButton]);
           }(),
         ),
-        if (ref.watch(recorderCenterTabProvider) == RecorderCenterTab.tasks)
+        if (_tab == RecorderCenterTab.tasks)
           Expanded(
             child: _tasksBody(
               inset: inset,
@@ -398,8 +496,11 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
               showHeading: false,
               // Its verbs ride the page switch's own line, above.
               showToolbar: false,
-              // Channels are the IPTV module's own list.
-              excludedPlatforms: const {kIptvRecordingPlatform},
+              platforms: live ? const {} : const {kIptvRecordingPlatform},
+              excludedPlatforms: live ? const {kIptvRecordingPlatform} : const {},
+              filterByPlatform: live,
+              emptyDescription: live ? null : t.recorder.iptvEmptyDescription,
+              openRoomLabel: live ? null : t.iptv.openChannel,
               onPlay: (around, take) => unawaited(_playLibraryTake(around, take)),
               onOpenRoom: (take) => unawaited(_openRoomOf(take)),
               platformName: _platformName,
@@ -416,7 +517,7 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
     required Widget statusFilter,
     required List<String> platforms,
     required String Function(String id) nameOf,
-    required List<RecordingTask> attention,
+    required List<RecorderTaskStructure> attention,
     required int total,
     required VoidCallback? onStopAll,
 
@@ -448,7 +549,8 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
                 spacing: DsSpace.s8,
                 children: [
                   Expanded(child: statusFilter),
-                  RecorderPlatformFilterButton(platforms: platforms, nameOf: nameOf, compact: narrow),
+                  if (widget.scope == RecordingPageScope.live)
+                    RecorderPlatformFilterButton(platforms: platforms, nameOf: nameOf, compact: narrow),
                   _BatchMenu(onStopAll: onStopAll),
                 ],
               ),
@@ -478,12 +580,20 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
                         icon: const DsIcon(DsIcons.video),
                         title: Text(
                           total == 0
-                              ? t.recorder.emptyTitle
+                              ? (widget.scope == RecordingPageScope.live
+                                    ? t.recorder.emptyTitle
+                                    : t.recorder.iptvEmptyTitle)
                               : t.recorder.emptyFilterTitle(status: _filterLabel(t, _filter)),
                         ),
-                        description: total == 0 ? Text(t.recorder.emptyDescription) : null,
+                        description: total == 0
+                            ? Text(
+                                widget.scope == RecordingPageScope.live
+                                    ? t.recorder.emptyDescription
+                                    : t.recorder.iptvEmptyDescription,
+                              )
+                            : null,
                         actions: [
-                          if (total == 0)
+                          if (total == 0 && widget.scope == RecordingPageScope.live)
                             DsButton(
                               variant: DsButtonVariant.primary,
                               leading: const DsIcon(DsIcons.plus, size: 16),
@@ -503,8 +613,8 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
                   : Padding(
                       padding: EdgeInsets.fromLTRB(inset, 0, inset, DsSpace.s8),
                       child: _LiveClock(
-                        active: attention.any((task) => task.isRunning),
-                        child: SingleChildScrollView(
+                        active: attention.any((task) => task.state == RecordingTaskState.recording),
+                        child: (_) => SingleChildScrollView(
                           padding: const EdgeInsets.only(bottom: DsSpace.s8),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -547,36 +657,26 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
   }
 
   /// One task as its card, with the actions that depend on the store's answer.
-  List<Widget> _taskCards(BuildContext context, RecordingTask task, Map<String, LiveRoom> rooms) {
-    final engine = ref.read(recorderEngineProvider);
+  List<Widget> _taskCards(BuildContext context, RecorderTaskStructure structure, Map<String, LiveRoom> rooms) {
+    final task = ref.read(recordingTasksProvider).tasks.firstWhere((item) => item.id == structure.id);
+    final live = !task.isIptv;
     return [
       _TaskCard(
         task: task,
         room: rooms[task.id] ?? rooms['${task.platform.toLowerCase()}:${task.roomId.trim()}'],
         platformName: _platformName(task.platform),
-        // The card's press opens the recording, the same door the library's row
-        // uses; the room is a menu step away, as it is there.
-        onOpen: _playableOf(task) == null
-            ? () => unawaited(openRoom(context, platform: task.platform, roomId: task.roomId))
-            : () => unawaited(_openPreview(task)),
-        // The menu's room entry always opens the room, never the take.
-        onOpenRoom: () => unawaited(openRoom(context, platform: task.platform, roomId: task.roomId)),
-        onStop: engine.isRecording(task.id) ? () => unawaited(_stop(task.id)) : null,
-        onToggleWatch: () => unawaited(_setWatched(task, watched: !task.enabled)),
-        onDelete: () => unawaited(_deleteTask(task)),
-        onSchedule: () => unawaited(_editSchedule(task)),
-        onStartNow: !task.postProcessing && task.state != RecordingTaskState.recording
-            ? () => unawaited(_startNow(task))
-            : null,
-        onCancelProcessing: task.postProcessing ? () => unawaited(_cancelProcessing(task.id)) : null,
-        // A take the app never finished still holds its segments: offer the
-        // finish again whenever the task names a file and nothing runs.
-        onRetryJoin:
-            !task.postProcessing && task.state != RecordingTaskState.recording && (task.filePath ?? '').isNotEmpty
-            ? () => unawaited(_retryJoin(task))
-            : null,
-        onPreview: _canPreview(task) ? () => unawaited(_openPreview(task)) : null,
-        onPlayExternal: _canPreview(task) ? () => unawaited(_playExternal(task)) : null,
+        canPreview: _canPreview,
+        isRecording: (id) => ref.read(recorderEngineProvider).isRecording(id),
+        onOpenRoom: (task) => unawaited(_openRecordingSource(task.platform, task.roomId)),
+        onDelete: (task) => unawaited(_deleteTask(task)),
+        onSchedule: live ? (task) => unawaited(_editSchedule(task)) : null,
+        onToggleWatch: live ? (task) => unawaited(_setWatched(task, watched: !task.enabled)) : null,
+        onStop: (task) => unawaited(_stop(task.id)),
+        onStartNow: live ? (task) => unawaited(_startNow(task)) : null,
+        onCancelProcessing: (task) => unawaited(_cancelProcessing(task.id)),
+        onRetryJoin: (task) => unawaited(_retryJoin(task)),
+        onPreview: (task) => unawaited(_openPreview(task)),
+        onPlayExternal: (task) => unawaited(_playExternal(task)),
       ),
     ];
   }
@@ -585,12 +685,34 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
   Future<void> _playLibraryTake(List<RecordingTake> around, RecordingTake take) =>
       playRecordingTake(context, ref, around: around, take: take, platformName: _platformName);
 
-  /// The room a take was made in, from the library's row menu. A hand-dropped
-  /// file the store never made a row for has no room to open.
+  /// The room or channel a take was made in. A hand-dropped file the store
+  /// never made a row for has no source to open.
   Future<void> _openRoomOf(RecordingTake take) async {
     final row = take.task;
     if (row == null) return;
-    await openRoom(context, platform: row.platform, roomId: row.roomId);
+    await _openRecordingSource(row.platform, row.roomId);
+  }
+
+  Future<void> _openRecordingSource(String platform, String roomId) async {
+    if (platform != kIptvRecordingPlatform) {
+      await openRoom(context, platform: platform, roomId: roomId);
+      return;
+    }
+    final t = context.t;
+    try {
+      final library = await ref.read(iptvLibraryProvider.future);
+      final channel = library.channelById(roomId);
+      if (!mounted) return;
+      if (channel == null) {
+        showDsToast(context: context, title: t.iptv.playerChannelMissing, status: DsStatus.warning);
+        return;
+      }
+      unawaited(context.push(RouteNames.iptvPlay.replaceFirst(':channelId', channel.id)));
+    } on Object {
+      if (mounted) {
+        showDsToast(context: context, title: t.iptv.playerChannelMissing, status: DsStatus.warning);
+      }
+    }
   }
 
   /// Turns a room's watch switch on or off. A take already running is left to
@@ -699,7 +821,13 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
         if (row.state == RecordingTaskState.stopped) {
           await ref
               .read(recordingTasksProvider.notifier)
-              .setStopped(item.id, filePath: row.takeDirectory, bytes: 0, warning: kRecordingFileDeletedWarning);
+              .setStopped(
+                item.id,
+                expectedStartedAt: row.startedAt,
+                filePath: row.takeDirectory,
+                bytes: 0,
+                warning: kRecordingFileDeletedWarning,
+              );
         } else {
           // A waiting or failed row keeps its own state — only the gone
           // file's record clears. A file-deleted verdict here would read
@@ -725,11 +853,7 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
   /// order — the same construction the IPTV page runs over its own filter of
   /// the shared task library, so the two doors cannot drift.
   List<MediaPreviewItem> _previewItems() => recordingPreviewItems(
-    // The same cut as the page's: live's door walks live's takes.
-    [
-      for (final task in ref.read(recordingTasksProvider).tasks)
-        if (task.platform != kIptvRecordingPlatform) task,
-    ],
+    ref.read(recorderScopedTasksProvider(widget.scope)),
     platformName: (task) => _platformName(task.platform),
   );
 
@@ -738,7 +862,7 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
   /// Each take ends as a user stop, so its segments stay and its join runs the
   /// way the card's own stop would. A row the engine does not hold is skipped
   /// rather than faked: another window owns that session and its files.
-  Future<void> _stopAll(List<RecordingTask> recording) async {
+  Future<void> _stopAll(List<RecorderTaskStructure> recording) async {
     final t = context.t;
     final confirmed = await showAppConfirm(
       context: context,
@@ -869,6 +993,7 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
   /// A platform id's display name, or the id itself when the registry
   /// does not know it (a task from a site since removed).
   String _platformName(String id) {
+    if (id == kIptvRecordingPlatform) return context.t.common.moduleIptv;
     final site = ref.read(sitesProvider).getById(id);
     return site == null ? id : localizedSiteName(site);
   }
@@ -880,7 +1005,7 @@ final class _LiveClock extends StatefulWidget {
   const _LiveClock({required this.active, required this.child});
 
   final bool active;
-  final Widget child;
+  final WidgetBuilder child;
 
   @override
   State<_LiveClock> createState() => _LiveClockState();
@@ -917,7 +1042,7 @@ final class _LiveClockState extends State<_LiveClock> {
   }
 
   @override
-  Widget build(BuildContext context) => widget.child;
+  Widget build(BuildContext context) => widget.child(context);
 }
 
 /// The resolution a quality name carries ("1080P", "原画 1080p"), or null when
@@ -967,82 +1092,88 @@ final class _TaskDetailsPanel extends ConsumerWidget {
     ].join(' · ');
     final saved = (task.filePath ?? '').trim();
     final section = recorderPanelSectionStyle(context);
-    return AppPanel(
-      title: Text(t.recorder.detailsTitle),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        spacing: DsSpace.s16,
-        children: [
-          DsListSection(
-            style: section,
-            header: Text(t.recorder.detailsMetrics),
-            children: [
-              DsListRow(
-                title: Text(t.recorder.columnDuration),
-                detail: Text(liveElapsed > Duration.zero ? formatRecordingDuration(liveElapsed) : '—'),
-              ),
-              DsListRow(title: Text(t.recorder.columnBitrate), detail: Text(bitrate)),
-              DsListRow(title: Text(t.recorder.statProfile), detail: Text(spec)),
-              if (codec.isNotEmpty) DsListRow(title: Text(t.recorder.statCodec), detail: Text(codec)),
-              DsListRow(
-                title: Text(t.recorder.statSaved),
-                detail: Text(savingNote(task: task, size: size, empty: t.recorder.statSavedEmpty)),
-              ),
-              if (task.droppedFrames > 0)
+    return _LiveClock(
+      active: task.isRunning,
+      child: (_) => AppPanel(
+        title: Text(t.recorder.detailsTitle),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          spacing: DsSpace.s16,
+          children: [
+            DsListSection(
+              style: section,
+              header: Text(t.recorder.detailsMetrics),
+              children: [
                 DsListRow(
-                  title: Text(t.recorder.stateRecording),
-                  detail: Text(t.recorder.droppedFramesNote(count: task.droppedFrames)),
+                  title: Text(t.recorder.columnDuration),
+                  detail: Text(liveElapsed > Duration.zero ? formatRecordingDuration(liveElapsed) : '—'),
                 ),
-            ],
-          ),
-          DsListSection(
-            style: section,
-            header: Text(t.recorder.detailsLocation),
-            children: [
-              DsListRow(
-                title: Text(t.recorder.saveLocation),
-                detail: Text(saved.isEmpty ? t.recorder.saveDirTitle : saved),
-                trailing: saved.isEmpty
-                    ? null
-                    : DsButton.icon(
-                        variant: DsButtonVariant.ghost,
-                        size: DsSize.sm,
-                        onPressed: () => unawaited(openSavedLocation(context, saved)),
-                        icon: const DsIcon(DsIcons.folderOpen, size: 16),
-                        semanticLabel: t.recorder.openFolder,
-                      ),
-              ),
-              if (task.endedAt != null || task.bytes > 0)
+                DsListRow(title: Text(t.recorder.columnBitrate), detail: Text(bitrate)),
+                DsListRow(title: Text(t.recorder.statProfile), detail: Text(spec)),
+                if (codec.isNotEmpty) DsListRow(title: Text(t.recorder.statCodec), detail: Text(codec)),
                 DsListRow(
-                  title: Text(t.recorder.statLatest),
-                  detail: Text(t.recorder.lastRecordingAt(time: formatRecordingMoment(task.endedAt ?? task.startedAt))),
+                  title: Text(t.recorder.statSaved),
+                  detail: Text(savingNote(task: task, size: size, empty: t.recorder.statSavedEmpty)),
                 ),
-            ],
-          ),
-          DsListSection(
-            style: section,
-            header: Text(t.recorder.liveCheckGroup),
-            children: [
-              DsListRow(
-                title: Text(t.recorder.roomCheckTitle),
-                trailing: DsSwitch(
-                  value: task.enabled,
-                  onChanged: (value) =>
-                      unawaited(ref.read(recordingTasksProvider.notifier).setEnabled(task.id, enabled: value)),
-                  semanticLabel: t.recorder.roomCheckTitle,
+                if (task.droppedFrames > 0)
+                  DsListRow(
+                    title: Text(t.recorder.stateRecording),
+                    detail: Text(t.recorder.droppedFramesNote(count: task.droppedFrames)),
+                  ),
+              ],
+            ),
+            DsListSection(
+              style: section,
+              header: Text(t.recorder.detailsLocation),
+              children: [
+                DsListRow(
+                  title: Text(t.recorder.saveLocation),
+                  detail: Text(saved.isEmpty ? t.recorder.saveDirTitle : saved),
+                  trailing: saved.isEmpty
+                      ? null
+                      : DsButton.icon(
+                          variant: DsButtonVariant.ghost,
+                          size: DsSize.sm,
+                          onPressed: () => unawaited(openSavedLocation(context, saved)),
+                          icon: const DsIcon(DsIcons.folderOpen, size: 16),
+                          semanticLabel: t.recorder.openFolder,
+                        ),
                 ),
+                if (task.endedAt != null || task.bytes > 0)
+                  DsListRow(
+                    title: Text(t.recorder.statLatest),
+                    detail: Text(
+                      t.recorder.lastRecordingAt(time: formatRecordingMoment(task.endedAt ?? task.startedAt)),
+                    ),
+                  ),
+              ],
+            ),
+            if (!task.isIptv)
+              DsListSection(
+                style: section,
+                header: Text(t.recorder.liveCheckGroup),
+                children: [
+                  DsListRow(
+                    title: Text(t.recorder.roomCheckTitle),
+                    trailing: DsSwitch(
+                      value: task.enabled,
+                      onChanged: (value) =>
+                          unawaited(ref.read(recordingTasksProvider.notifier).setEnabled(task.id, enabled: value)),
+                      semanticLabel: t.recorder.roomCheckTitle,
+                    ),
+                  ),
+                  DsListRow(
+                    title: Text(t.recorder.liveCheckSecondsTitle),
+                    detail: Text(t.recorder.checkEvery(seconds: task.checkSeconds)),
+                  ),
+                  DsListRow(
+                    title: Text(t.recorder.statProfile),
+                    detail: Text(task.quality.isNotEmpty ? task.quality : t.recorder.qualityBest),
+                  ),
+                ],
               ),
-              DsListRow(
-                title: Text(t.recorder.liveCheckSecondsTitle),
-                detail: Text(t.recorder.checkEvery(seconds: task.checkSeconds)),
-              ),
-              DsListRow(
-                title: Text(t.recorder.statProfile),
-                detail: Text(task.quality.isNotEmpty ? task.quality : t.recorder.qualityBest),
-              ),
-            ],
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -1083,8 +1214,8 @@ Duration recordingElapsed(RecordingTask task) {
 /// The list's order: a room being recorded first, then a room being finished,
 /// then the ones waiting for their next live stream, then a failed last take,
 /// and the paused rooms last. Ties keep the newest session on top.
-int _subscriptionOrder(RecordingTask a, RecordingTask b) {
-  final byRank = RecordingDisplayState.of(a).sortRank.compareTo(RecordingDisplayState.of(b).sortRank);
+int _subscriptionOrder(RecorderTaskStructure a, RecorderTaskStructure b) {
+  final byRank = a.display.sortRank.compareTo(b.display.sortRank);
   return byRank != 0 ? byRank : b.startedAt.compareTo(a.startedAt);
 }
 
@@ -1094,6 +1225,7 @@ String _filterLabel(Translations t, _RecorderFilter filter) => switch (filter) {
   _RecorderFilter.recording => t.recorder.filterRecording,
   _RecorderFilter.waiting => t.recorder.filterWaiting,
   _RecorderFilter.paused => t.recorder.filterPaused,
+  _RecorderFilter.saved => t.recorder.stateSaved,
   _RecorderFilter.failed => t.recorder.filterFailed,
 };
 
@@ -1110,7 +1242,8 @@ final class _TaskCard extends ConsumerWidget {
     required this.task,
     required this.room,
     required this.platformName,
-    required this.onOpen,
+    required this.canPreview,
+    required this.isRecording,
     required this.onOpenRoom,
     required this.onDelete,
     required this.onSchedule,
@@ -1131,45 +1264,31 @@ final class _TaskCard extends ConsumerWidget {
   /// The task's platform's display name (the page resolves it).
   final String platformName;
 
-  /// The card's own press: plays the take, or opens the room when there is
-  /// nothing playable to open.
-  final VoidCallback onOpen;
+  /// Whether the current task has a settled file a player can open.
+  final bool Function(RecordingTask task) canPreview;
 
-  /// Opens the room the task records, whatever the take's state.
-  final VoidCallback onOpenRoom;
+  /// Whether this window's engine currently owns the task's capture.
+  final bool Function(String taskId) isRecording;
 
-  /// Drops the task (the menu has confirmed it).
-  final VoidCallback onDelete;
-
-  /// Opens the take's schedule editor.
-  final VoidCallback onSchedule;
-
-  /// Stops a running capture, null when the task is not being recorded.
-  final VoidCallback? onStop;
-
-  /// Pauses or resumes the room's watch switch.
-  final VoidCallback onToggleWatch;
-
-  /// Cancels a running join/transcode, null when there is none.
-  final VoidCallback? onCancelProcessing;
-
-  /// Starts a waiting/stopped task now, null while it is already running.
-  final VoidCallback? onStartNow;
-
-  /// Re-runs the post-recording steps on a take the app never finished, null
-  /// while the task is being captured or finished.
-  final VoidCallback? onRetryJoin;
-
-  /// Opens the built-in preview over the centre's finished takes, null when
-  /// this card's take is not one of them.
-  final VoidCallback? onPreview;
-
-  /// Hands this take to the system's own player, null under the same rule.
-  final VoidCallback? onPlayExternal;
+  final void Function(RecordingTask task) onOpenRoom;
+  final void Function(RecordingTask task) onDelete;
+  final void Function(RecordingTask task)? onSchedule;
+  final void Function(RecordingTask task)? onToggleWatch;
+  final void Function(RecordingTask task)? onStop;
+  final void Function(RecordingTask task)? onCancelProcessing;
+  final void Function(RecordingTask task)? onStartNow;
+  final void Function(RecordingTask task)? onRetryJoin;
+  final void Function(RecordingTask task)? onPreview;
+  final void Function(RecordingTask task)? onPlayExternal;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
+    final task = ref.watch(
+      recordingTasksProvider.select(
+        (state) => state.tasks.where((item) => item.id == this.task.id).firstOrNull ?? this.task,
+      ),
+    );
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
     final platformIcon = localizedSiteIcon(ref.watch(sitesProvider).getById(task.platform), size: 14);
@@ -1198,7 +1317,8 @@ final class _TaskCard extends ConsumerWidget {
     final processing = task.postProcessing;
     final fileDeleted = _fileDeleted;
     final recording = task.isRunning && !processing;
-    final failed = task.enabled && task.state == RecordingTaskState.failed && !processing;
+    final failed = task.state == RecordingTaskState.failed && !processing;
+    final live = !task.isIptv;
     final area = (room?.area?.areaName ?? '').trim();
     // A title that opens with a bracket starts half an em in; the caption
     // under it starts at the box's edge, so it takes the same blank to read
@@ -1227,42 +1347,72 @@ final class _TaskCard extends ConsumerWidget {
       if (task.quality.isNotEmpty) task.quality else t.recorder.qualityBest,
       if (audience.isNotEmpty) audience,
       if (task.videoCodec.isNotEmpty) task.videoCodec.toUpperCase(),
-      '${t.recorder.roomArea} ${task.roomId}',
+      if (live) '${t.recorder.roomArea} ${task.roomId}',
     ];
-    final Widget action = processing
+    final preview = canPreview(task);
+    final stop = recording && isRecording(task.id) ? onStop : null;
+    final cancelProcessing = processing ? onCancelProcessing : null;
+    final startNow = live && !processing && task.state != RecordingTaskState.recording ? onStartNow : null;
+    // A take the app never finished still holds its segments: offer the
+    // finish again whenever the task names a file and nothing runs.
+    final retryJoin = !processing && task.state != RecordingTaskState.recording && (task.filePath ?? '').isNotEmpty
+        ? onRetryJoin
+        : null;
+    final openPreview = preview ? onPreview : null;
+    final playExternal = preview ? onPlayExternal : null;
+    final schedule = onSchedule;
+    final Widget? action = processing && cancelProcessing != null
         ? DsButton(
             variant: DsButtonVariant.secondary,
             size: DsSize.sm,
             leading: const DsIcon(DsIcons.x, size: 14),
-            onPressed: onCancelProcessing,
+            onPressed: () => cancelProcessing(task),
             child: Text(t.recorder.cancelProcessing),
           )
-        : recording
+        : recording && stop != null
         ? DsButton(
             variant: DsButtonVariant.secondary,
             size: DsSize.sm,
             leading: const DsIcon(DsIcons.squareStop, size: 14),
-            onPressed: onStop,
+            onPressed: () => stop(task),
             child: Text(t.recorder.stop),
           )
-        : failed
+        : !live && openPreview != null
+        ? DsButton(
+            variant: DsButtonVariant.primary,
+            size: DsSize.sm,
+            leading: const DsIcon(DsIcons.play, size: 14),
+            onPressed: () => openPreview(task),
+            child: Text(t.recorder.playRecording),
+          )
+        : failed && retryJoin != null
         ? DsButton(
             variant: DsButtonVariant.primary,
             size: DsSize.sm,
             leading: const DsIcon(DsIcons.refreshCw, size: 14),
-            onPressed: onStartNow,
+            onPressed: () => retryJoin(task),
+            child: Text(t.recorder.retryJoin),
+          )
+        : failed && live && startNow != null
+        ? DsButton(
+            variant: DsButtonVariant.primary,
+            size: DsSize.sm,
+            leading: const DsIcon(DsIcons.refreshCw, size: 14),
+            onPressed: () => startNow(task),
             child: Text(t.common.retry),
           )
-        : DsButton(
+        : live && startNow != null
+        ? DsButton(
             variant: DsButtonVariant.primary,
             size: DsSize.sm,
             leading: const DsIcon(DsIcons.play, size: 14),
-            onPressed: onStartNow,
+            onPressed: () => startNow(task),
             child: Text(t.recorder.startRecording),
-          );
+          )
+        : null;
     final saved = (task.filePath ?? '').trim();
     return DsCard(
-      onPressed: onOpen,
+      onPressed: preview && openPreview != null ? () => openPreview(task) : () => onOpenRoom(task),
       semanticLabel: title,
       style: DsCardStyle(
         padding: const EdgeInsets.all(DsSpace.s16),
@@ -1279,7 +1429,7 @@ final class _TaskCard extends ConsumerWidget {
               Text(t.recorder.roomCheckTitle, style: theme.typography.caption.copyWith(color: colors.textMuted)),
               DsSwitch(
                 value: task.enabled,
-                onChanged: (value) => onToggleWatch(),
+                onChanged: (value) => onToggleWatch?.call(task),
                 semanticLabel: t.recorder.roomCheckTitle,
               ),
             ],
@@ -1299,13 +1449,14 @@ final class _TaskCard extends ConsumerWidget {
           Widget menu() => _TaskMenu(
             task: task,
             hasFile: saved.isNotEmpty,
-            onPlay: onPreview ?? onPlayExternal,
-            onOpenRoom: onOpenRoom,
-            onStop: onStop,
-            onDelete: onDelete,
-            onSchedule: onSchedule,
-            onCancelProcessing: onCancelProcessing,
-            onRetryJoin: onRetryJoin,
+            onPlay: openPreview == null ? null : () => openPreview(task),
+            onPlayExternal: playExternal == null ? null : () => playExternal(task),
+            onOpenRoom: () => onOpenRoom(task),
+            onStop: stop == null ? null : () => stop(task),
+            onDelete: () => onDelete(task),
+            onSchedule: schedule == null ? null : () => schedule(task),
+            onCancelProcessing: cancelProcessing == null ? null : () => cancelProcessing(task),
+            onRetryJoin: retryJoin == null ? null : () => retryJoin(task),
           );
           final badge = DsBadge(label: Text(statusText), status: statusTone);
           final note = statusNote.isEmpty
@@ -1324,7 +1475,7 @@ final class _TaskCard extends ConsumerWidget {
           final controls = Row(
             mainAxisSize: MainAxisSize.min,
             spacing: DsSpace.s8,
-            children: [action, details(), menu()],
+            children: [?action, details(), menu()],
           );
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1409,13 +1560,13 @@ final class _TaskCard extends ConsumerWidget {
                 children: [
                   badge,
                   if (note != null) Expanded(child: note) else const Spacer(),
-                  watch(),
+                  if (live) watch(),
                 ],
               ),
               // A narrow card puts the verbs under the state line, held to the
               // card's right edge instead of stretching across it.
               if (width < 620) Row(mainAxisAlignment: MainAxisAlignment.end, children: [controls]),
-              if (task.state == RecordingTaskState.recording && onStop == null)
+              if (task.state == RecordingTaskState.recording && stop == null)
                 Text(
                   t.recorder.stateRecordingElsewhere,
                   maxLines: 1,
@@ -1522,6 +1673,7 @@ final class _TaskMenu extends StatelessWidget {
     required this.onDelete,
     required this.onSchedule,
     this.onPlay,
+    this.onPlayExternal,
     this.onStop,
     this.onCancelProcessing,
     this.onRetryJoin,
@@ -1536,11 +1688,14 @@ final class _TaskMenu extends StatelessWidget {
   /// the system's player otherwise; null when nothing is playable.
   final VoidCallback? onPlay;
 
-  /// Opens the room the task records.
+  /// Opens the take in the system's player.
+  final VoidCallback? onPlayExternal;
+
+  /// Opens the room or channel the task records.
   final VoidCallback onOpenRoom;
 
   final VoidCallback onDelete;
-  final VoidCallback onSchedule;
+  final VoidCallback? onSchedule;
 
   /// Stops a running capture, null when the task is not being recorded.
   final VoidCallback? onStop;
@@ -1572,9 +1727,15 @@ final class _TaskMenu extends StatelessWidget {
             label: Text(t.recorder.playRecording),
             onPressed: onPlay,
           ),
+        if (onPlayExternal != null)
+          DsMenuItem(
+            leading: const DsIcon(DsIcons.externalLink),
+            label: Text(t.recorder.playExternal),
+            onPressed: onPlayExternal,
+          ),
         DsMenuItem(
           leading: const DsIcon(DsIcons.externalLink),
-          label: Text(t.recorder.openRoom),
+          label: Text(task.isIptv ? t.iptv.openChannel : t.recorder.openRoom),
           onPressed: onOpenRoom,
         ),
         if (hasFile)
@@ -1583,7 +1744,12 @@ final class _TaskMenu extends StatelessWidget {
             label: Text(t.recorder.openFolder),
             onPressed: () => unawaited(_openFolder(context)),
           ),
-        DsMenuItem(leading: const DsIcon(DsIcons.settings), label: Text(t.navigation.settings), onPressed: onSchedule),
+        if (onSchedule != null)
+          DsMenuItem(
+            leading: const DsIcon(DsIcons.settings),
+            label: Text(t.navigation.settings),
+            onPressed: onSchedule,
+          ),
         if (onStop case final stop?)
           DsMenuItem(
             leading: const DsIcon(DsIcons.squareStop),
@@ -1609,9 +1775,9 @@ final class _TaskMenu extends StatelessWidget {
   /// Opens the folder the last session's file landed in, through the
   /// system's own file manager.
   Future<void> _openFolder(BuildContext context) async {
-    final file = (task.filePath ?? '').trim();
-    if (file.isEmpty) return;
-    await openDownloadedPath(context, p.dirname(file), failedTitle: context.t.recorder.openFolderFailed);
+    final folder = task.takeDirectory;
+    if (folder.isEmpty) return;
+    await openDownloadedPath(context, folder, failedTitle: context.t.recorder.openFolderFailed);
   }
 
   /// Asks before dropping the task: the entry goes, the files stay.

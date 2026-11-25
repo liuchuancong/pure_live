@@ -699,9 +699,14 @@ final class RecorderEngine {
     } on Object catch (error, stack) {
       await session.quiet();
       _sessions.remove(task.id);
+      await repo.setEnded(
+        task.id,
+        RecordingTaskState.failed,
+        expectedStartedAt: task.startedAt,
+        errorText: _errorOf(error),
+      );
       await releaseRecordingClaim(session.claim);
       unawaited(manager.dispose());
-      await repo.setEnded(task.id, RecordingTaskState.failed, errorText: _errorOf(error));
       appLog
           .forCategory('recorder')
           .error(
@@ -727,13 +732,18 @@ final class RecorderEngine {
       // works.
       await session.quiet();
       _sessions.remove(task.id);
-      await releaseRecordingClaim(session.claim);
-      unawaited(manager.dispose());
       try {
-        await repo.setEnded(task.id, RecordingTaskState.failed, errorText: _errorOf(error));
+        await repo.setEnded(
+          task.id,
+          RecordingTaskState.failed,
+          expectedStartedAt: task.startedAt,
+          errorText: _errorOf(error),
+        );
       } on Object {
         // The store is failing wholesale; the boot recovery settles the row.
       }
+      await releaseRecordingClaim(session.claim);
+      unawaited(manager.dispose());
       appLog
           .forCategory('recorder')
           .error(
@@ -1026,6 +1036,11 @@ final class RecorderEngine {
   Future<void> _writeProgress(String taskId) async {
     final session = _sessions[taskId];
     if (session == null || session._settling) return;
+    final startedAt = session.task.startedAt;
+    bool owns() =>
+        !session._settling &&
+        identical(_sessions[taskId], session) &&
+        session.task.startedAt.isAtSameMomentAs(startedAt);
     final state = session.backend.state;
     // The backend names bytes and media time only once it has them: a take
     // still writing its first segment answers zero, which a list reads as
@@ -1039,6 +1054,7 @@ final class RecorderEngine {
     final directory = _takeDirectoryOf(session.task.filePath);
     if (directory != null && directory.existsSync()) {
       final stats = await _directoryStats(directory);
+      if (!owns()) return;
       if (bytes <= 0) bytes = stats.bytes;
       files = stats.files;
     }
@@ -1061,6 +1077,7 @@ final class RecorderEngine {
     final bytesMoved = bytes != session._persistedBytes;
     final durationMoved = (durationMs - session._persistedDurationMs).abs() >= 5000;
     if (bytesMoved || durationMoved) {
+      if (!owns()) return;
       session
         .._persistedBytes = bytes
         .._persistedDurationMs = durationMs;
@@ -1068,12 +1085,14 @@ final class RecorderEngine {
       await repo?.setProgress(
         taskId,
         bytes,
+        expectedStartedAt: startedAt,
         durationMs: durationMs,
         segments: files,
         liveFps: liveFps,
         droppedFrames: dropped,
       );
     }
+    if (!owns()) return;
     // The cap stops the take on purpose: naming the reason lets the task
     // card say so, where a bare stop would read like a failure.
     if (session.capBytes > 0 && bytes >= session.capBytes) await stop(taskId, warning: 'size-cap');
@@ -1091,7 +1110,7 @@ final class RecorderEngine {
   Future<void> _checkFreeSpace(_LiveRecording session, int watermarkMb) async {
     try {
       final free = await FfmpegDiskSpace.probe(session.root);
-      if (free == null || !_sessions.containsKey(session.task.id)) return;
+      if (free == null || session._settling || !identical(_sessions[session.task.id], session)) return;
       if (free < watermarkMb * 1024 * 1024) {
         await stop(session.task.id, warning: 'disk-low');
       }
@@ -1129,13 +1148,13 @@ final class RecorderEngine {
     String warning = '',
   }) async {
     _sessions.remove(session.task.id);
-    await releaseRecordingClaim(session.claim);
     final repo = _ref.read(recordingRepositoryProvider).value;
     final directory = session.backend.activeDirectory ?? '';
     try {
       await repo?.setEnded(
         session.task.id,
         failed ? RecordingTaskState.failed : RecordingTaskState.stopped,
+        expectedStartedAt: session.task.startedAt,
         filePath: directory.isEmpty ? null : directory,
         bytes: bytes,
         durationMs: durationMs,
@@ -1149,6 +1168,8 @@ final class RecorderEngine {
       appLog
           .forCategory('recorder')
           .warning('the end entry could not be written', fields: {'task': session.task.id, 'error': '$error'});
+    } finally {
+      await releaseRecordingClaim(session.claim);
     }
     final settings = _ref.read(recordingSettingsProvider);
     if (!failed) {
@@ -1316,7 +1337,6 @@ final class RecorderEngine {
           }
           await target.close();
           await _archiveOriginals(target, keepPath: source, delete: deleteOriginals);
-          await release();
           final renamed = await _renameTake(target, sourceFile: source);
           finalFile = renamed.filePath;
           finalBytes = bytes;
@@ -1334,14 +1354,12 @@ final class RecorderEngine {
         // No usable single file (or the join is off): the folder itself is
         // what the take is, and its title still belongs on it.
         await target.close();
-        await release();
         final renamed = await _renameTake(target);
         await repository?.setFinalPath(target.taskId, expectedStartedAt: target.startedAt, filePath: renamed.directory);
       }
     } on Object {
       if (warning.isEmpty) warning = 'finalize-failed';
     } finally {
-      await release();
       // Let the last progress write land before the finish clears it; a late
       // write after `postProcessing: false` would otherwise restore a stale
       // flag.
@@ -1353,8 +1371,12 @@ final class RecorderEngine {
       _finalizeExecutions.remove(target.taskId);
       _finalizeCancelled.remove(target.taskId);
       _finalizing.remove(p.normalize(target.root));
-      await repository?.finishPostProcessing(target.taskId, expectedStartedAt: target.startedAt, warning: warning);
-      await target.close();
+      try {
+        await repository?.finishPostProcessing(target.taskId, expectedStartedAt: target.startedAt, warning: warning);
+        await target.close();
+      } finally {
+        await release();
+      }
       if (trimCache) trimCacheQuietly();
       _stopCacheTrimIfIdle();
     }

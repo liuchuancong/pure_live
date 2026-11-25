@@ -1,6 +1,6 @@
 import 'dart:async' show Timer, unawaited;
 import 'dart:convert' show jsonDecode, jsonEncode;
-import 'dart:io' show Directory, File, FileMode, HttpClient, HttpException, IOSink;
+import 'dart:io' show Directory, File, FileMode, FileSystemException, HttpClient, HttpException, IOSink;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_storage/live_storage.dart' show StoragePrefs;
@@ -408,6 +408,10 @@ final class VodDownloadsController extends Notifier<List<VodDownloadItem>> {
   final Map<String, HttpClient> _clients = {};
   final Map<String, _VodStop> _stops = {};
   final Map<String, Timer> _retryTimers = {};
+  final Map<String, Object> _generations = {};
+  final Map<String, bool> _deleteFiles = {};
+  final Set<String> _dropping = {};
+  final Set<String> _enqueuing = {};
   Timer? _persistTimer;
 
   @override
@@ -415,6 +419,11 @@ final class VodDownloadsController extends Notifier<List<VodDownloadItem>> {
     _items
       ..clear()
       ..addAll(_readTasks());
+    _generations
+      ..clear()
+      ..addAll({for (final item in _items) item.id: Object()});
+    _deleteFiles.clear();
+    _dropping.clear();
     // A run the previous session left mid-flight keeps its bytes, paused.
     for (var index = 0; index < _items.length; index++) {
       if (_items[index].phase == VodDownloadPhase.running) {
@@ -453,9 +462,12 @@ final class VodDownloadsController extends Notifier<List<VodDownloadItem>> {
   }) async {
     final id = '${bvid.isNotEmpty ? bvid : 'ep$epId'}:$cid';
     final existing = _items.where((item) => item.id == id).firstOrNull;
-    if (existing != null && existing.phase != VodDownloadPhase.failed) {
+    if (_enqueuing.contains(id) ||
+        _dropping.contains(id) ||
+        (existing != null && existing.phase != VodDownloadPhase.failed)) {
       return (outcome: VodDownloadEnqueue.duplicate, error: null);
     }
+    _enqueuing.add(id);
     try {
       final info = bvid.isNotEmpty
           ? await ref.read(vodClientProvider).downloadPart(bvid: bvid, cid: cid, qn: qn)
@@ -485,17 +497,25 @@ final class VodDownloadsController extends Notifier<List<VodDownloadItem>> {
         phase: VodDownloadPhase.queued,
         stamp: DateTime.now().millisecondsSinceEpoch,
       );
+      if (existing != null && !_items.contains(existing)) {
+        return (outcome: VodDownloadEnqueue.duplicate, error: null);
+      }
+      if (_dropping.contains(id)) return (outcome: VodDownloadEnqueue.duplicate, error: null);
       if (existing != null) {
         _items[_items.indexOf(existing)] = item;
       } else {
         _items.add(item);
       }
+      _generations[id] = Object();
+      _deleteFiles.remove(id);
       _publish();
       await _persist();
       _pump();
       return (outcome: VodDownloadEnqueue.queued, error: null);
     } on Object catch (failure) {
       return (outcome: VodDownloadEnqueue.failed, error: '$failure');
+    } finally {
+      _enqueuing.remove(id);
     }
   }
 
@@ -505,7 +525,7 @@ final class VodDownloadsController extends Notifier<List<VodDownloadItem>> {
 
   Future<void> pause(String id) async {
     final item = _items.where((row) => row.id == id).firstOrNull;
-    if (item == null) return;
+    if (item == null || _dropping.contains(id) || _stops[id] == _VodStop.drop) return;
     _retryTimers.remove(id)?.cancel();
     switch (item.phase) {
       case VodDownloadPhase.running:
@@ -523,7 +543,7 @@ final class VodDownloadsController extends Notifier<List<VodDownloadItem>> {
   /// written stay and a range request carries on from there.
   Future<void> resume(String id) async {
     final item = _items.where((row) => row.id == id).firstOrNull;
-    if (item == null) return;
+    if (item == null || _dropping.contains(id)) return;
     if (item.phase != VodDownloadPhase.paused && item.phase != VodDownloadPhase.failed) return;
     _retryTimers.remove(id)?.cancel();
     _replace(item.copyWith(phase: VodDownloadPhase.queued, attempts: 0, speed: 0));
@@ -535,8 +555,9 @@ final class VodDownloadsController extends Notifier<List<VodDownloadItem>> {
   /// its file unless [deleteFile] says otherwise.
   Future<void> remove(String id, {bool deleteFile = false}) async {
     final item = _items.where((row) => row.id == id).firstOrNull;
-    if (item == null) return;
+    if (item == null || _dropping.contains(id)) return;
     if (item.phase == VodDownloadPhase.running) {
+      _deleteFiles[id] = (_deleteFiles[id] ?? false) || deleteFile;
       _stops[id] = _VodStop.drop;
       _clients[id]?.close(force: true);
       return;
@@ -547,6 +568,7 @@ final class VodDownloadsController extends Notifier<List<VodDownloadItem>> {
   Future<void> pauseAll() async {
     var stopped = false;
     for (final item in _items) {
+      if (_dropping.contains(item.id) || _stops[item.id] == _VodStop.drop) continue;
       switch (item.phase) {
         case VodDownloadPhase.queued:
           _replace(item.copyWith(phase: VodDownloadPhase.paused));
@@ -566,7 +588,8 @@ final class VodDownloadsController extends Notifier<List<VodDownloadItem>> {
   Future<void> resumeAll() async {
     for (var index = 0; index < _items.length; index++) {
       final item = _items[index];
-      if (item.phase == VodDownloadPhase.paused || item.phase == VodDownloadPhase.failed) {
+      if (!_dropping.contains(item.id) &&
+          (item.phase == VodDownloadPhase.paused || item.phase == VodDownloadPhase.failed)) {
         _retryTimers.remove(item.id)?.cancel();
         _items[index] = item.copyWith(phase: VodDownloadPhase.queued, attempts: 0, speed: 0);
       }
@@ -578,33 +601,55 @@ final class VodDownloadsController extends Notifier<List<VodDownloadItem>> {
 
   /// Drops the finished rows; their files stay.
   Future<void> clearFinished() async {
-    _items.removeWhere((item) => item.phase == VodDownloadPhase.done);
+    for (final item in _items) {
+      if (item.phase == VodDownloadPhase.done && !_dropping.contains(item.id)) {
+        _generations.remove(item.id);
+        _deleteFiles.remove(item.id);
+      }
+    }
+    _items.removeWhere((item) => item.phase == VodDownloadPhase.done && !_dropping.contains(item.id));
     _publish();
     await _persist();
   }
 
   /// Removes a part file, and a finished task's file when asked.
-  Future<void> _drop(VodDownloadItem item, {bool deleteFile = false}) async {
-    _retryTimers.remove(item.id)?.cancel();
-    _items.removeWhere((row) => row.id == item.id);
-    _publish();
-    await _delete(File('${item.filePath}.part'));
-    if (deleteFile && item.phase == VodDownloadPhase.done) {
-      final video = File(item.filePath);
-      await _delete(video);
-      // The danmaku the download wrote beside it belongs to the same file:
-      // deleting the video and leaving three sidecars behind is how the folder
-      // fills with subtitles for videos nobody has.
-      await deleteDanmakuSidecars(video);
+  Future<void> _drop(VodDownloadItem item, {bool deleteFile = false, Object? generation}) async {
+    final id = item.id;
+    final token = generation ?? _generations[id];
+    if (token == null || !_dropping.add(id)) return;
+    try {
+      _retryTimers.remove(id)?.cancel();
+      if (!await _delete(File('${item.filePath}.part'))) {
+        throw FileSystemException('Cannot remove download part', item.filePath);
+      }
+      if (!_isCurrent(id, token)) return;
+      final current = _items.where((row) => row.id == id).firstOrNull;
+      if (deleteFile && current?.phase == VodDownloadPhase.done) {
+        final video = File(current!.filePath);
+        if (!await _delete(video)) {
+          throw FileSystemException('Cannot remove downloaded video', video.path);
+        }
+        await deleteDanmakuSidecars(video);
+      }
+      if (!_isCurrent(id, token)) return;
+      _items.removeWhere((row) => row.id == id);
+      _generations.remove(id);
+      _deleteFiles.remove(id);
+      _publish();
+      await _persist();
+    } finally {
+      _dropping.remove(id);
     }
-    await _persist();
   }
 
-  static Future<void> _delete(File file) async {
+  bool _isCurrent(String id, Object generation) => identical(_generations[id], generation);
+
+  static Future<bool> _delete(File file) async {
     try {
       if (file.existsSync()) await file.delete();
-    } on Object {
-      // A part file the system still holds is left for the cleaner.
+      return true;
+    } on FileSystemException {
+      return false;
     }
   }
 
@@ -614,7 +659,7 @@ final class VodDownloadsController extends Notifier<List<VodDownloadItem>> {
     var lanes = ref.read(vodDownloadSettingsProvider);
     for (final item in _items) {
       if (lanes <= 0) break;
-      if (item.phase != VodDownloadPhase.queued) continue;
+      if (item.phase != VodDownloadPhase.queued || _dropping.contains(item.id)) continue;
       lanes--;
       unawaited(_run(item.id));
     }
@@ -624,7 +669,8 @@ final class VodDownloadsController extends Notifier<List<VodDownloadItem>> {
   /// with a range request, and the row kept in step every quarter second.
   Future<void> _run(String id) async {
     final found = _items.where((row) => row.id == id).firstOrNull;
-    if (found == null || found.phase != VodDownloadPhase.queued) return;
+    if (found == null || found.phase != VodDownloadPhase.queued || _dropping.contains(id)) return;
+    final generation = _generations.putIfAbsent(id, Object.new);
     var item = found.copyWith(phase: VodDownloadPhase.running);
     _replace(item);
 
@@ -709,6 +755,7 @@ final class VodDownloadsController extends Notifier<List<VodDownloadItem>> {
       await sink.flush();
       await sink.close();
       sink = null;
+      if (_stops.containsKey(id)) throw const _Stopped();
       if (stopped) return;
       // A stream that ends early with a polite close is not a finished
       // file: the row must not claim done over bytes it never received.
@@ -717,20 +764,22 @@ final class VodDownloadsController extends Notifier<List<VodDownloadItem>> {
       if (total > 0 && received < total) {
         throw HttpException('transfer ended at $received of $total bytes');
       }
+      if (_stops.containsKey(id)) throw const _Stopped();
       final target = File(item.filePath);
       await _delete(target);
+      if (_stops.containsKey(id)) throw const _Stopped();
       final file = await scratch.rename(target.path);
+      if (_stops.containsKey(id)) throw const _Stopped();
       item = item.copyWith(received: received, speed: 0);
       _replace(item.copyWith(phase: VodDownloadPhase.done));
       await _saveDanmaku(file, item.cid);
     } on Object catch (error) {
-      if (error is! _Stopped && !stopped) {
+      if (_isCurrent(id, generation) && error is! _Stopped && !stopped) {
         item = item.copyWith(received: received, speed: 0, phase: VodDownloadPhase.failed, error: '$error');
         _replace(item);
         _scheduleRetry(item.id);
       }
     } finally {
-      _clients.remove(id);
       client?.close(force: true);
       if (sink != null) {
         try {
@@ -739,16 +788,26 @@ final class VodDownloadsController extends Notifier<List<VodDownloadItem>> {
           // The socket is gone; the bytes written are already on disk.
         }
       }
-      final stop = _stops.remove(id);
-      if (stop == _VodStop.drop) {
-        await _drop(item);
-      } else {
-        if (stop == _VodStop.pause) {
-          item = item.copyWith(received: received, speed: 0, phase: VodDownloadPhase.paused);
-          _replace(item);
+      if (_isCurrent(id, generation)) {
+        _clients.remove(id);
+        final stop = _stops.remove(id);
+        if (stop == _VodStop.drop) {
+          try {
+            await _drop(item, deleteFile: _deleteFiles.remove(id) ?? false, generation: generation);
+          } on Object catch (error) {
+            if (_isCurrent(id, generation)) {
+              _replace(item.copyWith(phase: VodDownloadPhase.failed, speed: 0, error: '$error'));
+            }
+          }
+        } else {
+          _deleteFiles.remove(id);
+          if (stop == _VodStop.pause) {
+            item = item.copyWith(received: received, speed: 0, phase: VodDownloadPhase.paused);
+            _replace(item);
+          }
+          await _persist();
+          _pump();
         }
-        await _persist();
-        _pump();
       }
     }
   }

@@ -34,6 +34,44 @@ import 'package:pure_live/shared/shared.dart'
         showPlatformPickerPanel;
 import 'package:pure_live/shared/widgets/app_dialog.dart';
 
+/// The library's inline search word, shared by the pane and the toolbar that
+/// may sit in its host page's header.
+final recorderLibrarySearchProvider = NotifierProvider<RecorderLibrarySearchController, String>(
+  RecorderLibrarySearchController.new,
+);
+
+final class RecorderLibrarySearchController extends Notifier<String> {
+  @override
+  String build() => '';
+
+  /// Narrows the library to [word]; an empty word returns to every take.
+  void search(String word) => state = word.trim();
+
+  /// Returns to every take.
+  void clear() => state = '';
+}
+
+/// Whether a take answers the search by facts already in the model: its title,
+/// anchor, site, room and file/folder names. Every word must match, so a title
+/// and site can be combined without another filter control.
+bool recordingTakeMatchesQuery(RecordingTake take, String query, String Function(String platformId) platformName) {
+  final words = query.trim().toLowerCase().split(RegExp(r'\s+')).where((word) => word.isNotEmpty);
+  if (words.isEmpty) return true;
+  final fields = [
+    take.roomTitle,
+    take.task?.anchorName ?? '',
+    take.platformId,
+    platformName(take.platformId),
+    take.roomId,
+    take.name,
+    take.platformFolder,
+    take.roomFolder,
+    take.folder,
+    take.filePath ?? '',
+  ].join('\n').toLowerCase();
+  return words.every(fields.contains);
+}
+
 /// The recording library: the takes on disk, browsed the way the recorder
 /// filed them — one day after another, the way a drive client reads a folder.
 ///
@@ -52,6 +90,8 @@ final class RecorderLibraryPane extends ConsumerStatefulWidget {
     required this.platformName,
     this.platforms = const {},
     this.excludedPlatforms = const {},
+    this.filterByPlatform = true,
+    this.emptyDescription,
     this.openRoomLabel,
     this.showHeading = true,
     this.showToolbar = true,
@@ -78,6 +118,12 @@ final class RecorderLibraryPane extends ConsumerStatefulWidget {
   /// Sites left out even when [platforms] is empty. The live centre uses this
   /// rather than a list of site ids, because the sites grow and IPTV does not.
   final Set<String> excludedPlatforms;
+
+  /// Whether the centre's shared platform filter also cuts this pane.
+  final bool filterByPlatform;
+
+  /// The empty file list's own explanation when a module scopes the tree.
+  final String? emptyDescription;
 
   /// The card's word for going to where the take was made. The live centre
   /// says 进入直播间; a module whose rooms are channels says its own, and the
@@ -129,13 +175,15 @@ final class _RecorderLibraryPaneState extends ConsumerState<RecorderLibraryPane>
       platforms: widget.platforms,
       excluded: widget.excludedPlatforms,
     );
-    final filter = ref.read(recorderPlatformFilterProvider);
-    return filter == kAllPlatforms
-        ? scoped
-        : [
-            for (final take in scoped)
-              if (take.platformId == filter) take,
-          ];
+    return _cutPlatforms(scoped, ref.read(recorderPlatformFilterProvider));
+  }
+
+  List<RecordingTake> _cutPlatforms(List<RecordingTake> scoped, String filter) {
+    if (!widget.filterByPlatform || filter == kAllPlatforms) return scoped;
+    return [
+      for (final take in scoped)
+        if (take.platformId == filter) take,
+    ];
   }
 
   @override
@@ -151,19 +199,19 @@ final class _RecorderLibraryPaneState extends ConsumerState<RecorderLibraryPane>
     );
     // The centre's platform filter cuts both lists the same way.
     final platformFilter = ref.watch(recorderPlatformFilterProvider);
-    final takes = platformFilter == kAllPlatforms
-        ? scoped
-        : [
-            for (final take in scoped)
-              if (take.platformId == platformFilter) take,
-          ];
+    final takes = _cutPlatforms(scoped, platformFilter);
+    final query = ref.watch(recorderLibrarySearchProvider);
     final filter = ref.watch(recorderLibraryFilterProvider);
-    final filtered = filter.sort.sorted(takes);
+    final filtered = filter.sort.sorted([
+      for (final take in takes)
+        if (recordingTakeMatchesQuery(take, query, widget.platformName)) take,
+    ]);
     final width = MediaQuery.sizeOf(context).width;
     final inset = LiveWindow.pageInset(width);
     final root = ref.watch(appPathsProvider).recordings.path;
     final controller = ref.read(recordingLibraryProvider.notifier);
-    final pageKey = '$platformFilter/${filter.sort.name}';
+    final pageKey =
+        '${widget.filterByPlatform ? platformFilter : kAllPlatforms}/${filter.sort.name}/${query.trim().toLowerCase()}';
     if (pageKey != _pageKey) {
       _pageKey = pageKey;
       _page = 1;
@@ -175,13 +223,6 @@ final class _RecorderLibraryPaneState extends ConsumerState<RecorderLibraryPane>
     final page = _page.clamp(1, pageCount);
     final shown = filtered.skip((page - 1) * _pageSize).take(_pageSize).toList();
     final shownKeys = {for (final take in shown) take.filePath ?? take.folder};
-    // The days in the shown order; the grouping never reorders, it follows
-    // the sort. A day split across pages repeats its header on each page.
-    final daySet = <String>{};
-    final days = <String>[
-      for (final take in shown)
-        if (daySet.add(take.day)) take.day,
-    ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -195,6 +236,7 @@ final class _RecorderLibraryPaneState extends ConsumerState<RecorderLibraryPane>
               child: RecorderLibraryToolbar(
                 platforms: recorderPlatformsOf(scoped.map((take) => take.platformId), widget.platformName),
                 nameOf: widget.platformName,
+                showPlatformFilter: widget.filterByPlatform,
               ),
             ),
           ),
@@ -220,7 +262,9 @@ final class _RecorderLibraryPaneState extends ConsumerState<RecorderLibraryPane>
                 icon: const DsIcon(DsIcons.disc3),
                 title: Text(takes.isEmpty ? t.recorder.emptyLibraryTitle : t.recorder.emptySearchTitle),
                 description: Text(
-                  takes.isEmpty ? t.recorder.emptyLibraryDescription : t.recorder.emptySearchDescription,
+                  takes.isEmpty
+                      ? widget.emptyDescription ?? t.recorder.emptyLibraryDescription
+                      : t.recorder.emptySearchDescription,
                 ),
                 actions: [
                   if (takes.isEmpty)
@@ -232,7 +276,7 @@ final class _RecorderLibraryPaneState extends ConsumerState<RecorderLibraryPane>
                 ],
               ),
             ),
-            (false, false) => _dayGroups(shown, days, inset),
+            (false, false) => _dayGroups(shown, inset),
           },
         ),
         if (filtered.isNotEmpty)
@@ -291,44 +335,48 @@ final class _RecorderLibraryPaneState extends ConsumerState<RecorderLibraryPane>
   /// whose layout extent exceeds its paint extent once a pinned child sits
   /// inside it, which aborts the viewport's layout and leaves the next pointer
   /// event hit-testing slivers that were never laid out.
-  Widget _dayGroups(List<RecordingTake> shown, List<String> days, double inset) {
+  Widget _dayGroups(List<RecordingTake> shown, double inset) {
     final t = context.t;
+    final grouped = <String, List<RecordingTake>>{};
+    for (final take in shown) {
+      grouped.putIfAbsent(take.day, () => <RecordingTake>[]).add(take);
+    }
     return Padding(
       padding: EdgeInsets.fromLTRB(inset, DsSpace.s8, inset, DsSpace.s12),
       child: CustomScrollView(
         slivers: [
-          for (final day in days) ...[
+          for (final entry in grouped.entries) ...[
             SliverToBoxAdapter(
               child: _DayHeader(
-                title: _dayTitle(day),
+                title: _dayTitle(entry.key),
                 summary: t.recorder.groupSummary(
-                  count: shown.where((take) => take.day == day).length,
-                  size: formatRecordingBytes(
-                    shown.where((take) => take.day == day).fold<int>(0, (total, take) => total + take.bytes),
-                  ),
+                  count: entry.value.length,
+                  size: formatRecordingBytes(entry.value.fold<int>(0, (total, take) => total + take.bytes)),
                 ),
-                collapsed: _collapsed.contains(day),
+                collapsed: _collapsed.contains(entry.key),
                 onToggle: () => setState(() {
-                  if (!_collapsed.remove(day)) _collapsed.add(day);
+                  if (!_collapsed.remove(entry.key)) _collapsed.add(entry.key);
                 }),
               ),
             ),
-            if (!_collapsed.contains(day))
+            if (!_collapsed.contains(entry.key))
               SliverList(
-                delegate: SliverChildListDelegate([
-                  for (final take in shown)
-                    if (take.day == day)
-                      _TakeRow(
-                        take: take,
-                        selected: _selected,
-                        onSelect: _toggle,
-                        onPlay: () => _play(take),
-                        onOpenRoom: take.task == null ? null : () => widget.onOpenRoom(take),
-                        onDelete: () => unawaited(_confirmDeleteTake(take)),
-                        openRoomLabel: widget.openRoomLabel ?? t.recorder.openRoom,
-                        platformName: widget.platformName,
-                      ),
-                ]),
+                delegate: SliverChildBuilderDelegate((context, index) {
+                  final take = entry.value[index];
+                  return KeyedSubtree(
+                    key: ValueKey(take.filePath ?? take.folder),
+                    child: _TakeRow(
+                      take: take,
+                      selected: _selected,
+                      onSelect: _toggle,
+                      onPlay: () => _play(take),
+                      onOpenRoom: take.task == null ? null : () => widget.onOpenRoom(take),
+                      onDelete: () => unawaited(_confirmDeleteTake(take)),
+                      openRoomLabel: widget.openRoomLabel ?? t.recorder.openRoom,
+                      platformName: widget.platformName,
+                    ),
+                  );
+                }, childCount: entry.value.length),
               ),
           ],
         ],
@@ -349,7 +397,14 @@ final class _RecorderLibraryPaneState extends ConsumerState<RecorderLibraryPane>
     // The run is everything on screen, ordered as the viewer sees it, so the
     // player's next and previous walk the library in its own order.
     final filter = ref.read(recorderLibraryFilterProvider);
-    widget.onPlay(filter.sort.sorted(_all), take);
+    final query = ref.read(recorderLibrarySearchProvider);
+    widget.onPlay(
+      filter.sort.sorted([
+        for (final candidate in _all)
+          if (recordingTakeMatchesQuery(candidate, query, widget.platformName)) candidate,
+      ]),
+      take,
+    );
   }
 
   // -- actions --------------------------------------------------------------
@@ -381,23 +436,42 @@ final class _RecorderLibraryPaneState extends ConsumerState<RecorderLibraryPane>
       for (final take in filtered)
         if (_selected.contains(take.filePath ?? take.folder)) take,
     ];
+    if (picked.isEmpty) return;
+    final t = context.t;
+    final bytes = picked.fold<int>(0, (total, take) => total + take.bytes);
+    final confirmed = await showAppConfirm(
+      context: context,
+      title: t.common.deleteSelected(count: picked.length),
+      description: [
+        t.recorder.deleteTakeBody(count: picked.length),
+        t.recorder.librarySummary(count: picked.length, size: formatRecordingBytes(bytes)),
+        // The cache confirmation already carries the irreversible warning; no
+        // second, untranslated warning is introduced for this destructive verb.
+        t.recorder.cacheClearConfirmDesc,
+      ].join('\n'),
+      confirmLabel: t.recorder.deleteSelected,
+      cancelLabel: t.common.cancel,
+      destructive: true,
+    );
+    if (!confirmed || !mounted) return;
+    // The confirmed snapshot, not the mutable selection, is what is deleted.
     final removed = await _deleteAll(picked);
     if (!mounted) return;
     setState(_selected.clear);
     showDsToast(
       context: context,
-      title: removed == 0 ? context.t.recorder.deleteBlocked : context.t.recorder.deletedToast(count: removed),
+      title: removed == 0 ? t.recorder.deleteBlocked : t.recorder.deletedToast(count: removed),
     );
     if (removed > 0) unawaited(ref.read(recordingTasksProvider.notifier).reload());
   }
 
   /// Deletes each take folder, skipping any the engine is still writing or
-  /// joining; the answer is how many actually went.
+  /// joining and any file the current task still owns; the answer is how many
+  /// actually went.
   ///
-  /// A take that had a task row is marked 文件已删除 on the way out. Without
-  /// that the row would stop being the page's business (a saved row with a path
-  /// is the library's) while the library had nothing left to show for it — and
-  /// the recording would vanish from both lists with no way back to it.
+  /// A historical take shares its room's task row with the newest take. Only
+  /// that current file may be marked 文件已删除: clearing an older file must not
+  /// make the newest recording disappear from the task list as well.
   Future<int> _deleteAll(List<RecordingTake> takes) async {
     final controller = ref.read(recordingLibraryProvider.notifier);
     final store = ref.read(recordingTasksProvider.notifier);
@@ -405,15 +479,25 @@ final class _RecorderLibraryPaneState extends ConsumerState<RecorderLibraryPane>
     for (final take in takes) {
       if (!await controller.deleteTake(take)) continue;
       removed++;
-      final row = take.task;
-      if (row == null) continue;
-      if (row.state == RecordingTaskState.stopped) {
-        await store.setStopped(row.id, filePath: row.takeDirectory, bytes: 0, warning: kRecordingFileDeletedWarning);
+      final original = take.task;
+      final file = take.filePath;
+      if (original == null || file == null) continue;
+      final current = ref.read(recordingTasksProvider).tasks.where((task) => task.id == original.id).firstOrNull;
+      if (current == null || !current.startedAt.isAtSameMomentAs(original.startedAt)) continue;
+      if (!taskOwnsFile(current, file)) continue;
+      if (current.state == RecordingTaskState.stopped) {
+        await store.setStopped(
+          current.id,
+          expectedStartedAt: current.startedAt,
+          filePath: current.takeDirectory,
+          bytes: 0,
+          warning: kRecordingFileDeletedWarning,
+        );
       } else {
         // A waiting or failed row keeps its own state — only the gone
         // file's record clears, or the card reads 文件已删除 over a
         // subscription that is about to start.
-        await store.add(row.copyWith(filePath: row.takeDirectory, bytes: 0));
+        await store.add(current.copyWith(filePath: current.takeDirectory, bytes: 0));
       }
     }
     return removed;
@@ -472,12 +556,19 @@ Future<void> playRecordingTake(
     items: items,
     initialIndex: index,
     onDeleted: (item) async {
-      final takes = ref.read(recordingLibraryProvider).value ?? const <RecordingTake>[];
-      final row = takes.where((candidate) => candidate.filePath == item.path).firstOrNull?.task;
+      final row = ref.read(recordingTasksProvider).tasks.where((task) => taskOwnsFile(task, item.path)).firstOrNull;
+      // The library can hold several takes for one room. An older file going
+      // from the player must not clear the newest take's path or warning.
       if (row != null) {
         await ref
             .read(recordingTasksProvider.notifier)
-            .setStopped(row.id, filePath: row.takeDirectory, bytes: 0, warning: kRecordingFileDeletedWarning);
+            .setStopped(
+              row.id,
+              expectedStartedAt: row.startedAt,
+              filePath: row.takeDirectory,
+              bytes: 0,
+              warning: kRecordingFileDeletedWarning,
+            );
       }
       await ref.read(recordingLibraryProvider.notifier).refresh();
     },
@@ -492,7 +583,12 @@ Future<void> playRecordingTake(
 final class RecorderLibraryToolbar extends ConsumerWidget {
   /// The toolbar over the module's takes; [platforms] feed the platform
   /// filter, named by [nameOf].
-  const RecorderLibraryToolbar({required this.platforms, required this.nameOf, super.key});
+  const RecorderLibraryToolbar({
+    required this.platforms,
+    required this.nameOf,
+    this.showPlatformFilter = true,
+    super.key,
+  });
 
   /// The site ids the list holds.
   final List<String> platforms;
@@ -500,11 +596,15 @@ final class RecorderLibraryToolbar extends ConsumerWidget {
   /// A site id's display name.
   final String Function(String id) nameOf;
 
+  /// Whether this toolbar offers a platform choice.
+  final bool showPlatformFilter;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
     final library = ref.watch(recordingLibraryProvider);
     final root = ref.watch(appPathsProvider).recordings.path;
+    final query = ref.watch(recorderLibrarySearchProvider);
     return LayoutBuilder(
       builder: (context, constraints) {
         // The pane's own width decides the verbs' dress — the window's width
@@ -514,7 +614,15 @@ final class RecorderLibraryToolbar extends ConsumerWidget {
           mainAxisSize: MainAxisSize.min,
           spacing: DsSpace.s8,
           children: [
-            RecorderPlatformFilterButton(platforms: platforms, nameOf: nameOf, compact: compact),
+            DsButton.icon(
+              variant: query.isEmpty ? DsButtonVariant.secondary : DsButtonVariant.primary,
+              size: DsSize.sm,
+              onPressed: () => unawaited(_editLibrarySearch(context, ref)),
+              icon: const DsIcon(DsIcons.search, size: 16),
+              semanticLabel: t.recorder.searchHint,
+            ),
+            if (showPlatformFilter)
+              RecorderPlatformFilterButton(platforms: platforms, nameOf: nameOf, compact: compact),
             // The order reads straight from this menu: it was the filter's only
             // condition, so a panel in between only added a step.
             DsMenuAnchor(
@@ -567,13 +675,61 @@ final class RecorderLibraryToolbar extends ConsumerWidget {
   }
 }
 
+/// Opens the library's text search in the app's own dialog. Keeping the field
+/// here leaves the header's verbs on one line; the list narrows in place.
+Future<void> _editLibrarySearch(BuildContext context, WidgetRef ref) async {
+  final t = context.t;
+  final search = ref.read(recorderLibrarySearchProvider.notifier);
+  final field = TextEditingController(text: ref.read(recorderLibrarySearchProvider));
+  var query = field.text;
+  await showAppDialog<void>(
+    context: context,
+    builder: (context) => AppDialog(
+      title: Text(t.recorder.searchHint),
+      description: DsTextField(
+        controller: field,
+        autofocus: true,
+        clearable: true,
+        placeholder: t.recorder.searchHint,
+        semanticLabel: t.recorder.searchHint,
+        onChanged: (next) => query = next,
+        onSubmitted: (next) {
+          query = next;
+          Navigator.of(context).pop();
+          search.search(query);
+        },
+      ),
+      actions: [
+        DsButton(
+          variant: DsButtonVariant.secondary,
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(t.common.cancel),
+        ),
+        DsButton(
+          onPressed: () {
+            Navigator.of(context).pop();
+            search.search(query);
+          },
+          child: Text(t.common.confirm),
+        ),
+      ],
+    ),
+  );
+  field.dispose();
+}
+
 /// The library's verbs folded into one menu for a phone: the order, the folder
 /// and the walk-again refresh, so the page switch keeps the header line to
 /// itself instead of stacking a second band of buttons under it.
 final class RecorderLibraryToolbarMore extends ConsumerWidget {
   /// Creates the compact toolbar; [platforms] feed the platform filter, named
   /// by [nameOf].
-  const RecorderLibraryToolbarMore({required this.platforms, required this.nameOf, super.key});
+  const RecorderLibraryToolbarMore({
+    required this.platforms,
+    required this.nameOf,
+    this.showPlatformFilter = true,
+    super.key,
+  });
 
   /// The site ids the list holds.
   final List<String> platforms;
@@ -581,12 +737,16 @@ final class RecorderLibraryToolbarMore extends ConsumerWidget {
   /// A site id's display name.
   final String Function(String id) nameOf;
 
+  /// Whether this toolbar offers a platform choice.
+  final bool showPlatformFilter;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
     final library = ref.watch(recordingLibraryProvider);
     final root = ref.watch(appPathsProvider).recordings.path;
     final filter = ref.watch(recorderLibraryFilterProvider);
+    final query = ref.watch(recorderLibrarySearchProvider);
     final controller = ref.read(recorderLibraryFilterProvider.notifier);
     return DsButton(
       variant: DsButtonVariant.secondary,
@@ -602,30 +762,44 @@ final class RecorderLibraryToolbarMore extends ConsumerWidget {
             DsListSection(
               children: [
                 DsListRow(
-                  leading: const DsIcon(DsIcons.antenna, size: 16),
-                  title: Text(t.recorder.filterPlatformGroup),
-                  detail: Text(switch (ref.watch(recorderPlatformFilterProvider)) {
-                    final id when id != kAllPlatforms => nameOf(id),
-                    _ => t.recorder.filterAll,
-                  }),
+                  leading: const DsIcon(DsIcons.search, size: 16),
+                  title: Text(t.recorder.searchHint),
+                  detail: query.isEmpty ? null : Text(query),
                   onPressed: () {
                     Navigator.of(context).pop();
-                    unawaited(
-                      showPlatformPickerPanel(
-                        context,
-                        platforms: [kAllPlatforms, ...platforms],
-                        current: ref.read(recorderPlatformFilterProvider),
-                        nameOf: (id) => id == kAllPlatforms ? t.recorder.filterAll : nameOf(id),
-                        iconOf: (id) => id == kAllPlatforms
-                            ? null
-                            : localizedSiteIcon(ref.read(sitesProvider).getById(id), size: 32),
-                        onChanged: (id) => ref.read(recorderPlatformFilterProvider.notifier).selected = id,
-                      ),
-                    );
+                    unawaited(_editLibrarySearch(context, ref));
                   },
                 ),
               ],
             ),
+            if (showPlatformFilter)
+              DsListSection(
+                children: [
+                  DsListRow(
+                    leading: const DsIcon(DsIcons.antenna, size: 16),
+                    title: Text(t.recorder.filterPlatformGroup),
+                    detail: Text(switch (ref.watch(recorderPlatformFilterProvider)) {
+                      final id when id != kAllPlatforms => nameOf(id),
+                      _ => t.recorder.filterAll,
+                    }),
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      unawaited(
+                        showPlatformPickerPanel(
+                          context,
+                          platforms: [kAllPlatforms, ...platforms],
+                          current: ref.read(recorderPlatformFilterProvider),
+                          nameOf: (id) => id == kAllPlatforms ? t.recorder.filterAll : nameOf(id),
+                          iconOf: (id) => id == kAllPlatforms
+                              ? null
+                              : localizedSiteIcon(ref.read(sitesProvider).getById(id), size: 32),
+                          onChanged: (id) => ref.read(recorderPlatformFilterProvider.notifier).selected = id,
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
             DsListSection(
               header: Text(t.recorder.sortLabel),
               children: [

@@ -55,13 +55,20 @@ import 'package:pure_live/shared/shared.dart'
         PlaybackLayout,
         PlayerCapsuleHead,
         PlayerIdleProgress,
+        PlayerMoreHues,
         PlayerMoreRow,
+        PlayerMoreTile,
+        PlayerMoreTiles,
+        PlayerPipChrome,
+        PlayerPipVerb,
+        PlayerStatsOverlay,
         RoomCoverChip,
         SectionHeader,
         cachedImage,
         capturePlayerFrame,
         kPlaybackCompactBreakpoint,
         kRoomCoverScrim,
+        playerBarLine,
         playerStatsVisibleProvider,
         showPlayerMoreContainer,
         silencePlayer;
@@ -74,6 +81,12 @@ import 'package:share_plus/share_plus.dart' show ShareParams, SharePlus;
 /// The first episode opens with the page; picking another switches the same
 /// handle to it. Episodes are addressed by `ep_id` through the signed PGC
 /// play endpoint, which is what the login-gated renditions need.
+/// The exact episode essence the page has successfully opened.
+typedef _SeasonMediaIdentity = ({int seasonId, int episodeId, int? cid, int? aid});
+
+/// The newest episode request; a newer pick replaces an older pending one.
+typedef _SeasonOpenIntent = ({VodEpisode episode, int? qn, Duration? resumeFrom});
+
 final class VodSeasonPage extends ConsumerStatefulWidget {
   /// The season behind [seasonId].
   const VodSeasonPage({required this.seasonId, super.key});
@@ -91,6 +104,11 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
 
   VodEpisode? _episode;
   VodPlayInfo? _play;
+  _SeasonMediaIdentity? _openedIdentity;
+  _SeasonOpenIntent? _pendingEpisode;
+  PlayerHandle? _attemptHandle;
+  int _openGeneration = 0;
+  int _openedGeneration = 0;
   int _qn = _defaultQn;
 
   /// The definition actually opened. The request names the whole ladder and
@@ -164,7 +182,6 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
   /// Whether the end of the episode has already been acted on.
   bool _finished = false;
   PlayerHandle? _handle;
-  PlayerId? _boundPlayer;
   StreamSubscription<PlayerTransportState>? _transportSub;
   StreamSubscription<PlayerAdapterEvent>? _eventSub;
   StreamSubscription<void>? _geometrySub;
@@ -181,6 +198,8 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
   String? _error;
   bool _opening = false;
   bool _silent = false;
+  bool _muted = false;
+  bool _globalMute = false;
   bool _disposed = false;
   bool _autoOpened = false;
   double? _dragSeconds;
@@ -213,6 +232,44 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
   PresentationMode _presentationMode = PresentationMode.normal;
 
   bool get _immersive => ref.read(roomPresentationProvider.notifier).modeOwnsWindow(ref.read(roomPresentationProvider));
+  bool get _effectivelyMuted => _muted || _globalMute;
+
+  _SeasonMediaIdentity _identityOf(VodEpisode episode) =>
+      (seasonId: widget.seasonId, episodeId: episode.id, cid: episode.cid, aid: episode.aid);
+
+  VodEpisode? _episodeOf(_SeasonMediaIdentity? identity) {
+    if (identity == null) return null;
+    for (final episode in _seasonDetail?.episodes ?? const <VodEpisode>[]) {
+      if (_identityOf(episode) == identity) return episode;
+    }
+    return null;
+  }
+
+  /// Only a successfully opened source may answer transport controls. The
+  /// handle being switched is deliberately absent from this path.
+  PlayerHandle? get _playableHandle {
+    final handle = _handle;
+    if (!mounted || _disposed || _opening || _openedIdentity == null || _openedGeneration != _openGeneration) {
+      return null;
+    }
+    return handle;
+  }
+
+  bool _isCurrentGeneration(int generation) => mounted && !_disposed && generation == _openGeneration;
+
+  void _clearTransportSubscriptions() {
+    unawaited(_transportSub?.cancel() ?? Future<void>.value());
+    unawaited(_eventSub?.cancel() ?? Future<void>.value());
+    unawaited(_geometrySub?.cancel() ?? Future<void>.value());
+    _transportSub = null;
+    _eventSub = null;
+    _geometrySub = null;
+  }
+
+  void _releaseHandle(PlayerHandle handle) {
+    silencePlayer(handle);
+    unawaited(_kernel.release(handle.id));
+  }
 
   @override
   void initState() {
@@ -234,6 +291,7 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
     // will take a brightness write at all.
     _volume = ref.read(modulePlaybackSettingsProvider(PlayerModule.vod)).volume;
     _speed = ref.read(vodPlaybackSettingsProvider).speed.value;
+    _globalMute = ref.read(playbackSettingsProvider).globalMute;
     // The background rule the video page plays by: the gate decides whether
     // leaving the app pauses this picture, and what resumes it.
     WidgetsBinding.instance.addObserver(this);
@@ -246,17 +304,16 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
             presentation != PresentationMode.floating;
       },
       pause: () async {
-        _backgroundPausedHandle = _handle?.id;
-        await _handle?.pause();
+        _backgroundPausedHandle = _playableHandle?.id;
+        await _playableHandle?.pause();
       },
       canResume: () =>
           _backgroundPausedHandle != null &&
-          _handle != null &&
-          _handle?.id == _backgroundPausedHandle &&
+          _playableHandle?.id == _backgroundPausedHandle &&
           !(_transport?.isPlaying ?? false),
       resume: () async {
         _backgroundPausedHandle = null;
-        await _handle?.play();
+        await _playableHandle?.play();
       },
     );
     unawaited(_syncBrightness());
@@ -284,7 +341,7 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
   /// pauses rather than playing under it — the archive page's own rule.
   @override
   void didPushNext() {
-    final handle = _handle;
+    final handle = _playableHandle;
     if (handle != null && (_transport?.isPlaying ?? false)) {
       unawaited(handle.pause().catchError((Object _) {}));
     }
@@ -298,7 +355,7 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
           .read(audioArbiterProvider.notifier)
           .claim(
             AudioOwner(AudioOwnerKind.vod, 'vod-season:${widget.seasonId}'),
-            () => Future<void>.value(_handle?.pause()),
+            () => Future<void>.value(_playableHandle?.pause()),
           ),
     );
   }
@@ -316,7 +373,9 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
     // was captured while it was alive: a `ref` read here throws, and a page
     // that throws on its way out never releases the handle — the picture keeps
     // sounding with nothing left on screen to stop it.
-    final handle = _handle;
+    final handle = _handle ?? _attemptHandle;
+    _handle = null;
+    _attemptHandle = null;
     if (handle != null) {
       if (_presentationNotifier.modeOwnsWindow(_presentationMode)) {
         unawaited(_presentationNotifier.exit(handle.id));
@@ -332,161 +391,188 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
     _gestureTimer?.cancel();
     _hideTimer?.cancel();
     _countdownTimer?.cancel();
-    unawaited(_eventSub?.cancel() ?? Future<void>.value());
-    unawaited(_transportSub?.cancel() ?? Future<void>.value());
-    unawaited(_geometrySub?.cancel() ?? Future<void>.value());
+    _clearTransportSubscriptions();
     super.dispose();
   }
 
   Future<void> _openEpisode(VodEpisode episode, {int? qn, Duration? resumeFrom}) async {
+    if (!mounted || _disposed) return;
+    // A pick made while another source is opening is intent, not noise: keep
+    // only the newest one and drain it after the current attempt settles.
+    _pendingEpisode = (episode: episode, qn: qn, resumeFrom: resumeFrom);
     if (_opening) return;
-    setState(() {
-      _opening = true;
-      _episode = episode;
-      _play = null;
-      _silent = false;
-      _transport = null;
-      _dragSeconds = null;
-      _error = null;
-      _finished = false;
-    });
-    // The checkpoint the cinema's continue card reads: where this series
-    // was left, rewritten at every episode open so the card always names
-    // the ladder's current position.
-    final detail = ref.read(vodSeasonDetailProvider(widget.seasonId)).value;
-    final index = detail?.episodes.indexOf(episode) ?? -1;
-    // The continue position rides its episode: an episode re-opened
-    // carries on from its checkpoint seconds (the UGC page's rule), an
-    // explicit resume — a quality switch — uses the picture's own
-    // position, a fresh episode starts at its opening.
-    VodSeasonProgress? checkpoint;
-    for (final entry in ref.read(vodSeasonProgressProvider)) {
-      if (entry.seasonId == '${widget.seasonId}') {
-        checkpoint = entry;
-        break;
+    await _drainEpisodeOpens();
+  }
+
+  Future<void> _drainEpisodeOpens() async {
+    while (mounted && !_disposed && _pendingEpisode != null) {
+      final intent = _pendingEpisode!;
+      _pendingEpisode = null;
+      final episode = intent.episode;
+      final generation = ++_openGeneration;
+      final fallback = _episodeOf(_openedIdentity) ?? _episode;
+      // Checkpoint the source that actually reported a transport before its
+      // identity is cleared; the requested episode has not opened yet.
+      _savePosition(force: true);
+      final detail = ref.read(vodSeasonDetailProvider(widget.seasonId)).value;
+      final index = detail?.episodes.indexOf(episode) ?? -1;
+      VodSeasonProgress? checkpoint;
+      for (final entry in ref.read(vodSeasonProgressProvider)) {
+        if (entry.seasonId == '${widget.seasonId}') {
+          checkpoint = entry;
+          break;
+        }
       }
-    }
-    final Duration? from;
-    if (resumeFrom != null) {
-      from = resumeFrom;
-    } else if (checkpoint != null && checkpoint.episodeIndex == index && (checkpoint.positionSeconds ?? 0) > 5) {
-      from = Duration(seconds: checkpoint.positionSeconds!.round());
-    } else {
-      from = null;
-    }
-    if (detail != null && index >= 0) {
-      unawaited(
-        ref
-            .read(vodSeasonProgressProvider.notifier)
-            .save(
-              seasonId: '${widget.seasonId}',
-              title: detail.title,
-              cover: detail.coverUrl,
-              episodeIndex: index,
-              total: detail.episodes.length,
-              positionSeconds: from == null ? null : from.inMilliseconds / 1000,
-            ),
-      );
-    }
-    // The next episode has its own ladder, its own position and its own held
-    // rate, so none of this one's gestures or countdown carries over.
-    _resetScrub();
-    _cancelCountdown();
-    final previous = _handle;
-    if (previous != null) {
-      try {
-        await previous.pause();
-      } on Object {
-        // The switch itself reports a player that will not answer.
+      final Duration? from;
+      if (intent.resumeFrom != null) {
+        from = intent.resumeFrom;
+      } else if (checkpoint != null && checkpoint.episodeIndex == index && (checkpoint.positionSeconds ?? 0) > 5) {
+        from = Duration(seconds: checkpoint.positionSeconds!.round());
+      } else {
+        from = null;
       }
-    }
-    try {
-      // The app interface's PGC service when the viewer chose it and signed
-      // in; a refusal falls back to the web endpoint. Either is asked for the
-      // whole ladder, and `want` picks the picture out of it — the same split
-      // the archive page keeps, so a tier the account may have is never
-      // hidden by the number the request carried.
-      final appClient = ref.read(vodAppClientProvider);
-      final want = qn ?? _qn;
+      final want = intent.qn ?? _qn;
       _qn = want;
-      VodPlayInfo info;
-      if (ref.read(vodPlaybackSettingsProvider).apiType == VodApiType.app && appClient != null) {
-        try {
-          info = await appClient.playPgc(epid: episode.id, cid: episode.cid);
-        } on Object {
+      final previous = _handle;
+      _handle = null;
+      _attemptHandle = null;
+      _openedIdentity = null;
+      _openedGeneration = 0;
+      _backgroundPausedHandle = null;
+      _clearTransportSubscriptions();
+      // Retire the old source before any network wait. Reusing it here leaves
+      // the previous episode audible when the next source fails to open.
+      if (previous != null) _releaseHandle(previous);
+      _resetScrub();
+      _cancelCountdown();
+      _gestureTimer?.cancel();
+      setState(() {
+        _opening = true;
+        _episode = episode;
+        _play = null;
+        _silent = false;
+        _transport = null;
+        _dragSeconds = null;
+        _error = null;
+        _finished = false;
+        _openedQn = want;
+        _openedLabel = null;
+        _aspectRatio = 16 / 9;
+        _openPanel = null;
+        _gestureKind = null;
+        _gestureValue = null;
+        _gestureNote = null;
+        _speedHeld = false;
+        _speedBeforeHold = _speed;
+      });
+      if (!_isCurrentGeneration(generation)) return;
+      try {
+        final appClient = ref.read(vodAppClientProvider);
+        VodPlayInfo info;
+        if (ref.read(vodPlaybackSettingsProvider).apiType == VodApiType.app && appClient != null) {
+          try {
+            info = await appClient.playPgc(epid: episode.id, cid: episode.cid);
+          } on Object {
+            info = await ref.read(vodClientProvider).pgcPlay(episodeId: episode.id, cid: episode.cid, aid: episode.aid);
+          }
+        } else {
           info = await ref.read(vodClientProvider).pgcPlay(episodeId: episode.id, cid: episode.cid, aid: episode.aid);
         }
-      } else {
-        info = await ref.read(vodClientProvider).pgcPlay(episodeId: episode.id, cid: episode.cid, aid: episode.aid);
-      }
-      if (!mounted || _disposed) return;
-      final kernel = ref.read(playerKernelProvider);
-      final handle =
-          previous ??
-          await kernel.create(
-            config: const PlayerConfig(name: 'vod-pgc'),
-            preferredBackend: ref.read(playerKernelBackendProvider).id,
-          );
-      if (!mounted || _disposed) {
-        if (previous == null) unawaited(kernel.release(handle.id));
-        return;
-      }
-      _handle = handle;
-      _bind(handle);
-      _holdSound();
-      // A playing mini window belongs to the episode the viewer just left;
-      // a new one here supersedes it (its close path checkpoints the old).
-      FloatingVideoWindow.dismiss();
-      final picture = vodDashVideoOf(info, maxQuality: want);
-      _openedQn = picture?.quality ?? info.servedQuality ?? want;
-      _openedLabel = vodQualityLabel(info, _openedQn) ?? info.quality;
-      final dash = vodDashSourceOf(info, maxQuality: want);
-      if (dash != null) {
-        try {
-          await handle.openMedia(dash, autoPlay: true);
-          // media_core signals "this engine cannot join two essences" as an
-          // UnsupportedError; the muxed request below is its handler.
-          // ignore: avoid_catching_errors
-        } on UnsupportedError {
-          // A single-URL engine: ask the muxed answer, whose sound is inside
-          // the file.
-          info = await ref
-              .read(vodClientProvider)
-              .pgcPlay(episodeId: episode.id, cid: episode.cid, aid: episode.aid, dash: false);
-          if (!mounted || _disposed) return;
-          _openedQn = info.servedQuality ?? _openedQn;
-          _openedLabel = info.quality;
+        if (!_isCurrentGeneration(generation)) return;
+        final handle = await _kernel.create(
+          config: const PlayerConfig(name: 'vod-pgc'),
+          preferredBackend: ref.read(playerKernelBackendProvider).id,
+        );
+        if (!_isCurrentGeneration(generation)) {
+          _releaseHandle(handle);
+          return;
+        }
+        _attemptHandle = handle;
+        _handle = handle;
+        _bind(handle, generation);
+        _holdSound();
+        FloatingVideoWindow.dismiss();
+        await handle.setMute(muted: _effectivelyMuted);
+        final picture = vodDashVideoOf(info, maxQuality: want);
+        _openedQn = picture?.quality ?? info.servedQuality ?? want;
+        _openedLabel = vodQualityLabel(info, _openedQn) ?? info.quality;
+        final dash = vodDashSourceOf(info, maxQuality: want);
+        _holdSound();
+        await handle.setMute(muted: _effectivelyMuted);
+        if (!_isCurrentGeneration(generation)) return;
+        if (dash != null) {
+          try {
+            await handle.openMedia(dash, autoPlay: true);
+            // media_core signals "this engine cannot join two essences" as an
+            // UnsupportedError; the muxed request below is its handler.
+            // ignore: avoid_catching_errors
+          } on UnsupportedError {
+            info = await ref
+                .read(vodClientProvider)
+                .pgcPlay(episodeId: episode.id, cid: episode.cid, aid: episode.aid, dash: false);
+            if (!_isCurrentGeneration(generation)) return;
+            _openedQn = info.servedQuality ?? _openedQn;
+            _openedLabel = info.quality;
+            _holdSound();
+            await handle.setMute(muted: _effectivelyMuted);
+            await handle.open(_episodeSource(info, episode), autoPlay: true);
+          }
+        } else {
           await handle.open(_episodeSource(info, episode), autoPlay: true);
         }
-      } else {
-        await handle.open(_episodeSource(info, episode), autoPlay: true);
+        if (!_isCurrentGeneration(generation)) return;
+        await handle.setVolume(_volume);
+        await handle.setMute(muted: _effectivelyMuted);
+        await handle.setRate(_speed);
+        if (from != null && from.inMilliseconds > 5000) {
+          await handle.seek(from);
+        }
+        if (!_isCurrentGeneration(generation)) return;
+        // The identity is published only after the source and its opening
+        // options succeeded. Every control and checkpoint reads this identity.
+        _openedIdentity = _identityOf(episode);
+        _openedGeneration = generation;
+        _attemptHandle = null;
+        setState(() {
+          _play = info;
+          _silent = info.silent;
+          _opening = false;
+        });
+        if (detail != null && index >= 0) {
+          unawaited(
+            ref
+                .read(vodSeasonProgressProvider.notifier)
+                .save(
+                  seasonId: '${widget.seasonId}',
+                  title: detail.title,
+                  cover: detail.coverUrl,
+                  episodeIndex: index,
+                  total: detail.episodes.length,
+                  positionSeconds: from == null ? null : from.inMilliseconds / 1000,
+                ),
+          );
+        }
+        _wake();
+      } on Object catch (failure) {
+        final stale = _attemptHandle ?? _handle;
+        _handle = null;
+        _attemptHandle = null;
+        _openedIdentity = null;
+        _openedGeneration = 0;
+        _clearTransportSubscriptions();
+        if (stale != null) _releaseHandle(stale);
+        if (!mounted || _disposed) return;
+        setState(() {
+          _episode = fallback;
+          _opening = false;
+          _play = null;
+          _silent = false;
+          _transport = null;
+          _dragSeconds = null;
+          _openedLabel = null;
+          _error = failure is VodFailure ? failure.message : '$failure';
+        });
       }
-      if (!mounted || _disposed) return;
-      // The sound and the rate the page already answers to belong to the new
-      // episode too; an engine that kept the old handle remembers neither.
-      await handle.setVolume(_volume);
-      await handle.setRate(_speed);
-      // A continue position outranks the opening titles; the fresh
-      // episode skips none.
-      if (from != null && from.inMilliseconds > 5000) {
-        await handle.seek(from);
-      }
-      // A seek on a stalled source can outlast the page; the video page's
-      // own guard applies here too.
-      if (!mounted || _disposed) return;
-      setState(() {
-        _play = info;
-        _silent = info.silent;
-        _opening = false;
-      });
-      _wake();
-    } on Object catch (failure) {
-      if (!mounted || _disposed) return;
-      setState(() {
-        _opening = false;
-        _transport = null;
-        _error = failure is VodFailure ? failure.message : '$failure';
-      });
     }
   }
 
@@ -495,9 +581,9 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
   /// open-time write names the ladder's position; this one adds the
   /// where within the episode.
   void _savePosition({bool force = false, Duration? positionOverride, bool markDone = false}) {
-    final episode = _episode;
+    final episode = _episodeOf(_openedIdentity);
     final transport = _transport;
-    if (episode == null || transport == null) return;
+    if (episode == null || transport == null || _openedGeneration != _openGeneration) return;
     final total = transport.duration.inMilliseconds;
     // The floating mini window hands its last second over on the way out;
     // this page's own transport stopped at the handoff, so the override
@@ -682,8 +768,7 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
   }
 
   void _wheelVolume(double delta) {
-    final handle = _handle;
-    if (handle == null) return;
+    if (_playableHandle == null) return;
     final step = ref.read(playbackSettingsProvider).volumeWheelStepPercent / 100;
     final next = (_volume + (delta > 0 ? -step : step)).clamp(0.0, 1.0);
     _showGesture(VodGestureKind.volume, '${(next * 100).round()}%');
@@ -691,7 +776,7 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
   }
 
   Future<void> _setVolume(double value) async {
-    final handle = _handle;
+    final handle = _playableHandle;
     if (handle == null) return;
     setState(() => _volume = value);
     // The module remembers it: the next episode opens here.
@@ -703,19 +788,25 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
     }
   }
 
-  Future<void> _toggleMute() async {
-    final handle = _handle;
+  Future<void> _setMuted({required bool muted}) async {
+    final handle = _playableHandle;
+    if (!muted && _globalMute) {
+      _globalMute = false;
+      unawaited(ref.read(playbackSettingsProvider.notifier).setGlobalMute(value: false));
+    }
+    if (mounted) setState(() => _muted = muted);
     if (handle == null) return;
     try {
-      await handle.setMute(muted: !handle.muted);
+      await handle.setMute(muted: _effectivelyMuted);
     } on Object {
       // A refused mute is not a playback failure.
     }
-    if (mounted) setState(() {});
   }
 
+  Future<void> _toggleMute() => _setMuted(muted: !_effectivelyMuted);
+
   Future<void> _setSpeed(double rate) async {
-    final handle = _handle;
+    final handle = _playableHandle;
     if (handle == null) return;
     setState(() => _speed = rate);
     try {
@@ -728,7 +819,7 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
   /// Steps the episode by [seconds] and says where it landed.
   Future<void> _stepSeek(double seconds) async {
     final transport = _transport;
-    final handle = _handle;
+    final handle = _playableHandle;
     if (transport == null || handle == null) return;
     final total = transport.duration.inMilliseconds / 1000;
     var target = transport.position.inMilliseconds / 1000 + seconds;
@@ -765,6 +856,7 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
   }
 
   void _scrubBy(double delta, double width) {
+    if (_playableHandle == null) return;
     final transport = _transport;
     if (transport == null || width <= 0) return;
     final total = transport.duration.inMilliseconds / 1000;
@@ -798,7 +890,7 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
   void _speedHold(bool held) => unawaited(held ? _beginSpeedHold() : _endSpeedHold());
 
   Future<void> _beginSpeedHold() async {
-    final handle = _handle;
+    final handle = _playableHandle;
     if (handle == null || _speedHeld) return;
     _speedHeld = true;
     _speedBeforeHold = _speed;
@@ -821,7 +913,7 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
       _speed = _speedBeforeHold;
       _gestureKind = null;
     });
-    final handle = _handle;
+    final handle = _playableHandle;
     if (handle == null) return;
     try {
       await handle.setRate(_speedBeforeHold);
@@ -833,8 +925,9 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
   /// The episode [direction] steps from the one playing, or null at either end
   /// of the season's list.
   VodEpisode? _episodeStepped(int direction) {
+    if (_playableHandle == null) return null;
     final episodes = ref.read(vodSeasonDetailProvider(widget.seasonId)).value?.episodes ?? const <VodEpisode>[];
-    final index = episodes.indexWhere((candidate) => candidate.id == _episode?.id) + direction;
+    final index = episodes.indexWhere((candidate) => _identityOf(candidate) == _openedIdentity) + direction;
     if (index < 0 || index >= episodes.length) return null;
     return episodes[index];
   }
@@ -852,7 +945,7 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
   /// What the end of an episode leads to: the station's own finish action,
   /// counted down first when it names the next one rather than a stop.
   Future<void> _handleFinished() async {
-    if (_finished) return;
+    if (_finished || _playableHandle == null) return;
     _finished = true;
     // The checkpoint says the season was played to its end: for a ladder
     // the last-episode rule already reads it done, and a single-episode
@@ -912,41 +1005,35 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
     );
   }
 
-  void _bind(PlayerHandle handle) {
-    if (_boundPlayer == handle.id) return;
-    _boundPlayer = handle.id;
-    unawaited(_transportSub?.cancel() ?? Future<void>.value());
-    unawaited(_eventSub?.cancel() ?? Future<void>.value());
-    unawaited(_geometrySub?.cancel() ?? Future<void>.value());
+  void _bind(PlayerHandle handle, int generation) {
+    _clearTransportSubscriptions();
     _geometrySub = handle.geometryController.state.listen((state) {
+      if (!_isCurrentGeneration(generation)) return;
       final size = state.geometry.videoSize;
       if (size.width <= 0 || size.height <= 0) return;
       final ratio = size.width / size.height;
-      if (!mounted || !ratio.isFinite || (_aspectRatio - ratio).abs() < 0.01) return;
+      if (!ratio.isFinite || (_aspectRatio - ratio).abs() < 0.01) return;
       setState(() => _aspectRatio = ratio.clamp(0.5, 2.4));
     });
     _transportSub = handle.playbackStream.listen((state) {
-      if (!mounted) return;
+      if (!_isCurrentGeneration(generation)) return;
       setState(() {
         _transport = state;
         if (state.isPlaying) _error = null;
       });
       if (state.isPlaying) _scheduleHide();
-      _savePosition();
+      if (_openedGeneration == generation && _openedIdentity != null) _savePosition();
     });
     // The station's own events, not positions the page guesses at: the end
     // of an episode is what the finish action waits for, and a failed one
     // says so on the picture instead of spinning forever.
     _eventSub = handle.adapterEvents.listen((event) {
-      if (!mounted) return;
+      if (!_isCurrentGeneration(generation)) return;
       switch (event) {
         case final PlayerAdapterErrorEvent error:
-          setState(() {
-            _opening = false;
-            _error = error.message;
-          });
+          setState(() => _error = error.message);
         case PlayerAdapterCompleted():
-          unawaited(_handleFinished());
+          if (_openedGeneration == generation && _openedIdentity != null) unawaited(_handleFinished());
         default:
           break;
       }
@@ -957,9 +1044,15 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
   /// pill reads: a record compares structurally, so a tick from some other
   /// task in the queue does not rebuild this page.
   ({VodDownloadPhase phase, double? progress, String id})? _episodeDownload(VodEpisode? episode) {
-    final item = vodDownloadOf(ref.watch(vodDownloadsProvider), 'ep${episode?.id ?? 0}', episode?.cid ?? 0);
-    if (item == null) return null;
-    return (phase: item.phase, progress: item.progress, id: item.id);
+    final episodeId = episode?.id ?? 0;
+    final cid = episode?.cid ?? 0;
+    return ref.watch(
+      vodDownloadsProvider.select((items) {
+        final item = vodDownloadOf(items, 'ep$episodeId', cid);
+        if (item == null) return null;
+        return (phase: item.phase, progress: item.progress, id: item.id);
+      }),
+    );
   }
 
   /// Hands the current episode to the app-wide download queue; the queue
@@ -1003,18 +1096,23 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
   }
 
   Future<void> _togglePlay() async {
-    final handle = _handle;
+    final handle = _playableHandle;
     if (handle == null) return;
     try {
       final playing = _transport?.isPlaying ?? false;
-      playing ? await handle.pause() : await handle.play();
+      if (playing) {
+        await handle.pause();
+      } else {
+        _holdSound();
+        await handle.play();
+      }
     } on Object catch (error) {
       if (mounted) setState(() => _error = '$error');
     }
   }
 
   Future<void> _seekTo(double seconds) async {
-    final handle = _handle;
+    final handle = _playableHandle;
     if (handle == null) return;
     try {
       await handle.seek(Duration(milliseconds: (seconds * 1000).round()));
@@ -1024,15 +1122,30 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
   }
 
   void _toggleFullscreen() {
-    final handle = _handle;
+    final handle = _playableHandle;
     if (handle == null) return;
     unawaited(ref.read(roomPresentationProvider.notifier).toggleFullscreen(handle.id));
+  }
+
+  /// The page's own way out: a mode that took the window gives it back, and
+  /// the viewer lands on the page underneath; with none standing, the page
+  /// itself is left. Escape has always followed this rule, and the small
+  /// window's close lands on it when the window is the page's own — the main
+  /// window cannot close without taking the app with it, so "done watching"
+  /// there means the episode stops and the window hands the page back.
+  void _leave() {
+    final handle = _handle;
+    if (handle != null && _immersive) {
+      unawaited(ref.read(roomPresentationProvider.notifier).exit(handle.id));
+      return;
+    }
+    context.pop();
   }
 
   /// Keeps the frame the episode is showing in the viewer's screenshot
   /// folder, the way every player's picture verbs do.
   Future<void> _screenshot() async {
-    final handle = _handle;
+    final handle = _playableHandle;
     if (handle == null) return;
     final file = await capturePlayerFrame(handle, ref.read(appPathsProvider).screenshots, prefix: 'season');
     if (!mounted) return;
@@ -1047,7 +1160,7 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
   /// The desktop's compact window (the phone's system window on iOS); a host
   /// that refuses has to be told, or the button reads as broken.
   Future<void> _togglePip() async {
-    final handle = _handle;
+    final handle = _playableHandle;
     if (handle == null) return;
     final accepted = await ref.read(roomPresentationProvider.notifier).togglePip(handle.id);
     if (accepted || !mounted) return;
@@ -1064,7 +1177,7 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
     // would land its picture on the primary's overlay. Secondary windows
     // keep their own picture instead.
     if (!ref.read(isPrimaryWindowProvider)) return false;
-    final handle = _handle;
+    final handle = _playableHandle;
     return handle != null &&
         handle.source != null &&
         _presentationMode == PresentationMode.normal &&
@@ -1076,16 +1189,16 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
   /// while the page pops back; the expand button re-opens this route (the
   /// season restarts its walk — this page keeps no progress record).
   Future<void> _enterMiniWindow() async {
-    final handle = _handle;
+    final handle = _playableHandle;
     final source = handle?.source;
     if (handle == null || source == null) return;
+    final episode = _episodeOf(_openedIdentity);
     final t = context.t;
     final backend = ref.read(playerKernelBackendProvider).id;
     // The window's close path runs after this page is gone: the
     // checkpoint's writer and the ladder it names are captured now.
     final progress = ref.read(vodSeasonProgressProvider.notifier);
     final detail = ref.read(vodSeasonDetailProvider(widget.seasonId)).value;
-    final episode = _episode;
     final index = episode == null || detail == null ? -1 : detail.episodes.indexOf(episode);
     final title = detail?.title ?? t.vod.opening;
     final ok = await FloatingVideoWindow.show(
@@ -1158,16 +1271,25 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
   }
 
   /// The picture verbs over the picture: the two small windows, then the
-  /// more door — one pill, on every stage size this page draws. The frame
-  /// copy lives on the picture's right edge with the lock; the episode's
-  /// download lives in the more container now. The catalogues — the
-  /// episodes among them — live on the bar's middle row, where every
-  /// player keeps them; the strip carries only the window verbs.
+  /// more door — one pill, on every stage size this page draws. The compact
+  /// window leads the cluster, the room's own order: where the picture goes
+  /// comes before what is done to it. The desktop's small window is the one
+  /// stage that draws none of this — its chrome is the shared one's, and the
+  /// way back to this page rides that. The frame copy lives on the picture's
+  /// right edge with the lock; the episode's download lives in the more
+  /// container now. The catalogues — the episodes among them — live on the
+  /// bar's middle row, where every player keeps them; the strip carries only
+  /// the window verbs.
   List<Widget> _pictureVerbs(Translations t) => [
-    if (_handle != null && ref.read(roomPresentationProvider.notifier).pipAvailable)
+    if (_playableHandle != null && ref.read(roomPresentationProvider.notifier).pipAvailable)
       PlayerBarButton(
-        icon: DsIcons.pictureInPicture,
-        label: t.player.pipOn,
+        // The frame with the way in while the page holds the picture, and
+        // the frame with the way out once the phone's system window does —
+        // the page keeps its layout under that window, so the verb it shows
+        // has to say which way it goes now.
+        icon: _presentationMode == PresentationMode.pip ? DsIcons.pictureInPicture2 : DsIcons.pictureInPicture,
+        label: _presentationMode == PresentationMode.pip ? t.player.pipOff : t.player.pipOn,
+        selected: _presentationMode == PresentationMode.pip,
         onPressed: () {
           _wake();
           unawaited(_togglePip());
@@ -1188,64 +1310,79 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
       onPressed: () {
         _wake();
         unawaited(
-          showPlayerMoreContainer(
-            context,
-            content: (context, {required labeled}) => _seasonMoreContent(context.t),
-          ),
+          showPlayerMoreContainer(context, content: (context, {required labeled}) => _seasonMoreContent(context.t)),
         );
       },
     ),
   ];
 
-  /// The more container's rows: the episode's download — the home it took
-  /// when the lock claimed the edge — and the stream's own numbers. The
-  /// StatefulBuilder is the panel's own redraw, so a download's percent and
-  /// the switch read fresh on every pick.
+  /// The more container's content, the room's own shape: what the panel does
+  /// as a round tile over one list of settings — the episode's download, the
+  /// home it took when the lock claimed the edge, and the stream's own
+  /// numbers. The StatefulBuilder is the panel's own redraw, so a download's
+  /// percent and the switch read fresh on every pick.
   Widget _seasonMoreContent(Translations t) {
     final handle = _handle;
     return StatefulBuilder(
       builder: (context, setPanel) {
         final download = _episodeDownload(_episode);
+        final running =
+            download != null &&
+            (download.phase == VodDownloadPhase.running || download.phase == VodDownloadPhase.queued);
+        final stats = ref.read(playerStatsVisibleProvider);
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
-          spacing: DsSpace.s4,
+          spacing: DsSpace.s12,
           children: [
-            PlayerMoreRow(
-              label: t.player.download,
-              leading: DsIcons.download,
-              value: switch (download) {
-                final task? when task.phase == VodDownloadPhase.running || task.phase == VodDownloadPhase.queued =>
-                  task.progress == null
-                      ? t.settings.downloadPercentUnknown
-                      : t.settings.downloadPercent(percent: '${(task.progress! * 100).round()}'),
-                _ => null,
-              },
-              onTap: (_episode?.cid ?? 0) <= 0
-                  ? null
-                  : () {
-                      Navigator.of(context).pop();
-                      _wake();
-                      unawaited(_startDownload());
-                    },
+            PlayerMoreTiles(
+              tiles: [
+                PlayerMoreTile(
+                  color: PlayerMoreHues.download,
+                  icon: DsIcons.download,
+                  // A download under way says its own percent under the circle.
+                  label: switch (download) {
+                    final task? when running =>
+                      task.progress == null
+                          ? t.settings.downloadPercentUnknown
+                          : t.settings.downloadPercent(percent: '${(task.progress! * 100).round()}'),
+                    _ => t.player.download,
+                  },
+                  onTap: (_episode?.cid ?? 0) <= 0
+                      ? null
+                      : () {
+                          Navigator.of(context).pop();
+                          _wake();
+                          unawaited(_startDownload());
+                        },
+                ),
+              ],
             ),
-            PlayerMoreRow(
-              label: t.player.statsToggle,
-              leading: DsIcons.activity,
-              value: null,
-              onTap: handle == null
-                  ? null
-                  : () {
+            DsListSection(
+              children: [
+                // Read fresh on the panel's own redraw: the pick flips the
+                // provider under the row, and this switch is the first thing
+                // the redraw reads.
+                PlayerMoreRow(
+                  label: t.player.statsToggle,
+                  leading: DsIcons.activity,
+                  value: null,
+                  onTap: handle == null
+                      ? null
+                      : () {
+                          ref.read(playerStatsVisibleProvider.notifier).toggle();
+                          setPanel(() {});
+                        },
+                  trailing: DsSwitch(
+                    value: stats,
+                    onChanged: (_) {
                       ref.read(playerStatsVisibleProvider.notifier).toggle();
                       setPanel(() {});
                     },
-              trailing: DsSwitch(
-                value: ref.read(playerStatsVisibleProvider),
-                onChanged: (_) {
-                  ref.read(playerStatsVisibleProvider.notifier).toggle();
-                  setPanel(() {});
-                },
-              ),
+                  ),
+                ),
+              ],
             ),
+            const SizedBox(height: DsSpace.s12),
           ],
         );
       },
@@ -1257,6 +1394,14 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
     final t = context.t;
     final colors = DsTheme.colorsOf(context);
     final immersive = _immersive;
+    ref.listen(playbackSettingsProvider.select((settings) => settings.globalMute), (previous, next) {
+      if (previous == next) return;
+      if (mounted) setState(() => _globalMute = next);
+      final handle = _handle ?? _attemptHandle;
+      if (handle != null) {
+        unawaited(handle.setMute(muted: _effectivelyMuted).catchError((Object _) {}));
+      }
+    });
     // A sideways window (shorter than 480 tall, wider than tall, 600 or
     // more across) takes the stage alone: the page's episode column has no
     // room beside a 16:9 picture that short, and the strip's verbs stay
@@ -1338,6 +1483,8 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
         const SingleActivator(LogicalKeyboardKey.space): _togglePlay,
         const SingleActivator(LogicalKeyboardKey.keyF): _toggleFullscreen,
         const SingleActivator(LogicalKeyboardKey.f11): _toggleFullscreen,
+        // The stream's own figures: the key every player answers to.
+        const SingleActivator(LogicalKeyboardKey.keyI): () => ref.read(playerStatsVisibleProvider.notifier).toggle(),
         // The same keys the archive page answers with: the arrows step the
         // episode and the sound, the comma and the period walk the rate,
         // and a held arrow keeps growing the step so a long skip is one key.
@@ -1353,14 +1500,7 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
         const SingleActivator(LogicalKeyboardKey.arrowDown): _nudgeDown,
         const SingleActivator(LogicalKeyboardKey.comma): () => unawaited(_stepSpeed(-1)),
         const SingleActivator(LogicalKeyboardKey.period): () => unawaited(_stepSpeed(1)),
-        const SingleActivator(LogicalKeyboardKey.escape): () {
-          final handle = _handle;
-          if (_immersive && handle != null) {
-            unawaited(ref.read(roomPresentationProvider.notifier).exit(handle.id));
-          } else {
-            context.pop();
-          }
-        },
+        const SingleActivator(LogicalKeyboardKey.escape): _leave,
       },
       child: Focus(
         autofocus: true,
@@ -1532,14 +1672,22 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
   }
 
   void _playNow() {
-    final handle = _handle;
+    final handle = _playableHandle;
     if (handle != null) {
+      _holdSound();
       unawaited(handle.play());
       return;
     }
     final episodes = ref.read(vodSeasonDetailProvider(widget.seasonId)).value?.episodes ?? const <VodEpisode>[];
     if (episodes.isEmpty) return;
-    unawaited(_openEpisode(episodes.first));
+    final opened = _episodeOf(_openedIdentity);
+    final checkpoint = ref
+        .read(vodSeasonProgressProvider)
+        .where((entry) => entry.seasonId == '${widget.seasonId}')
+        .firstOrNull;
+    final saved = checkpoint == null ? null : episodes.elementAtOrNull(checkpoint.episodeIndex);
+    final episode = _episode ?? opened ?? saved ?? episodes.first;
+    unawaited(_openEpisode(episode));
   }
 
   /// Sends the season's web address through the system share sheet where the
@@ -1579,10 +1727,6 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
     final handle = _handle;
     final transport = _transport;
     final episode = _episode;
-    final duration = transport?.duration ?? episode?.duration ?? Duration.zero;
-    final position = _dragSeconds != null
-        ? Duration(milliseconds: (_dragSeconds! * 1000).round())
-        : transport?.position ?? Duration.zero;
     final playing = transport?.isPlaying ?? false;
     // The bar follows the pointer: a tap on the picture puts it away while the
     // episode plays, and a stopped one keeps it, because a paused picture has nothing
@@ -1590,6 +1734,12 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
     // right edge is the whole chrome, the room's own rule.
     final showBar = !_locked && (_controlsVisible || !playing);
     final qualities = _play?.qualities ?? const <VodQuality>[];
+    // The desktop's small window wears the shared chrome alone: no strip, no
+    // corner pills and no bar of catalogues — the way back and the season's
+    // name, the close, the transport, the sound, the seek line and the pin —
+    // the picture keeping its gestures. The mode takes the window, so it only
+    // ever stands on the immersive branch.
+    final smallWindow = immersive && _presentationMode == PresentationMode.pip && _presentationNotifier.pipOwnsWindow;
     return ClipRRect(
       borderRadius: BorderRadius.circular(immersive || stageOnly ? 0 : theme.radii.overlay),
       child: ColoredBox(
@@ -1610,7 +1760,7 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
               // episode faster until the finger lifts. The same shapes the archive
               // page answers with, from the same widget.
               VodPictureGestures(
-                enabled: handle != null && !_locked,
+                enabled: _playableHandle != null && !_locked,
                 onTap: _toggleControls,
                 onDoubleTap: _doubleTapAt,
                 onScrub: _scrubBy,
@@ -1631,25 +1781,52 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
                 Positioned.fill(
                   child: VodGestureTip(kind: kind, value: _gestureValue ?? '', note: _gestureNote),
                 ),
+              // The stream's own numbers, on the same session switch the
+              // room, the archive and every other player answer to — the
+              // switch the more panel's row and the `I` key both flip.
+              if (handle case final player? when ref.watch(playerStatsVisibleProvider))
+                Positioned.fill(
+                  child: IgnorePointer(child: PlayerStatsOverlay(handle: player)),
+                ),
               if (_opening || (transport?.isBuffering ?? false))
                 const Center(child: DsSpinner(style: DsSpinnerStyle(size: 40))),
-              if (immersive)
+              // The way out of the two fullscreens, the system's and the
+              // window's: the pill is the shape's own way out — it names the
+              // shape it sits in and leaves that one, never falling into the
+              // other on the way, the way the bar's pair never does. The small
+              // window draws no pill here: its top-left is the shared chrome's
+              // way back to the page.
+              if (immersive && !smallWindow)
                 PositionedDirectional(
                   top: DsSpace.s8,
                   start: DsSpace.s8,
-                  child: DsButton.icon(
-                    variant: DsButtonVariant.ghost,
-                    size: DsSize.sm,
-                    semanticLabel: t.player.fullscreenOff,
-                    onPressed: _toggleFullscreen,
-                    icon: const DsIcon(DsIcons.minimize),
+                  child: SafeArea(
+                    child: PlayerGlassPill(
+                      child: PlayerBarButton(
+                        icon: switch (_presentationMode) {
+                          PresentationMode.windowFullscreen => DsIcons.squareShrinkUpLeftDownRight,
+                          _ => DsIcons.minimize,
+                        },
+                        label: switch (_presentationMode) {
+                          PresentationMode.windowFullscreen => t.player.windowFullscreenOff,
+                          _ => t.player.fullscreenOff,
+                        },
+                        onPressed: () {
+                          _wake();
+                          _leave();
+                        },
+                      ),
+                    ),
                   ),
                 ),
               // Immersive keeps the picture verbs too: the way out sits at
               // the top-left, the verbs at the top-right, over both stage
               // shapes this page draws. The sideways stage-only body does
-              // the same, its top-left pill being the way back instead.
-              if ((immersive || stageOnly) && handle != null)
+              // the same, its top-left pill being the way back instead. The
+              // small window's corners are the shared chrome's, so the cluster
+              // stands down there: its compact-window button would otherwise
+              // show the way in while being the way out.
+              if ((immersive || stageOnly) && !smallWindow && handle != null)
                 PositionedDirectional(
                   top: DsSpace.s8,
                   end: DsSpace.s8,
@@ -1683,8 +1860,11 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
               // frame's copy above the lock — take the shot, then hand the
               // picture over to the lock. Locked, the unlock pill is the
               // only thing drawn, whatever the page does next; the download
-              // lives in the more container now.
-              if ((immersive || stageOnly || showBar || _locked) && handle != null)
+              // lives in the more container now. The small window's corners
+              // belong to the shared chrome, so the column stands down there
+              // — save as that unlock pill: a locked picture with no unlock
+              // on it is a door bricked from inside.
+              if (handle != null && (_locked || (!smallWindow && (immersive || stageOnly || showBar))))
                 PositionedDirectional(
                   end: DsSpace.s12,
                   top: 0,
@@ -1694,7 +1874,7 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
                       mainAxisSize: MainAxisSize.min,
                       spacing: DsSpace.s8,
                       children: [
-                        if (!_locked && handle.canCaptureScreenshot)
+                        if (!_locked && !smallWindow && handle.canCaptureScreenshot)
                           PlayerGlassPill(
                             child: PlayerBarButton(
                               icon: DsIcons.camera,
@@ -1743,12 +1923,16 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
                         // same cluster every player carries, sized for
                         // the stage that shows it.
                         if (handle != null)
-                          PlayerGlassPill(child: Row(mainAxisSize: MainAxisSize.min, children: _pictureVerbs(t))),
+                          PlayerGlassPill(
+                            child: Row(mainAxisSize: MainAxisSize.min, children: _pictureVerbs(t)),
+                          ),
                       ],
                     ),
                   ),
                 ),
-              if (_silent)
+              // The silent-source badge sits in the corner the small window's
+              // close takes, and that corner is the shared chrome's.
+              if (_silent && !smallWindow)
                 PositionedDirectional(
                   top: DsSpace.s8,
                   end: DsSpace.s8,
@@ -1757,8 +1941,8 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
               // The bar away, the picture keeps one line at its foot: how far
               // the episode ran, and the strip that brings the bar back.
               // Locked, the line stands down too — nothing reads as chrome
-              // but the unlock pill.
-              if (!showBar && playing && handle != null && !_locked)
+              // but the unlock pill. The small window's chrome draws its own.
+              if (!smallWindow && !showBar && playing && handle != null && !_locked)
                 PositionedDirectional(
                   bottom: 0,
                   start: 0,
@@ -1769,7 +1953,7 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
                     onWake: _wake,
                   ),
                 ),
-              if (showBar)
+              if (!smallWindow && showBar)
                 PositionedDirectional(
                   bottom: 0,
                   start: 0,
@@ -1788,88 +1972,100 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
                         // The step to the next episode is announced and counted,
                         // so a viewer who is not done with this one can stop it.
                         if (_countdown > 0)
-                          Align(
-                            alignment: AlignmentDirectional.centerEnd,
-                            child: VodPictureNotice(
-                              icon: DsIcons.listVideo,
-                              text: t.vod.nextPartIn(seconds: _countdown),
-                              actionLabel: t.common.cancel,
-                              onAction: _cancelCountdown,
-                            ),
-                          ),
-                        if (_episodeDownload(episode) case final download?
-                            when download.phase == VodDownloadPhase.running ||
-                                download.phase == VodDownloadPhase.queued)
-                          Row(
-                            spacing: DsSpace.s8,
-                            children: [
-                              const DsSpinner(style: DsSpinnerStyle(size: 12)),
-                              Expanded(
-                                child: Text(
-                                  switch (download.progress) {
-                                    final progress? => t.settings.downloadPercent(
-                                      percent: '${(progress * 100).round()}',
-                                    ),
-                                    null => t.settings.downloadPercentUnknown,
-                                  },
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: theme.typography.caption.copyWith(color: OnVideoColors.foreground),
-                                ),
-                              ),
-                              DsButton.icon(
-                                variant: DsButtonVariant.ghost,
-                                size: DsSize.sm,
-                                semanticLabel: t.player.downloadPause,
-                                onPressed: () => unawaited(ref.read(vodDownloadsProvider.notifier).pause(download.id)),
-                                icon: const DsIcon(DsIcons.pause),
-                              ),
-                            ],
-                          ),
-                        // The clocks and the line come from the shared layer
-                        // now; the season's own seek line — the preview, the
-                        // cover thumb — rides the slot the layer leaves for it.
-                        PlayerSeekLayer.replay(
-                          position: position,
-                          duration: duration,
-                          buffered: _transport?.buffer.ranges ?? const [],
-                          seekBar: VodSeekBar(
-                            position: position,
-                            duration: duration,
-                            semanticLabel: t.player.progress,
-                            buffered: _transport?.buffer.ranges ?? const [],
-                            coverUrl: ref.read(vodSeasonDetailProvider(widget.seasonId)).value?.coverUrl,
-                            showPreview: ref.watch(vodPlaybackSettingsProvider).seekPreview,
-                            onScrub: (seconds) => setState(() => _dragSeconds = seconds),
-                            onSeek: (seconds) {
-                              setState(() => _dragSeconds = null);
-                              unawaited(_seekTo(seconds));
-                            },
-                          ),
-                        ),
+                          Align(alignment: AlignmentDirectional.centerEnd, child: _countdownNotice(t)),
+                        // The episode's download under way, then the line the
+                        // episode is read by: the rows the page's bar and the
+                        // small window's shade both carry, so neither goes
+                        // unsaid because the window got small.
+                        ?_downloadRow(t, theme, episode),
+                        _seekLine(t),
                         // The bar's spacing and its buttons are the shared
-                        // player's, so the season answers like the archive:
-                        // the transport with the way out on one line, the
-                        // catalogue folding to its own line below — the
-                        // session verbs (the download, the frame copy) live
-                        // in the picture's top pill now, not on this row.
-                        // The bar's own width is the volume ladder's ruler:
-                        // 96 px when it is roomy, 72 when it bends, and gone
-                        // under 480, where the mute and the wheel still speak.
+                        // player's, so the season answers like the archive: one
+                        // control line under the seek line — the transport
+                        // leading it, the catalogues beside it and the way out
+                        // at the line's end — and a line that cannot carry the
+                        // catalogues gives them the one above, so play stays
+                        // the first control of the bottom line whatever the
+                        // width. The session verbs (the download, the frame
+                        // copy) live in the picture's top pill and the rows
+                        // over this one, not on it.
                         LayoutBuilder(
                           builder: (context, barConstraints) {
                             final barWidth = barConstraints.maxWidth;
+                            final tv = PlayerBarTier.tvOf(context);
+                            final gap = tv ? DsSpace.s8 : DsSpace.s4;
+                            final control = PlayerBarTier.controlFootprint(context);
+                            final pip = _presentationMode == PresentationMode.pip;
+                            final previous = _hasPreviousEpisode;
+                            final next = _hasNextEpisode;
+                            // The bar's own width is the volume ladder's ruler:
+                            // 96 px when it is roomy, 72 when it bends, and gone
+                            // under 480, where the mute and the wheel still speak.
                             final volumeWidth = barWidth >= 720 ? 96.0 : (barWidth >= 480 ? 72.0 : null);
+                            // The catalogues' three answers, as their chips
+                            // draw them.
+                            final qualityLabel = _qualityMenuLabel(t);
+                            final speedLabel = VodSpeedChoice.nearest(_speed).label;
+                            final episodeLabel = episode == null
+                                ? t.vod.episodes
+                                : t.vod.episodeNo(index: episode.index);
+                            final hasEpisodes = _seasonDetail != null && _seasonDetail!.episodes.length > 1;
+                            // The line is read before it is laid out, by the
+                            // shared rule and off the bar's own width: the
+                            // words go first, then the line gives way to the
+                            // one above.
+                            final line = playerBarLine(
+                              barWidth: barWidth,
+                              gap: gap,
+                              fixed: [
+                                if (previous) control,
+                                control,
+                                if (next) control,
+                                control,
+                                ?volumeWidth,
+                                if (_desktop && !pip) control,
+                                if (!pip) control,
+                              ],
+                              worded: [
+                                if (qualities.isNotEmpty)
+                                  PlayerBarChoice.extentOf(context, qualityLabel, compact: false),
+                                PlayerBarChoice.extentOf(context, speedLabel, compact: false),
+                                if (hasEpisodes) PlayerBarChoice.extentOf(context, episodeLabel, compact: false),
+                              ],
+                              glyphs: [
+                                if (qualities.isNotEmpty)
+                                  PlayerBarChoice.extentOf(context, qualityLabel, compact: true),
+                                PlayerBarChoice.extentOf(context, speedLabel, compact: true),
+                                if (hasEpisodes) PlayerBarChoice.extentOf(context, episodeLabel, compact: true),
+                              ],
+                            );
+                            final compact = !line.words;
                             return PlayerBarRows(
-                              // Two rows at every width: the transport, then
-                              // the catalogues along the picture's bottom
-                              // edge — the pace never hides at the wide
-                              // row's right end.
-                              foldWidth: double.infinity,
-                              gap: PlayerBarTier.tvOf(context) ? DsSpace.s8 : DsSpace.s4,
+                              // The shared reading decides: one line while the
+                              // width carries all three groups, the catalogues
+                              // on the line above when it does not — never a
+                              // threshold of this page's own.
+                              foldWidth: line.inline ? 0 : double.infinity,
+                              foldAbove: true,
+                              gap: gap,
                               start: Row(
-                                spacing: PlayerBarTier.tvOf(context) ? DsSpace.s8 : DsSpace.s4,
+                                spacing: gap,
                                 children: [
+                                  // The steps between episodes lead, the way
+                                  // every serial's bar carries them: the
+                                  // episode before, play, the episode after —
+                                  // where the thumb starts, at every width. A
+                                  // season is watched in both directions, and
+                                  // the catalogue keeps the jump to any one.
+                                  if (previous)
+                                    PlayerBarButton(
+                                      icon: DsIcons.skipBack,
+                                      label: t.vod.previousPart,
+                                      onPressed: () {
+                                        _wake();
+                                        _openSteppedEpisode(-1);
+                                      },
+                                    ),
                                   PlayerBarButton(
                                     icon: playing ? DsIcons.pause : DsIcons.play,
                                     label: playing ? t.player.pause : t.player.play,
@@ -1880,20 +2076,7 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
                                             unawaited(_togglePlay());
                                           },
                                   ),
-                                  // The steps between episodes, after play where
-                                  // every player keeps them: a season is watched
-                                  // in both directions, and the bar's catalogue
-                                  // row keeps the jump to any one of them.
-                                  if (_hasPreviousEpisode)
-                                    PlayerBarButton(
-                                      icon: DsIcons.skipBack,
-                                      label: t.vod.previousPart,
-                                      onPressed: () {
-                                        _wake();
-                                        _openSteppedEpisode(-1);
-                                      },
-                                    ),
-                                  if (_hasNextEpisode)
+                                  if (next)
                                     PlayerBarButton(
                                       icon: DsIcons.skipForward,
                                       label: t.vod.nextPart,
@@ -1902,9 +2085,9 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
                                         _openSteppedEpisode(1);
                                       },
                                     ),
-                                  // The volume the archive bar carries and this one
-                                  // never grew: the pair, then the slider, exactly
-                                  // where the archive keeps them.
+                                  // The volume the archive bar carries: the
+                                  // pair, then the slider, exactly where the
+                                  // archive keeps them.
                                   PlayerBarButton(
                                     icon: (handle?.muted ?? false) ? DsIcons.volumeX : DsIcons.volume2,
                                     label: (handle?.muted ?? false) ? t.player.unmute : t.player.mute,
@@ -1915,80 +2098,67 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
                                             unawaited(_toggleMute());
                                           },
                                   ),
-                                  if (volumeWidth != null)
-                                    SizedBox(
-                                      width: volumeWidth,
-                                      child: DsSlider(
-                                        value: ((handle?.volume ?? _volume) * 100).clamp(0.0, 100.0),
-                                        max: 100,
-                                        style: const DsSliderStyle(
-                                          height: 24,
-                                          trackHeight: 4,
-                                          trackColor: OnVideoColors.track,
-                                          fillColor: OnVideoColors.foreground,
-                                          thumbColor: OnVideoColors.foreground,
-                                          thumbSize: 12,
-                                        ),
-                                        onChanged: handle == null
-                                            ? null
-                                            : (value) {
-                                                _wake();
-                                                unawaited(_setVolume(value / 100));
-                                              },
-                                        semanticLabel: t.player.volume,
-                                      ),
-                                    ),
+                                  if (volumeWidth case final width?) _volumeSlider(t, width),
                                 ],
                               ),
-                              middle: Row(
-                                spacing: PlayerBarTier.tvOf(context) ? DsSpace.s8 : DsSpace.s4,
-                                children: [
-                                  if (qualities.isNotEmpty)
+                              // The net under the reading: a catalogue the
+                              // measure said fits and the type draws a hair
+                              // wider scrolls here rather than painting past
+                              // the bar.
+                              middle: SingleChildScrollView(
+                                scrollDirection: Axis.horizontal,
+                                child: Row(
+                                  spacing: gap,
+                                  children: [
+                                    if (qualities.isNotEmpty)
+                                      PlayerBarChoice(
+                                        anchorKey: _qualityAnchor,
+                                        label: t.player.quality,
+                                        value: qualityLabel,
+                                        icon: DsIcons.gauge,
+                                        selected: _openPanel == 'quality',
+                                        compact: compact,
+                                        onPressed: () =>
+                                            setState(() => _openPanel = _openPanel == 'quality' ? null : 'quality'),
+                                      ),
+                                    // The pace, the button the keyboard's comma
+                                    // and period have always walked: the same
+                                    // ladder the vod page lists, now with a
+                                    // door of its own.
                                     PlayerBarChoice(
-                                      anchorKey: _qualityAnchor,
-                                      label: t.player.quality,
-                                      value: _qualityMenuLabel(t),
-                                      icon: DsIcons.gauge,
-                                      selected: _openPanel == 'quality',
+                                      anchorKey: _speedAnchor,
+                                      label: t.player.speed,
+                                      value: speedLabel,
+                                      icon: DsIcons.timer,
+                                      selected: _openPanel == 'speed',
+                                      compact: compact,
                                       onPressed: () =>
-                                          setState(() => _openPanel = _openPanel == 'quality' ? null : 'quality'),
+                                          setState(() => _openPanel = _openPanel == 'speed' ? null : 'speed'),
                                     ),
-                                  // The pace, the button the keyboard's comma and
-                                  // period have always walked: the same ladder the
-                                  // vod page lists, now with a door of its own.
-                                  PlayerBarChoice(
-                                    anchorKey: _speedAnchor,
-                                    label: t.player.speed,
-                                    value: VodSpeedChoice.nearest(_speed).label,
-                                    icon: DsIcons.timer,
-                                    selected: _openPanel == 'speed',
-                                    onPressed: () =>
-                                        setState(() => _openPanel = _openPanel == 'speed' ? null : 'speed'),
-                                  ),
-                                  // The episodes catalogue, the bar's own
-                                  // catalogue row's list — where the archive
-                                  // keeps its parts and the station's page its
-                                  // related row. The catalogue rides the bar,
-                                  // so it shows and hides with it.
-                                  if (_seasonDetail != null && _seasonDetail!.episodes.length > 1)
-                                    PlayerBarChoice(
-                                      anchorKey: _episodesAnchor,
-                                      label: t.vod.episodes,
-                                      value: _episode == null ? t.vod.episodes : t.vod.episodeNo(index: _episode!.index),
-                                      icon: DsIcons.listVideo,
-                                      selected: _openPanel == 'episodes',
-                                      onPressed: () =>
-                                          setState(() => _openPanel = _openPanel == 'episodes' ? null : 'episodes'),
-                                    ),
-                                ],
+                                    // The episodes catalogue, where the archive
+                                    // keeps its parts. It rides the bar, so it
+                                    // shows and hides with it.
+                                    if (hasEpisodes)
+                                      PlayerBarChoice(
+                                        anchorKey: _episodesAnchor,
+                                        label: t.vod.episodes,
+                                        value: episodeLabel,
+                                        icon: DsIcons.listVideo,
+                                        selected: _openPanel == 'episodes',
+                                        compact: compact,
+                                        onPressed: () =>
+                                            setState(() => _openPanel = _openPanel == 'episodes' ? null : 'episodes'),
+                                      ),
+                                  ],
+                                ),
                               ),
                               end: Row(
-                                spacing: PlayerBarTier.tvOf(context) ? DsSpace.s8 : DsSpace.s4,
+                                spacing: gap,
                                 children: [
                                   // The window's own shape with the arrows that say
                                   // which way it goes — the desktop verb, present in
                                   // the immersive shell too, its pair beside it.
-                                  if (_desktop && _presentationMode != PresentationMode.pip)
+                                  if (_desktop && !pip)
                                     PlayerBarButton(
                                       icon: _presentationMode == PresentationMode.windowFullscreen
                                           ? DsIcons.squareShrinkUpLeftDownRight
@@ -2001,12 +2171,15 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
                                           ? null
                                           : () {
                                               _wake();
-                                              unawaited(
-                                                _presentationNotifier.toggleWindowFullscreen(handle.id),
-                                              );
+                                              unawaited(_presentationNotifier.toggleWindowFullscreen(handle.id));
                                             },
                                     ),
-                                  if (_presentationMode != PresentationMode.pip)
+                                  // The system fullscreen, the phone's way
+                                  // and the F key's. It reads as the way in
+                                  // from the window's own fullscreen too: the
+                                  // two variants answer to their own buttons,
+                                  // and neither is the other's exit.
+                                  if (!pip)
                                     PlayerBarButton(
                                       icon: _presentationMode == PresentationMode.fullscreen
                                           ? DsIcons.minimize
@@ -2027,23 +2200,17 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
                             );
                           },
                         ),
-                        if (_error != null)
-                          Padding(
-                            padding: const EdgeInsetsDirectional.only(top: DsSpace.s4),
-                            child: Text(
-                              _error!,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: theme.typography.caption.copyWith(color: theme.colors.danger.text),
-                            ),
-                          ),
+                        if (_error case final error?) _barError(theme, error),
                       ],
                     ),
                   ),
                 ),
               // The bar's pickers hang their cards over the picture: a tap
-              // anywhere else closes whichever one stands.
-              if (_openPanel != null)
+              // anywhere else closes whichever one stands. The small window
+              // has no bar to hang a card from and no room for one — its
+              // chrome is the shared one's — so a catalogue left open before
+              // the window shrank waits there for the page to come back.
+              if (!smallWindow && _openPanel != null)
                 Positioned.fill(
                   child: GestureDetector(
                     behavior: HitTestBehavior.opaque,
@@ -2051,7 +2218,7 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
                     child: const SizedBox.expand(),
                   ),
                 ),
-              if (showBar && _openPanel == 'quality' && qualities.isNotEmpty)
+              if (!smallWindow && showBar && _openPanel == 'quality' && qualities.isNotEmpty)
                 PlayerPanelHost(
                   anchorKey: _qualityAnchor,
                   barKey: _barAnchor,
@@ -2065,7 +2232,7 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
                           selected: quality.qn == _openedQn,
                           onPressed: () {
                             setState(() => _openPanel = null);
-                            final current = _episode;
+                            final current = _episodeOf(_openedIdentity);
                             if (current != null) {
                               unawaited(_openEpisode(current, qn: quality.qn, resumeFrom: _transport?.position));
                             }
@@ -2074,7 +2241,7 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
                     ],
                   ),
                 ),
-              if (showBar && _openPanel == 'speed')
+              if (!smallWindow && showBar && _openPanel == 'speed')
                 PlayerPanelHost(
                   anchorKey: _speedAnchor,
                   barKey: _barAnchor,
@@ -2097,7 +2264,7 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
               // The episodes catalogue: the bar's list chip hangs it over
               // the picture — one row per episode, the one playing lit, the
               // number jump kept as the catalogue's own first row.
-              if (showBar && _openPanel == 'episodes')
+              if (!smallWindow && showBar && _openPanel == 'episodes')
                 PlayerPanelHost(
                   anchorKey: _episodesAnchor,
                   barKey: _barAnchor,
@@ -2133,10 +2300,266 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
                     },
                   ),
                 ),
+              // The desktop's small window, its last layers: the band that
+              // moves the window — the top 44 px, under the chrome, a double
+              // press on it handing the page back — then the shared chrome
+              // over the picture, and the countdown to the next episode as
+              // its pill over the two. The bar carries that offer above its
+              // seek line; stacked into a shade this short it would push the
+              // bar up over the corners, and over the close with them.
+              if (smallWindow) ...[
+                PositionedDirectional(
+                  start: 0,
+                  end: 0,
+                  top: 0,
+                  height: 44,
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.translucent,
+                    onPanStart: (_) {
+                      final window = ref.read(windowsPipWindowProvider);
+                      if (window != null) unawaited(window.startDragging());
+                    },
+                    onDoubleTap: () {
+                      _wake();
+                      unawaited(_togglePip());
+                    },
+                  ),
+                ),
+                Positioned.fill(
+                  child: LayoutBuilder(
+                    builder: (context, constraints) =>
+                        _smallWindowChrome(context, constraints.maxWidth, visible: showBar),
+                  ),
+                ),
+                if (showBar && _countdown > 0) Positioned.fill(child: Center(child: _countdownNotice(t))),
+              ],
             ],
           ),
         ),
       ),
+    );
+  }
+
+  /// How long the episode on the picture runs: the engine's own reading of
+  /// it, else the figure the ladder named for the episode.
+  Duration get _episodeDuration => _transport?.duration ?? _episodeOf(_openedIdentity)?.duration ?? Duration.zero;
+
+  /// Where the episode stands: the second a drag is holding the line on,
+  /// else the engine's.
+  Duration get _episodePosition => _dragSeconds != null
+      ? Duration(milliseconds: (_dragSeconds! * 1000).round())
+      : _transport?.position ?? Duration.zero;
+
+  /// The season's own seek line: the clocks come from the shared layer, and
+  /// the line — the preview, the cover thumb — rides the slot the layer
+  /// leaves for it. The page's bar and the small window's shade draw the
+  /// same one, so a drag speaks the same two callbacks wherever it starts.
+  Widget _seekLine(Translations t) => PlayerSeekLayer.replay(
+    position: _episodePosition,
+    duration: _episodeDuration,
+    buffered: _transport?.buffer.ranges ?? const [],
+    seekBar: VodSeekBar(
+      position: _episodePosition,
+      duration: _episodeDuration,
+      semanticLabel: t.player.progress,
+      buffered: _transport?.buffer.ranges ?? const [],
+      coverUrl: ref.read(vodSeasonDetailProvider(widget.seasonId)).value?.coverUrl,
+      showPreview: ref.watch(vodPlaybackSettingsProvider).seekPreview,
+      onScrub: (seconds) => setState(() => _dragSeconds = seconds),
+      onSeek: (seconds) {
+        setState(() => _dragSeconds = null);
+        unawaited(_seekTo(seconds));
+      },
+    ),
+  );
+
+  /// The sound's level on the bar, [width] wide: the one slider the page's
+  /// bar and the small window's shade trim the volume with.
+  Widget _volumeSlider(Translations t, double width) => SizedBox(
+    width: width,
+    child: DsSlider(
+      value: ((_playableHandle?.volume ?? _volume) * 100).clamp(0.0, 100.0),
+      max: 100,
+      style: const DsSliderStyle(
+        height: 24,
+        trackHeight: 4,
+        trackColor: OnVideoColors.track,
+        fillColor: OnVideoColors.foreground,
+        thumbColor: OnVideoColors.foreground,
+        thumbSize: 12,
+      ),
+      onChanged: _playableHandle == null
+          ? null
+          : (value) {
+              _wake();
+              unawaited(_setVolume(value / 100));
+            },
+      semanticLabel: t.player.volume,
+    ),
+  );
+
+  /// The offer the end of an episode makes: the next one opening when the
+  /// countdown runs out, and the word that stops it. A pill over what it
+  /// stands on — a one-time offer that leaves when taken, not a watching
+  /// verb — so the bar sets it at its line's end and the small window
+  /// floats it over the picture.
+  Widget _countdownNotice(Translations t) => VodPictureNotice(
+    icon: DsIcons.listVideo,
+    text: t.vod.nextPartIn(seconds: _countdown),
+    actionLabel: t.common.cancel,
+    onAction: _cancelCountdown,
+  );
+
+  /// The episode's download under way, the row the bar keeps above its seek
+  /// line: how far the file is, and the pause that holds it there. Null
+  /// when nothing of this episode is in the queue's hands.
+  Widget? _downloadRow(Translations t, DsThemeData theme, VodEpisode? episode) {
+    if (_episodeDownload(episode) case final download?
+        when download.phase == VodDownloadPhase.running || download.phase == VodDownloadPhase.queued) {
+      return Row(
+        spacing: DsSpace.s8,
+        children: [
+          const DsSpinner(style: DsSpinnerStyle(size: 12)),
+          Expanded(
+            child: Text(
+              switch (download.progress) {
+                final progress? => t.settings.downloadPercent(percent: '${(progress * 100).round()}'),
+                null => t.settings.downloadPercentUnknown,
+              },
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.typography.caption.copyWith(color: OnVideoColors.foreground),
+            ),
+          ),
+          DsButton.icon(
+            variant: DsButtonVariant.ghost,
+            size: DsSize.sm,
+            semanticLabel: t.player.downloadPause,
+            onPressed: () => unawaited(ref.read(vodDownloadsProvider.notifier).pause(download.id)),
+            icon: const DsIcon(DsIcons.pause),
+          ),
+        ],
+      );
+    }
+    return null;
+  }
+
+  /// What the picture has to report — a source that would not open, a seek
+  /// the engine refused — [message] on one line under the transport, in the
+  /// theme's danger ink. It rides the bar rather than covering the picture:
+  /// a refused seek is not the end of the episode.
+  Widget _barError(DsThemeData theme, String message) => Padding(
+    padding: const EdgeInsetsDirectional.only(top: DsSpace.s4),
+    child: Text(
+      message,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: theme.typography.caption.copyWith(color: theme.colors.danger.text),
+    ),
+  );
+
+  /// The desktop's small window: the shared chrome over the episode's
+  /// picture. The season's name beside the way back, the transport leading
+  /// the bar, the sound after it, the season's own seek line running along
+  /// the bottom edge above them, and the pin at the bar's end; what the
+  /// page's bar says around that line — a download under way, a failure —
+  /// rides the same slot. The picture underneath keeps every gesture it has
+  /// on the page.
+  Widget _smallWindowChrome(BuildContext context, double width, {required bool visible}) {
+    final t = context.t;
+    final theme = DsTheme.of(context);
+    final handle = _playableHandle;
+    final playing = _transport?.isPlaying ?? false;
+    final muted = handle?.muted ?? false;
+    final control = PlayerBarTier.controlFootprint(context);
+    // The name's room: what the two corner pills and the window's insets
+    // leave of the window.
+    final nameMax = (width - 2 * control - 56).clamp(0, double.infinity).toDouble();
+    // Play and pause: the bar's first control on a desktop's window, the
+    // middle of the picture on a phone's.
+    Widget transportButton({double? size, double? glyph}) => PlayerBarButton(
+      icon: playing ? DsIcons.pause : DsIcons.play,
+      label: playing ? t.player.pause : t.player.play,
+      size: size,
+      iconSize: glyph,
+      onPressed: handle == null
+          ? null
+          : () {
+              _wake();
+              unawaited(_togglePlay());
+            },
+    );
+    return PlayerPipChrome(
+      visible: visible,
+      width: width,
+      control: control,
+      onRestore: () {
+        _wake();
+        unawaited(_togglePip());
+      },
+      onClose: () {
+        _wake();
+        unawaited(_playableHandle?.pause());
+        final close = ref.read(roomLeaveProvider);
+        if (close != null) {
+          unawaited(close());
+          return;
+        }
+        // The page's own window cannot close itself: the episode stops and
+        // the small window hands the page back.
+        _leave();
+      },
+      onWake: _wake,
+      identity: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: nameMax),
+        child: Text(
+          // The word the page's own head prints over the picture.
+          ref.watch(vodSeasonDetailProvider(widget.seasonId)).value?.title ?? t.vod.opening,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: theme.typography.labelStrong.copyWith(color: OnVideoColors.foreground),
+        ),
+      ),
+      leading: transportButton(),
+      playPause: PlayerGlassPill(
+        child: Padding(
+          padding: const EdgeInsets.all(DsSpace.s8),
+          child: transportButton(size: theme.sizes.lg, glyph: DsSpace.s24),
+        ),
+      ),
+      verbs: [
+        PlayerPipVerb(
+          child: PlayerBarButton(
+            icon: muted ? DsIcons.volumeX : DsIcons.volume2,
+            label: muted ? t.player.unmute : t.player.mute,
+            onPressed: handle == null
+                ? null
+                : () {
+                    _wake();
+                    unawaited(_toggleMute());
+                  },
+          ),
+        ),
+        // The level where the window is wide enough to trim it; under that
+        // the mute pill alone names the sound.
+        if (width >= 480) PlayerPipVerb(extent: 88, child: _volumeSlider(t, 88)),
+      ],
+      progress: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        spacing: DsSpace.s4,
+        children: [
+          ?_downloadRow(t, theme, _episode),
+          _seekLine(t),
+          if (_error case final error?) _barError(theme, error),
+        ],
+      ),
+      onTogglePin: () {
+        final next = !ref.read(playbackSettingsProvider).windowsPipAlwaysOnTop;
+        unawaited(ref.read(playbackSettingsProvider.notifier).setWindowsPipAlwaysOnTop(value: next));
+        unawaited(ref.read(desktopWindowHostProvider).setAlwaysOnTop(value: next));
+      },
+      pinned: ref.watch(playbackSettingsProvider.select((settings) => settings.windowsPipAlwaysOnTop)),
     );
   }
 }
