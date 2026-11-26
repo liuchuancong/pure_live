@@ -657,9 +657,11 @@ final class _ImmersiveCapsuleState extends ConsumerState<_ImmersiveCapsule> {
                     ),
                   // The identity half is a label, not a door: no tap, no
                   // details sheet — the anchor's facts stay where they are.
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: DsSpace.s4, vertical: DsSpace.s3),
-                    child: _capsuleIdentity(name: name, avatar: avatar, where: where),
+                  Flexible(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: DsSpace.s4, vertical: DsSpace.s3),
+                      child: _capsuleIdentity(name: name, avatar: avatar, where: where),
+                    ),
                   ),
                   // The follow verb rides the capsule: in the immersive shapes
                   // it is the only follow surface, the column being gone.

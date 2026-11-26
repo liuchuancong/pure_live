@@ -105,8 +105,19 @@ final class RoomOpenTiming {
   /// the next fix does.
   void markOpened() => _opened ??= _now();
 
-  /// T5: the engine reported a picture with a size in it.
-  void markFirstFrame() => _firstFrame ??= _now();
+  /// T5: the engine reported a picture with a size in it. Returns whether this
+  /// was the first frame report of the entry.
+  bool markFirstFrame() {
+    if (_firstFrame != null) return false;
+    _firstFrame = _now();
+    return true;
+  }
+
+  /// Whether the engine has already reported playback.
+  bool get hasPlaying => _playing != null;
+
+  /// Whether a frame mark is already available.
+  bool get hasFirstFrame => _firstFrame != null;
 
   /// T6: the room says it is playing. Returns whether this was the first
   /// playing report of the entry, so the caller hands its numbers over once.
@@ -133,9 +144,14 @@ final class RoomOpenTiming {
     (name: 'chat', took: _chat?.difference(started)),
   ];
 
-  /// T0 to wherever the entry ended.
-  Duration get total =>
-      (_playing ?? _firstFrame ?? _requested ?? _lines ?? _qualities ?? _detail ?? started).difference(started);
+  /// T0 to the later of playback and the first frame.
+  Duration get total {
+    var finished = _playing;
+    if (_firstFrame != null && (finished == null || _firstFrame!.isAfter(finished))) {
+      finished = _firstFrame;
+    }
+    return (finished ?? _requested ?? _lines ?? _qualities ?? _detail ?? started).difference(started);
+  }
 
   /// The fixed-field log line: [failed] when the entry ended in an error
   /// rather than a picture, [abandoned] when the viewer walked away from it

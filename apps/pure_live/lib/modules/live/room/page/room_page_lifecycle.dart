@@ -34,7 +34,7 @@ extension _RoomPageLifecycle on _RoomPageState {
     // The state is read, not watched: the page's build selects the fields
     // this answers to and calls in whenever any of them changes.
     final room = ref.read(roomProvider);
-    final connecting = room.room != null && room.handle == null && !room.playback.playing;
+    final connecting = room.room != null && !room.pictureReady && room.handle == null && !room.playback.playing;
     if (connecting && _slowTimer == null) {
       _slowTimer = Timer(slowAfter, () {
         if (mounted) ref.read(roomSlowProvider.notifier).slow = true;

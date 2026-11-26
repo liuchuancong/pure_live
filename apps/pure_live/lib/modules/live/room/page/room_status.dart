@@ -174,6 +174,12 @@ RoomPictureState pictureStateOf(Translations t, RoomState state, {bool slow = fa
   if (playback.playback == PlayerPlaybackState.buffering) {
     return _of(RoomPictureKind.buffering, t.room.buffering, busy: true);
   }
+  // A staged player can already be painting while the sweep verifies its
+  // position. Once a frame has arrived, a connecting card over that picture
+  // describes the controller's bookkeeping rather than what the viewer sees.
+  if (state.pictureReady && playback.playback == PlayerPlaybackState.opening) {
+    return _playing;
+  }
   return switch (playback.playback) {
     PlayerPlaybackState.idle || PlayerPlaybackState.opening =>
       slow

@@ -78,6 +78,9 @@ typedef RoomState = ({
   PlayerCoreState playback,
   PlayerHandle? handle,
   PlayerHandle? player,
+
+  /// Whether the mounted player has reported a picture for this source.
+  bool pictureReady,
   bool audioOnly,
 
   /// The room's effective mute (the viewer's own toggle after the app-wide
@@ -106,6 +109,7 @@ RoomState _initial({bool audioOnly = false, bool muted = false, double volume = 
   playback: PlayerCoreState.idle,
   handle: null,
   player: null,
+  pictureReady: false,
   audioOnly: audioOnly,
   muted: muted,
   volume: volume,
@@ -989,17 +993,7 @@ final class RoomController extends Notifier<RoomState> {
   StreamSubscription<GeometryState>? _geometry;
 
   /// The adapter events that carry the first decoded frame of an entry.
-  StreamSubscription<PlayerAdapterEvent>? _frames;
-
-  /// The staged player the picture mounts on while an open is still in
-  /// flight, found by [_watchStagedSurface]; cancelled with the room.
-  Timer? _surfaceWatch;
-
-  /// Rises with every [_watchStagedSurface] start, so the command that began
-  /// an older watch stops only its own: a command landing mid-open (a retry
-  /// over a slow entry, a line from the picker) restarts the watch, and the
-  /// older await's end must not cancel the newer one's.
-  int _surfaceWatchGeneration = 0;
+  StreamSubscription<PlayerAdapterEvent>? _openSignals;
 
   /// The platform's own "the stored cookie was refused" events, for the site
   /// this room was opened from; cancelled with the room.
@@ -1015,13 +1009,6 @@ final class RoomController extends Notifier<RoomState> {
   /// How many times a chat the platform refused *for now* is opened again on
   /// the room's own, before the column's 重试 button is left to the viewer.
   static const int _kChatTransientRetries = 3;
-
-  /// How often the staged-player watcher polls the kernel while an open is in
-  /// flight. The sweep creates the player without announcing it, so the only
-  /// seam this side of media_core has is the kernel's own handle list; the
-  /// poll only has to land inside the open, and it stops the moment the
-  /// player commits.
-  static const Duration _kStagedSurfacePoll = Duration(milliseconds: 40);
 
   /// The pending automatic chat retry, and how many this room has spent.
   Timer? _chatRetry;
@@ -1398,10 +1385,7 @@ final class RoomController extends Notifier<RoomState> {
     // A line switch over no committed handle — the picker's way out of a
     // failed open — stages a fresh sweep, whose staged player carries the
     // first frames the same way an open's does.
-    int? watch;
-    if (state.handle == null) watch = _watchStagedSurface();
     await _playback?.switchLine(index);
-    _stopStagedSurfaceWatch(watch);
     // Each line carries its own lease, so the timer is the new line's.
     _armLeaseRenewal();
   }
@@ -1413,10 +1397,7 @@ final class RoomController extends Notifier<RoomState> {
       // A retry over no committed handle is a fresh sweep (an open whose
       // candidates all failed): its staged player carries the first frames
       // the same way an open's does.
-      int? watch;
-      if (state.handle == null) watch = _watchStagedSurface();
       await playback.retry();
-      _stopStagedSurfaceWatch(watch);
       return;
     }
     final platform = _requestedPlatform;
@@ -1977,6 +1958,7 @@ final class RoomController extends Notifier<RoomState> {
     bool keepPlayingWhenUnchanged = false,
   }) async {
     final epoch = _openEpoch;
+    bool isCurrent() => ref.mounted && epoch == _openEpoch;
     final resolved = await _resolveLines(capability, room);
     if (resolved.error case final error?) {
       if (epoch == _openEpoch) {
@@ -2069,14 +2051,12 @@ final class RoomController extends Notifier<RoomState> {
         _autoSwitchUnavailable = false;
         _autoSwitchPlayerFailure = null;
       }
-      // The engine holding an opened input - the split between the CDN's time
-      // and the decoder's. `ready` alone is not it: the adapter is ready once
-      // it is initialised, before any media; `hasSource` is set when the open
-      // returns. See RoomOpenTiming.markOpened.
-      if (playback_.ready && playback_.hasSource) _openTiming?.markOpened();
-      // The entry's line is written the first time the room says it is
-      // playing, which is the number the viewer waits for.
-      if (playback_.playing && (_openTiming?.markPlaying() ?? false)) _reportOpenTiming();
+      // Keep the entry open until playback and a frame have both been
+      // reported; either signal can arrive first on a reused or candidate
+      // player, and `playing` alone does not prove a picture reached the view.
+      if (playback_.playing && (_openTiming?.markPlaying() ?? false) && (_openTiming?.hasFirstFrame ?? false)) {
+        _reportOpenTiming();
+      }
     });
     _failures ??= playback.onError.listen((failure) {
       // The engine's own reading of what died: a network-kind failure keeps
@@ -2114,7 +2094,7 @@ final class RoomController extends Notifier<RoomState> {
         watchStartedAt: DateTime.now(),
       );
       _watchVideoSize(handle);
-      _watchFirstFrame(handle);
+      _watchOpenSignals(handle, isCurrent: () => ref.mounted && identical(_playback, playback));
       // The player's pause and seek carry into the flying layer; the
       // viewer's current audio follows every engine, the decoder choice
       // goes to the first one.
@@ -2130,14 +2110,20 @@ final class RoomController extends Notifier<RoomState> {
       // its lease is the one that has to be watched.
       _armLeaseRenewal();
     });
-    // Marked before the wait: `play` returns once the engine has opened the
-    // input, so asking and hearing about it are the two ends of the segment
-    // `opened` then splits.
+    // Marked before the wait: the adapter's opened event and this hand-off are
+    // the two ends of the segment `opened` then splits.
     _openTiming?.markRequested();
-    // The sweep stages its engine without announcing it; the watcher hands
-    // that player to the picture from the moment it accepts a line, so the
-    // connect/probe window's frames are painted instead of dropped.
-    final watch = _watchStagedSurface();
+    state = _with(pictureReady: false);
+    // The surface mounts the sweep's own candidate before open, so the
+    // connect/probe window paints into a texture that already has a view.
+    // URI polling could pick an older handle carrying the same address;
+    // identity and the open epoch come from the sweep instead.
+    playback.onPlayerStaged = (handle) {
+      if (!isCurrent() || handle.disposed || state.handle != null) return;
+      if (identical(state.player, handle)) return;
+      _watchOpenSignals(handle, isCurrent: isCurrent);
+      state = _with(player: handle, pictureReady: false);
+    };
     await playback.play(
       LiveSourceRequest(
         sources: roomSourcesOf(
@@ -2152,7 +2138,6 @@ final class RoomController extends Notifier<RoomState> {
       ),
       preferredBackend: ref.read(playerKernelBackendProvider).id,
     );
-    _stopStagedSurfaceWatch(watch);
     _armLeaseRenewal();
   }
 
@@ -2211,83 +2196,32 @@ final class RoomController extends Notifier<RoomState> {
     });
   }
 
-  /// The entry's first frame, from the events that mean a picture is coming.
+  /// The entry's input-opened and first-frame signals, observed from staging.
   ///
   /// On Windows the backend reports the decoded frame itself
   /// (`PlayerAdapterVideoFrameProgress`, the estimated-vf-fps heartbeat) — the
   /// truest mark, and the first choice. No other platform's adapter carries
-  /// that event, so the entry's `firstFrame=` field used to stay `-` there for
-  /// ever; on those platforms the stream's first reported size is the nearest
-  /// signal to a picture the engine gives, and it is what the stage's own
-  /// meaning counts ("the engine reported a picture with a size in it").
-  /// Whichever of the two arrives first marks the stage — `markFirstFrame`
-  /// keeps the first — so every platform answers the question the number
-  /// exists for, at the truthfulness its engine can deliver.
-  void _watchFirstFrame(PlayerHandle handle) {
-    unawaited(_frames?.cancel() ?? Future<void>.value());
-    _frames = handle.adapterEvents.listen((event) {
-      if (event case PlayerAdapterVideoFrameProgress() || PlayerAdapterVideoSizeChanged()) {
-        _openTiming?.markFirstFrame();
+  /// that event, so on those platforms the stream's first reported size is the
+  /// nearest signal to a picture the engine gives. Whichever arrives first
+  /// marks the stage, at the truthfulness its engine can deliver. Listening
+  /// before open also catches signals a candidate produces before commit.
+  void _watchOpenSignals(PlayerHandle handle, {required bool Function() isCurrent}) {
+    unawaited(_openSignals?.cancel() ?? Future<void>.value());
+    _openSignals = handle.adapterEvents.listen((event) {
+      // A failed candidate can still have events queued while the next one is
+      // staged; only the surface's current handle may describe this picture.
+      if (!isCurrent() || !identical(state.player, handle)) return;
+      switch (event) {
+        case PlayerAdapterOpened():
+          _openTiming?.markOpened();
+        case PlayerAdapterVideoFrameProgress() || PlayerAdapterVideoSizeChanged():
+          final firstFrame = _openTiming?.markFirstFrame() ?? false;
+          if (!state.pictureReady) state = _with(pictureReady: true);
+          if (firstFrame && (_openTiming?.hasPlaying ?? false)) {
+            _reportOpenTiming();
+          }
       }
     });
-  }
-
-  /// Publishes the sweep's staged player as the picture's binding while the
-  /// open is still in flight, and answers the watch's generation for
-  /// [_stopStagedSurfaceWatch].
-  ///
-  /// The sweep commits a candidate only after verification — by which time the
-  /// first frame is already decoded — so a picture that mounts on the
-  /// committed handle alone leaves every frame of the connect/probe/decode
-  /// window in a texture nothing paints. The sweep creates that player without
-  /// announcing it, so this side polls the kernel's handle list until one
-  /// carries an opened source of this room's lines, and writes it to
-  /// [RoomState.player]: the surface mounts on it, and the first decoded frame
-  /// lands in a view that is already there. The committed handle is that same
-  /// object, so the mount survives the commit without a rebind.
-  int _watchStagedSurface() {
-    _surfaceWatch?.cancel();
-    final epoch = _openEpoch;
-    final generation = ++_surfaceWatchGeneration;
-    _surfaceWatch = Timer.periodic(_kStagedSurfacePoll, (timer) {
-      // A room that closed or moved on, or one whose player committed, has no
-      // staging left to watch.
-      if (!ref.mounted || epoch != _openEpoch) {
-        timer.cancel();
-        return;
-      }
-      final committed = state.handle;
-      if (committed != null) {
-        // The commit and the last publish are the same object; align them
-        // when a candidate died between the two (a poll that missed it).
-        if (!identical(state.player, committed)) state = _with(player: committed);
-        timer.cancel();
-        return;
-      }
-      // Only the newest opened candidate can be this room's: every open
-      // mints its own addresses, so another surface's player carries lines
-      // this room never asked for.
-      PlayerHandle? staged;
-      final lines = state.lines;
-      for (final handle in ref.read(playerKernelProvider).handles) {
-        final source = handle.source;
-        if (source == null || handle.disposed) continue;
-        if (lines.any((line) => Uri.tryParse(line.url) == source.uri)) staged = handle;
-      }
-      if (staged == null || identical(staged, state.player)) return;
-      state = _with(player: staged);
-    });
-    return generation;
-  }
-
-  /// Ends the watch [generation] began: the play it followed has returned
-  /// (committed, exhausted or superseded), so there is no staging of its own
-  /// left to publish. Null means this command started no watch; a newer watch
-  /// is left alone.
-  void _stopStagedSurfaceWatch(int? generation) {
-    if (generation == null || _surfaceWatchGeneration != generation) return;
-    _surfaceWatch?.cancel();
-    _surfaceWatch = null;
   }
 
   Future<void> _openDanmaku(LiveDanmakuProvider provider, LiveRoom room) async {
@@ -2847,6 +2781,7 @@ final class RoomController extends Notifier<RoomState> {
     PlayerCoreState? playback,
     PlayerHandle? handle,
     PlayerHandle? player,
+    bool? pictureReady,
     bool? audioOnly,
     bool? muted,
     double? volume,
@@ -2864,6 +2799,7 @@ final class RoomController extends Notifier<RoomState> {
       playback: playback ?? state.playback,
       handle: handle ?? state.handle,
       player: player ?? state.player,
+      pictureReady: pictureReady ?? state.pictureReady,
       audioOnly: audioOnly ?? state.audioOnly,
       muted: muted ?? _muted || _globalMute,
       volume: volume ?? _volume,
@@ -2899,8 +2835,8 @@ final class RoomController extends Notifier<RoomState> {
     _chatStates = null;
     unawaited(_chat?.cancel() ?? Future<void>.value());
     unawaited(_geometry?.cancel() ?? Future<void>.value());
-    unawaited(_frames?.cancel() ?? Future<void>.value());
-    _frames = null;
+    unawaited(_openSignals?.cancel() ?? Future<void>.value());
+    _openSignals = null;
     unawaited(_cookieRefusals?.cancel() ?? Future<void>.value());
     _cookieRefusals = null;
     _states = null;
@@ -2914,7 +2850,6 @@ final class RoomController extends Notifier<RoomState> {
     _leaseRenewal = null;
     _chatRetry?.cancel();
     _chatRetry = null;
-    _stopStagedSurfaceWatch(_surfaceWatchGeneration);
     _chatAttempts = 0;
     final session = _session;
     _session = null;

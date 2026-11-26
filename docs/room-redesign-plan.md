@@ -360,3 +360,13 @@ Windows 窗口全屏入口（第十五轮改）：播放行「全屏｜窗口全
   - **验证**：五个 Dart 文件完成局部格式化并撤回无关格式差异；App `dart analyze lib test` **No issues found**；`flutter test --no-pub` 全量 **1267/1267** 通过（03:17，退出码 0）；`git diff --check` 本轮路径无空白错误，仅既有 CRLF 替换提示。
   - **平台/主题与限制**：改动沿用现有 desen_ui、主题 token 和响应式分支，覆盖桌面、平板、手机与 TV 的导航判定，不区分浅色/深色/自定义主题。未构建 APK/桌面产物、未截图、未运行 UI，未做真实键盘、TV、触控、大字体或读屏验收；这些行为目前只有源码核对、静态分析和全量自动测试证据。
   - **剩余候选**：横屏聊天对非 TV 顶栏的 `endInset`、竖屏全屏 SafeArea、PiP 控件宽度与顺序规划、IPTV 窄屏长源名、红果移除确认、虎牙同构抽屉门及设置缩窄丢 section 仍需后续取证；相关文件已有并行改动，本轮未覆盖。
+
+- 2026-11-26：第七十二轮（参考播放器对照、首帧计时与候选画面收口）⇒
+  - **参考对照**：逐项核对 `E:\study\PureLive` 的会话、计时与直播 sweep，确认当前也是详情→清晰度→线路的串行链路；参考主要的 1 MiB/1 秒探测、6 秒缓存和低延迟写入参数已经在当前默认值中。没有证据支持盲降缓存档位或把站点请求强行并发，本轮不重复实现已有能力。
+  - **首开计时纠偏**：旧实现把 `ready && hasSource` 当作原生输入已打开、把 `playing` 当作首开完成，且首帧监听在候选提交后才挂上。现改为监听真实的 `PlayerAdapterOpened`，从 staged 候选开始观察 `PlayerAdapterVideoFrameProgress`；其他平台以首个有效视频尺寸作为引擎能提供的最接近首帧信号。播放与首帧两个标记都到齐才结束计时，`total` 取两者较晚时间。
+  - **候选画面状态**：`RoomState` 新增运行时 `pictureReady`，候选句柄切换时清零；监听器同时校验当前 open/source 与 `state.player` 的句柄身份，旧候选排队到达的事件不能把新线路标成有画面。候选已出画而 sweep 仍在验证位置时，不再覆盖“连接中/慢”卡片；慢连接计时同步停用，失败、缓冲、暂停和离线状态仍按原优先级显示。
+  - **窄窗 UI**：沉浸胶囊的身份文本外层增加 `Flexible`，让长房间标题先收缩省略，避免挤掉返回、关注和详情按钮并触发 RenderFlex 溢出；不改标题数据来源或既有信息层级。
+  - **配置与主要文件**：无新增持久化配置、Slang key、依赖或主题 token；`pictureReady` 与候选监听均为房间运行态。修改 `room_controller.dart`、`room_open_timing.dart`、`room_status.dart`、`room_page_lifecycle.dart`、`player_surface_top_bar.dart` 和 `room_open_timing_test.dart`；仓外 media_core 与本轮其他并行工作树内容未修改。
+  - **验证**：六个 Dart 文件完成单文件格式化；候选身份补强后再次 `dart analyze lib test` **No issues found**；`flutter test --no-pub test/live/room_open_timing_test.dart` **9/9** 通过；`git diff --check` 本轮路径无空白错误，`pubspec.yaml`/`pubspec.lock` 无本轮依赖变化。
+  - **平台/主题与限制**：改动沿用现有播放器、desen_ui 和浅色/深色/自定义主题；胶囊收缩只影响沉浸顶栏。未构建 APK/桌面产物、未截图、未运行 UI、未做真实线路切换、手机/TV、触控、大字体、读屏或视觉验收；静态分析与计时单测不能证明真实秒开或流畅度提升。
+  - **剩余性能边界**：当前 `RoomOpenTiming` 仍从 `RoomController.open()` 起算，路由/窗口创建与首帧绘制不在区间内；仓外 live sweep 的原生 initialize/open 尚未套 18 秒 open 超时，失败线路仍串行尝试，Windows 首帧心跳来自约 1 秒一次的 estimated-vf-fps。后续应以当前构建的真实点击到首帧、切线和持续卡顿日志取证，再决定是否调整媒体核或并发策略。提交范围仅限上述文件，其他并行改动保留在工作树。

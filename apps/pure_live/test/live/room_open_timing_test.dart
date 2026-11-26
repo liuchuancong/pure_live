@@ -91,6 +91,18 @@ void main() {
     expect(timing.markPlaying(), isFalse);
   });
 
+  test('a later first frame completes the entry without moving the playing mark', () {
+    final timing = _timing(site: 'bilibili', roomId: '1');
+
+    expect(timing.markPlaying(), isTrue);
+    expect(timing.hasPlaying, isTrue);
+    expect(timing.hasFirstFrame, isFalse);
+    expect(timing.markFirstFrame(), isTrue);
+    expect(timing.markFirstFrame(), isFalse);
+    expect(timing.hasFirstFrame, isTrue);
+    expect(timing.total, const Duration(milliseconds: 200));
+  });
+
   test('the log splits the CDN time from the decoder time', () {
     final timing = _timing(site: 'bilibili', roomId: '5')
       ..markDetail()
