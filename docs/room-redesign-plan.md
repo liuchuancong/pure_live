@@ -370,3 +370,22 @@ Windows 窗口全屏入口（第十五轮改）：播放行「全屏｜窗口全
   - **验证**：六个 Dart 文件完成单文件格式化；候选身份补强后再次 `dart analyze lib test` **No issues found**；`flutter test --no-pub test/live/room_open_timing_test.dart` **9/9** 通过；`git diff --check` 本轮路径无空白错误，`pubspec.yaml`/`pubspec.lock` 无本轮依赖变化。
   - **平台/主题与限制**：改动沿用现有播放器、desen_ui 和浅色/深色/自定义主题；胶囊收缩只影响沉浸顶栏。未构建 APK/桌面产物、未截图、未运行 UI、未做真实线路切换、手机/TV、触控、大字体、读屏或视觉验收；静态分析与计时单测不能证明真实秒开或流畅度提升。
   - **剩余性能边界**：当前 `RoomOpenTiming` 仍从 `RoomController.open()` 起算，路由/窗口创建与首帧绘制不在区间内；仓外 live sweep 的原生 initialize/open 尚未套 18 秒 open 超时，失败线路仍串行尝试，Windows 首帧心跳来自约 1 秒一次的 estimated-vf-fps。后续应以当前构建的真实点击到首帧、切线和持续卡顿日志取证，再决定是否调整媒体核或并发策略。提交范围仅限上述文件，其他并行改动保留在工作树。
+
+- 2026-11-26：第七十三轮（直播候选原生打开有界化与失败线路续试）⇒
+  - **打开截止时间**：仓外 `media_core_live` 的同引擎换线与 staged 引擎候选统一经过 `_openCandidate`，使用 `LiveWatchdogs.sourceReadyTimeout`（默认 18 秒）限制原生 `open()`；`Duration.zero` 保持完全关闭。打开与位置验证是两个先后不重叠的独立窗口，不把 18 秒误称为两阶段共享总预算。
+  - **卡住句柄退役**：超时后先取消当前句柄的控制器订阅、清理 source/watchdog/capability，再调用 `PlayerKernel.release`。release 会同步摘除内核注册并立即标记句柄 disposed；原生 dispose 仍可能排在被卡住的 open 后，因此后台完成，不再让下一条线路额外等待释放超时。
+  - **回归覆盖**：新增 staged open 挂起后下一引擎成功、同引擎第二条线 open 挂起后正确耗尽并清空句柄、零截止时间不干预慢 open 三项测试；同时断言旧原生调用迟到完成不会夺回当前播放或重新注册句柄。
+  - **配置与主要文件**：无新增持久化配置、Slang key、依赖、主题 token 或 App 业务状态。仓外修改 `live_playback_sweep.dart`、`live_playback_controller.dart`、`live_watchdogs.dart`、`live_playback_controller_test.dart`；PureLive 仅回填本台账。外部仓库已有其他并行修改，本轮未整文件覆盖、未提交或推送。
+  - **验证**：控制器定向测试 **23/23**、`media_core_live` 全包 **62/62** 通过；`flutter analyze --no-pub` 与 App `dart analyze lib test` 均 **No issues found**；本轮四个外部文件完成单文件格式化，两个仓库 `git diff --check` 无空白错误（PureLive 仅既有 CRLF 替换提示）。
+  - **平台/主题与限制**：修复位于共享直播播放核，不区分桌面、平板、手机、TV 或浅色/深色/自定义主题。未构建 APK/桌面产物、未截图、未运行 UI，未做真实慢线路、原生 open 挂起、切线、音频、多窗口、TV、触控、大字体或读屏验收；自动测试不能证明真实秒开或流畅度已经提升。
+  - **剩余边界**：原生 initialize/create 仍不受该 open 截止时间保护；候选线路依旧串行，连续多个卡住候选会分别消耗打开窗口，并受内核在途释放数量上限约束。Windows 首帧信号仍约为 1 秒分辨率，真实点击到首帧仍应结合当前构建日志取证。
+
+- 2026-11-26：第七十四轮（播放器内核初始化截止时间与未注册句柄退役）⇒
+  - **初始化有界化**：`PlayerKernel.create()` 现在将既有 `PlayerConstants.initializationTimeout`（15 秒）应用到 `handle.initialize()`。直播 sweep 使用无 source 的 `kernel.create(preferredBackend: engine)`，此前不会进入 create 自带的 18 秒 open 超时，因此这是独立于第七十三轮的另一条启动卡死边界。
+  - **超时退役**：初始化超时时句柄尚未注册，不能走 `kernel.release`；改为立即调用 `handle.dispose()` 同步标记退役，但不等待原生销毁。原生 initialize 无法取消，dispose 会排在其后，迟到初始化完成后先经过既有 500ms 静音保护，再执行 adapter/runtime 释放。后台释放失败记录 lifecycle warning，调用方只收到原始 `TimeoutException`。
+  - **错误路径保持**：非超时初始化异常仍等待 `handle.dispose()` 完成后才抛出，保持原有清理契约；超时句柄不进入内核 registry，也不占用 pending-release 槽位。
+  - **回归覆盖**：新增真实时钟测试验证 15 秒截止、超时返回时无注册句柄且原生 dispose 尚未执行、首个 initialize 仍挂起时第二个 create 已成功、旧 initialize 迟到完成后旧 adapter 被销毁且 healthy 句柄继续独占 registry、release 后 registry 清空。
+  - **配置与主要文件**：无新增持久化配置、Slang key、依赖、主题 token 或 App 业务状态。仓外修改 `player_kernel.dart`，新增 `test/kernel/player_kernel_initialization_timeout_test.dart`；`player_handle.dart` 仅复核既有同步退役与静音契约，最终无本轮差异。PureLive 仅回填本台账，外部仓库未提交或推送。
+  - **验证**：初始化超时及既有 kernel dispose race 定向测试 **2/2** 通过；`media_core` 全包 **2671/2671** 通过；`media_core_live` 全包 **62/62** 通过且分析无问题；media_core `lib` 分析与 App `dart analyze lib test` 均 **No issues found**；本轮两个外部目标 `dart analyze` 无问题，`git diff --check` 无空白错误。media_core 全包分析仍报告并行未入库测试 `kernel_dispose_race_test.dart` 的两条 info，本轮未改动该文件。
+  - **平台/主题与限制**：修复位于共享播放器内核，不区分桌面、平板、手机、TV 或浅色/深色/自定义主题。未构建 APK/桌面产物、未截图、未运行 UI，未做真实原生 initialize 挂起、慢引擎、切线、音频、多窗口、TV、触控、大字体或读屏验收；自动测试不能证明真实秒开或流畅度已经提升。
+  - **剩余边界**：同步 adapter factory `create()` 与 create 之前的 source 解析不在该截止时间内；候选线路仍串行，多个永久挂起的原生 open 仍可能陆续触及内核在途释放上限。Windows 首帧信号仍约为 1 秒分辨率，真实点击到首帧仍应结合当前构建日志取证。
