@@ -13,6 +13,8 @@ import 'package:path/path.dart' as p;
 import 'package:pure_live/app/background/glass/live_glass.dart' show kLiveGlassHeroFrostSigma;
 import 'package:pure_live/app/providers/boot/storage_providers.dart' show appPathsProvider;
 import 'package:pure_live/app/routing/navigation/route_names.dart' show RouteNames;
+import 'package:pure_live/app/windows/chrome/window_chrome.dart'
+    show WindowCaptionControls, WindowChromeState, WindowDragArea;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/music/controller/library/music_library.dart';
 import 'package:pure_live/modules/music/controller/lyric/music_desktop_lyric_settings.dart'
@@ -62,6 +64,7 @@ final class _MusicPlayerPageState extends ConsumerState<MusicPlayerPage> {
     final t = context.t;
     final colors = DsTheme.colorsOf(context);
     final theme = DsTheme.of(context);
+    final drawsCaptionControls = WindowChromeState.drawsCaptionControls;
     // The track alone: the sleep timer's remaining line counts down once a
     // second, and a page-level watch would rebuild the whole stage for one
     // caption — its own Consumer carries the tick below.
@@ -116,110 +119,114 @@ final class _MusicPlayerPageState extends ConsumerState<MusicPlayerPage> {
               ),
             ),
             SafeArea(
-              child: track == null
-                  ? Center(
-                      child: DsEmptyState(
-                        icon: const DsIcon(DsIcons.music),
-                        title: Text(t.music.searchIdleTitle),
-                        description: Text(t.music.searchIdleDescription),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final wide = constraints.maxWidth >= 920;
+                  // A phone has no room for a stage and a panel side by
+                  // side or stacked half each: the song leads, and the
+                  // lyrics / queue / comments open from the header, the
+                  // way the station's own phone player does.
+                  // A short window is the same problem as a narrow
+                  // one: two half-height panes leave neither side
+                  // usable, so height counts as well as width.
+                  final phone = constraints.maxWidth < LiveWindow.sheet || constraints.maxHeight < 520;
+                  final compactCaption = drawsCaptionControls && constraints.maxWidth < 520;
+                  final caption = Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    spacing: DsSpace.s3,
+                    children: [
+                      Text(
+                        t.music.nowPlaying,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.typography.title.copyWith(color: colors.text),
                       ),
-                    )
-                  : LayoutBuilder(
-                      builder: (context, constraints) {
-                        final wide = constraints.maxWidth >= 920;
-                        // A phone has no room for a stage and a panel side by
-                        // side or stacked half each: the song leads, and the
-                        // lyrics / queue / comments open from the header, the
-                        // way the station's own phone player does.
-                        // A short window is the same problem as a narrow
-                        // one: two half-height panes leave neither side
-                        // usable, so height counts as well as width.
-                        final phone = constraints.maxWidth < LiveWindow.sheet || constraints.maxHeight < 520;
-                        final header = Row(
-                          spacing: DsSpace.s8,
+                      const _SleepRemainingLine(),
+                    ],
+                  );
+                  final header = Row(
+                    spacing: compactCaption ? DsSpace.s4 : DsSpace.s8,
+                    children: [
+                      DsButton.icon(
+                        variant: DsButtonVariant.ghost,
+                        size: DsSize.sm,
+                        semanticLabel: t.common.close,
+                        onPressed: () => context.pop(),
+                        icon: const DsIcon(DsIcons.chevronLeft),
+                      ),
+                      Expanded(child: drawsCaptionControls ? WindowDragArea(child: caption) : caption),
+                      if (track != null && phone)
+                        DsButton.icon(
+                          variant: DsButtonVariant.secondary,
+                          size: DsSize.sm,
+                          semanticLabel: t.music.stagePanels,
+                          onPressed: () => _openStagePanels(context),
+                          icon: const DsIcon(DsIcons.listMusic),
+                        ),
+                      // The song's own verbs ride in the header, as the
+                      // reference's PlayDetail does: the tier it plays
+                      // at, the way to save it, and the runtime menu —
+                      // the stage keeps the song and the transport
+                      // keeps movement.
+                      if (track != null) ...[
+                        const MusicQualityPill(),
+                        if (!compactCaption)
+                          DsButton.icon(
+                            variant: DsButtonVariant.secondary,
+                            size: DsSize.sm,
+                            semanticLabel: t.music.download,
+                            onPressed: () => unawaited(downloadTrackWithToast(context, ref, track)),
+                            icon: const DsIcon(DsIcons.download),
+                          ),
+                        const _PlayerMenu(),
+                      ],
+                      if (drawsCaptionControls) ...[
+                        const SizedBox(width: DsSpace.s4),
+                        WindowCaptionControls(height: compactCaption ? 32 : 40, ink: colors.text),
+                      ],
+                    ],
+                  );
+                  final body = track == null
+                      ? Center(
+                          child: DsEmptyState(
+                            icon: const DsIcon(DsIcons.music),
+                            title: Text(t.music.searchIdleTitle),
+                            description: Text(t.music.searchIdleDescription),
+                          ),
+                        )
+                      : wide
+                      ? const Row(
+                          spacing: DsSpace.s24,
                           children: [
-                            DsButton.icon(
-                              variant: DsButtonVariant.ghost,
-                              size: DsSize.sm,
-                              semanticLabel: t.common.close,
-                              onPressed: () => context.pop(),
-                              icon: const DsIcon(DsIcons.chevronLeft),
-                            ),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                spacing: DsSpace.s3,
-                                children: [
-                                  Text(
-                                    t.music.nowPlaying,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: theme.typography.title.copyWith(color: colors.text),
-                                  ),
-                                  const _SleepRemainingLine(),
-                                ],
-                              ),
-                            ),
-                            if (phone)
-                              DsButton.icon(
-                                variant: DsButtonVariant.secondary,
-                                size: DsSize.sm,
-                                semanticLabel: t.music.stagePanels,
-                                onPressed: () => _openStagePanels(context),
-                                icon: const DsIcon(DsIcons.listMusic),
-                              ),
-                            // The song's own verbs ride in the header, as the
-                            // reference's PlayDetail does: the tier it plays
-                            // at, the way to save it, and the runtime menu —
-                            // the stage keeps the song and the transport
-                            // keeps movement.
-                            const MusicQualityPill(),
-                            DsButton.icon(
-                              variant: DsButtonVariant.secondary,
-                              size: DsSize.sm,
-                              semanticLabel: t.music.download,
-                              onPressed: () => unawaited(downloadTrackWithToast(context, ref, track)),
-                              icon: const DsIcon(DsIcons.download),
-                            ),
-                            const _PlayerMenu(),
+                            Expanded(flex: 5, child: _Stage()),
+                            Expanded(flex: 6, child: MusicStagePanels()),
                           ],
-                        );
-                        final body = wide
-                            ? const Row(
-                                spacing: DsSpace.s24,
-                                children: [
-                                  Expanded(flex: 5, child: _Stage()),
-                                  Expanded(flex: 6, child: MusicStagePanels()),
-                                ],
-                              )
-                            : phone
-                            ? const _Stage()
-                            : const Column(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                spacing: DsSpace.s12,
-                                children: [
-                                  Expanded(child: _Stage()),
-                                  Expanded(child: MusicStagePanels()),
-                                ],
-                              );
-                        return Column(
+                        )
+                      : phone
+                      ? const _Stage()
+                      : const Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
+                          spacing: DsSpace.s12,
                           children: [
-                            Padding(
-                              padding: const EdgeInsets.fromLTRB(DsSpace.s8, DsSpace.s8, DsSpace.s8, DsSpace.s12),
-                              child: header,
-                            ),
-                            Expanded(
-                              child: Padding(
-                                padding: const EdgeInsets.fromLTRB(DsSpace.s8, 0, DsSpace.s8, 0),
-                                child: body,
-                              ),
-                            ),
-                            const _TransportBar(),
+                            Expanded(child: _Stage()),
+                            Expanded(child: MusicStagePanels()),
                           ],
                         );
-                      },
-                    ),
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(DsSpace.s8, DsSpace.s8, DsSpace.s8, DsSpace.s12),
+                        child: header,
+                      ),
+                      Expanded(
+                        child: Padding(padding: const EdgeInsets.fromLTRB(DsSpace.s8, 0, DsSpace.s8, 0), child: body),
+                      ),
+                      if (track != null) const _TransportBar(),
+                    ],
+                  );
+                },
+              ),
             ),
           ],
         ),

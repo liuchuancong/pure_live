@@ -615,7 +615,7 @@ GoRouter buildAppRouter({
       ),
       GoRoute(
         path: RouteNames.musicPlayer,
-        builder: (context, state) => const WindowChromeFrame(child: MusicPlayerPage()),
+        builder: (context, state) => const _PlayerWindowChrome(drawsOwnChrome: true, child: MusicPlayerPage()),
       ),
       // A creator's replay catalog, opened by an offline room: the room's
       // ownership callbacks ride in as the extra and never serialize.
