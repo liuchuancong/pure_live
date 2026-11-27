@@ -84,6 +84,12 @@ final class _VodPersonalPageState extends ConsumerState<VodPersonalPage> {
   int _seasonType = 1;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _openFollowingIfNeeded());
+  }
+
+  @override
   void didUpdateWidget(VodPersonalPage oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.tab != _tab) {
@@ -92,6 +98,7 @@ final class _VodPersonalPageState extends ConsumerState<VodPersonalPage> {
         _managing = false;
         _selected.clear();
       });
+      WidgetsBinding.instance.addPostFrameCallback((_) => _openFollowingIfNeeded());
     }
   }
 
@@ -101,6 +108,24 @@ final class _VodPersonalPageState extends ConsumerState<VodPersonalPage> {
   }
 
   void _openSeason(int seasonId) => unawaited(context.push('/vod/season/$seasonId'));
+
+  void _openFollowingIfNeeded() {
+    if (!mounted || _tab != VodPersonalTab.following) return;
+    if (!(ref.read(vodAccountProvider).value?.isLogin ?? false)) return;
+    final state = ref.read(vodFollowingProvider(_seasonType));
+    if (state.loaded || state.loading) return;
+    unawaited(ref.read(vodFollowingProvider(_seasonType).notifier).open());
+  }
+
+  void _selectTab(VodPersonalTab tab) {
+    if (_tab == tab) return;
+    setState(() {
+      _tab = tab;
+      _managing = false;
+      _selected.clear();
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) => _openFollowingIfNeeded());
+  }
 
   /// The watched fraction a history row draws along its cover: nothing at all
   /// when the archive is finished (the line under the title says so), when it
@@ -228,7 +253,7 @@ final class _VodPersonalPageState extends ConsumerState<VodPersonalPage> {
       case VodPersonalTab.toView:
         ref.invalidate(vodWatchLaterProvider);
       case VodPersonalTab.following:
-        ref.invalidate(vodFollowingSeasonsProvider(_seasonType));
+        await ref.read(vodFollowingProvider(_seasonType).notifier).refresh();
       case VodPersonalTab.history:
       case VodPersonalTab.favourites:
         return;
@@ -245,7 +270,10 @@ final class _VodPersonalPageState extends ConsumerState<VodPersonalPage> {
     builder: (context) => _SeasonTypePanel(
       seasonType: _seasonType,
       onPick: (type) {
-        if (type != _seasonType) setState(() => _seasonType = type);
+        if (type != _seasonType) {
+          setState(() => _seasonType = type);
+          WidgetsBinding.instance.addPostFrameCallback((_) => _openFollowingIfNeeded());
+        }
       },
     ),
   );
@@ -349,9 +377,12 @@ final class _VodPersonalPageState extends ConsumerState<VodPersonalPage> {
     // them only while their own tab is the one on the screen, so a
     // guest opening the page fetches one list, not four.
     final watchLater = _tab == VodPersonalTab.toView ? ref.watch(vodWatchLaterProvider) : null;
-    final seasons = _tab == VodPersonalTab.following && loggedIn
-        ? ref.watch(vodFollowingSeasonsProvider(_seasonType))
+    final followingState = _tab == VodPersonalTab.following && loggedIn
+        ? ref.watch(vodFollowingProvider(_seasonType))
         : null;
+    if (followingState != null && !followingState.loaded && !followingState.loading) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _openFollowingIfNeeded());
+    }
     final toView = watchLater?.value ?? const <VodVideo>[];
     // The toolbar's word narrows the loaded lists in place.
     final personalFilter = ref.watch(inlineFilterProvider(NavigationItem.vodPersonal));
@@ -359,14 +390,13 @@ final class _VodPersonalPageState extends ConsumerState<VodPersonalPage> {
       for (final video in toView)
         if (inlineFilterKeeps(personalFilter, [video.title, ?video.uploader])) video,
     ];
-    final following = seasons?.value;
     final browse = ref.watch(browseSettingsProvider);
     final layout = ref.watch(browseLayoutProvider);
     final count = switch (_tab) {
       VodPersonalTab.toView => toView.length,
       VodPersonalTab.history => history.length,
       VodPersonalTab.favourites => favourites.length,
-      VodPersonalTab.following => following?.seasons.length ?? 0,
+      VodPersonalTab.following => followingState?.seasons.length ?? 0,
     };
     // The 追番 sub-list is only a choice once the platform's answer is on the
     // screen; a guest gets the sign-in invitation, and an entry that opens an
@@ -410,7 +440,7 @@ final class _VodPersonalPageState extends ConsumerState<VodPersonalPage> {
             owner: NavigationItem.vodPersonal,
             tabs: DsTabs<VodPersonalTab>(
               value: _tab,
-              onChanged: (tab) => setState(() => _tab = tab),
+              onChanged: _selectTab,
               semanticLabel: t.vod.personalTitle,
               style: kVodFeedTabsStyle,
               tabs: [for (final tab in VodPersonalTab.values) DsTab(value: tab, label: Text(tab.label(t)))],
@@ -513,19 +543,19 @@ final class _VodPersonalPageState extends ConsumerState<VodPersonalPage> {
                     ],
                   ),
                   VodPersonalTab.following => PagedCardGrid<VodSeason>(
-                    items: following?.seasons ?? const <VodSeason>[],
+                    items: followingState?.seasons ?? const <VodSeason>[],
                     layout: layout,
                     aspectRatio: kVodSeasonTileAspect,
                     crossSpacing: browse.crossSpacing,
                     mainSpacing: browse.mainSpacing,
-                    isLoading: seasons?.isLoading ?? false,
-                    hasMore: false,
-                    onLoadMore: () async {},
-                    error: switch (seasons?.error) {
+                    isLoading: followingState?.loading ?? false,
+                    hasMore: followingState?.hasMore ?? false,
+                    onLoadMore: () => ref.read(vodFollowingProvider(_seasonType).notifier).loadMore(),
+                    error: switch (followingState?.error) {
                       null => null,
                       final failure => failure.toString(),
                     },
-                    onRetry: () => ref.invalidate(vodFollowingSeasonsProvider(_seasonType)),
+                    onRetry: () => ref.read(vodFollowingProvider(_seasonType).notifier).refresh(),
                     emptyIcon: DsIcons.tvMinimal,
                     emptyTitle: t.vod.followingEmptyTitle,
                     emptyDescription: t.vod.followingEmptyDescription,

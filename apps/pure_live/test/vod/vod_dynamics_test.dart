@@ -158,8 +158,11 @@ void main() {
       final container = containerOver(stub);
       addTearDown(container.dispose);
 
+      final following = vodFollowingProvider(1);
+      container.listen(following, (_, _) {});
+      await container.read(following.notifier).open();
+      expect(container.read(following).seasons, isEmpty);
       expect(await container.read(vodWatchLaterProvider.future), isEmpty);
-      expect(await container.read(vodFollowingSeasonsProvider(1).future).then((page) => page.seasons), isEmpty);
       // The nav read happened; the lists themselves were never asked.
       expect(stub.seen.map((request) => request.url.path), ['/x/web-interface/nav']);
     });
@@ -185,6 +188,9 @@ void main() {
       final watchLater = await container.read(vodWatchLaterProvider.future);
       expect(watchLater.single.id, 'BV1aaaaaaaaa'); // the bad row stays out
 
+      final following = vodFollowingProvider(1);
+      container.listen(following, (_, _) {});
+      final controller = container.read(following.notifier);
       stub.routes['/x/space/bangumi/follow/list'] = jsonEncode({
         'code': 0,
         'data': {
@@ -194,15 +200,36 @@ void main() {
           'total': 21,
         },
       });
-      final bangumi = await container.read(vodFollowingSeasonsProvider(1).future);
+      await controller.open();
+      var bangumi = container.read(following);
       expect(bangumi.seasons.single.title, '追的番');
       expect(bangumi.hasMore, isTrue); // 1 * 20 < 21
-      final asked = stub.seen.last.url.queryParameters;
+      var asked = stub.seen.last.url.queryParameters;
       expect(asked['vmid'], '42'); // the viewer's own mid, never a guess
       expect(asked['type'], '1');
 
+      stub.routes['/x/space/bangumi/follow/list'] = jsonEncode({
+        'code': 0,
+        'data': {
+          'list': [
+            {'season_id': 5, 'title': '追的番'},
+            {'season_id': 6, 'title': '第二页的番'},
+          ],
+          'total': 21,
+        },
+      });
+      await controller.loadMore();
+      bangumi = container.read(following);
+      expect(bangumi.seasons.map((season) => season.seasonId), [5, 6]);
+      expect(bangumi.nextPage, 3);
+      expect(bangumi.hasMore, isFalse); // 2 * 20 >= 21
+      asked = stub.seen.last.url.queryParameters;
+      expect(asked['pn'], '2');
+
       // The cinema shelf asks its own type.
-      await container.read(vodFollowingSeasonsProvider(2).future);
+      final cinema = vodFollowingProvider(2);
+      container.listen(cinema, (_, _) {});
+      await container.read(cinema.notifier).open();
       expect(stub.seen.last.url.queryParameters['type'], '2');
     });
   });

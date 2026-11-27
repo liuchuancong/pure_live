@@ -507,3 +507,12 @@ Windows 窗口全屏入口（第十五轮改）：播放行「全屏｜窗口全
   - **配置与主要文件**：无新增持久化配置、Slang key、依赖或主题 token。修改 `modules/music/controller/sync/music_sync_data.dart`、`music_sync_server.dart`、`test/music/music_sync_test.dart`、`music_sync_server_test.dart` 与本台账。
   - **验证**：四个 Dart 文件仅做单文件格式化；音乐同步聚焦回归 **47/47** 通过；App `dart analyze lib test` 为 **No issues found**；App 全量测试 **1340/1340（4 分 22 秒）** 通过；`git diff --check` 通过。仓外 media_core 无本轮修改。
   - **多平台与限制**：修复位于音乐同步运行时，不区分桌面、平板、手机、TV 或浅色/深色/自定义主题。未构建 APK/桌面产物、未截图或运行 UI，未做真实 LX 服务音质同步、畸形 payload、落盘失败、多客户端广播、多窗口、TV、触控、大字体或读屏验收；下载恢复仍受外部 `media_core_audio` 缺少 resolver 重绑 API 限制，本轮未修改该包。
+
+- 2026-11-27：第八十八轮（Bilibili 搜索入口、追番分页、UP 主页信息与详情操作区）⇒
+  - **搜索用户入口**：用户搜索结果接入既有 `/vod/u/:mid` 路由，不再只展示不可进入的文本行；空或非法 mid 不发起跳转。
+  - **追番真实分页**：`vodFollowingSeasonsProvider` 替换为按番剧/影视类型独立的 `vodFollowingProvider`，个人页在首次进入、切换类型和刷新时驱动首屏，滚动继续加载下一页。请求携带正确 `vmid`、`type`、`ps`、`pn`，按季去重、识别无新增页并终止；账号变化、重复刷新及迟到响应均有代次守卫，游客直接显示空状态。
+  - **UP 主页信息与关注**：UP 页接入新增的 `vodUploaderCardProvider`，优先展示平台返回的昵称、头像、粉丝数、签名和投稿数，视频列表数据作为回退；可写账号显示关注/已关注按钮，失败沿用本地化提示。搜索入口与主页详情形成闭环。
+  - **详情操作区响应式**：点赞、投币、收藏、稍后再看和分享保持胶囊组；容器宽度达到 720px 时下载按钮固定在同行最右，窄容器时下载按钮换到独立行并右对齐，移除 `Wrap` 内 `Spacer` 的不确定布局。
+  - **配置与主要文件**：无新增持久化配置、Slang key、依赖或主题 token；追番分页、请求代次与页面标签均为运行时状态。修改 `modules/vod/controller/vod_controller.dart`、`modules/vod/controller/vod_social.dart`、`modules/vod/pages/vod_personal_page.dart`、`vod_search_page.dart`、`vod_uploader_page.dart`、`vod_video_page.dart`、`modules/vod/widgets/vod_widgets.dart`、`test/vod/vod_dynamics_test.dart`、`packages/live_vod/lib/src/bilibili_vod_client.dart` 与本台账；共享工作树其他并行改动保留，未整文件覆盖或回退。
+  - **验证**：`dart analyze lib` 为 **No issues found**；`flutter test test/vod` **78/78** 通过；本轮精确路径 `git diff --check` 无空白错误。测试覆盖游客追番、首屏参数、第二页追加去重、分页终止与影视类型；未重跑 App 全量测试。
+  - **多平台与限制**：沿用现有 desen_ui、主题和响应式分支，详情操作区覆盖 720px 内容宽阈值，不复制 TV 四列布局，也未改写播放器。未构建 APK/桌面产物、未截图或运行 UI，未做真实搜索跳转、账号切换并发、追番长列表、关注写入、窄屏/大字体/TV/触控/读屏验收；自动测试不能替代这些运行时验收。DASH 音视频轨下载仍作为独立后续任务，本轮未实现。

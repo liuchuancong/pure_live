@@ -178,6 +178,11 @@ final class _VodSearchPageState extends ConsumerState<VodSearchPage> {
 
   void _openSeason(VodSeason season) => unawaited(context.push('/vod/season/${season.seasonId}'));
 
+  void _openUser(VodUser user) {
+    if (user.mid <= 0) return;
+    unawaited(context.push('/vod/u/${user.mid}'));
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = context.t;
@@ -293,6 +298,7 @@ final class _VodSearchPageState extends ConsumerState<VodSearchPage> {
                   onRefresh: _rerun,
                   onVideo: _openVideo,
                   onSeason: _openSeason,
+                  onUser: _openUser,
                 )
               : _SearchIdleHistory(onPick: _pickHistory),
         ),
@@ -405,6 +411,7 @@ final class _SearchResults extends StatelessWidget {
     required this.onRefresh,
     required this.onVideo,
     required this.onSeason,
+    required this.onUser,
   });
 
   final VodState state;
@@ -420,6 +427,7 @@ final class _SearchResults extends StatelessWidget {
 
   final ValueChanged<VodVideo> onVideo;
   final ValueChanged<VodSeason> onSeason;
+  final ValueChanged<VodUser> onUser;
 
   @override
   Widget build(BuildContext context) {
@@ -481,13 +489,11 @@ final class _SearchResults extends StatelessWidget {
               VodSeasonCard(season: season, onOpen: () => onSeason(season), preview: true),
         );
       case VodSearchKind.user:
-        // A user hit is a display row — the station offers no space page to
-        // open — so this kind stays the list however the feeds are laid out.
         return PagedCardGrid<VodUser>(
           items: state.users,
           layout: CardLayout.list,
           listMainAxisExtent: kVodRowExtent,
-          listItemBuilder: (context, user) => VodUserRow(user: user),
+          listItemBuilder: (context, user) => VodUserRow(user: user, onOpen: () => onUser(user)),
           crossSpacing: settings.crossSpacing,
           mainSpacing: settings.mainSpacing,
           isLoading: state.loading,
@@ -500,7 +506,7 @@ final class _SearchResults extends StatelessWidget {
           emptyIcon: DsIcons.user,
           emptyTitle: t.vod.noResultsTitle,
           emptyDescription: t.vod.noResultsDescription,
-          itemBuilder: (context, user) => VodUserRow(user: user),
+          itemBuilder: (context, user) => VodUserRow(user: user, onOpen: () => onUser(user)),
         );
     }
   }

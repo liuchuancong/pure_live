@@ -716,6 +716,36 @@ final class BilibiliVodClient {
     return VodUserSearchPage(users: [for (final hit in answer.results) ?_userOf(hit)], hasMore: answer.hasMore);
   }
 
+  /// One uploader's card (`web-interface/card`): the name, the face, the
+  /// signature, the follower count and — where the station counts it — the
+  /// archive count. A shut, private or missing account answers no card, and
+  /// so does a station that refuses the call: null then, and the page keeps
+  /// the two lines the archive's own detail carries.
+  Future<VodUser?> user(int mid) async {
+    if (mid <= 0) return null;
+    final response = await http.send(
+      LiveRequest.custom(
+        method: 'GET',
+        url: Uri.https('api.bilibili.com', '/x/web-interface/card', {'mid': '$mid'}),
+        headers: await _searchHeaders(),
+      ),
+    );
+    final data = _body(response)['data'];
+    if (data is! Map) return null;
+    final card = data['card'];
+    if (card is! Map) return null;
+    final name = _plain('${card['name'] ?? ''}');
+    if (name.isEmpty) return null;
+    return VodUser(
+      mid: _intOf(card['mid']) ?? mid,
+      name: name,
+      avatar: _coverOf(card['face']),
+      sign: '${card['sign'] ?? ''}'.trim(),
+      fans: _intOf(card['fans']),
+      videoCount: _intOf(data['archive_count']),
+    );
+  }
+
   /// The live-room hits of a search (`live_room`).
   Future<VodLiveRoomSearchPage> searchLiveRooms(String keyword, {int page = 1, int pageSize = 20}) async {
     final answer = await _searchType(keyword, type: 'live_room', page: page, pageSize: pageSize);

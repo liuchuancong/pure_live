@@ -11,6 +11,7 @@ import 'package:live_vod/live_vod.dart';
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/vod/controller/vod_controller.dart';
+import 'package:pure_live/modules/vod/controller/vod_social.dart' show vodFollowUpProvider, vodWriteReadyProvider;
 import 'package:pure_live/modules/vod/widgets/vod_widgets.dart'
     show VodVideoCard, VodVideoRow, kVodCardInfoExtent, kVodRowExtent;
 import 'package:pure_live/shared/shared.dart';
@@ -53,6 +54,17 @@ final class _VodUploaderPageState extends ConsumerState<VodUploaderPage> {
     unawaited(context.push('/vod/$bvid'));
   }
 
+  Future<void> _toggleFollowUp() async {
+    final mid = int.tryParse(widget.mid) ?? 0;
+    if (mid <= 0) return;
+    try {
+      await ref.read(vodFollowUpProvider(mid).notifier).toggle();
+    } on Object {
+      if (!mounted) return;
+      showDsToast(context: context, title: context.t.vod.followFailed, status: DsStatus.danger);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = context.t;
@@ -62,8 +74,13 @@ final class _VodUploaderPageState extends ConsumerState<VodUploaderPage> {
     final controller = ref.read(vodUploaderProvider.notifier);
     final sites = ref.watch(sitesProvider).all.where((site) => site.manifest.id == SiteIds.bilibili);
     final platform = sites.isEmpty ? t.common.moduleVod : localizedSiteName(sites.first);
-    final name = state.videos.isEmpty ? null : state.videos.first.uploader;
-    final avatar = state.videos.isEmpty ? null : state.videos.first.uploaderAvatar;
+    final mid = int.tryParse(widget.mid) ?? 0;
+    final card = mid > 0 ? ref.watch(vodUploaderCardProvider(mid)).value : null;
+    final writable = ref.watch(vodWriteReadyProvider);
+    final followed = writable && mid > 0 ? ref.watch(vodFollowUpProvider(mid)) : null;
+    final name = card?.name ?? (state.videos.isEmpty ? null : state.videos.first.uploader);
+    final avatar = card?.avatar ?? (state.videos.isEmpty ? null : state.videos.first.uploaderAvatar);
+    final uploadCount = card?.videoCount ?? state.total;
     final error = switch (state.error) {
       VodFailure(:final message) => message,
       final Object? other => other?.toString(),
@@ -85,11 +102,20 @@ final class _VodUploaderPageState extends ConsumerState<VodUploaderPage> {
                   DsSpace.s16,
                   0,
                 ),
-                child: _Head(name: name ?? t.common.moduleVod, avatar: avatar, total: state.total, platform: platform),
+                child: _Head(
+                  name: name ?? t.common.moduleVod,
+                  avatar: avatar,
+                  fans: card?.fans,
+                  sign: card?.sign,
+                  platform: platform,
+                  canFollow: writable && mid > 0,
+                  followed: followed,
+                  onFollow: _toggleFollowUp,
+                ),
               ),
               Padding(
                 padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s16, DsSpace.s16, DsSpace.s16, DsSpace.s4),
-                child: SectionHeader(title: t.vod.uploads, count: state.total),
+                child: SectionHeader(title: t.vod.uploads, count: uploadCount),
               ),
               Expanded(
                 child: PagedCardGrid<VodVideo>(
@@ -121,22 +147,38 @@ final class _VodUploaderPageState extends ConsumerState<VodUploaderPage> {
   }
 }
 
-/// The space's identity head: the uploader's face, name and platform badge
-/// over the whole list's size — the shape the Huya uploader's page wears.
+/// The space's identity head: the uploader's face, name, platform and real
+/// account facts over the uploads. The follow control appears only for a
+/// credential that can write the web relation endpoint.
 final class _Head extends StatelessWidget {
-  const _Head({required this.name, required this.avatar, required this.total, required this.platform});
+  const _Head({
+    required this.name,
+    required this.avatar,
+    required this.fans,
+    required this.sign,
+    required this.platform,
+    required this.canFollow,
+    required this.followed,
+    required this.onFollow,
+  });
 
   final String name;
   final String? avatar;
-  final int? total;
+  final int? fans;
+  final String? sign;
   final String platform;
+  final bool canFollow;
+  final bool? followed;
+  final Future<void> Function() onFollow;
 
   @override
   Widget build(BuildContext context) {
     final t = context.t;
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
+    final signature = sign?.trim() ?? '';
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       spacing: DsSpace.s12,
       children: [
         DsAvatar(
@@ -164,14 +206,28 @@ final class _Head extends StatelessWidget {
                   DsBadge(label: Text(platform), dot: false),
                 ],
               ),
-              if (total != null)
+              if (fans != null)
                 Text(
-                  '${AudienceFormat.format(total)} ${t.vod.uploads}',
+                  '${AudienceFormat.format(fans)} ${t.vod.fans}',
+                  style: theme.typography.caption.copyWith(color: colors.textMuted),
+                ),
+              if (signature.isNotEmpty)
+                Text(
+                  signature,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                   style: theme.typography.caption.copyWith(color: colors.textMuted),
                 ),
             ],
           ),
         ),
+        if (canFollow)
+          DsButton(
+            variant: followed == true ? DsButtonVariant.secondary : DsButtonVariant.primary,
+            size: DsSize.sm,
+            onPressed: () => unawaited(onFollow()),
+            child: Text(followed == true ? t.vod.followedUp : t.vod.followUp),
+          ),
       ],
     );
   }

@@ -4153,45 +4153,72 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
             // so it stays a fact; 收藏 remains the local shelf's verb;
             // 分享 and the download keep theirs — the download at the
             // row's far end, where a viewer's eye lands last.
-            Wrap(
-              spacing: DsSpace.s8,
-              runSpacing: DsSpace.s8,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              children: [
-                if (detail.likeCount case final count?)
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final actionPills = <Widget>[
+                  if (detail.likeCount case final count?)
+                    VodStatPill(
+                      icon: DsIcons.thumbsUp,
+                      label: t.vod.likes,
+                      value: AudienceFormat.format(count),
+                      active: writable && liked == true,
+                      onPressed: writable && detail.aid > 0 ? () => unawaited(_toggleLike()) : null,
+                    ),
+                  if (detail.coinCount case final count?)
+                    VodStatPill(icon: DsIcons.coins, label: t.vod.coins, value: AudienceFormat.format(count)),
+                  if (detail.favoriteCount case final count?)
+                    VodStatPill(icon: DsIcons.star, label: t.vod.favorites, value: AudienceFormat.format(count)),
                   VodStatPill(
-                    icon: DsIcons.thumbsUp,
-                    label: t.vod.likes,
-                    value: AudienceFormat.format(count),
-                    active: writable && liked == true,
-                    onPressed: writable && detail.aid > 0 ? () => unawaited(_toggleLike()) : null,
+                    icon: DsIcons.heart,
+                    label: saved ? t.vod.savedVideo : t.vod.saveVideo,
+                    value: saved ? t.vod.savedVideo : t.vod.saveVideo,
+                    active: saved,
+                    onPressed: () => unawaited(_toggleFavourite()),
                   ),
-                if (detail.coinCount case final count?)
-                  VodStatPill(icon: DsIcons.coins, label: t.vod.coins, value: AudienceFormat.format(count)),
-                if (detail.favoriteCount case final count?)
-                  VodStatPill(icon: DsIcons.star, label: t.vod.favorites, value: AudienceFormat.format(count)),
-                VodStatPill(
-                  icon: DsIcons.heart,
-                  label: saved ? t.vod.savedVideo : t.vod.saveVideo,
-                  value: saved ? t.vod.savedVideo : t.vod.saveVideo,
-                  active: saved,
-                  onPressed: () => unawaited(_toggleFavourite()),
-                ),
-                VodStatPill(
-                  icon: DsIcons.share,
-                  label: t.vod.share,
-                  value: t.vod.share,
-                  onPressed: () => unawaited(_share()),
-                ),
-                const Spacer(),
-                DsButton(
+                  VodStatPill(
+                    icon: DsIcons.share,
+                    label: t.vod.share,
+                    value: t.vod.share,
+                    onPressed: () => unawaited(_share()),
+                  ),
+                ];
+                final downloadButton = DsButton(
                   variant: DsButtonVariant.secondary,
                   size: DsSize.sm,
                   onPressed: _part == null ? null : () => unawaited(_startDownload()),
                   leading: const DsIcon(DsIcons.download, size: 14),
                   child: Text(t.player.download),
-                ),
-              ],
+                );
+                if (constraints.maxWidth >= 720) {
+                  return Row(
+                    children: [
+                      Expanded(
+                        child: Wrap(
+                          spacing: DsSpace.s8,
+                          runSpacing: DsSpace.s8,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: actionPills,
+                        ),
+                      ),
+                      const SizedBox(width: DsSpace.s8),
+                      downloadButton,
+                    ],
+                  );
+                }
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Wrap(
+                      spacing: DsSpace.s8,
+                      runSpacing: DsSpace.s8,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: actionPills,
+                    ),
+                    const SizedBox(height: DsSpace.s8),
+                    Align(alignment: AlignmentDirectional.centerEnd, child: downloadButton),
+                  ],
+                );
+              },
             ),
             const DsDivider(),
             if (showParts && detail.parts.length > 1)

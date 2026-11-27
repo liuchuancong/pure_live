@@ -793,10 +793,8 @@ final class VodDynamicRow extends StatelessWidget {
 }
 
 /// One user search hit as a row: the avatar, the name, the signature and the
-/// figures under it. The station's user tab only presents the hit — there is
-/// no space page behind it — so [onOpen] stays null there and the row reads
-/// as plain text; a caller that does open on a press sets it and the row
-/// turns into one press target with a chevron at its end.
+/// figures under it. A caller that opens the uploader's space sets [onOpen]
+/// and the row turns into one press target with a chevron at its end.
 final class VodUserRow extends StatelessWidget {
   /// The row for [user]; [onOpen] opens the user, when there is a place to
   /// open them at.

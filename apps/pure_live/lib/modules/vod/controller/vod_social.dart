@@ -1,7 +1,7 @@
 import 'dart:async' show unawaited;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_riverpod/misc.dart' show FutureProviderFamily, NotifierProviderFamily;
+import 'package:flutter_riverpod/misc.dart' show NotifierProviderFamily;
 import 'package:live_sites/live_sites.dart' show SiteIds;
 import 'package:live_vod/live_vod.dart';
 
@@ -20,16 +20,103 @@ final FutureProvider<List<VodVideo>> vodWatchLaterProvider = FutureProvider<List
   return await ref.watch(vodClientProvider).watchLater();
 });
 
-/// The seasons the signed-in viewer follows: type 1 is 番剧, 2 is 影视.
-final FutureProviderFamily<VodSeasonPage, int> vodFollowingSeasonsProvider = FutureProvider.family<VodSeasonPage, int>((
-  ref,
-  type,
-) async {
-  final account = await ref.watch(vodAccountProvider.future);
-  final mid = account.mid;
-  if (!account.isLogin || mid == null) return const VodSeasonPage(seasons: [], hasMore: false);
-  return await ref.watch(vodClientProvider).followingSeasons(mid: mid, type: type);
+/// The seasons the signed-in viewer follows, paged by the shelf's scroll.
+typedef VodFollowingState = ({
+  List<VodSeason> seasons,
+  int nextPage,
+  bool hasMore,
+  bool loading,
+  bool loaded,
+  VodFailure? error,
 });
+
+VodFollowingState _followingInitial() =>
+    (seasons: const [], nextPage: 1, hasMore: true, loading: false, loaded: false, error: null);
+
+/// One 追番 shelf. The account change starts a new shelf, so a late page from
+/// the previous viewer never lands in the current one.
+final class VodFollowingController extends Notifier<VodFollowingState> {
+  VodFollowingController(this.type);
+
+  /// The station's shelf type: 1 番剧, 2 影视.
+  final int type;
+
+  int _generation = 0;
+
+  @override
+  VodFollowingState build() {
+    ref.watch(accountsProvider.select((accounts) => accounts.credentials[SiteIds.bilibili]?.userId));
+    _generation++;
+    return _followingInitial();
+  }
+
+  /// Loads the first page when the shelf has not been read.
+  Future<void> open() async {
+    if (state.loaded || state.loading) return;
+    await _load(1);
+  }
+
+  /// Loads the next page when the station says one follows.
+  Future<void> loadMore() async {
+    if (state.loading || !state.hasMore || !state.loaded) return;
+    await _load(state.nextPage);
+  }
+
+  /// Reads the shelf again from its first page.
+  Future<void> refresh() => _load(1);
+
+  Future<void> _load(int page) async {
+    final generation = ++_generation;
+    state = (
+      seasons: page == 1 ? const [] : state.seasons,
+      nextPage: state.nextPage,
+      hasMore: state.hasMore,
+      loading: true,
+      loaded: state.loaded,
+      error: null,
+    );
+    try {
+      final account = await ref.read(vodAccountProvider.future);
+      final mid = account.mid;
+      if (!account.isLogin || mid == null) {
+        if (!ref.mounted || generation != _generation) return;
+        state = (seasons: const [], nextPage: 1, hasMore: false, loading: false, loaded: true, error: null);
+        return;
+      }
+      final answer = await ref.read(vodClientProvider).followingSeasons(mid: mid, type: type, page: page);
+      if (!ref.mounted || generation != _generation) return;
+      final seasons = page == 1 ? <VodSeason>[] : [...state.seasons];
+      if (page > 1) {
+        final seen = {for (final season in seasons) season.seasonId};
+        seasons.addAll(answer.seasons.where((season) => seen.add(season.seasonId)));
+      } else {
+        seasons.addAll(answer.seasons);
+      }
+      state = (
+        seasons: seasons,
+        nextPage: page + 1,
+        hasMore: answer.hasMore && answer.seasons.isNotEmpty,
+        loading: false,
+        loaded: true,
+        error: null,
+      );
+    } on Object catch (failure) {
+      if (!ref.mounted || generation != _generation) return;
+      state = (
+        seasons: state.seasons,
+        nextPage: state.nextPage,
+        hasMore: false,
+        loading: false,
+        loaded: true,
+        error: failure is VodFailure ? failure : VodFailure(failure.toString()),
+      );
+    }
+  }
+}
+
+/// The viewer's 追番 shelves, one controller per station type.
+final NotifierProviderFamily<VodFollowingController, VodFollowingState, int> vodFollowingProvider =
+    NotifierProvider.family<VodFollowingController, VodFollowingState, int>(VodFollowingController.new);
 
 /// The dynamic feed's state: the posts read so far, the cursor for the next
 /// page, and the in-flight flag.

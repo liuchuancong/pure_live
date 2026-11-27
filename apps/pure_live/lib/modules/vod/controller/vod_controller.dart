@@ -1,6 +1,7 @@
 import 'dart:convert' show jsonDecode, jsonEncode;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show FutureProviderFamily;
 import 'package:live_net/live_net.dart' show ClientProfile, LiveHttp;
 import 'package:live_sites/live_sites.dart' show SiteIds;
 import 'package:live_storage/live_storage.dart' show StoragePrefs;
@@ -227,6 +228,21 @@ final vodClientProvider = Provider<BilibiliVodClient>((ref) {
       ? ''
       : credential.cookies.entries.map((entry) => '${entry.key}=${entry.value}').join('; ');
   return BilibiliVodClient(http, cookie: cookie, log: appLog.forCategory('vod.api'));
+});
+
+/// One uploader's card: the follower count, the archive count and the
+/// signature the video page's row reads. A station that refuses the call, or
+/// an account with no card to give, answers null — the row then keeps the two
+/// lines the archive's own detail carries.
+final FutureProviderFamily<VodUser?, int> vodUploaderCardProvider = FutureProvider.family<VodUser?, int>((
+  ref,
+  mid,
+) async {
+  try {
+    return await ref.watch(vodClientProvider).user(mid);
+  } on Object {
+    return null;
+  }
 });
 
 /// The vod page's state.
