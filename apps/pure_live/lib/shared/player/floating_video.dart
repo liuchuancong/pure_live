@@ -95,7 +95,13 @@ final class FloatingVideoWindow {
       _activeClose = null;
       previous?.call();
     }
-    if (_scheduled) return _showCompleter!.future;
+    if (_scheduled) {
+      final completer = _showCompleter!;
+      final previous = _handoff;
+      _handoff = handoff;
+      previous?.onClose?.call(previous.resume, reopen: false);
+      return completer.future;
+    }
     _scheduled = true;
     _showCompleter = Completer<bool>();
     final generation = ++_generation;

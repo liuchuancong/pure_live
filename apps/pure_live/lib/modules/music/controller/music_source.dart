@@ -94,14 +94,21 @@ Future<audio.TrackSource> resolveWithToggle(
   audio.MusicTrack track, {
   audio.MusicQuality? quality,
   bool allowAutoToggle = true,
+  void Function(audio.MusicSource source, audio.MusicTrack track)? onResolved,
 }) async {
+  Future<audio.TrackSource> resolve(audio.MusicSource source, audio.MusicTrack candidate) async {
+    final resolved = await source.resolveTrackSource(candidate, quality: quality);
+    onResolved?.call(source, candidate);
+    return resolved;
+  }
+
   final sources = ref.read(musicSourceListProvider);
   final swapped = ref.read(musicSourceSwapsProvider.notifier).swappedOf(track);
   if (swapped != null) {
     for (final source in sources) {
       if (source.id != swapped.sourceId) continue;
       try {
-        return await source.resolveTrackSource(swapped, quality: quality);
+        return await resolve(source, swapped);
       } on Object catch (error, stackTrace) {
         // A swap is something the viewer chose on purpose. When it stops
         // answering, the song falls back to its own source and the queue only
@@ -117,7 +124,7 @@ Future<audio.TrackSource> resolveWithToggle(
   }
   Object? ownFailure;
   try {
-    return await own.resolveTrackSource(track, quality: quality);
+    return await resolve(own, track);
   } on Object catch (error, stackTrace) {
     ownFailure = error;
     if (!allowAutoToggle) rethrow;
@@ -129,7 +136,7 @@ Future<audio.TrackSource> resolveWithToggle(
       final page = await source.search('${track.title} ${track.artist}', pageSize: 10);
       final match = findSameSong(track, page.items);
       if (match == null) continue;
-      return await source.resolveTrackSource(match, quality: quality);
+      return await resolve(source, match);
     } on Object catch (error, stackTrace) {
       // The walk is a search and an ask: either half can refuse, and the
       // reason says which platform is unreachable this session.

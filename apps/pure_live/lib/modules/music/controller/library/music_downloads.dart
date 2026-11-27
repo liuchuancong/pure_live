@@ -93,20 +93,27 @@ final class MusicDownloadsController extends Notifier<List<audio.MusicDownloadTa
     final quality = musicQualityOf(ref.read(musicPlaybackSettingsProvider).quality);
     final directory = ref.read(appPathsProvider).music.path;
     try {
+      audio.MusicSource? resolvedSource;
+      var resolvedTrack = track;
       final resolved = await resolveWithToggle(
         ref,
         track,
         quality: quality,
         allowAutoToggle: settings.downloadUseOtherSource,
+        onResolved: (source, candidate) {
+          resolvedSource = source;
+          resolvedTrack = candidate;
+        },
       );
       audio.MusicLyricPayload? lyric;
+      final lyricSource = resolvedSource ?? activeSource;
       if (settings.downloadEmbedLyric || settings.downloadWriteLyric) {
         try {
-          lyric = await activeSource.resolveLyric(track);
+          lyric = await lyricSource.resolveLyric(resolvedTrack);
         } on Object catch (error, stackTrace) {
           // A song without a lyric still downloads; whether the platform
           // answered at all is the part worth keeping.
-          noteMusicSourceSilence('${activeSource.id} download lyric', error, stackTrace);
+          noteMusicSourceSilence('${lyricSource.id} download lyric', error, stackTrace);
         }
       }
       final request = audio.MusicDownloadRequest.forTrack(
@@ -134,12 +141,26 @@ final class MusicDownloadsController extends Notifier<List<audio.MusicDownloadTa
       _queue.enqueue(
         request,
         resolve: () async {
+          audio.MusicSource? freshSource;
+          var freshTrack = track;
           final fresh = await resolveWithToggle(
             ref,
             track,
             quality: quality,
             allowAutoToggle: settings.downloadUseOtherSource,
+            onResolved: (source, candidate) {
+              freshSource = source;
+              freshTrack = candidate;
+            },
           );
+          if (settings.downloadEmbedLyric || settings.downloadWriteLyric) {
+            final source = freshSource ?? activeSource;
+            try {
+              lyric = await source.resolveLyric(freshTrack);
+            } on Object catch (error, stackTrace) {
+              noteMusicSourceSilence('${source.id} download lyric', error, stackTrace);
+            }
+          }
           return audio.MusicDownloadRequest.forTrack(
             track: track,
             source: fresh,

@@ -72,4 +72,39 @@ void main() {
     await tester.pump();
     expect(FloatingVideoWindow.isShowing, isFalse);
   });
+
+  testWidgets('a handoff waiting for its frame is replaced by the newest one', (tester) async {
+    tester.view.physicalSize = const Size(1200, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await pumpApp(tester);
+
+    var firstCloses = 0;
+    var secondCloses = 0;
+    final first = FloatingVideoWindow.show(
+      FloatingVideoHandoff(
+        title: '排队中的旧视频',
+        open: (kernel) async => throw StateError('no engine in tests'),
+        onClose: (_, {required reopen}) => firstCloses++,
+      ),
+    );
+    final second = FloatingVideoWindow.show(
+      FloatingVideoHandoff(
+        title: '排队中的新视频',
+        open: (kernel) async => throw StateError('no engine in tests'),
+        onClose: (_, {required reopen}) => secondCloses++,
+      ),
+    );
+    await tester.pump();
+    expect(await first, isTrue);
+    expect(await second, isTrue);
+    await tester.pump();
+
+    expect(find.text('排队中的新视频'), findsWidgets);
+    expect(find.text('排队中的旧视频'), findsNothing);
+    FloatingVideoWindow.dismiss();
+    await tester.pump();
+    expect(firstCloses, 1);
+    expect(secondCloses, 1);
+  });
 }

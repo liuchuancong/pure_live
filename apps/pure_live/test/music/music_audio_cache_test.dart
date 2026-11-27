@@ -1,3 +1,4 @@
+import 'dart:async' show StreamController, unawaited;
 import 'dart:io' show Directory, File, FileSystemException;
 import 'dart:typed_data' show Uint8List;
 
@@ -270,6 +271,22 @@ void main() {
       expect(inner.resolves, 0);
     });
 
+    test('disarming the box cancels a transfer before it can publish a file', () async {
+      final directory = await directoryWithAudio('cache-cancel', {});
+      final box = MusicAudioCacheBox();
+      addTearDown(box.disarm);
+      http.holdOpen = true;
+      final source = box.register(inner, environment: () => (directory: directory, limitMb: 8, http: http));
+      inner.answer = audio.TrackSource(uri: Uri.parse('https://cdn.example/song.mp3'));
+
+      await source.resolveTrackSource(_track());
+      await _until(() => http.cancelled || http.opens == 1);
+      box.disarm();
+      await _until(() => http.cancelled);
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+      expect(File('${directory.path}/music-audio/kw_977_auto.audio').existsSync(), isFalse);
+    });
+
     test('registered sources share one usage ledger and one clear', () async {
       final directory = await directoryWithAudio('cache-shared', {'kw_977_auto': 3, 'wy_42_auto': 7});
       final box = MusicAudioCacheBox();
@@ -417,11 +434,22 @@ final class _StubSource extends audio.MusicSource {
 final class _StubHttp implements LiveHttp {
   Uint8List? body;
   int opens = 0;
+  bool holdOpen = false;
+  bool cancelled = false;
 
   @override
   Future<LiveStreamedResponse> open(LiveRequest request) async {
     opens += 1;
-    return _StubStreamed(body ?? Uint8List(0));
+    if (!holdOpen) return _StubStreamed(body ?? Uint8List(0), null);
+    final controller = StreamController<Uint8List>();
+    unawaited(
+      request.cancelToken.whenCancel.then((_) {
+        cancelled = true;
+        controller.addError(StateError('cancelled'));
+        unawaited(controller.close());
+      }),
+    );
+    return _StubStreamed(null, controller.stream);
   }
 
   @override
@@ -433,9 +461,10 @@ final class _StubHttp implements LiveHttp {
 
 /// A streamed answer over an in-memory body.
 final class _StubStreamed implements LiveStreamedResponse {
-  _StubStreamed(this.body);
+  _StubStreamed(this.body, this._stream);
 
-  final Uint8List body;
+  final Uint8List? body;
+  final Stream<Uint8List>? _stream;
 
   @override
   int get statusCode => 200;
@@ -444,7 +473,7 @@ final class _StubStreamed implements LiveStreamedResponse {
   Map<String, String> get headers => const {};
 
   @override
-  Stream<Uint8List> get stream => Stream<Uint8List>.value(body);
+  Stream<Uint8List> get stream => _stream ?? Stream<Uint8List>.value(body ?? Uint8List(0));
 
   @override
   Future<void> close() async {}

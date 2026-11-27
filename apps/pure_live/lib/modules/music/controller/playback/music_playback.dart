@@ -187,6 +187,25 @@ final musicModulePlayerGuardProvider = Provider<void>((ref) {
   });
 });
 
+/// The player commands driven by the module's open API.
+abstract interface class MusicOpenApiPlayer {
+  Future<void> toggle();
+
+  Future<void> playCurrent();
+
+  Future<void> pause();
+
+  Future<void> next();
+
+  Future<void> previous();
+
+  Future<void> seek(Duration position);
+
+  Future<void> setVolume(double volume);
+
+  Future<void> setMuted({required bool muted});
+}
+
 /// The module's player: a song queue, the audio engine and the module's own
 /// preferences.
 ///
@@ -196,9 +215,10 @@ final musicModulePlayerGuardProvider = Provider<void>((ref) {
 /// scopes it to the window because it holds a kernel: the controller outlives
 /// the pages that watch it, so closing the player page keeps the song playing,
 /// and closing the window ends it — as it does for a room.
-final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
-  late final audio.AudioPlaybackController _audio;
-  late final MusicProgressStore _progressStore;
+final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> implements MusicOpenApiPlayer {
+  late audio.AudioPlaybackController _audio;
+  late MusicProgressStore _progressStore;
+  int _generation = 0;
   StreamSubscription<audio.AudioPlaybackState>? _states;
   audio.DesktopLyricController? _desktopLyric;
   bool _desktopRestoreAttempted = false;
@@ -229,6 +249,8 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
   int _muteGeneration = 0;
   double _desiredVolume = 1;
   double _desiredRate = 1;
+  int _volumeIntent = 0;
+  int _rateIntent = 0;
   bool _volumePending = false;
   bool _ratePending = false;
   String? _pendingSeekKey;
@@ -239,16 +261,54 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
   /// The module this controller was built for: only the music module's own
   /// instance records a resume point or restarts the queue; the idle
   /// instance built when another module is on screen must not overwrite it.
-  late final AppModule _module;
+  late AppModule _module;
+
+  bool _isCurrent(int generation) => ref.mounted && generation == _generation;
 
   @override
   audio.AudioPlaybackState build() {
+    final generation = ++_generation;
     // The player is the module's: leaving the module disposes this controller
     // (stopping the engine and releasing the kernel handle), and coming back
     // builds a fresh one that resumes where the switch interrupted. The
     // kernel itself is read, not watched: it is rebuilt with the module.
     ref.watch(selectedModuleProvider);
     _module = ref.read(selectedModuleProvider);
+    _states = null;
+    _desktopLyric = null;
+    _desktopRestoreAttempted = false;
+    _desktopVisibleChanges = null;
+    _desktopLockChanges = null;
+    _background = null;
+    _recentTrack = null;
+    _savedTrack = null;
+    _savedIndex = -1;
+    _savedLength = -1;
+    _savedMode = null;
+    _askedNotifications = false;
+    _progressTrackKey = null;
+    _restoredProgressKey = null;
+    _progressPositionMs = 0;
+    _lastProgressWrite = DateTime.fromMillisecondsSinceEpoch(0);
+    _dislikedSkipKey = null;
+    _dislikedSkips = 0;
+    _erroredSkipKey = null;
+    _erroredSkips = 0;
+    _lyricOverrideKey = null;
+    _sessionTrackKey = null;
+    _engineSessionBound = false;
+    _sessionAdapter = null;
+    _localMuted = false;
+    _muteGeneration++;
+    _volumePending = false;
+    _ratePending = false;
+    _pendingSeekKey = null;
+    _pendingSeekPosition = Duration.zero;
+    _queueEpoch = 0;
+    _eqPending = false;
+    _pitchPending = false;
+    _devicePending = false;
+    _compareBypass = false;
     final settings = ref.read(musicPlaybackSettingsProvider);
     _desiredVolume = settings.volume;
     _desiredRate = settings.playbackRate;
@@ -310,7 +370,7 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
       unawaited(
         audio.MediaSessionBootstrap.enable()
             .then((driver) {
-              if (ref.mounted) _attachBackground(driver);
+              if (_isCurrent(generation)) _attachBackground(driver);
             })
             .catchError((Object _) {
               // The platform has no surface; playback still works.
@@ -388,7 +448,7 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
       _applyEq(eq);
     });
     _states = _audio.stateStream.listen((next) {
-      if (!ref.mounted) return;
+      if (!_isCurrent(generation)) return;
       state = next;
       // Queue restoration publishes its first track asynchronously. Waiting
       // for that real state closes the race with the desktop lyric restore.
@@ -492,7 +552,7 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
       unawaited(_desktopLyric?.dispose() ?? Future<void>.value());
       unawaited(_audio.dispose());
     });
-    unawaited(_restorePlaybackPrefs());
+    unawaited(_restorePlaybackPrefs(generation));
     // The chain waits for the first engine handle when boot landed before one;
     // when a handle already exists this applies straight away.
     _applyEq(ref.read(musicEqProvider));
@@ -500,7 +560,7 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
     _applyAudioDevice();
     // Only the music module's instance resumes. Its first published track
     // also restores the desktop lyric overlay, rather than racing the queue.
-    if (_module == AppModule.music) unawaited(_restore());
+    if (_module == AppModule.music) unawaited(_restore(generation));
     return _audio.state;
   }
 
@@ -594,8 +654,9 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
     if (engine == null) return;
     // Kept and cancelled with the container: bounded per engine instance,
     // but a subscription nobody holds is not one this controller owns.
+    final generation = _generation;
     _sessionCommands = engine.stream.mediaSessionCommands.listen((command) {
-      if (!ref.mounted) return;
+      if (!_isCurrent(generation)) return;
       if (command is MediaSessionCommandNext) {
         unawaited(next());
       } else if (command is MediaSessionCommandPrevious) {
@@ -658,6 +719,7 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
       _eqDebounce = Timer(const Duration(milliseconds: 250), () => _applyEq(eq, immediate: true));
       return;
     }
+    final generation = _generation;
     final engine = _engineAdapter?.player;
     if (engine == null) {
       // An engine that is not the mpv_audio backend has no typed chain;
@@ -669,7 +731,7 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
       engine
           .setAudioEffects(musicEqAudioEffects(eq))
           .then<void>((_) async {
-            if (!ref.mounted) return;
+            if (!_isCurrent(generation)) return;
             // The chain took; the preamp rides the engine's native gain.
             ref.read(musicEqApplyFailedProvider.notifier).state = false;
             // Zeroed when the chain is off: the A/B bypass must lift the
@@ -677,7 +739,7 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
             await engine.setVolumeGain(eq.enabled ? eq.preampDb : 0);
           })
           .catchError((Object _) {
-            if (ref.mounted) ref.read(musicEqApplyFailedProvider.notifier).state = true;
+            if (_isCurrent(generation)) ref.read(musicEqApplyFailedProvider.notifier).state = true;
           }),
     );
     // The pitch node is the engine's first-class control, not a filter.
@@ -792,12 +854,13 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
     // The overlay has its own close and lock buttons: following its stream
     // keeps the saved choice (and the menu's check marks) honest when the
     // viewer reaches for the window instead of the settings page.
+    final generation = _generation;
     _desktopVisibleChanges = desktop.visibleChanges.listen((visible) {
-      if (!ref.mounted) return;
+      if (!_isCurrent(generation)) return;
       unawaited(ref.read(musicDesktopLyricsSettingsProvider.notifier).setDesktopLyrics(visible: visible));
     });
     _desktopLockChanges = desktop.lockedChanges.listen((locked) {
-      if (!ref.mounted) return;
+      if (!_isCurrent(generation)) return;
       unawaited(ref.read(musicDesktopLyricsSettingsProvider.notifier).setDesktopLyricLocked(locked: locked));
     });
     if (desktopSettings.desktopLyricLocked) {
@@ -822,6 +885,7 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
   /// restored overlay that cannot draw simply stays hidden.
   Future<void> _restoreDesktopLyric() async {
     if (_desktopRestoreAttempted || _desktopLyric != null || !ref.mounted || _module != AppModule.music) return;
+    final generation = _generation;
     if (!ref.read(musicDesktopLyricsSettingsProvider).desktopLyrics) return;
     // A window with no song under it is noise; the lyric overlay follows the
     // first track, and the explicit toggle shows it without one.
@@ -833,7 +897,7 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
     try {
       final desktop = _desktopController();
       if (!await desktop.hasPermission()) return;
-      if (!ref.mounted || !ref.read(musicDesktopLyricsSettingsProvider).desktopLyrics) return;
+      if (!_isCurrent(generation) || !ref.read(musicDesktopLyricsSettingsProvider).desktopLyrics) return;
       await desktop.show();
     } on Object {
       // No overlay window on this platform.
@@ -956,6 +1020,23 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
     return _audio.playTrack(track, insertNext: true);
   }
 
+  @override
+  Future<void> playCurrent() async {
+    _queueEpoch++;
+    _pendingSeekKey = null;
+    await _audio.play();
+    _holdSound();
+  }
+
+  @override
+  Future<void> pause() async {
+    _queueEpoch++;
+    _pendingSeekKey = null;
+    await _audio.pause();
+    _holdSound(playing: false);
+  }
+
+  @override
   Future<void> toggle() async {
     _queueEpoch++;
     _pendingSeekKey = null;
@@ -963,6 +1044,7 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
     _holdSound();
   }
 
+  @override
   Future<void> next() async {
     _queueEpoch++;
     _pendingSeekKey = null;
@@ -970,6 +1052,7 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
     _holdSound();
   }
 
+  @override
   Future<void> previous() async {
     _queueEpoch++;
     _pendingSeekKey = null;
@@ -977,6 +1060,7 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
     _holdSound();
   }
 
+  @override
   Future<void> seek(Duration position) {
     _pendingSeekKey = null;
     return _audio.seek(position);
@@ -988,8 +1072,10 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
   /// pixel is the kind of housekeeping a tick must not carry.
   Timer? _volumeSave;
 
+  @override
   Future<void> setVolume(double volume) async {
     final clamped = volume.clamp(0.0, 1.0);
+    _volumeIntent++;
     _desiredVolume = clamped;
     await _audio.setVolume(clamped);
     _volumeSave?.cancel();
@@ -1000,9 +1086,12 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
   }
 
   Future<void> _applyEnginePrefs() async {
+    final generation = _generation;
+    final controller = _audio;
     try {
-      await _audio.setVolume(_desiredVolume);
-      await _audio.setRate(_desiredRate);
+      await controller.setVolume(_desiredVolume);
+      if (!_isCurrent(generation)) return;
+      await controller.setRate(_desiredRate);
     } on Object {
       // A rebuilt engine may disappear while its preferences are replayed.
     }
@@ -1011,16 +1100,19 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
   Future<void> _applyMute() async {
     if (!ref.mounted) return;
     final generation = ++_muteGeneration;
+    final buildGeneration = _generation;
+    final controller = _audio;
     final muted = _effectivelyMuted;
     try {
-      await _audio.setMute(muted: muted);
+      await controller.setMute(muted: muted);
     } on Object {
       // A refused mute does not make the current song unplayable.
       return;
     }
-    if (ref.mounted && generation != _muteGeneration) unawaited(_applyMute());
+    if (_isCurrent(buildGeneration) && generation != _muteGeneration) unawaited(_applyMute());
   }
 
+  @override
   Future<void> setMuted({required bool muted}) async {
     _localMuted = muted;
     if (!muted && ref.read(playbackSettingsProvider).globalMute) {
@@ -1030,6 +1122,7 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
   }
 
   Future<void> setRate(double rate) async {
+    _rateIntent++;
     _desiredRate = rate;
     await _audio.setRate(rate);
     await ref.read(musicPlaybackSettingsProvider.notifier).setPlaybackRate(rate);
@@ -1475,14 +1568,22 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
   /// restored paused, because opening a page is not pressing play.
   /// Restores the viewer's volume and speed before any queue loads — the
   /// reference persists both across runs (`volume.ts`, `playbackRate.ts`).
-  Future<void> _restorePlaybackPrefs() async {
+  Future<void> _restorePlaybackPrefs(int buildGeneration) async {
+    final controller = _audio;
     final settings = ref.read(musicPlaybackSettingsProvider);
-    if (settings.volume != 1) await _audio.setVolume(settings.volume);
+    final volumeIntent = _volumeIntent;
+    final rateIntent = _rateIntent;
+    if (settings.volume != 1) await controller.setVolume(settings.volume);
+    if (!_isCurrent(buildGeneration)) return;
+    if (volumeIntent != _volumeIntent) await controller.setVolume(_desiredVolume);
+    if (!_isCurrent(buildGeneration)) return;
     await _applyMute();
-    if (settings.playbackRate != 1) await _audio.setRate(settings.playbackRate);
+    if (!_isCurrent(buildGeneration) || rateIntent != _rateIntent) return;
+    if (settings.playbackRate != 1) await controller.setRate(settings.playbackRate);
   }
 
-  Future<void> _restore() async {
+  Future<void> _restore(int buildGeneration) async {
+    final controller = _audio;
     final resume = ref.read(musicSwitchResumeProvider);
     final interrupted = resume.playing;
     final position = resume.position;
@@ -1495,20 +1596,20 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
     // song at its saved position and keeps playing.
     if (!interrupted && !settings.autoplay) return;
     final snapshot = ref.read(musicQueueStoreProvider).read();
-    if (snapshot == null || !ref.mounted) return;
+    if (snapshot == null || !_isCurrent(buildGeneration)) return;
     final epoch = _queueEpoch;
     final restoreIndex = snapshot.index >= 0 && snapshot.index < snapshot.tracks.length ? snapshot.index : 0;
-    await _audio.setQueue(snapshot.tracks, startIndex: restoreIndex, autoPlay: false);
+    await controller.setQueue(snapshot.tracks, startIndex: restoreIndex, autoPlay: false);
     // The viewer picked something while the snapshot was loading: theirs
     // stands, the restore's remaining steps would only talk over it.
-    if (epoch != _queueEpoch || !ref.mounted) return;
+    if (epoch != _queueEpoch || !_isCurrent(buildGeneration)) return;
     // The mode is the viewer's own pick, not a default: sequential is
     // what a fresh queue already is, so only the rest needs the word.
     if (snapshot.mode != audio.PlayMode.list) _audio.setPlayMode(snapshot.mode);
     // Persist the legal selection and mode (and the current identity for old
     // snapshots), never a cursor whose item was removed from the new queue.
     await _saveQueue();
-    if (epoch != _queueEpoch || !ref.mounted) return;
+    if (epoch != _queueEpoch || !_isCurrent(buildGeneration)) return;
     var seekTo = interrupted ? position : Duration.zero;
     if (!interrupted && settings.rememberProgress) {
       final saved = _positions[musicTrackKey(snapshot.tracks[restoreIndex])];
@@ -1519,10 +1620,10 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
     if (seekTo > Duration.zero) {
       _pendingSeekKey = musicTrackKey(snapshot.tracks[restoreIndex]);
       _pendingSeekPosition = seekTo;
-      await _audio.seek(seekTo);
+      await controller.seek(seekTo);
     }
-    if (epoch != _queueEpoch || !ref.mounted) return;
-    await _audio.play();
+    if (epoch != _queueEpoch || !_isCurrent(buildGeneration)) return;
+    await controller.play();
     _holdSound();
   }
 }

@@ -140,7 +140,7 @@ final class MusicOpenApi {
     required this._isFavourite,
   });
 
-  final MusicPlayerController Function() _playerOf;
+  final MusicOpenApiPlayer Function() _playerOf;
   final audio.AudioPlaybackState Function() _readState;
   final Future<audio.LyricDocument> Function({bool force}) _loadLyric;
   final MusicFavouritesController _favourites;
@@ -229,9 +229,9 @@ final class MusicOpenApi {
       case '/toggle':
         await _playerOf().toggle();
       case '/play':
-        await _playerOf().toggle();
+        await _playerOf().playCurrent();
       case '/pause':
-        if (state.playing) await _playerOf().toggle();
+        await _playerOf().pause();
       case '/skip':
         await _playerOf().next();
       case '/back':
@@ -478,22 +478,33 @@ final musicOpenApiProvider = Provider<MusicOpenApi>((ref) {
     favourites: ref.read(musicFavouritesProvider.notifier),
     isFavourite: (track) => ref.read(musicFavouritesProvider).contains(track),
   );
-  // Read, not watch: this runs from build's own microtask and from the
-  // deferred retry below, both outside the build — and a gate/port flip
-  // that lands inside the retry's window rebuilds this provider anyway.
+  var syncing = Future<void>.value();
   Future<void> sync() async {
-    if (ref.read(musicOpenApiGateProvider)) {
-      await api.start(ref.read(musicOpenApiPortProvider), lan: ref.read(musicOpenApiLanProvider));
-    } else {
-      await api.stop();
+    if (!ref.mounted) return;
+    try {
+      if (ref.read(musicOpenApiGateProvider)) {
+        await api.start(ref.read(musicOpenApiPortProvider), lan: ref.read(musicOpenApiLanProvider));
+      } else {
+        await api.stop();
+      }
+    } on Object {
+      // A port can be occupied temporarily; the deferred retry below gets
+      // another attempt without taking the player down with the endpoint.
     }
   }
 
-  unawaited(sync());
+  void scheduleSync() {
+    syncing = syncing.then((_) => sync());
+  }
+
+  scheduleSync();
   // The one deferred retry: cancelled on rebuild so a disposed ref never
   // runs it.
-  final retry = Timer(const Duration(seconds: 2), () => unawaited(sync()));
+  final retry = Timer(const Duration(seconds: 2), scheduleSync);
   ref
+    ..listen(musicOpenApiGateProvider, (_, _) => scheduleSync())
+    ..listen(musicOpenApiPortProvider, (_, _) => scheduleSync())
+    ..listen(musicOpenApiLanProvider, (_, _) => scheduleSync())
     ..listen(musicPlayerProvider, (_, _) => api.pushPlayerStatus())
     ..listen(musicFavouritesProvider, (_, _) => api.pushPlayerStatus())
     ..onDispose(() {

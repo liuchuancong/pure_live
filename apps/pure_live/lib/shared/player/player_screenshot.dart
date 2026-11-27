@@ -40,9 +40,10 @@ Future<File?> capturePlayerFrame(PlayerHandle handle, Directory folder, {require
   }
 }
 
-/// `20261103_031500` — the moment to the second, so a burst of presses does not
-/// overwrite the frame before it.
+/// `20261103_031500_123` — the moment to the millisecond, so a burst of
+/// presses does not overwrite the frame before it.
 String _stamp(DateTime value) {
   String two(int part) => part.toString().padLeft(2, '0');
-  return '${value.year}${two(value.month)}${two(value.day)}_${two(value.hour)}${two(value.minute)}${two(value.second)}';
+  String three(int part) => part.toString().padLeft(3, '0');
+  return '${value.year}${two(value.month)}${two(value.day)}_${two(value.hour)}${two(value.minute)}${two(value.second)}_${three(value.millisecond)}';
 }

@@ -15,6 +15,7 @@ import 'package:pure_live/modules/music/controller/playback/music_open_api.dart'
         musicOpenApiLxLyricOf,
         musicOpenApiParseFilter,
         musicOpenApiStatusName;
+import 'package:pure_live/modules/music/controller/playback/music_playback.dart' show MusicOpenApiPlayer;
 
 void main() {
   group('filter', () {
@@ -86,6 +87,7 @@ void main() {
     late StorageStores stores;
     late ProviderContainer container;
     late MusicOpenApi api;
+    late _FakeOpenApiPlayer player;
     late audio.AudioPlaybackState playback;
     late List<Completer<audio.LyricDocument>> loads;
     late int port;
@@ -95,9 +97,10 @@ void main() {
       await StoragePrefs.init();
       container = ProviderContainer();
       playback = audio.AudioPlaybackState.idle;
+      player = _FakeOpenApiPlayer();
       loads = [];
       api = MusicOpenApi(
-        () => throw StateError('status does not drive playback'),
+        () => player,
         () => playback,
         loadLyric: ({force = false}) {
           final load = Completer<audio.LyricDocument>();
@@ -120,15 +123,28 @@ void main() {
     });
 
     Future<Map<String, Object?>> status() async {
-      final client = HttpClient();
-      try {
-        final request = await client.getUrl(Uri.parse('http://127.0.0.1:$port/status?filter=name,lyric'));
-        final response = await request.close();
-        return jsonDecode(await response.transform(utf8.decoder).join()) as Map<String, Object?>;
-      } finally {
-        client.close(force: true);
-      }
+      final body = await _request(port, '/status?filter=name,lyric');
+      return jsonDecode(body) as Map<String, Object?>;
     }
+
+    test('play and pause are explicit commands rather than toggles', () async {
+      playback = const audio.AudioPlaybackState(
+        track: audio.MusicTrack(id: '1', sourceId: 'kw', title: 'Song', artist: 'Singer'),
+      );
+      await _request(port, '/play');
+      expect(player.plays, 1);
+      expect(player.pauses, 0);
+      expect(player.toggles, 0);
+
+      playback = const audio.AudioPlaybackState(
+        track: audio.MusicTrack(id: '1', sourceId: 'kw', title: 'Song', artist: 'Singer'),
+        playing: true,
+      );
+      await _request(port, '/pause');
+      expect(player.plays, 1);
+      expect(player.pauses, 1);
+      expect(player.toggles, 0);
+    });
 
     test('the same song id on two platforms gets its own lyric', () async {
       playback = const audio.AudioPlaybackState(
@@ -187,6 +203,53 @@ void main() {
       expect(loads, hasLength(2));
     });
   });
+}
+
+Future<String> _request(int port, String path) async {
+  final client = HttpClient();
+  try {
+    final request = await client.getUrl(Uri.parse('http://127.0.0.1:$port$path'));
+    final response = await request.close();
+    return await response.transform(utf8.decoder).join();
+  } finally {
+    client.close(force: true);
+  }
+}
+
+final class _FakeOpenApiPlayer implements MusicOpenApiPlayer {
+  int plays = 0;
+  int pauses = 0;
+  int toggles = 0;
+
+  @override
+  Future<void> toggle() async {
+    toggles++;
+  }
+
+  @override
+  Future<void> playCurrent() async {
+    plays++;
+  }
+
+  @override
+  Future<void> pause() async {
+    pauses++;
+  }
+
+  @override
+  Future<void> next() async {}
+
+  @override
+  Future<void> previous() async {}
+
+  @override
+  Future<void> seek(Duration position) async {}
+
+  @override
+  Future<void> setVolume(double volume) async {}
+
+  @override
+  Future<void> setMuted({required bool muted}) async {}
 }
 
 Future<void> _until(bool Function() test) async {

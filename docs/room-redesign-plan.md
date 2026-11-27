@@ -426,3 +426,14 @@ Windows 窗口全屏入口（第十五轮改）：播放行「全屏｜窗口全
   - **配置与主要文件**：无新增持久化配置、Slang key、依赖或主题 token；generation、歌词写入队列和缓存键均属运行时状态。修改 `modules/music/controller/playback/music_open_api.dart`、`modules/music/controller/sources/music_source_cache.dart`、`modules/music/controller/sources/music_audio_cache.dart`、`test/music/music_open_api_test.dart`、`music_browse_and_lyric_wrappers_test.dart`、`music_audio_cache_test.dart` 与本台账。
   - **验证**：本轮六个 Dart 文件完成单文件格式化；App `dart analyze lib`、`dart analyze test` 均 **No issues found**；聚焦回归 **37/37**、音乐模块全套 **243/243**、App 全量测试 **1315/1315（3 分 47 秒）** 通过。仓外 media_core 无本轮修改。
   - **多平台与限制**：修复位于音乐运行时，不区分桌面、平板、手机、TV 或浅色/深色/自定义主题。未构建 APK/桌面产物、未截图或运行 UI，未做真实跨平台同 ID 歌曲、快速切歌、清缓存同时播放、多窗口、TV、触控、大字体或读屏验收；自动测试不能替代这些运行时验收。
+
+- 2026-11-27：第七十九轮（小窗排队交接、音乐引擎重建与下载归属）⇒
+  - **小窗排队交接**：`FloatingVideoWindow.show()` 在同一帧插入前收到多次请求时，最新 handoff 覆盖旧 handoff，两个调用方共享同一次插入结果；被替换的旧请求收到带恢复位置的 `onClose`，重入 dismiss 也不会清空尚未返回的 completer。
+  - **开放 API 命令与重配**：`/play`、`/pause` 分别调用显式 `playCurrent()`、`pause()`，不再用 toggle 表达暂停；新增 `MusicOpenApiPlayer` 命令接口，隔离播放器具体实现。开关、端口和 LAN 监听改为串行同步，配置变化会停止、重启或重绑当前端点，并保留一次延迟重试。
+  - **音乐引擎重建**：Riverpod 3 在依赖变化时保留 Notifier 实例，原 `late final` 引擎字段会在模块切换重建时二次赋值崩溃。本轮把引擎与运行字段改为可变并按 build 代次重置，旧 state、媒体会话、EQ、桌面歌词和恢复回调均校验 generation；启动恢复音量、静音和倍速不再覆盖用户刚发出的新意图。
+  - **缓存与下载归属**：窗口作用域的音频缓存 box 销毁时取消所有在途下载，取消令牌同时作为提交所有权，旧会话不能向新会话提交或删除文件。下载自动换源后，初次解析与过期重解析都使用实际音频来源及匹配歌曲读取歌词，避免音频与歌词来自不同平台。
+  - **截图文件名**：共享播放器截图时间戳从秒精度提升到毫秒精度，避免连续截图在同一秒互相覆盖。
+  - **回归覆盖**：新增同帧小窗 handoff 替换、开放 API play/pause 非 toggle、音频缓存 disarm 取消在途传输三项回归。
+  - **配置与主要文件**：无新增持久化配置、Slang key、依赖或主题 token；generation、同步 Future 队列、下载取消令牌和解析来源归属均为运行时状态。修改 `shared/player/floating_video.dart`、`shared/player/player_screenshot.dart`、`modules/music/controller/music_source.dart`、`modules/music/controller/library/music_downloads.dart`、`modules/music/controller/playback/music_open_api.dart`、`music_playback.dart`、`modules/music/controller/sources/music_audio_cache.dart`、`test/shared/floating_video_test.dart`、`test/music/music_open_api_test.dart`、`music_audio_cache_test.dart` 与本台账。
+  - **验证**：本轮 Dart 文件仅做单文件格式化；App `dart analyze lib test` 为 **No issues found**；聚焦回归 **31/31**、音乐加共享播放器回归 **248/248**、App 全量测试 **1318/1318（3 分 48 秒）** 通过。仓外 media_core 无本轮修改。
+  - **多平台与限制**：修复位于共享播放与音乐运行时，不区分桌面、平板、手机、TV 或浅色/深色/自定义主题。未构建 APK/桌面产物、未截图或运行 UI，未做真实模块切换重建、开放 API 热重绑、自动换源下载歌词、缓存取消同时重开、多窗口、TV、触控、大字体或读屏验收；自动测试不能替代这些运行时验收。

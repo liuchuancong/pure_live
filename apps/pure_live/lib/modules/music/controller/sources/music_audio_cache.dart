@@ -69,6 +69,7 @@ final class MusicAudioCache {
   final DateTime Function() _now;
   final Map<String, _CacheEntry> _entries = {};
   final Set<String> _downloading = {};
+  final Map<String, CancelToken> _downloadTokens = {};
 
   /// Bytes in finished files.
   int get totalBytes => _entries.values.fold(0, (sum, entry) => sum + entry.size);
@@ -134,7 +135,31 @@ final class MusicAudioCache {
   /// The download of [key] failed or was cancelled: its partial file goes.
   Future<void> abort(String key) async {
     _downloading.remove(key);
+    _downloadTokens.remove(key);
     await files.delete(MusicAudioCacheKey.partOf(key));
+  }
+
+  /// Claims the cancellation token for a download that already owns [key].
+  void trackDownload(String key, CancelToken token) {
+    if (_downloading.contains(key)) _downloadTokens[key] = token;
+  }
+
+  /// Whether [token] still owns [key]'s transfer.
+  bool ownsDownload(String key, CancelToken token) => identical(_downloadTokens[key], token);
+
+  /// Releases [token]'s claim on [key]; false when a newer session owns it.
+  bool releaseDownload(String key, CancelToken token) {
+    if (!identical(_downloadTokens[key], token)) return false;
+    _downloadTokens.remove(key);
+    return true;
+  }
+
+  /// Cancels every transfer before the cache leaves its window scope.
+  void cancelDownloads() {
+    for (final token in _downloadTokens.values) {
+      token.cancel();
+    }
+    _downloadTokens.clear();
   }
 
   /// Evicts least recently used files until the cache fits [maxBytes];
@@ -295,6 +320,7 @@ final class CachedTrackSource extends audio.MusicSource {
     }
     final files = cache.files as DirectoryMusicCacheFiles;
     final token = CancelToken();
+    cache.trackDownload(key, token);
     try {
       final response = await env.http.open(
         LiveRequest.custom(
@@ -316,13 +342,15 @@ final class CachedTrackSource extends audio.MusicSource {
       } finally {
         await sink.close();
       }
+      if (!cache.ownsDownload(key, token)) return;
       await cache.commit(key);
+      cache.releaseDownload(key, token);
     } on Object catch (error) {
       // A dead download says so: an abort that only freed the key read
       // as never having started, and the next play re-flew it.
       appLog.forCategory('music.cache').warning('audio cache download failed', fields: {'key': key, 'error': '$error'});
       token.cancel();
-      await cache.abort(key);
+      if (cache.releaseDownload(key, token)) await cache.abort(key);
     }
   }
 
@@ -426,6 +454,9 @@ final class MusicAudioCacheBox {
   void disarm() {
     _sources.clear();
     _wearing = null;
+    for (final cache in _caches.values) {
+      cache.cancelDownloads();
+    }
     _caches.clear();
     for (final identity in _loading.keys) {
       _generations[identity] = (_generations[identity] ?? 0) + 1;
