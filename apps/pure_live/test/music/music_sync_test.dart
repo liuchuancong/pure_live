@@ -349,6 +349,81 @@ void main() {
       expect(invoked, isFalse);
     });
 
+    test('async handlers are acknowledged only after their work completes', () async {
+      final delayed = Completer<List<Object?>>();
+      final pushed = Completer<List<Object?>>();
+      final barrier = Completer<List<Object?>>();
+      final gate = Completer<String>();
+      server.listen((request) async {
+        final socket = await WebSocketTransformer.upgrade(request);
+        socket
+          ..add(musicSyncEncodeRequest('delayed', const [], const []))
+          ..add(musicSyncEncodeRequest('pushed', const [], const []))
+          ..add(musicSyncEncodeRequest('barrier', const [], const []))
+          ..listen((data) {
+            final frame = jsonDecode(data as String);
+            if (frame is! List || frame.isEmpty || frame.first != 1) return;
+            final response = frame.cast<Object?>();
+            if (response[1] == 'delayed' && !delayed.isCompleted) delayed.complete(response);
+            if (response[1] == 'pushed' && !pushed.isCompleted) pushed.complete(response);
+            if (response[1] == 'barrier' && !barrier.isCompleted) barrier.complete(response);
+          });
+      });
+      client
+        ..registerHandler('delayed', (_) => gate.future)
+        ..registerPushHandler('pushed', (_) => gate.future)
+        ..registerHandler('barrier', (_) => null);
+      await client.connect(address, keyInfo);
+
+      await barrier.future.timeout(const Duration(seconds: 2));
+      expect(delayed.isCompleted, isFalse);
+      expect(pushed.isCompleted, isFalse);
+      gate.complete('ready');
+      expect(await delayed.future.timeout(const Duration(seconds: 2)), [1, 'delayed', null, 'ready']);
+      expect(await pushed.future.timeout(const Duration(seconds: 2)), [1, 'pushed', null, null]);
+    });
+
+    test('a late async reply is not sent into a replacement socket', () async {
+      final first = Completer<WebSocket>();
+      final second = Completer<WebSocket>();
+      final started = Completer<void>();
+      final gate = Completer<String>();
+      final barrier = Completer<List<Object?>>();
+      final replacementFrames = <List<Object?>>[];
+      var connections = 0;
+      server.listen((request) async {
+        final socket = await WebSocketTransformer.upgrade(request);
+        if (connections++ == 0) {
+          first.complete(socket);
+          socket.add(musicSyncEncodeRequest('delayed', const [], const []));
+        } else {
+          socket.listen((data) {
+            final frame = jsonDecode(data as String);
+            if (frame is! List || frame.isEmpty || frame.first != 1) return;
+            final response = frame.cast<Object?>();
+            replacementFrames.add(response);
+            if (response[1] == 'barrier' && !barrier.isCompleted) barrier.complete(response);
+          });
+          second.complete(socket);
+        }
+      });
+      client
+        ..registerHandler('delayed', (_) {
+          started.complete();
+          return gate.future;
+        })
+        ..registerHandler('barrier', (_) => null);
+      await client.connect(address, keyInfo);
+      await started.future.timeout(const Duration(seconds: 2));
+
+      await (await first.future).close();
+      final replacement = await second.future.timeout(const Duration(seconds: 3));
+      gate.complete('late');
+      replacement.add(musicSyncEncodeRequest('barrier', const [], const []));
+      await barrier.future.timeout(const Duration(seconds: 2));
+      expect(replacementFrames.where((frame) => frame[1] == 'delayed'), isEmpty);
+    });
+
     test('a malformed frame fails the session without escaping the socket listener', () async {
       final accepted = Completer<WebSocket>();
       server.listen((request) async {

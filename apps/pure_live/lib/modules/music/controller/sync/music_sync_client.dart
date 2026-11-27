@@ -111,7 +111,8 @@ final class MusicSyncClient {
   final Map<String, List<String>> _callCallbacks = <String, List<String>>{};
   final Map<String, Timer> _callbackTimers = <String, Timer>{};
   final Map<String, Object? Function(List<Object?> args)> _handlers = <String, Object? Function(List<Object?> args)>{};
-  final Map<String, void Function(List<Object?> args)> _pushHandlers = <String, void Function(List<Object?> args)>{};
+  final Map<String, Object? Function(List<Object?> args)> _pushHandlers =
+      <String, Object? Function(List<Object?> args)>{};
 
   LiveWebSocketClient? _socket;
   // Both subscriptions are cancelled together by _cancelSocketListeners.
@@ -137,8 +138,9 @@ final class MusicSyncClient {
   /// call; fire-and-forget actions go through [registerPushHandler].
   void registerHandler(String name, Object? Function(List<Object?> args) handler) => _handlers[name] = handler;
 
-  /// Registers a push-style handler whose return value is not awaited.
-  void registerPushHandler(String name, void Function(List<Object?> args) handler) => _pushHandlers[name] = handler;
+  /// Registers a push-style handler whose return value is discarded after it
+  /// completes; the remote still receives the acknowledgement afterwards.
+  void registerPushHandler(String name, Object? Function(List<Object?> args) handler) => _pushHandlers[name] = handler;
 
   /// Unregisters everything — used on disconnect.
   void unregisterAll() {
@@ -356,22 +358,73 @@ final class MusicSyncClient {
   }
 
   void _answer(MusicSyncRpcRequest request) {
+    final socket = _socket;
+    if (socket == null) return;
     final push = _pushHandlers[request.name];
     if (push != null) {
-      push(request.args);
-      _socket?.send(musicSyncEncodeFrame(request.reply(null)));
+      _invokeHandler(socket, request, push, discardResult: true);
       return;
     }
     final handler = _handlers[request.name];
     if (handler == null) {
-      _socket?.send(musicSyncEncodeFrame(request.replyError('${request.name} is not defined')));
+      _sendError(socket, request, '${request.name} is not defined');
       return;
     }
+    _invokeHandler(socket, request, handler, discardResult: false);
+  }
+
+  void _invokeHandler(
+    LiveWebSocketClient socket,
+    MusicSyncRpcRequest request,
+    Object? Function(List<Object?> args) handler, {
+    required bool discardResult,
+  }) {
     try {
       final result = handler(request.args);
-      _socket?.send(musicSyncEncodeFrame(request.reply(result)));
+      if (result is Future) {
+        unawaited(_completeHandler(socket, request, result, discardResult: discardResult));
+      } else {
+        _sendReply(socket, request, result, discardResult: discardResult);
+      }
     } on Object catch (error) {
-      _socket?.send(musicSyncEncodeFrame(request.replyError(error.toString())));
+      _sendError(socket, request, error.toString());
+    }
+  }
+
+  Future<void> _completeHandler(
+    LiveWebSocketClient socket,
+    MusicSyncRpcRequest request,
+    Future<dynamic> future, {
+    required bool discardResult,
+  }) async {
+    try {
+      final result = await future;
+      _sendReply(socket, request, result, discardResult: discardResult);
+    } on Object catch (error) {
+      _sendError(socket, request, error.toString());
+    }
+  }
+
+  void _sendReply(
+    LiveWebSocketClient socket,
+    MusicSyncRpcRequest request,
+    Object? result, {
+    required bool discardResult,
+  }) {
+    if (!identical(_socket, socket) || !socket.isConnected) return;
+    try {
+      socket.send(musicSyncEncodeFrame(request.reply(discardResult ? null : result)));
+    } on Object {
+      _onClosed(socket);
+    }
+  }
+
+  void _sendError(LiveWebSocketClient socket, MusicSyncRpcRequest request, String message) {
+    if (!identical(_socket, socket) || !socket.isConnected) return;
+    try {
+      socket.send(musicSyncEncodeFrame(request.replyError(message)));
+    } on Object {
+      _onClosed(socket);
     }
   }
 

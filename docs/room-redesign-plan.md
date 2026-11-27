@@ -480,3 +480,12 @@ Windows 窗口全屏入口（第十五轮改）：播放行「全屏｜窗口全
   - **下载恢复边界**：复核 `MusicDownloadQueue.restore` 与重试路径后确认，恢复仅把未完成任务标为 paused，不保存也不接受重新解析闭包；App 侧没有可安全挂接 resolver 的公开 API。重启后若旧取流地址失效，恢复任务仍可能重试失败，需在外部 media_core 提供恢复解析扩展点后才能闭环，本轮未修改该包。
   - **验证**：两个修改文件单文件格式化无变化；音乐同步聚焦回归 **24/24** 通过；App `dart analyze lib test` 为 **No issues found**；App 全量测试 **1330/1330** 通过。仓外 media_core 已有并行改动，本轮未修改。
   - **多平台与限制**：修复位于音乐同步运行时，不区分桌面、平板、手机、TV 或浅色/深色/自定义主题。未构建 APK/桌面产物、未截图或运行 UI，未做真实 LX 服务回调、长连接重连、多窗口、TV、触控、大字体或读屏验收；自动测试不能替代这些运行时验收。
+
+- 2026-11-27：第八十五轮（LX 同步异步写入确认收口）⇒
+  - **协议依据**：核对 LX Desktop 列表与屏蔽规则的客户端 handler，`list_sync_set_list_data`、`dislike_sync_set_list_data` 都是先等待本地写入再返回的 async handler；客户端提前确认会让服务端在落盘完成前结束同步阶段。
+  - **异步 RPC 生命周期**：`MusicSyncClient` 统一等待普通与 push handler 返回的 Future，工作完成后才发送结果或 null 确认；同步异常与异步异常均转换为 RPC error，避免未捕获 Future。所有确认与错误帧继续绑定发起请求时的 socket 身份，旧连接的迟到工作不会写入 replacement socket。
+  - **双向写入边界**：列表与屏蔽规则覆盖写入直接返回写入 Future；远端 overwrite action 同样等待实际本地写入，不提前结束 push action。本轮未把仍无生产调用者的本地变更推送接入新流程，也未改变 recent/favourites/playlists 的既有顺序写入。
+  - **回归覆盖**：新增普通 async handler 与 async push handler 都在 gate 完成后才确认、旧 socket 的迟到 async reply 不进入新 socket 两项本地 HTTP/WebSocket 集成回归；以 barrier 请求确保后续帧已按序处理后再断言。
+  - **配置与主要文件**：无新增持久化配置、Slang key、依赖或主题 token；异步处理与 socket 身份均属运行时状态。修改 `modules/music/controller/sync/music_sync_client.dart`、`modules/music/controller/sync/music_sync.dart`、`test/music/music_sync_test.dart` 与本台账。
+  - **验证**：三个修改文件仅做单文件格式化；音乐同步聚焦回归 **26/26** 通过；App `dart analyze lib test` 为 **No issues found**；App 全量测试 **1332/1332（4 分 16 秒）** 通过；`git diff --check` 通过。仓外 media_core 已有并行改动，本轮未修改。
+  - **多平台与限制**：修复位于音乐同步运行时，不区分桌面、平板、手机、TV 或浅色/深色/自定义主题。未构建 APK/桌面产物、未截图或运行 UI，未做真实 LX 服务并发写入、落盘失败、长连接重连、多窗口、TV、触控、大字体或读屏验收；自动测试不能替代这些运行时验收。

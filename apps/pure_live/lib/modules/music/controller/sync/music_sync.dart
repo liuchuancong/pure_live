@@ -285,20 +285,14 @@ final class MusicSyncController extends Notifier<MusicSyncState> {
       ..registerHandler('list_sync_get_md5', (args) => musicSyncMd5Of(_localListData()))
       ..registerHandler('list_sync_get_sync_mode', (args) => state.syncMode)
       ..registerHandler('list_sync_get_list_data', (args) => _localListData())
-      ..registerHandler('list_sync_set_list_data', (args) {
-        unawaited(_overwriteLocalLists(args.firstOrNull));
-        return null;
-      })
+      ..registerHandler('list_sync_set_list_data', (args) => _overwriteLocalLists(args.firstOrNull))
       ..registerHandler('list_sync_finished', (args) => null)
       // --- dislike ---
       ..registerPushHandler('onDislikeSyncAction', (args) => _applyDislikeAction(args.firstOrNull))
       ..registerHandler('dislike_sync_get_md5', (args) => musicSyncMd5Of(_dislikeRules()))
       ..registerHandler('dislike_sync_get_sync_mode', (args) => state.syncMode)
       ..registerHandler('dislike_sync_get_list_data', (args) => _dislikeRules())
-      ..registerHandler('dislike_sync_set_list_data', (args) {
-        unawaited(_storeRemoteDislikeRules(args.firstOrNull));
-        return null;
-      })
+      ..registerHandler('dislike_sync_set_list_data', (args) => _storeRemoteDislikeRules(args.firstOrNull))
       ..registerHandler('dislike_sync_finished', (args) => null);
   }
 
@@ -337,18 +331,18 @@ final class MusicSyncController extends Notifier<MusicSyncState> {
   /// overwrite form replaces the module's lists wholesale. The fine-grained
   /// per-list actions are not produced by the module's own editing surface,
   /// so they are honoured as full refreshes.
-  void _applyListAction(Object? action) {
+  Future<void> _applyListAction(Object? action) async {
     if (action is! Map) return;
     final data = action['data'];
     if (action['action'] == 'list_data_overwrite') {
-      unawaited(_overwriteLocalLists(data));
+      await _overwriteLocalLists(data);
     }
   }
 
-  void _applyDislikeAction(Object? action) {
+  Future<void> _applyDislikeAction(Object? action) async {
     if (action is! Map) return;
     if (action['action'] == 'dislike_data_overwrite') {
-      unawaited(_storeRemoteDislikeRules(action['data']));
+      await _storeRemoteDislikeRules(action['data']);
     }
   }
 
