@@ -417,3 +417,12 @@ Windows 窗口全屏入口（第十五轮改）：播放行「全屏｜窗口全
   - **配置与主要文件**：无新增持久化配置、Slang key、依赖或主题 token；仅复用既有路由深度、generation 与 finalize 任务集合。修改 `modules/iptv/pages/iptv_play_page.dart`、`modules/vod/pages/vod_video_page.dart`、`vod_season_page.dart`、`modules/huya/pages/huya_video_player_page.dart`、`modules/hongguo/pages/hongguo_player_page.dart`、`modules/live/recorder/engine/recorder_engine.dart` 与本台账。
   - **验证**：App `dart analyze lib`、`dart analyze test` 均 **No issues found**；播放/录制聚焦回归 **17/17**、录制仓库 **11/11** 通过；`flutter test --no-pub` 全量 **1310/1310** 通过（04:51，退出码 0）。仅格式化本轮明确修改的六个 Dart 文件，仓外 media_core 无本轮修改。
   - **多平台与限制**：修复位于共享播放与录制运行时，不区分桌面、平板、手机、TV 或浅色/深色/自定义主题。未构建 APK/桌面产物、未截图或运行 UI，未做真实覆盖返回与切台并发、录制 finalize 期间重开、多窗口、TV、触控、大字体或读屏验收；自动测试不能替代这些运行时验收。
+
+- 2026-11-27：第七十八轮（开放 API 歌词身份、在途请求与缓存清理竞态）⇒
+  - **歌词身份与过期响应**：`MusicOpenApi` 的歌词缓存键改用既有 `musicTrackKey`（`sourceId:id`），不同平台的同名歌曲不再共用一份歌词。每次加载前清空旧文档，完成后仅在缓存键仍等于捕获键时提交；切歌、切偏移或刷新 revision 后，迟到的旧响应返回空文档，不能覆盖新状态或污染后续缓存。
+  - **歌词缓存写入串行化**：`CachedLyricSource` 对 forget、clear 与网络回写共用进程内 Future 队列，每次读改写都在前一次提交完成后读取最新存储，避免多个平台包装器并发完成时丢失其他歌曲。clear 同步递增 generation，清空前发起的网络请求即使之后完成也不会把已删除歌词重新写回；清空操作排在已有写入之后，保证最终状态为空。
+  - **音频缓存清理容错**：Windows 播放器仍占用某个缓存文件时，`MusicAudioCache.clear()` 捕获该文件的 `FileSystemException` 并继续删除其余文件，不再因首个占用文件中断整批清理。文件仍被占用时保留磁盘文件，但缓存账目仍按用户清理动作清空；没有引入自动重试或活动文件保护锁。
+  - **回归覆盖**：新增开放 API 同 ID 跨平台歌词、慢旧请求不能覆盖新歌曲、清空期间在途歌词不复活、两首歌乱序完成均保留，以及音频缓存单文件占用不阻断其余清理五项测试。
+  - **配置与主要文件**：无新增持久化配置、Slang key、依赖或主题 token；generation、歌词写入队列和缓存键均属运行时状态。修改 `modules/music/controller/playback/music_open_api.dart`、`modules/music/controller/sources/music_source_cache.dart`、`modules/music/controller/sources/music_audio_cache.dart`、`test/music/music_open_api_test.dart`、`music_browse_and_lyric_wrappers_test.dart`、`music_audio_cache_test.dart` 与本台账。
+  - **验证**：本轮六个 Dart 文件完成单文件格式化；App `dart analyze lib`、`dart analyze test` 均 **No issues found**；聚焦回归 **37/37**、音乐模块全套 **243/243**、App 全量测试 **1315/1315（3 分 47 秒）** 通过。仓外 media_core 无本轮修改。
+  - **多平台与限制**：修复位于音乐运行时，不区分桌面、平板、手机、TV 或浅色/深色/自定义主题。未构建 APK/桌面产物、未截图或运行 UI，未做真实跨平台同 ID 歌曲、快速切歌、清缓存同时播放、多窗口、TV、触控、大字体或读屏验收；自动测试不能替代这些运行时验收。

@@ -154,7 +154,11 @@ final class MusicAudioCache {
     final keys = [..._entries.keys];
     _entries.clear();
     for (final key in keys) {
-      await files.delete(MusicAudioCacheKey.fileOf(key));
+      try {
+        await files.delete(MusicAudioCacheKey.fileOf(key));
+      } on FileSystemException {
+        // A player may still hold the file open on Windows; keep clearing the rest.
+      }
     }
   }
 }

@@ -1,4 +1,4 @@
-import 'dart:io' show Directory, File;
+import 'dart:io' show Directory, File, FileSystemException;
 import 'dart:typed_data' show Uint8List;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -118,6 +118,15 @@ void main() {
       expect(cache.keys, isEmpty);
       expect(files.files.containsKey('kw_b.audio'), isFalse); // finished files go
       expect(files.files.containsKey('kw_c.audio.part'), isTrue); // a download in flight finishes into it
+    });
+
+    test('a clear keeps going when a player still holds one file open', () async {
+      await _seed(cache, files, {'kw_locked': 10, 'kw_free': 10});
+      files.locked.add('kw_locked.audio');
+      await cache.clear();
+      expect(cache.keys, isEmpty);
+      expect(files.files.containsKey('kw_locked.audio'), isTrue);
+      expect(files.files.containsKey('kw_free.audio'), isFalse);
     });
 
     test('a hit whose entry is gone re-resolves instead of answering a dead path', () async {
@@ -363,6 +372,7 @@ audio.MusicTrack _track({String id = '977', String sourceId = 'kw'}) =>
 /// The files, as a map: no disk, no clock.
 final class _MapFiles implements MusicCacheFiles {
   final files = <String, ({int size, DateTime modified})>{};
+  final locked = <String>{};
 
   @override
   Future<List<CachedAudioFile>> list() async => [
@@ -380,6 +390,7 @@ final class _MapFiles implements MusicCacheFiles {
 
   @override
   Future<void> delete(String name) async {
+    if (locked.contains(name)) throw const FileSystemException('in use');
     files.remove(name);
   }
 }

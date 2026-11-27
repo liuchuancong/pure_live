@@ -7,7 +7,7 @@ import 'package:live_storage/live_storage.dart' show StoragePrefs;
 import 'package:media_core_audio/media_core_audio.dart' as audio;
 
 import 'package:pure_live/modules/music/controller/library/music_library.dart'
-    show MusicFavouritesController, musicFavouritesProvider;
+    show MusicFavouritesController, musicFavouritesProvider, musicTrackKey;
 import 'package:pure_live/modules/music/controller/playback/music_playback.dart';
 
 /// The preference the open-API switch is kept under.
@@ -412,15 +412,19 @@ final class MusicOpenApi {
       _lyric = null;
       return null;
     }
-    final key = '${track.id}|${state.lyricOffset.inMilliseconds}|${state.lyricRevision}';
+    final key = '${musicTrackKey(track)}|${state.lyricOffset.inMilliseconds}|${state.lyricRevision}';
     if (key == _lyricKey) return _lyric;
     _lyricKey = key;
+    _lyric = null;
+    audio.LyricDocument document;
     try {
-      _lyric = await _loadLyric();
+      document = await _loadLyric();
     } on Object {
-      _lyric = null;
+      return null;
     }
-    return _lyric;
+    if (key != _lyricKey) return null;
+    _lyric = document;
+    return document;
   }
 }
 

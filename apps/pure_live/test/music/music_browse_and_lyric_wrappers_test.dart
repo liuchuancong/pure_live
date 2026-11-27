@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert' show jsonDecode, jsonEncode;
 
 import 'package:flutter_test/flutter_test.dart';
@@ -138,6 +139,32 @@ void main() {
       expect(CachedLyricSource.storedLyricCount(), 0);
     });
 
+    test('clearing while a fetch is in flight does not resurrect its lyric', () async {
+      final pending = Completer<audio.MusicLyricPayload?>();
+      final platform = _StubSource(resolve: (_) => pending.future);
+      final fetched = CachedLyricSource(platform).resolveLyric(_track());
+      await CachedLyricSource.clearLyricCache();
+      pending.complete(const audio.MusicLyricPayload(lyric: '[00:01.000]迟到'));
+      expect((await fetched)!.lyric, '[00:01.000]迟到');
+      expect(CachedLyricSource.storedLyricCount(), 0);
+    });
+
+    test('concurrent fetches keep both songs when they finish out of order', () async {
+      final first = Completer<audio.MusicLyricPayload?>();
+      final second = Completer<audio.MusicLyricPayload?>();
+      final left = CachedLyricSource(_StubSource(resolve: (_) => first.future));
+      final right = CachedLyricSource(_StubSource(resolve: (_) => second.future));
+      final leftFetch = left.resolveLyric(_track());
+      final rightFetch = right.resolveLyric(
+        const audio.MusicTrack(id: '9002', sourceId: 'kw', title: '第二首', artist: '周杰伦'),
+      );
+      second.complete(const audio.MusicLyricPayload(lyric: '[00:01.000]第二首'));
+      await rightFetch;
+      first.complete(const audio.MusicLyricPayload(lyric: '[00:01.000]第一首'));
+      await leftFetch;
+      expect(_storedKeys(), containsAll(['kw:9001', 'kw:9002']));
+    });
+
     test('the cache holds two hundred songs, the oldest falling off', () async {
       // Two hundred seeded entries; the oldest is the one the map saw first.
       final seeded = <String, Object?>{
@@ -244,10 +271,11 @@ audio.MusicTrack _track() => const audio.MusicTrack(
 /// A platform the wrappers can wrap: it counts its lyric asks and can be
 /// told to answer, stay silent or fail.
 final class _StubSource extends audio.MusicSource {
-  _StubSource({this.lyric, this.lyricThrows = false});
+  _StubSource({this.lyric, this.lyricThrows = false, this.resolve});
 
   final audio.MusicLyricPayload? lyric;
   final bool lyricThrows;
+  final Future<audio.MusicLyricPayload?> Function(audio.MusicTrack)? resolve;
   int lyricAsks = 0;
 
   @override
@@ -259,6 +287,7 @@ final class _StubSource extends audio.MusicSource {
   @override
   Future<audio.MusicLyricPayload?> resolveLyric(audio.MusicTrack track) async {
     lyricAsks += 1;
+    if (resolve != null) return await resolve!(track);
     if (lyricThrows) throw StateError('the stub refuses');
     return lyric;
   }

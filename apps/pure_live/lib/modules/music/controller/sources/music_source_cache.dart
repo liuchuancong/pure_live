@@ -25,6 +25,9 @@ class CachedLyricSource extends audio.MusicSource {
   /// The platform source the calls ride on.
   final audio.MusicSource inner;
 
+  static int _generation = 0;
+  static Future<void> _pendingWrite = Future<void>.value();
+
   @override
   String get id => inner.id;
 
@@ -54,13 +57,14 @@ class CachedLyricSource extends audio.MusicSource {
 
   @override
   Future<audio.MusicLyricPayload?> resolveLyric(audio.MusicTrack track) async {
+    final generation = _generation;
     final cached = _read()[musicTrackKey(track)];
     if (cached != null) return cached;
     try {
       final payload = await inner.resolveLyric(track);
       if (payload != null) {
         try {
-          await _write(track, payload);
+          await _write(track, payload, generation: generation);
         } on Object {
           // A write that fails must not lose the lyric it was holding.
         }
@@ -72,12 +76,12 @@ class CachedLyricSource extends audio.MusicSource {
   }
 
   /// Forgets [track]'s cached lyric; a refresh asks the platform again.
-  Future<void> forget(audio.MusicTrack track) async {
+  Future<void> forget(audio.MusicTrack track) => _mutate(() async {
     final cache = _read();
     if (cache.isEmpty) return;
     final next = _serialized({...cache}..remove(musicTrackKey(track)));
     await StoragePrefs.setString(kMusicLyricCacheKey, next);
-  }
+  });
 
   /// How many songs keep a cached lyric right now — the cache page's count.
   static int storedLyricCount() {
@@ -92,12 +96,21 @@ class CachedLyricSource extends audio.MusicSource {
   }
 
   /// Forgets every cached lyric — the cache page's clear button.
-  static Future<void> clearLyricCache() async {
-    try {
-      await StoragePrefs.setString(kMusicLyricCacheKey, '');
-    } on Object {
-      // A preference; a closed store loses it.
-    }
+  static Future<void> clearLyricCache() {
+    _generation += 1;
+    return _mutate(() async {
+      try {
+        await StoragePrefs.setString(kMusicLyricCacheKey, '');
+      } on Object {
+        // A preference; a closed store loses it.
+      }
+    });
+  }
+
+  static Future<void> _mutate(Future<void> Function() action) {
+    final result = _pendingWrite.then((_) => action());
+    _pendingWrite = result.catchError((Object _) {});
+    return result;
   }
 
   Map<String, audio.MusicLyricPayload> _read() {
@@ -134,15 +147,17 @@ class CachedLyricSource extends audio.MusicSource {
     );
   }
 
-  Future<void> _write(audio.MusicTrack track, audio.MusicLyricPayload payload) async {
-    final next = <String, audio.MusicLyricPayload>{..._read()}
-      ..remove(musicTrackKey(track))
-      ..[musicTrackKey(track)] = payload;
-    while (next.length > kMusicLyricCacheLimit) {
-      next.remove(next.keys.first);
-    }
-    await StoragePrefs.setString(kMusicLyricCacheKey, _serialized(next));
-  }
+  Future<void> _write(audio.MusicTrack track, audio.MusicLyricPayload payload, {required int generation}) =>
+      _mutate(() async {
+        if (generation != _generation) return;
+        final next = <String, audio.MusicLyricPayload>{..._read()}
+          ..remove(musicTrackKey(track))
+          ..[musicTrackKey(track)] = payload;
+        while (next.length > kMusicLyricCacheLimit) {
+          next.remove(next.keys.first);
+        }
+        await StoragePrefs.setString(kMusicLyricCacheKey, _serialized(next));
+      });
 
   static String _serialized(Map<String, audio.MusicLyricPayload> cache) => jsonEncode({
     for (final entry in cache.entries)
