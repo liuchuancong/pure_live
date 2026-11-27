@@ -516,3 +516,11 @@ Windows 窗口全屏入口（第十五轮改）：播放行「全屏｜窗口全
   - **配置与主要文件**：无新增持久化配置、Slang key、依赖或主题 token；追番分页、请求代次与页面标签均为运行时状态。修改 `modules/vod/controller/vod_controller.dart`、`modules/vod/controller/vod_social.dart`、`modules/vod/pages/vod_personal_page.dart`、`vod_search_page.dart`、`vod_uploader_page.dart`、`vod_video_page.dart`、`modules/vod/widgets/vod_widgets.dart`、`test/vod/vod_dynamics_test.dart`、`packages/live_vod/lib/src/bilibili_vod_client.dart` 与本台账；共享工作树其他并行改动保留，未整文件覆盖或回退。
   - **验证**：`dart analyze lib` 为 **No issues found**；`flutter test test/vod` **78/78** 通过；本轮精确路径 `git diff --check` 无空白错误。测试覆盖游客追番、首屏参数、第二页追加去重、分页终止与影视类型；未重跑 App 全量测试。
   - **多平台与限制**：沿用现有 desen_ui、主题和响应式分支，详情操作区覆盖 720px 内容宽阈值，不复制 TV 四列布局，也未改写播放器。未构建 APK/桌面产物、未截图或运行 UI，未做真实搜索跳转、账号切换并发、追番长列表、关注写入、窄屏/大字体/TV/触控/读屏验收；自动测试不能替代这些运行时验收。DASH 音视频轨下载仍作为独立后续任务，本轮未实现。
+
+- 2026-11-27：第八十九轮（Bilibili 分页重试、账号代次与社交写入互斥）⇒
+  - **搜索与 UP 分页**：搜索和 UP 投稿控制器监听 VOD 客户端身份变化并递增请求代次，旧账号迟到响应不再写入新状态。搜索失败后的重试保留已加载列表并重试失败页；UP 页新增独立 `retry()`，第二页失败不再退回第一页。UP 分页遇到空页或完全重复页立即终止，避免平台仍声明 `hasMore` 时无限加载。
+  - **社交写入互斥**：点赞和关注在请求进行中忽略重复触发，杜绝快速连点产生乱序写请求；失败仍回滚并抛出本地化提示。账号切换同时递增代次，旧写入的失败回滚不会覆盖新账号状态。
+  - **UP 头部窄屏降级**：内容宽小于 420px 时，头像与资料保持一行，关注按钮换到独立一行并右对齐；较宽容器维持原有横向布局。复用既有 desen_ui 头像、徽标、按钮与主题 token，不新增配置或依赖。
+  - **配置与主要文件**：无新增持久化配置、Slang key、依赖或主题 token；请求代次、写入互斥和分页终止均为运行时状态。修改 `modules/vod/controller/vod_controller.dart`、`modules/vod/controller/vod_social.dart`、`modules/vod/pages/vod_uploader_page.dart`、`test/vod/vod_search_and_pgc_test.dart`、`vod_signed_walks_test.dart`、`vod_social_test.dart` 与本台账；共享工作树其他并行改动保留。
+  - **验证**：六个 Dart 文件仅做单文件格式化；App `dart analyze lib` 为 **No issues found**；`flutter test test/vod` **85/85** 通过。新增回归覆盖搜索失败页重试、搜索与 UP 账号切换迟到响应、UP 重复页终止、UP 失败页重试，以及点赞/关注在途重复触发。
+  - **多平台与限制**：沿用现有 desen_ui 和浅色/深色/自定义主题；UP 头部按 420px 内容宽降级，桌面和平板保持原布局。未构建 APK/桌面产物、未截图或运行 UI，未做真实账号切换、慢网连续点击、窄屏/大字体/TV/触控/读屏验收；自动测试不能替代这些运行时验收。Bilibili 原生收藏、投币、评论写入和 DASH 轨下载仍不在本轮范围。

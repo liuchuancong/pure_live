@@ -347,10 +347,13 @@ final class VodLikeController extends Notifier<bool?> {
   final int aid;
 
   int _generation = 0;
+  bool _writing = false;
 
   @override
   bool? build() {
     ref.watch(accountsProvider.select((accounts) => accounts.credentials[SiteIds.bilibili]?.userId));
+    _generation++;
+    _writing = false;
     final client = ref.read(vodClientProvider);
     if (!client.canWrite) return null;
     unawaited(_read(client, ++_generation));
@@ -371,15 +374,19 @@ final class VodLikeController extends Notifier<bool?> {
   /// Flips the viewer's like: the flip lands at once, and the endpoint's
   /// refusal puts it back and rethrows for the page's toast.
   Future<void> toggle() async {
-    _generation++;
+    if (_writing) return;
+    _writing = true;
+    final generation = ++_generation;
     final next = !(state ?? false);
     state = next;
     try {
       await ref.read(vodClientProvider).setLike(aid: aid, like: next);
     } on Object {
-      if (!ref.mounted) return;
+      if (!ref.mounted || generation != _generation) return;
       state = !next;
       rethrow;
+    } finally {
+      if (generation == _generation) _writing = false;
     }
   }
 }
@@ -397,10 +404,13 @@ final class VodFollowUpController extends Notifier<bool?> {
   final int mid;
 
   int _generation = 0;
+  bool _writing = false;
 
   @override
   bool? build() {
     ref.watch(accountsProvider.select((accounts) => accounts.credentials[SiteIds.bilibili]?.userId));
+    _generation++;
+    _writing = false;
     final client = ref.read(vodClientProvider);
     if (!client.canWrite) return null;
     unawaited(_read(client, ++_generation));
@@ -423,15 +433,19 @@ final class VodFollowUpController extends Notifier<bool?> {
   /// Flips the viewer's follow: the flip lands at once, and the endpoint's
   /// refusal puts it back and rethrows for the page's toast.
   Future<void> toggle() async {
-    _generation++;
+    if (_writing) return;
+    _writing = true;
+    final generation = ++_generation;
     final next = !(state ?? false);
     state = next;
     try {
       await ref.read(vodClientProvider).setFollowing(mid: mid, follow: next);
     } on Object {
-      if (!ref.mounted) return;
+      if (!ref.mounted || generation != _generation) return;
       state = !next;
       rethrow;
+    } finally {
+      if (generation == _generation) _writing = false;
     }
   }
 }

@@ -72,7 +72,13 @@ final class VodController extends Notifier<VodState> {
   int _duration = 0;
 
   @override
-  VodState build() => _initial(VodSearchKind.video);
+  VodState build() {
+    ref.watch(vodClientProvider);
+    _generation++;
+    _stagnant = 0;
+    _lastTotal = 0;
+    return _initial(VodSearchKind.video);
+  }
 
   /// Searches [query] from its first page; a blank query clears the results.
   ///
@@ -98,10 +104,10 @@ final class VodController extends Notifier<VodState> {
     return _load(state.query, state.kind, state.nextPage);
   }
 
-  /// Runs the committed query again from its first page (the retry button).
+  /// Runs the failed page again, or the committed query from its head.
   Future<void> retry() {
     if (state.query.isEmpty) return Future.value();
-    return _load(state.query, state.kind, 1);
+    return _load(state.query, state.kind, state.error == null ? 1 : state.nextPage);
   }
 
   Future<void> _load(String query, VodSearchKind kind, int page) async {
@@ -405,8 +411,16 @@ final class VodUploaderState {
 
 /// One UP主's space videos, paged.
 final class VodUploaderController extends Notifier<VodUploaderState> {
+  int _generation = 0;
+
   @override
-  VodUploaderState build() => const VodUploaderState();
+  VodUploaderState build() {
+    ref.listen(vodClientProvider, (_, _) {
+      _generation++;
+      state = const VodUploaderState();
+    });
+    return const VodUploaderState();
+  }
 
   /// Opens [mid]'s space; another mid starts it over.
   Future<void> open(String mid) async {
@@ -424,9 +438,13 @@ final class VodUploaderController extends Notifier<VodUploaderState> {
   /// Reads the page again from its first page.
   Future<void> refresh() => _load(1);
 
+  /// Retries the page that failed without discarding earlier pages.
+  Future<void> retry() => _load(state.nextPage);
+
   Future<void> _load(int page) async {
     if (state.loading) return;
     final mid = state.mid;
+    final generation = ++_generation;
     state = VodUploaderState(
       mid: mid,
       videos: state.videos,
@@ -439,21 +457,22 @@ final class VodUploaderController extends Notifier<VodUploaderState> {
       final answer = number <= 0
           ? const VodSearchPage(videos: [])
           : await ref.read(vodClientProvider).spaceVideos(number, page: page);
-      if (!ref.mounted || state.mid != mid) return;
+      if (!ref.mounted || generation != _generation || state.mid != mid) return;
       final merged = page == 1 ? [...answer.videos] : [...state.videos];
       if (page > 1) {
         final seen = {for (final video in merged) video.id};
         merged.addAll(answer.videos.where((video) => seen.add(video.id)));
       }
+      final added = page > 1 ? merged.length - state.videos.length : merged.length;
       state = VodUploaderState(
         mid: mid,
         videos: List<VodVideo>.unmodifiable(merged),
         nextPage: page + 1,
-        hasMore: answer.hasMore,
+        hasMore: answer.hasMore && added > 0,
         total: page == 1 ? answer.total : state.total,
       );
     } on Object catch (failure) {
-      if (!ref.mounted || state.mid != mid) return;
+      if (!ref.mounted || generation != _generation || state.mid != mid) return;
       state = VodUploaderState(
         mid: mid,
         videos: state.videos,

@@ -132,6 +132,75 @@ void main() {
       expect(retried.videos.single.title, '恢复了');
     });
 
+    test('a failed later page retries itself without dropping earlier rows', () async {
+      var attempts = 0;
+      http.route('search/type', (url) async {
+        final page = int.parse(url.queryParameters['page'] ?? '1');
+        if (page == 2) {
+          attempts += 1;
+          if (attempts == 1) throw StateError('the second page is down');
+        }
+        return _ok(
+          jsonEncode({
+            'code': 0,
+            'data': {
+              'result': [videoRow('BV$page', '第 $page 页')],
+              'numResults': 45,
+            },
+          }),
+        );
+      });
+      final container = containerWith();
+      final notifier = container.read(vodProvider.notifier);
+
+      await notifier.search('晴天');
+      await notifier.loadMore();
+      expect(container.read(vodProvider).videos.single.bvid, 'BV1');
+      expect(container.read(vodProvider).nextPage, 2);
+      expect(container.read(vodProvider).error, isNotNull);
+
+      await notifier.retry();
+      final retried = container.read(vodProvider);
+      expect(retried.videos.map((video) => video.bvid), ['BV1', 'BV2']);
+      expect(retried.nextPage, 3);
+      expect(retried.error, isNull);
+      expect(attempts, 2);
+    });
+
+    test('an account change drains the previous account response', () async {
+      final gate = Completer<void>();
+      http.route('search/type', (url) async {
+        await gate.future;
+        return _ok(
+          jsonEncode({
+            'code': 0,
+            'data': {
+              'result': [videoRow('BV_old', '旧账号')],
+              'numResults': 1,
+            },
+          }),
+        );
+      });
+      final container = containerWith();
+      final notifier = container.read(vodProvider.notifier);
+      final flying = notifier.search('晴天');
+      await _settle();
+
+      container.updateOverrides([
+        vodClientProvider.overrideWithValue(
+          BilibiliVodClient(http, cookie: 'SESSDATA=new', log: appLog.forCategory('vod.api')),
+        ),
+      ]);
+      await _settle();
+      expect(container.read(vodProvider).query, isEmpty);
+
+      gate.complete();
+      await flying;
+      await _settle();
+      expect(container.read(vodProvider).videos, isEmpty);
+      expect(container.read(vodProvider).query, isEmpty);
+    });
+
     test('a blank query clears the page', () async {
       final container = containerWith();
       final notifier = container.read(vodProvider.notifier);

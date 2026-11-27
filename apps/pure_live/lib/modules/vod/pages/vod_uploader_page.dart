@@ -130,7 +130,7 @@ final class _VodUploaderPageState extends ConsumerState<VodUploaderPage> {
                   hasMore: state.hasMore,
                   onLoadMore: controller.loadMore,
                   error: error,
-                  onRetry: () => unawaited(controller.refresh()),
+                  onRetry: () => unawaited(controller.retry()),
                   onRefresh: controller.refresh,
                   refreshError: error,
                   emptyIcon: DsIcons.circleUser,
@@ -177,58 +177,81 @@ final class _Head extends StatelessWidget {
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
     final signature = sign?.trim() ?? '';
-    return Row(
+    final avatarWidget = DsAvatar(
+      initials: avatarInitials(name),
+      image: (avatar?.isEmpty ?? true) ? null : cachedImage(avatar!, policy: ImageCachePolicies.avatar),
+      size: DsSize.lg,
+      semanticLabel: name,
+    );
+    final details = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      spacing: DsSpace.s12,
+      spacing: DsSpace.s4,
       children: [
-        DsAvatar(
-          initials: avatarInitials(name),
-          image: (avatar?.isEmpty ?? true) ? null : cachedImage(avatar!, policy: ImageCachePolicies.avatar),
-          size: DsSize.lg,
-          semanticLabel: name,
-        ),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            spacing: DsSpace.s4,
-            children: [
-              Row(
-                spacing: DsSpace.s8,
-                children: [
-                  Flexible(
-                    child: Text(
-                      name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.typography.title.copyWith(color: colors.text),
-                    ),
-                  ),
-                  DsBadge(label: Text(platform), dot: false),
-                ],
+        Row(
+          spacing: DsSpace.s8,
+          children: [
+            Flexible(
+              child: Text(
+                name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.typography.title.copyWith(color: colors.text),
               ),
-              if (fans != null)
-                Text(
-                  '${AudienceFormat.format(fans)} ${t.vod.fans}',
-                  style: theme.typography.caption.copyWith(color: colors.textMuted),
-                ),
-              if (signature.isNotEmpty)
-                Text(
-                  signature,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.typography.caption.copyWith(color: colors.textMuted),
-                ),
-            ],
-          ),
+            ),
+            DsBadge(label: Text(platform), dot: false),
+          ],
         ),
-        if (canFollow)
-          DsButton(
+        if (fans != null)
+          Text(
+            '${AudienceFormat.format(fans)} ${t.vod.fans}',
+            style: theme.typography.caption.copyWith(color: colors.textMuted),
+          ),
+        if (signature.isNotEmpty)
+          Text(
+            signature,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: theme.typography.caption.copyWith(color: colors.textMuted),
+          ),
+      ],
+    );
+    final follow = canFollow
+        ? DsButton(
             variant: followed == true ? DsButtonVariant.secondary : DsButtonVariant.primary,
             size: DsSize.sm,
             onPressed: () => unawaited(onFollow()),
             child: Text(followed == true ? t.vod.followedUp : t.vod.followUp),
-          ),
-      ],
+          )
+        : null;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth < 420) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            spacing: DsSpace.s12,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                spacing: DsSpace.s12,
+                children: [
+                  avatarWidget,
+                  Expanded(child: details),
+                ],
+              ),
+              if (follow != null) Align(alignment: AlignmentDirectional.centerEnd, child: follow),
+            ],
+          );
+        }
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          spacing: DsSpace.s12,
+          children: [
+            avatarWidget,
+            Expanded(child: details),
+            ?follow,
+          ],
+        );
+      },
     );
   }
 }

@@ -46,6 +46,29 @@ void main() {
       expect(stub.seen, isEmpty); // no read, no write: the row keeps its door
     });
 
+    test('a second tap waits for the in-flight write instead of racing it', () async {
+      final stub = _RouteStub()
+        ..routes['/x/web-interface/archive/has/like'] = '{"code":0,"data":[0]}'
+        ..routes['/x/web-interface/archive/like'] = '{"code":0}';
+      final gate = Completer<String>();
+      stub.hold('/x/web-interface/archive/like', gate);
+      final container = signedIn(stub);
+      addTearDown(container.dispose);
+      container.listen(vodLikeProvider(5), (_, _) {});
+      await pumpEventQueue();
+      final controller = container.read(vodLikeProvider(5).notifier);
+
+      final first = controller.toggle();
+      await controller.toggle();
+      final writes = stub.seen.where((request) => request.url.path == '/x/web-interface/archive/like');
+      expect(writes, hasLength(1));
+      expect(container.read(vodLikeProvider(5)), isTrue);
+
+      gate.complete('{"code":0}');
+      await first;
+      expect(container.read(vodLikeProvider(5)), isTrue);
+    });
+
     test('the verdict reads, flips optimistically, and rolls back on a refusal', () async {
       final stub = _RouteStub()..routes['/x/web-interface/archive/has/like'] = '{"code":0,"data":[1]}';
       stub.routes['/x/web-interface/archive/like'] = '{"code":0}';
@@ -75,6 +98,29 @@ void main() {
   });
 
   group('the follow chip', () {
+    test('a second tap waits for the in-flight write instead of racing it', () async {
+      final stub = _RouteStub()
+        ..routes['/x/relation'] = '{"code":0,"data":{"attribute":0}}'
+        ..routes['/x/relation/modify'] = '{"code":0}';
+      final gate = Completer<String>();
+      stub.hold('/x/relation/modify', gate);
+      final container = signedIn(stub);
+      addTearDown(container.dispose);
+      container.listen(vodFollowUpProvider(7), (_, _) {});
+      await pumpEventQueue();
+      final controller = container.read(vodFollowUpProvider(7).notifier);
+
+      final first = controller.toggle();
+      await controller.toggle();
+      final writes = stub.seen.where((request) => request.url.path == '/x/relation/modify');
+      expect(writes, hasLength(1));
+      expect(container.read(vodFollowUpProvider(7)), isTrue);
+
+      gate.complete('{"code":0}');
+      await first;
+      expect(container.read(vodFollowUpProvider(7)), isTrue);
+    });
+
     test('a stale read does not revert the flip', () async {
       final stub = _RouteStub();
       final gate = Completer<String>();

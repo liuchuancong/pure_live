@@ -1,3 +1,4 @@
+import 'dart:async' show Completer;
 import 'dart:convert' show jsonDecode, jsonEncode, utf8;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -126,6 +127,98 @@ void main() {
       expect(container.read(vodUploaderProvider).videos, hasLength(1));
       await notifier.loadMore();
       expect(container.read(vodUploaderProvider).videos.map((video) => video.bvid), ['BV1', 'BV2']);
+    });
+
+    test('a repeated page ends the walk', () async {
+      http.route(
+        'wbi/arc/search',
+        (url) async => _ok(
+          jsonEncode({
+            'code': 0,
+            'data': {
+              'list': {
+                'vlist': [spaceRow('BV1', '第一条')],
+              },
+              'page': {'count': 88},
+            },
+          }),
+        ),
+      );
+      final container = containerWith();
+      final notifier = container.read(vodUploaderProvider.notifier);
+
+      await notifier.open('977');
+      await notifier.loadMore();
+      expect(container.read(vodUploaderProvider).videos, hasLength(1));
+      expect(container.read(vodUploaderProvider).hasMore, isFalse);
+      final calls = http.calls.length;
+      await notifier.loadMore();
+      expect(http.calls.length, calls);
+    });
+
+    test('a failed later page retries itself and keeps earlier rows', () async {
+      var secondAttempts = 0;
+      http.route('wbi/arc/search', (url) async {
+        final page = int.parse(url.queryParameters['pn'] ?? '1');
+        if (page == 2 && ++secondAttempts == 1) throw StateError('the second page is down');
+        return _ok(
+          jsonEncode({
+            'code': 0,
+            'data': {
+              'list': {
+                'vlist': [spaceRow('BV$page', '第 $page 页')],
+              },
+              'page': {'count': 88},
+            },
+          }),
+        );
+      });
+      final container = containerWith();
+      final notifier = container.read(vodUploaderProvider.notifier);
+
+      await notifier.open('977');
+      await notifier.loadMore();
+      expect(container.read(vodUploaderProvider).videos.single.bvid, 'BV1');
+      expect(container.read(vodUploaderProvider).nextPage, 2);
+      expect(container.read(vodUploaderProvider).error, isNotNull);
+
+      await notifier.retry();
+      expect(container.read(vodUploaderProvider).videos.map((video) => video.bvid), ['BV1', 'BV2']);
+      expect(container.read(vodUploaderProvider).error, isNull);
+      expect(secondAttempts, 2);
+    });
+
+    test('an account change drains the previous account response', () async {
+      final gate = Completer<void>();
+      http.route('wbi/arc/search', (url) async {
+        await gate.future;
+        return _ok(
+          jsonEncode({
+            'code': 0,
+            'data': {
+              'list': {
+                'vlist': [spaceRow('BV_old', '旧账号')],
+              },
+              'page': {'count': 1},
+            },
+          }),
+        );
+      });
+      final container = containerWith();
+      final notifier = container.read(vodUploaderProvider.notifier);
+      final flying = notifier.open('977');
+      await pumpEventQueue();
+
+      container.updateOverrides([
+        vodClientProvider.overrideWithValue(
+          BilibiliVodClient(http, cookie: 'SESSDATA=new', log: appLog.forCategory('vod.api')),
+        ),
+      ]);
+      await pumpEventQueue();
+      gate.complete();
+      await flying;
+      await pumpEventQueue();
+      expect(container.read(vodUploaderProvider).videos, isEmpty);
     });
 
     test("a failed page lands as the walk's own error", () async {
