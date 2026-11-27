@@ -9,6 +9,7 @@ import 'package:pure_live/modules/music/controller/playback/music_playback_setti
     show musicPlaybackSettingsProvider;
 import 'package:pure_live/modules/music/controller/sources/lx_script_runtime.dart';
 import 'package:pure_live/modules/music/controller/sources/music_display_lyric.dart' show DisplayLyricSource;
+import 'package:pure_live/modules/music/controller/sources/music_source_bilibili.dart' show BilibiliMusicSource;
 import 'package:pure_live/modules/music/controller/sources/music_source_cache.dart' show CachedLyricSource;
 import 'package:pure_live/modules/music/controller/sources/music_source_failure.dart' show noteMusicSourceSilence;
 import 'package:pure_live/modules/music/controller/sources/music_source_kg.dart' show KgMusicSource;
@@ -18,6 +19,7 @@ import 'package:pure_live/modules/music/controller/sources/music_source_match.da
 import 'package:pure_live/modules/music/controller/sources/music_source_mg.dart' show MgMusicSource;
 import 'package:pure_live/modules/music/controller/sources/music_source_tx.dart' show TxMusicSource;
 import 'package:pure_live/modules/music/controller/sources/music_source_wy.dart' show WyMusicSource;
+import 'package:pure_live/modules/vod/controller/vod_controller.dart' show vodClientProvider;
 
 /// The platform key lx-music uses for Kuwo; the module's default source.
 const String kLxMusicSourceId = 'kw';
@@ -34,6 +36,7 @@ final musicSourceListProvider = Provider<List<audio.MusicSource>>((ref) {
     CachedLyricSource(TxMusicSource(runtime, transport)),
     CachedLyricSource(WyMusicSource(runtime, transport)),
     CachedLyricSource(MgMusicSource(runtime, transport)),
+    CachedLyricSource(BilibiliMusicSource(ref.watch(vodClientProvider))),
   ];
 
   // The lyric walk: when a track's own platform holds no words, the other

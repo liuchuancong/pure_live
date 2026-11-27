@@ -143,7 +143,7 @@ void main() {
     expect(info.bestAudio?.url, 'https://cdn/audio-high.m4s');
   });
 
-  test('the muxed fallback asks fnval 1', () async {
+  test('the muxed fallback asks fnval 0', () async {
     final http = _FakeHttp({
       '/x/player/pagelist': {
         'code': 0,
@@ -164,7 +164,7 @@ void main() {
 
     final info = await BilibiliVodClient(http).playPart(bvid: 'BV1', cid: 7, dash: false);
 
-    expect(http.asked.last.queryParameters['fnval'], '1');
+    expect(http.asked.last.queryParameters['fnval'], '0');
     expect(info.url, 'https://cdn/muxed.mp4');
   });
 
@@ -613,6 +613,11 @@ void main() {
     expect(info.url, 'https://cdn/episode.mp4');
     expect(info.quality, '1080P');
     expect(info.qualities, hasLength(2));
+
+    final muxed = await BilibiliVodClient(http).pgcPlay(episodeId: 7001, cid: 9001, aid: 8001, dash: false);
+    final muxedAsk = http.asked.lastWhere((uri) => uri.path == '/pgc/player/web/playurl');
+    expect(muxedAsk.queryParameters['fnval'], '0');
+    expect(muxed.url, 'https://cdn/episode.mp4');
   });
 
   test('the audio ladder comes back best first', () async {

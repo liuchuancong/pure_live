@@ -12,10 +12,10 @@ export 'package:live_vod/src/vod_models.dart';
 /// lists, and the cinema (PGC) pages.
 ///
 /// The client speaks only [LiveHttp] and JSON, so the transport (proxies,
-/// retries, cookies) stays the app's business. A play address is the
-/// progressive mp4 (`fnval=1`): it carries its audio with the picture, which
-/// is what a single-surface player needs; the DASH audio ladder is served
-/// separately for the music mode.
+/// retries, cookies) stays the app's business. DASH play addresses carry the
+/// picture and sound as separate essences; the muxed mp4 (`fnval=0`) remains
+/// available for players that cannot join them, and the DASH audio ladder is
+/// served separately for the music mode.
 final class BilibiliVodClient {
   /// A client over [http].
   // A private named parameter cannot be an initializing formal.
@@ -458,7 +458,7 @@ final class BilibiliVodClient {
   /// Resolves one part's play data.
   ///
   /// `fnval=4048` asks for the DASH ladder — every definition the session may
-  /// have, plus the sound as its own track. The muxed mp4 (`fnval=1`) tops out
+  /// have, plus the sound as its own track. The muxed mp4 (`fnval=0`) tops out
   /// at 720P for a guest, so it is only asked for when [dash] is false: an
   /// engine that cannot join two essences, or a download that must be one
   /// file. A DASH answer with no audio track is marked [VodPlayInfo.silent]
@@ -476,7 +476,7 @@ final class BilibiliVodClient {
           'bvid': bvid,
           'cid': '$cid',
           'qn': '$ladderQuality',
-          'fnval': dash ? '4048' : '1',
+          'fnval': dash ? '4048' : '0',
           'fnver': '0',
           'fourk': '1',
           'platform': 'oc',
@@ -1179,7 +1179,7 @@ final class BilibiliVodClient {
       if (cid != null) 'cid': '$cid',
       if (aid != null) 'avid': '$aid',
       'qn': '$ladderQuality',
-      'fnval': dash ? '4048' : '1',
+      'fnval': dash ? '4048' : '0',
       'fnver': '0',
       'fourk': '1',
     };

@@ -36,8 +36,20 @@ final class MusicQualityPill extends ConsumerWidget {
     final offered = player.track?.qualities ?? const [];
     final known = offered.isNotEmpty;
     final hintStyle = theme.typography.caption.copyWith(color: colors.textSubtle);
-    bool offers(MusicQuality quality) => offered.any((entry) => entry.id == quality.scriptName);
-    final askedIsServed = served != null && served.id == asked.scriptName;
+    bool sameTier(String servedId, MusicQuality quality) {
+      if (servedId == quality.scriptName) return true;
+      return switch (quality) {
+        MusicQuality.standard => const {'64k', '132k'}.contains(servedId),
+        MusicQuality.high => const {'192k', 'dolby'}.contains(servedId),
+        _ => false,
+      };
+    }
+
+    bool offers(MusicQuality quality) => offered.any((entry) => sameTier(entry.id, quality));
+    final servedTier = served == null
+        ? null
+        : MusicQuality.values.where((quality) => sameTier(served.id, quality)).firstOrNull;
+    final askedIsServed = servedTier == asked;
     return DsMenuAnchor(
       semanticLabel: t.music.quality,
       items: [
@@ -48,7 +60,7 @@ final class MusicQualityPill extends ConsumerWidget {
             // The tier the song is really served at is marked where it differs
             // from the asked one, so a source's downgrade reads as the
             // source's doing.
-            trailing: served != null && served.id == quality.scriptName
+            trailing: served != null && servedTier == quality
                 ? Text(askedIsServed ? t.music.qualityServedHere : t.music.qualityDowngraded, style: hintStyle)
                 : (known && !offers(quality) ? Text(t.music.qualityNotInSong, style: hintStyle) : null),
             onPressed: () => unawaited(ref.read(musicPlaybackSettingsProvider.notifier).setQuality(quality)),
@@ -63,7 +75,7 @@ final class MusicQualityPill extends ConsumerWidget {
         size: DsSize.sm,
         semanticLabel: t.music.quality,
         onPressed: controller.toggle,
-        child: Text(asked.label(t), style: theme.typography.caption),
+        child: Text(served?.label ?? asked.label(t), style: theme.typography.caption),
       ),
     );
   }
