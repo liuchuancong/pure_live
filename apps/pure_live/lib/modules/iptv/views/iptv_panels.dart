@@ -425,7 +425,8 @@ final class _IptvOnAirEqualizerState extends State<IptvOnAirEqualizer> with Sing
 
 /// The channel row the module's own list draws: the mark, the name with its
 /// dial number, what is on now under it, the heart — and the tally where the
-/// channel is the one on air. The reference's 64px row; a click plays.
+/// channel is the one on air. The reference's 64px row; a click plays, or opens
+/// the current channel's guide.
 final class IptvChannelTile extends StatelessWidget {
   /// A row for [channel], read at the instant [slot] holds.
   const IptvChannelTile({
@@ -434,6 +435,7 @@ final class IptvChannelTile extends StatelessWidget {
     required this.selected,
     required this.onPlay,
     required this.onToggleFavourite,
+    this.onOpenGuide,
     this.showNumber = true,
     this.groupLine,
     super.key,
@@ -445,12 +447,15 @@ final class IptvChannelTile extends StatelessWidget {
   /// What is on it now, read at the list's shared instant.
   final IptvProgrammeSlot? slot;
 
-  /// Whether this channel is the one the player is showing — the row draws
-  /// the tally and the selection ground for it.
+  /// Whether this channel has reached playback — the row draws the tally and
+  /// the selection ground for it.
   final bool selected;
 
-  /// Plays the channel.
+  /// Plays the channel, or opens its guide when it is already on air.
   final VoidCallback onPlay;
+
+  /// Opens the channel's programme guide from the row's action menu.
+  final VoidCallback? onOpenGuide;
 
   /// Flips the favourite flag.
   final VoidCallback onToggleFavourite;
@@ -475,80 +480,94 @@ final class IptvChannelTile extends StatelessWidget {
     // to edge — with the on-air bar at its left and the name in the accent's
     // label ink. The bar keeps its slot on every row, so the marks line up
     // down the list.
-    return Padding(
-      padding: const EdgeInsetsDirectional.symmetric(horizontal: DsSpace.s4, vertical: DsSpace.s3),
-      child: Container(
-        decoration: BoxDecoration(color: selected ? colors.accentTint : null, borderRadius: BorderRadius.circular(10)),
-        // `selected` stays off: the ground above is the selection's whole
-        // statement, and the kit's filled treatment would paint over it.
-        child: DsListRow(
-          semanticLabel: channel.entry.name,
-          leading: Row(
-            mainAxisSize: MainAxisSize.min,
-            spacing: DsSpace.s6,
-            children: [
-              Container(
-                width: 3,
-                height: 30,
-                decoration: BoxDecoration(
-                  color: selected ? colors.accent : const Color(0x00000000),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              IptvChannelLogo(channel: channel, size: DsSize.md),
-            ],
+    return DsContextMenuRegion(
+      semanticLabel: t.iptv.guideTitle,
+      items: [
+        if (onOpenGuide != null)
+          DsMenuItem(
+            leading: const DsIcon(DsIcons.calendarClock, size: 16),
+            label: Text(t.iptv.guideTitle),
+            onPressed: onOpenGuide,
           ),
-          title: Text(
-            [if (number != null) '$number', channel.entry.name].join('  '),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: theme.typography.body.copyWith(
-              fontWeight: FontWeight.w600,
-              color: selected ? colors.accentText : colors.text,
+        DsMenuItem(
+          leading: const DsIcon(DsIcons.heart, size: 16),
+          label: Text(channel.favorite ? t.iptv.unfavouriteAction : t.iptv.favouriteAction),
+          onPressed: onToggleFavourite,
+        ),
+      ],
+      child: Padding(
+        padding: const EdgeInsetsDirectional.symmetric(horizontal: DsSpace.s4, vertical: DsSpace.s3),
+        child: Container(
+          decoration: BoxDecoration(color: selected ? colors.accentTint : null, borderRadius: BorderRadius.circular(10)),
+          child: DsListRow(
+            semanticLabel: channel.entry.name,
+            leading: Row(
+              mainAxisSize: MainAxisSize.min,
+              spacing: DsSpace.s6,
+              children: [
+                Container(
+                  width: 3,
+                  height: 30,
+                  decoration: BoxDecoration(
+                    color: selected ? colors.accent : const Color(0x00000000),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                IptvChannelLogo(channel: channel, size: DsSize.md),
+              ],
             ),
-          ),
-          description: onAir
-              ? Row(
-                  spacing: DsSpace.s6,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 5,
-                      height: 5,
-                      decoration: BoxDecoration(color: colors.accent, shape: BoxShape.circle),
-                    ),
-                    Flexible(
-                      child: Text(
-                        current.title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.typography.caption.copyWith(color: colors.textMuted),
-                      ),
-                    ),
-                  ],
-                )
-              : groupLine == null
-              ? null
-              : Text(
-                  groupLine!,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.typography.caption.copyWith(color: colors.textSubtle),
-                ),
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
-            spacing: DsSpace.s3,
-            children: [
-              if (selected) const IptvOnAirEqualizer(),
-              IptvIconAction(
-                icon: DsIcons.heart,
-                label: channel.favorite ? t.iptv.unfavouriteAction : t.iptv.favouriteAction,
-                onPressed: onToggleFavourite,
-                color: channel.favorite ? colors.accent : null,
+            title: Text(
+              [if (number != null) '$number', channel.entry.name].join('  '),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.typography.body.copyWith(
+                fontWeight: FontWeight.w600,
+                color: selected ? colors.accentText : colors.text,
               ),
-            ],
+            ),
+            description: onAir
+                ? Row(
+                    spacing: DsSpace.s6,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 5,
+                        height: 5,
+                        decoration: BoxDecoration(color: colors.accent, shape: BoxShape.circle),
+                      ),
+                      Flexible(
+                        child: Text(
+                          current.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.typography.caption.copyWith(color: colors.textMuted),
+                        ),
+                      ),
+                    ],
+                  )
+                : groupLine == null
+                ? null
+                : Text(
+                    groupLine!,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.typography.caption.copyWith(color: colors.textSubtle),
+                  ),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              spacing: DsSpace.s3,
+              children: [
+                if (selected) const IptvOnAirEqualizer(),
+                IptvIconAction(
+                  icon: DsIcons.heart,
+                  label: channel.favorite ? t.iptv.unfavouriteAction : t.iptv.favouriteAction,
+                  onPressed: onToggleFavourite,
+                  color: channel.favorite ? colors.accent : null,
+                ),
+              ],
+            ),
+            onPressed: onPlay,
           ),
-          onPressed: onPlay,
         ),
       ),
     );
