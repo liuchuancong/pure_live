@@ -225,6 +225,23 @@ void main() {
         throwsA(isA<Exception>()),
       );
     });
+
+    test('a malformed frame fails the session without escaping the socket listener', () async {
+      final accepted = Completer<WebSocket>();
+      server.listen((request) async {
+        accepted.complete(await WebSocketTransformer.upgrade(request));
+      });
+      final failed = Completer<MusicSyncStatus>();
+      final subscription = client.status.listen((status) {
+        if (status == MusicSyncStatus.failed && !failed.isCompleted) failed.complete(status);
+      });
+      await client.connect(address, keyInfo);
+
+      (await accepted.future).add('{not json');
+      await failed.future.timeout(const Duration(seconds: 2));
+      expect(client.isConnected, isFalse);
+      await subscription.cancel();
+    });
   });
 
   group('client surface', () {

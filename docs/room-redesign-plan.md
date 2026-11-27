@@ -463,3 +463,11 @@ Windows 窗口全屏入口（第十五轮改）：播放行「全屏｜窗口全
   - **配置与主要文件**：无新增持久化配置、Slang key、依赖或主题 token；socket 订阅、身份守卫与 pending 调用清理均属运行时状态。修改 `modules/music/controller/sync/music_sync_client.dart`、`test/music/music_sync_test.dart` 与本台账。
   - **验证**：两个修改文件单文件格式化无变化；音乐同步聚焦回归 **20/20** 通过；App `dart analyze lib test` 为 **No issues found**；`flutter test --no-pub` 全量 **1326/1326（4 分 34 秒）** 通过。仓外 media_core 无本轮修改。
   - **多平台与限制**：修复位于音乐同步运行时，不区分桌面、平板、手机、TV 或浅色/深色/自定义主题。未构建 APK/桌面产物、未截图或运行 UI，未做真实 LX 服务握手、长连接重连、同步中主动断开、多窗口、TV、触控、大字体或读屏验收；自动测试不能替代这些运行时验收。
+
+- 2026-11-27：第八十三轮（LX 同步坏帧隔离与迟到消息守卫）⇒
+  - **坏帧失败路径**：客户端解压或解析远端帧失败时不再让异常从 WebSocket 监听器逃逸，而是按服务端既有策略关闭当前会话、释放在途调用并报告 failed；非法 JSON、损坏的 `cg_` gzip/base64 都走同一路径。
+  - **消息身份守卫**：消息监听器携带创建时的 socket 身份，处理帧前先确认它仍是当前连接；旧连接迟到的帧不会重置新连接的空闲计时、回答 RPC 或关闭新会话。
+  - **回归覆盖**：新增本地服务发送非法 JSON 后同步会话进入 failed 且 `isConnected` 为 false 的集成回归，测试进程无未捕获监听异常。
+  - **配置与主要文件**：无新增持久化配置、Slang key、依赖或主题 token；帧解析错误与 socket 身份均属运行时保护。修改 `modules/music/controller/sync/music_sync_client.dart`、`test/music/music_sync_test.dart` 与本台账。
+  - **验证**：两个修改文件单文件格式化无变化；音乐同步聚焦回归 **21/21** 通过；App `dart analyze lib test` 为 **No issues found**；`flutter test --no-pub` 全量 **1327/1327（4 分 08 秒）** 通过。仓外 media_core 无本轮修改。
+  - **多平台与限制**：修复位于音乐同步运行时，不区分桌面、平板、手机、TV 或浅色/深色/自定义主题。未构建 APK/桌面产物、未截图或运行 UI，未做真实 LX 服务坏帧注入、断网重连、多窗口、TV、触控、大字体或读屏验收；自动测试不能替代这些运行时验收。

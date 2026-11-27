@@ -215,7 +215,7 @@ final class MusicSyncClient {
     );
     final socket = LiveWebSocketClient(uri: uri);
     _socket = socket;
-    _messageSubscription = socket.messages.listen(_onFrame);
+    _messageSubscription = socket.messages.listen((data) => _onFrame(socket, data));
     _stateSubscription = socket.states.listen((state) {
       if (!identical(_socket, socket)) return;
       switch (state) {
@@ -304,12 +304,18 @@ final class MusicSyncClient {
     unawaited(_swallow(call(name, args)));
   }
 
-  void _onFrame(Object? data) {
+  void _onFrame(LiveWebSocketClient socket, Object? data) {
+    if (!identical(_socket, socket)) return;
     if (data is! String) return;
     if (data == 'ping') return;
+    final Object? decoded;
+    try {
+      decoded = musicSyncParseMessage(musicSyncDecodeFrame(data));
+    } on Object {
+      _onClosed(socket);
+      return;
+    }
     _armIdleWatch();
-    final payload = musicSyncDecodeFrame(data);
-    final decoded = musicSyncParseMessage(payload);
     switch (decoded) {
       case final MusicSyncRpcRequest request:
         _answer(request);
