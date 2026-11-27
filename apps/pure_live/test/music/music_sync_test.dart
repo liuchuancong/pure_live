@@ -226,6 +226,129 @@ void main() {
       );
     });
 
+    test('a timed-out call stops accepting its late callback', () async {
+      final accepted = Completer<WebSocket>();
+      final outgoing = Completer<List<Object?>>();
+      final barrier = Completer<void>();
+      server.listen((request) async {
+        final socket = await WebSocketTransformer.upgrade(request);
+        accepted.complete(socket);
+        socket.listen((data) {
+          final frame = jsonDecode(data as String);
+          if (frame is List && frame.isNotEmpty && frame.first == 0 && !outgoing.isCompleted) {
+            outgoing.complete(frame.cast<Object?>());
+          }
+        });
+      });
+      await client.connect(address, keyInfo);
+      client.registerHandler('barrier', (_) {
+        barrier.complete();
+        return null;
+      });
+      var invoked = false;
+      final call = client.call('wait', [(_) => invoked = true], timeout: const Duration(milliseconds: 100));
+      final request = await outgoing.future.timeout(
+        const Duration(seconds: 2),
+        onTimeout: () => throw StateError('outgoing request'),
+      );
+      final callbackName = (request[3]! as List).single as String;
+
+      await expectLater(call, throwsA(isA<Exception>()));
+      final socket = await accepted.future;
+      socket
+        ..add(jsonEncode([2, callbackName, const <Object?>[]]))
+        ..add(musicSyncEncodeRequest('barrier', const [], const []));
+      await barrier.future.timeout(const Duration(seconds: 2));
+      expect(invoked, isFalse);
+    });
+
+    test('reconnection invalidates callbacks from the lost socket', () async {
+      final first = Completer<WebSocket>();
+      final second = Completer<WebSocket>();
+      final outgoing = Completer<List<Object?>>();
+      final barrier = Completer<void>();
+      var connections = 0;
+      server.listen((request) async {
+        final socket = await WebSocketTransformer.upgrade(request);
+        if (connections++ == 0) {
+          first.complete(socket);
+          socket.listen((data) {
+            final frame = jsonDecode(data as String);
+            if (frame is List && frame.isNotEmpty && frame.first == 0 && !outgoing.isCompleted) {
+              outgoing.complete(frame.cast<Object?>());
+            }
+          });
+        } else {
+          second.complete(socket);
+        }
+      });
+      await client.connect(address, keyInfo);
+      client.registerHandler('barrier', (_) {
+        barrier.complete();
+        return null;
+      });
+      var invoked = false;
+      final call = client.call('wait', [(_) => invoked = true]);
+      final failed = expectLater(call, throwsA(isA<Exception>()));
+      final request = await outgoing.future.timeout(
+        const Duration(seconds: 2),
+        onTimeout: () => throw StateError('outgoing request'),
+      );
+      final callbackName = (request[3]! as List).single as String;
+
+      await (await first.future).close();
+      await failed;
+      final replacement = await second.future.timeout(const Duration(seconds: 3));
+      replacement
+        ..add(jsonEncode([2, callbackName, const <Object?>[]]))
+        ..add(musicSyncEncodeRequest('barrier', const [], const []));
+      await barrier.future.timeout(const Duration(seconds: 2));
+      expect(invoked, isFalse);
+    });
+
+    test('reconnection invalidates callbacks retained after a response', () async {
+      final first = Completer<WebSocket>();
+      final second = Completer<WebSocket>();
+      final outgoing = Completer<List<Object?>>();
+      final barrier = Completer<void>();
+      var connections = 0;
+      server.listen((request) async {
+        final socket = await WebSocketTransformer.upgrade(request);
+        if (connections++ == 0) {
+          first.complete(socket);
+          socket.listen((data) {
+            final frame = jsonDecode(data as String);
+            if (frame is List && frame.isNotEmpty && frame.first == 0 && !outgoing.isCompleted) {
+              outgoing.complete(frame.cast<Object?>());
+              socket.add(jsonEncode([1, frame[1], null, null]));
+            }
+          });
+        } else {
+          second.complete(socket);
+        }
+      });
+      await client.connect(address, keyInfo);
+      client.registerHandler('barrier', (_) {
+        barrier.complete();
+        return null;
+      });
+      var invoked = false;
+      await client.call('wait', [(_) => invoked = true]);
+      final request = await outgoing.future.timeout(
+        const Duration(seconds: 2),
+        onTimeout: () => throw StateError('outgoing request'),
+      );
+      final callbackName = (request[3]! as List).single as String;
+
+      await (await first.future).close();
+      final replacement = await second.future.timeout(const Duration(seconds: 3));
+      replacement
+        ..add(jsonEncode([2, callbackName, const <Object?>[]]))
+        ..add(musicSyncEncodeRequest('barrier', const [], const []));
+      await barrier.future.timeout(const Duration(seconds: 2));
+      expect(invoked, isFalse);
+    });
+
     test('a malformed frame fails the session without escaping the socket listener', () async {
       final accepted = Completer<WebSocket>();
       server.listen((request) async {

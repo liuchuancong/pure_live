@@ -108,6 +108,8 @@ final class MusicSyncClient {
   final StreamController<String> _messages = StreamController<String>.broadcast();
   final Map<String, Completer<Object?>> _pending = <String, Completer<Object?>>{};
   final Map<String, void Function(List<Object?> args)> _callbacks = <String, void Function(List<Object?> args)>{};
+  final Map<String, List<String>> _callCallbacks = <String, List<String>>{};
+  final Map<String, Timer> _callbackTimers = <String, Timer>{};
   final Map<String, Object? Function(List<Object?> args)> _handlers = <String, Object? Function(List<Object?> args)>{};
   final Map<String, void Function(List<Object?> args)> _pushHandlers = <String, void Function(List<Object?> args)>{};
 
@@ -143,6 +145,9 @@ final class MusicSyncClient {
     _handlers.clear();
     _pushHandlers.clear();
     _callbacks.clear();
+    _callCallbacks.clear();
+    _callbackTimers.values.forEach(_cancelTimer);
+    _callbackTimers.clear();
   }
 
   // --- auth ---
@@ -270,22 +275,35 @@ final class MusicSyncClient {
     // reference turns local functions into proxy callbacks.
     final wireArgs = <Object?>[];
     final callbackIndexes = <int>[];
+    final callbackNames = <String>[];
     for (var i = 0; i < args.length; i++) {
       final arg = args[i];
       if (arg is void Function(List<Object?>)) {
         final callbackName = 'func_${_callbackCounter++}_$callId';
         _callbacks[callbackName] = arg;
+        callbackNames.add(callbackName);
         callbackIndexes.add(i);
         wireArgs.add(MusicSyncRpcCallback(callbackName));
       } else {
         wireArgs.add(arg);
       }
     }
-    socket.send(musicSyncEncodeFrame(musicSyncEncodeRequest(callId, wireArgs, callbackIndexes)));
+    if (callbackNames.isNotEmpty) {
+      _callCallbacks[callId] = callbackNames;
+      _callbackTimers[callId] = Timer(timeout, () => _releaseCallbacks(callId));
+    }
+    try {
+      socket.send(musicSyncEncodeFrame(musicSyncEncodeRequest(callId, wireArgs, callbackIndexes)));
+    } on Object {
+      _pending.remove(callId);
+      _releaseCallbacks(callId);
+      rethrow;
+    }
     return completer.future.timeout(
       timeout,
       onTimeout: () {
         _pending.remove(callId);
+        _releaseCallbacks(callId);
         throw Exception('同步调用超时: $name');
       },
     );
@@ -322,6 +340,8 @@ final class MusicSyncClient {
       case final MusicSyncRpcResponse response:
         final completer = _pending.remove(response.name);
         if (completer == null) return;
+        // Keep function slots through the call's timeout: the protocol has
+        // no separate callback-completion frame.
         if (response.error == null) {
           completer.complete(response.result);
         } else {
@@ -384,10 +404,18 @@ final class MusicSyncClient {
 
   void _failPending() {
     final pending = _pending.values.toList(growable: false);
+    _callCallbacks.keys.toList(growable: false).forEach(_releaseCallbacks);
     _pending.clear();
     for (final completer in pending) {
       if (!completer.isCompleted) completer.completeError(Exception('同步连接已断开'));
     }
+  }
+
+  void _releaseCallbacks(String callId) {
+    _callbackTimers.remove(callId)?.cancel();
+    final names = _callCallbacks.remove(callId);
+    if (names == null) return;
+    names.forEach(_callbacks.remove);
   }
 
   void _emit(MusicSyncStatus status) {
@@ -407,6 +435,8 @@ final class MusicSyncClient {
     return int.tryParse(address.hostPath.substring(colon + 1)) ?? (address.httpScheme == 'https' ? 443 : 80);
   }
 }
+
+void _cancelTimer(Timer timer) => timer.cancel();
 
 /// The device name the protocol sends in auth messages.
 String musicSyncDeviceName() => Platform.localHostname;
