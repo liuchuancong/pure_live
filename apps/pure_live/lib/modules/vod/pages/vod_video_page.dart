@@ -270,6 +270,8 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
   /// Whether the end of the current part has already been acted on, so the
   /// station's finish action runs once per part.
   bool _finished = false;
+  bool _archiveCompleted = false;
+  bool _nextPartCheckpointPending = false;
 
   /// The Android background-playback gate and the handle it paused.
   BackgroundPlaybackGate? _backgroundGate;
@@ -402,7 +404,6 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
     // The station's playback choices: the rate a video opens with and what
     // a finished part leads to.
     _speed = ref.read(vodPlaybackSettingsProvider).speed.value;
-    _readSkipPoints();
     unawaited(_syncBrightness());
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) unawaited(_load());
@@ -717,6 +718,9 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
       final fallback = _partOf(_openedIdentity) ?? _part;
       // The source that actually reported this transport owns the checkpoint.
       _saveProgress(force: true);
+      _nextPartCheckpointPending = false;
+      _archiveCompleted = false;
+      _readSkipPoints(part.cid);
       final previous = _handle;
       _handle = null;
       _attemptHandle = null;
@@ -1109,7 +1113,27 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
   Future<void> _handleFinished() async {
     if (_finished || _playableHandle == null) return;
     _finished = true;
-    _saveProgress(force: true);
+    final parts = _detail?.parts ?? const <VodPart>[];
+    final index = parts.indexWhere((part) => _identityOf(part) == _openedIdentity);
+    final next = index >= 0 && index + 1 < parts.length ? parts[index + 1] : null;
+    _archiveCompleted = next == null;
+    _saveProgress(force: true, markDone: _archiveCompleted);
+    if (next != null) {
+      final detail = _detail;
+      final duration = _transport?.duration ?? next.duration ?? Duration.zero;
+      unawaited(
+        _historyNotifier.save(
+          bvid: widget.bvid,
+          cid: next.cid,
+          seconds: 0,
+          title: detail?.title ?? next.title,
+          cover: detail?.coverUrl,
+          uploader: detail?.uploader,
+          durationSeconds: duration.inMilliseconds / 1000,
+        ),
+      );
+      _nextPartCheckpointPending = true;
+    }
     switch (ref.read(vodPlaybackSettingsProvider).finish) {
       case VodFinishAction.pause:
         break;
@@ -1513,15 +1537,19 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
   /// them for its own cinema titles and nothing at all for a posted archive,
   /// so the points a viewer sets here are the only ones there are. The store
   /// seam lives on the history controller; the page keeps only the marks.
-  void _readSkipPoints() {
-    final points = ref.read(vodHistoryProvider.notifier).skipPoints(widget.bvid);
+  void _readSkipPoints(int cid) {
+    final points = ref.read(vodHistoryProvider.notifier).skipPoints(widget.bvid, cid: cid);
     _headSeconds = points?.headSeconds;
     _tailSeconds = points?.tailSeconds;
   }
 
-  Future<void> _writeSkipPoints() => ref
-      .read(vodHistoryProvider.notifier)
-      .saveSkipPoints(widget.bvid, headSeconds: _headSeconds, tailSeconds: _tailSeconds);
+  Future<void> _writeSkipPoints() {
+    final cid = _partOf(_openedIdentity)?.cid ?? _part?.cid;
+    if (cid == null) return Future<void>.value();
+    return ref
+        .read(vodHistoryProvider.notifier)
+        .saveSkipPoints(widget.bvid, cid: cid, headSeconds: _headSeconds, tailSeconds: _tailSeconds);
+  }
 
   /// Marks the moment the picture stands on as the end of its opening, or the
   /// start of its ending.
@@ -1913,7 +1941,9 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
   /// also the history record the station's 个人 page reads, so it carries the
   /// archive's metadata; the end of an archive marks it finished instead of
   /// clearing it.
-  void _saveProgress({bool force = false}) {
+  void _saveProgress({bool force = false, bool markDone = false}) {
+    // The next part's zero-second checkpoint owns the archive until it opens.
+    if (_nextPartCheckpointPending) return;
     final part = _partOf(_openedIdentity);
     final transport = _transport;
     if (part == null || transport == null || _openedGeneration != _openGeneration) return;
@@ -1933,7 +1963,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
         cover: detail?.coverUrl,
         uploader: detail?.uploader,
         durationSeconds: total / 1000,
-        completed: position >= total - 5000,
+        completed: markDone || _archiveCompleted,
       ),
     );
   }

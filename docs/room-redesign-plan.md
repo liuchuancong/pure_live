@@ -571,3 +571,12 @@ Windows 窗口全屏入口（第十五轮改）：播放行「全屏｜窗口全
   - **配置与主要文件**：无新增持久化配置、Slang key、依赖或主题 token。修改 `modules/vod/widgets/vod_app_login_dialog.dart`、`modules/vod/pages/vod_personal_page.dart`、`vod_season_page.dart`、`modules/vod/widgets/vod_player_chrome.dart`、`modules/vod/controller/vod_downloads.dart`、`test/vod/vod_seek_bar_test.dart` 与本台账；个人页和剧集页既有 `PageLayoutScope` 并行改动未纳入本轮。
   - **验证**：本轮六个 Dart 文件仅做单文件格式化检查，结果为 0 个变更；App `dart analyze lib test` 为 **No issues found**；`flutter test --no-pub test/vod` **101/101** 通过。新增回归覆盖进度条聚焦、方向键、Home/End seek；下载测试覆盖 provider 释放后的迟到失败路径。
   - **多平台与限制**：修复位于 VOD 页面、登录弹窗、播放器控件和下载控制器，不区分桌面、平板、手机、TV 或浅色/深色/自定义主题。未构建 APK/桌面产物、未截图或运行 UI，未做真实扫码慢网、账号读取失败、TV 遥控器、触控、大字号和读屏验收；自动测试不能替代这些运行时验收。DASH 音视频轨下载仍不在本轮范围。
+
+- 2026-11-27：第九十五轮（Bilibili 分P/剧集完成状态、播放面板与账号切换）⇒
+  - **完成状态语义**：普通视频只有当前分P是最后一个分P且触发播放结束事件才标记整稿完成；非末P结束写入下一P的零秒续播点，不再因接近片尾或打开最后一集而提前完成。剧集同样只有最后一集播放结束才标记整季完成，切集、周期保存和页面释放不会覆盖该完成标记。
+  - **分P跳过点隔离**：片头、片尾按 `bvid + cid` 独立保存，读取优先使用当前分P记录并回退旧版整稿记录；切换分P时重新加载对应跳过点。
+  - **控制面板生命周期**：剧集页清晰度、倍率和选集面板打开时取消闲置隐藏，关闭后重新计时；已有计时器不能在面板打开后把面板一起隐藏。
+  - **账号状态隔离**：动态页的账号读取失败与未登录分离，提供失败提示和重试；推荐、热门浏览源随 VOD 客户端变化重置，旧账号迟到的响应不能写入新账号。
+  - **配置与主要文件**：无新增 Slang key、依赖或主题 token；跳过点偏好键由整稿键扩展为分P键，并保留旧键读取。修改 `modules/vod/controller/vod_controller.dart`、`vod_library.dart`、`modules/vod/pages/vod_page.dart`、`vod_season_page.dart`、`vod_video_page.dart`、`test/vod/vod_library_history_test.dart`、`vod_signed_walks_test.dart` 与本台账；三个页面既有 `PageLayoutScope` 并行改动未纳入本轮。
+  - **验证**：本轮 Dart 文件仅做单文件格式化；App `dart analyze lib test` 为 **No issues found**；`flutter test --no-pub test/vod` **104/104** 通过，全量 `flutter test --no-pub` **1367/1367** 通过。新增回归覆盖分P跳过点隔离与旧记录回退、零秒续播点、最后一集不等于已完成、账号切换浏览源与迟到响应隔离。
+  - **多平台与限制**：修复位于 VOD 状态与播放页逻辑，不区分桌面、平板、手机、TV 或浅色/深色/自定义主题。未构建 APK/桌面产物、未截图或运行 UI，未做真实多P播放结束、剧集切集、账号慢请求、TV 遥控器和读屏验收；自动测试不能替代这些运行时验收。DASH 音视频轨下载仍不在本轮范围。

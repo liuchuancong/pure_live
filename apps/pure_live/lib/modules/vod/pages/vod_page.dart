@@ -127,6 +127,19 @@ final class _VodPageState extends ConsumerState<VodPage> {
   @override
   Widget build(BuildContext context) {
     final t = context.t;
+    ref.listen(vodClientProvider, (_, _) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        switch (_tab) {
+          case VodTab.recommend:
+            _ensureFeed(_recommendKey);
+          case VodTab.popular:
+            _ensureFeed(_popularKey);
+          case VodTab.dynamics:
+            unawaited(ref.read(vodDynamicsProvider.notifier).open());
+        }
+      });
+    });
     final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -266,6 +279,22 @@ final class _VodDynamicsViewState extends ConsumerState<_VodDynamicsView> {
     final login = account.value;
     if (account.isLoading && login == null) {
       return const Padding(padding: EdgeInsets.all(DsSpace.s16), child: SkeletonRows(rows: 5));
+    }
+    if (account.hasError && login == null) {
+      return Center(
+        child: DsEmptyState(
+          icon: const DsIcon(DsIcons.rss),
+          title: Text(t.common.loadFailed),
+          description: Text('${account.error}'),
+          actions: [
+            DsButton(
+              variant: DsButtonVariant.secondary,
+              onPressed: () => ref.invalidate(vodAccountProvider),
+              child: Text(t.common.retry),
+            ),
+          ],
+        ),
+      );
     }
     if (login == null || !login.isLogin) {
       return Center(

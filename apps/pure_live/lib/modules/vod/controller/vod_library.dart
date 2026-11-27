@@ -368,27 +368,30 @@ final class VodHistoryController extends Notifier<List<VodHistoryEntry>> {
       if (json['completed'] == true) return null;
       final cid = (json['cid'] as num?)?.toInt();
       final seconds = (json['seconds'] as num?)?.toDouble();
-      if (cid == null || seconds == null || seconds <= 0) return null;
+      if (cid == null || seconds == null || seconds < 0) return null;
       return (cid: cid, seconds: seconds);
     } on Object {
       return null;
     }
   }
 
-  /// Reads one archive's viewer-set opening and ending points.
-  VodSkipPoints? skipPoints(String bvid) {
+  /// Reads one part's viewer-set opening and ending points, falling back to
+  /// the archive-wide record written before the points became part-scoped.
+  VodSkipPoints? skipPoints(String bvid, {int? cid}) {
     try {
-      return VodSkipPoints.parse(StoragePrefs.getString('$kVodSkipPrefix$bvid'));
+      final scoped = cid == null ? null : StoragePrefs.getString('$kVodSkipPrefix$bvid:$cid');
+      return VodSkipPoints.parse(scoped ?? StoragePrefs.getString('$kVodSkipPrefix$bvid'));
     } on Object {
       return null;
     }
   }
 
-  /// Writes one archive's opening and ending points.
-  Future<void> saveSkipPoints(String bvid, {double? headSeconds, double? tailSeconds}) async {
+  /// Writes one part's opening and ending points.
+  Future<void> saveSkipPoints(String bvid, {int? cid, double? headSeconds, double? tailSeconds}) async {
+    final suffix = cid == null ? '' : ':$cid';
     try {
       await StoragePrefs.setString(
-        '$kVodSkipPrefix$bvid',
+        '$kVodSkipPrefix$bvid$suffix',
         jsonEncode({'head': headSeconds?.round(), 'tail': tailSeconds?.round()}),
       );
     } on Object {
@@ -552,17 +555,14 @@ final class VodSeasonProgress {
   /// When the checkpoint was written.
   final DateTime updatedAt;
 
-  /// Whether the season is done and leaves the continue card alone: the
-  /// end event said so, or a ladder of several episodes has had its last
-  /// one opened. A single-episode season (a film) only counts when it was
-  /// played to its end — merely opening it was never the mark of a
-  /// finished one.
-  bool get completed => finished || (total != null && total! > 1 && episodeIndex >= total! - 1);
+  /// Whether the season's end event marked it finished. Opening the last
+  /// episode is only a place to resume, not proof that it was watched.
+  bool get completed => finished;
 }
 
 /// The preference prefix one archive's viewer-set opening and ending points
-/// live under — the video page writes one per archive, and the manifest
-/// gate reviews the prefix as a computed key.
+/// live under — the video page writes one per part, and the manifest gate
+/// reviews the prefix as a computed key.
 const String kVodSkipPrefix = 'vod.skip.';
 
 /// One archive's viewer-set opening and ending points, in seconds.

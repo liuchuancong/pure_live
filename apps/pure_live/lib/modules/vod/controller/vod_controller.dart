@@ -279,9 +279,15 @@ String vodFeedKey(VodFeedKind kind, {int id = 0}) => switch (kind) {
 final class VodFeedController extends Notifier<Map<String, VodFeedState>> {
   /// Pages in a row that brought nothing new, per feed key.
   final Map<String, int> _stagnant = {};
+  int _generation = 0;
 
   @override
-  Map<String, VodFeedState> build() => const {};
+  Map<String, VodFeedState> build() {
+    ref.watch(vodClientProvider);
+    _generation++;
+    _stagnant.clear();
+    return const {};
+  }
 
   VodFeedState feedOf(String key) => state[key] ?? _feedInitial();
 
@@ -305,6 +311,7 @@ final class VodFeedController extends Notifier<Map<String, VodFeedState>> {
   Future<void> _load(String key, int page) async {
     final current = feedOf(key);
     if (current.loading) return;
+    final generation = _generation;
     final parts = key.split(':');
     state = {...state, key: _with(current, loading: true, clearError: true)};
     final client = ref.read(vodClientProvider);
@@ -320,7 +327,7 @@ final class VodFeedController extends Notifier<Map<String, VodFeedState>> {
           // Again the client's own window for the popular list.
           answer = await client.popular(page: page);
       }
-      if (!ref.mounted) return;
+      if (!ref.mounted || generation != _generation) return;
       final open = state[key];
       if (open == null) return;
       // Feeds can overlap across pages: a video the feed already holds is
@@ -341,7 +348,7 @@ final class VodFeedController extends Notifier<Map<String, VodFeedState>> {
         key: _with(open, videos: merged, nextPage: page + 1, hasMore: answer.hasMore && stagnant < 2, loading: false),
       };
     } on Object catch (failure) {
-      if (!ref.mounted) return;
+      if (!ref.mounted || generation != _generation) return;
       final open = state[key];
       if (open == null) return;
       state = {

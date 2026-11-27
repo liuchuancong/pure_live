@@ -181,6 +181,7 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
 
   /// Whether the end of the episode has already been acted on.
   bool _finished = false;
+  bool _seasonCompleted = false;
   PlayerHandle? _handle;
   StreamSubscription<PlayerTransportState>? _transportSub;
   StreamSubscription<PlayerAdapterEvent>? _eventSub;
@@ -519,6 +520,7 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
       // Checkpoint the source that actually reported a transport before its
       // identity is cleared; the requested episode has not opened yet.
       _savePosition(force: true);
+      _seasonCompleted = false;
       final detail = ref.read(vodSeasonDetailProvider(widget.seasonId)).value;
       final index = detail?.episodes.indexOf(episode) ?? -1;
       VodSeasonProgress? checkpoint;
@@ -715,7 +717,7 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
         episodeIndex: index,
         total: detail.episodes.length,
         positionSeconds: position / 1000,
-        completed: markDone,
+        completed: markDone || _seasonCompleted,
       ),
     );
   }
@@ -773,6 +775,22 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
     } else {
       _wake();
     }
+  }
+
+  void _togglePanel(String panel) {
+    final opening = _openPanel != panel;
+    setState(() => _openPanel = opening ? panel : null);
+    if (opening) {
+      _hideTimer?.cancel();
+    } else {
+      _scheduleHide();
+    }
+  }
+
+  void _closePanel() {
+    if (_openPanel == null) return;
+    setState(() => _openPanel = null);
+    _scheduleHide();
   }
 
   /// The watching lock: taking it puts the panels away first, and locked the
@@ -1058,11 +1076,9 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
   Future<void> _handleFinished() async {
     if (_finished || _playableHandle == null) return;
     _finished = true;
-    // The checkpoint says the season was played to its end: for a ladder
-    // the last-episode rule already reads it done, and a single-episode
-    // season (a film) needs this mark to leave the continue card.
-    _savePosition(force: true, markDone: true);
     final next = _episodeStepped(1);
+    _seasonCompleted = next == null;
+    _savePosition(force: true, markDone: _seasonCompleted);
     switch (ref.read(vodPlaybackSettingsProvider).finish) {
       case VodFinishAction.pause:
         break;
@@ -2359,8 +2375,7 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
                                         icon: DsIcons.gauge,
                                         selected: _openPanel == 'quality',
                                         compact: compact,
-                                        onPressed: () =>
-                                            setState(() => _openPanel = _openPanel == 'quality' ? null : 'quality'),
+                                        onPressed: () => _togglePanel('quality'),
                                       ),
                                     // The pace, the button the keyboard's comma
                                     // and period have always walked: the same
@@ -2373,8 +2388,7 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
                                       icon: DsIcons.timer,
                                       selected: _openPanel == 'speed',
                                       compact: compact,
-                                      onPressed: () =>
-                                          setState(() => _openPanel = _openPanel == 'speed' ? null : 'speed'),
+                                      onPressed: () => _togglePanel('speed'),
                                     ),
                                     // The episodes catalogue, where the archive
                                     // keeps its parts. It rides the bar, so it
@@ -2387,8 +2401,7 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
                                         icon: DsIcons.listVideo,
                                         selected: _openPanel == 'episodes',
                                         compact: compact,
-                                        onPressed: () =>
-                                            setState(() => _openPanel = _openPanel == 'episodes' ? null : 'episodes'),
+                                        onPressed: () => _togglePanel('episodes'),
                                       ),
                                   ],
                                 ),
@@ -2455,7 +2468,7 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
                 Positioned.fill(
                   child: GestureDetector(
                     behavior: HitTestBehavior.opaque,
-                    onTap: () => setState(() => _openPanel = null),
+                    onTap: _closePanel,
                     child: const SizedBox.expand(),
                   ),
                 ),
@@ -2472,7 +2485,7 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
                           label: quality.label,
                           selected: quality.qn == _openedQn,
                           onPressed: () {
-                            setState(() => _openPanel = null);
+                            _closePanel();
                             final current = _episodeOf(_openedIdentity);
                             if (current != null) {
                               unawaited(_openEpisode(current, qn: quality.qn, resumeFrom: _transport?.position));
@@ -2495,7 +2508,7 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
                           label: choice.label,
                           selected: choice.value == _speed,
                           onPressed: () {
-                            setState(() => _openPanel = null);
+                            _closePanel();
                             unawaited(_setSpeed(choice.value));
                           },
                         ),
@@ -2522,7 +2535,7 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
                               label: t.vod.episodesJump,
                               selected: false,
                               onPressed: () {
-                                setState(() => _openPanel = null);
+                                _closePanel();
                                 unawaited(_jumpEpisode());
                               },
                             ),
@@ -2532,7 +2545,7 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
                               detail: episode.title.isEmpty ? null : t.vod.episodeNo(index: episode.index),
                               selected: current != null && episode.id == current.id,
                               onPressed: () {
-                                setState(() => _openPanel = null);
+                                _closePanel();
                                 unawaited(_openEpisode(episode));
                               },
                             ),

@@ -258,6 +258,67 @@ void main() {
       expect(feed.hasMore, isTrue); // rows came back, so another draw is worth asking
     });
 
+    test('an account change drops the old feed and ignores its late answer', () async {
+      final oldHttp = _StubHttp()..route('web-interface/nav', _jsonFuture(jsonDecode(navBody) as Object));
+      final gate = Completer<String>();
+      oldHttp.route('wbi/index/top/feed/rcmd', (url) async {
+        await gate.future;
+        return _ok(
+          jsonEncode({
+            'code': 0,
+            'data': {
+              'item': [
+                {'bvid': 'BV_old', 'title': '旧账号推荐'},
+              ],
+            },
+          }),
+        );
+      });
+      final newHttp = _StubHttp()
+        ..route('web-interface/nav', _jsonFuture(jsonDecode(navBody) as Object))
+        ..route(
+          'wbi/index/top/feed/rcmd',
+          (url) async => _ok(
+            jsonEncode({
+              'code': 0,
+              'data': {
+                'item': [
+                  {'bvid': 'BV_new', 'title': '新账号推荐'},
+                ],
+              },
+            }),
+          ),
+        );
+      final oldClient = BilibiliVodClient(oldHttp, cookie: 'SESSDATA=old', log: appLog.forCategory('vod.api'));
+      final newClient = BilibiliVodClient(newHttp, cookie: 'SESSDATA=new', log: appLog.forCategory('vod.api'));
+      final container = ProviderContainer(overrides: [vodClientProvider.overrideWithValue(oldClient)])
+        ..listen(vodFeedProvider, (_, _) {});
+      addTearDown(container.dispose);
+      final notifier = container.read(vodFeedProvider.notifier);
+
+      final oldOpen = notifier.open('recommend');
+      await pumpEventQueue();
+      container.updateOverrides([vodClientProvider.overrideWithValue(newClient)]);
+      await pumpEventQueue();
+      expect(notifier.feedOf('recommend').videos, isEmpty);
+
+      await notifier.open('recommend');
+      expect(notifier.feedOf('recommend').videos.single.bvid, 'BV_new');
+      gate.complete(
+        jsonEncode({
+          'code': 0,
+          'data': {
+            'item': [
+              {'bvid': 'BV_old', 'title': '旧账号推荐'},
+            ],
+          },
+        }),
+      );
+      await oldOpen;
+      await pumpEventQueue();
+      expect(notifier.feedOf('recommend').videos.single.bvid, 'BV_new');
+    });
+
     test('a nav answer without keys fails the signed ask plainly', () async {
       http.route(
         'web-interface/nav',

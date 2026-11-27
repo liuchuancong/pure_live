@@ -149,6 +149,25 @@ void main() {
     });
   });
 
+  group('part skip points', () {
+    test('parts keep independent points and fall back to the legacy record', () async {
+      final container = await _container({
+        '${kVodSkipPrefix}BV1': jsonEncode({'head': 10, 'tail': 90}),
+      });
+      final controller = container.read(vodHistoryProvider.notifier);
+
+      expect(controller.skipPoints('BV1', cid: 1)?.headSeconds, 10);
+      await controller.saveSkipPoints('BV1', cid: 1, headSeconds: 20, tailSeconds: 80);
+      await controller.saveSkipPoints('BV1', cid: 2, headSeconds: 30, tailSeconds: 70);
+
+      expect(controller.skipPoints('BV1', cid: 1)?.headSeconds, 20);
+      expect(controller.skipPoints('BV1', cid: 1)?.tailSeconds, 80);
+      expect(controller.skipPoints('BV1', cid: 2)?.headSeconds, 30);
+      expect(controller.skipPoints('BV1', cid: 2)?.tailSeconds, 70);
+      expect(controller.skipPoints('BV1', cid: 3)?.headSeconds, 10);
+    });
+  });
+
   group('season checkpoints', () {
     test('save writes the json the reader parses back', () async {
       final container = await _container();
@@ -186,14 +205,22 @@ void main() {
       expect(entries.last.total, 12);
     });
 
-    test('completed is the last episode of the ladder', () {
+    test('completed requires the finish mark, not the last episode index', () {
       final stamp = DateTime.fromMillisecondsSinceEpoch(1000);
       final middle = VodSeasonProgress(seasonId: '1', title: 'x', episodeIndex: 5, total: 12, updatedAt: stamp);
       final last = VodSeasonProgress(seasonId: '1', title: 'x', episodeIndex: 11, total: 12, updatedAt: stamp);
+      final finished = VodSeasonProgress(
+        seasonId: '1',
+        title: 'x',
+        episodeIndex: 11,
+        total: 12,
+        updatedAt: stamp,
+        finished: true,
+      );
       final unknown = VodSeasonProgress(seasonId: '1', title: 'x', episodeIndex: 11, updatedAt: stamp);
       expect(middle.completed, isFalse);
-      expect(last.completed, isTrue);
-      // A ladder of unknown length never reads as finished.
+      expect(last.completed, isFalse);
+      expect(finished.completed, isTrue);
       expect(unknown.completed, isFalse);
     });
 
@@ -240,6 +267,14 @@ void main() {
   });
 
   group('archive history batch removal', () {
+    test('a zero-second checkpoint still names the part to resume', () async {
+      final container = await _container({
+        '${kVodProgressPrefix}a': jsonEncode({'cid': 2, 'seconds': 0, 'completed': false, 'updatedAt': 1000}),
+      });
+      final controller = container.read(vodHistoryProvider.notifier);
+      expect(controller.resumePoint('a'), (cid: 2, seconds: 0.0));
+    });
+
     test('removeMany drops the selected records and keeps the rest', () async {
       final container = await _container({
         '${kVodProgressPrefix}a': jsonEncode({'title': '甲', 'seconds': 10.0, 'completed': false, 'updatedAt': 1000}),
