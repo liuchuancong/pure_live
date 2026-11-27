@@ -854,6 +854,7 @@ final class VodDownloadsController extends Notifier<List<VodDownloadItem>> {
   /// row still has automatic retries left. The budget starts over when the
   /// viewer retries by hand: that is a new instruction, not a continuation.
   void _scheduleRetry(String id) {
+    if (!ref.mounted) return;
     final limit = ref.read(vodDownloadRetryProvider);
     if (limit <= 0) return;
     final current = _items.where((row) => row.id == id).firstOrNull;

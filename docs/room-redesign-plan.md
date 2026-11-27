@@ -561,3 +561,13 @@ Windows 窗口全屏入口（第十五轮改）：播放行「全屏｜窗口全
   - **配置与主要文件**：无新增持久化配置、Slang key、依赖或主题 token。修改 `modules/vod/controller/vod_app_login.dart`、`vod_downloads.dart`、`vod_social.dart`、`features/settings/surface/settings_search.dart`、`test/vod/vod_downloads_test.dart`、`vod_social_test.dart`、`test/features/settings/settings_search_test.dart` 与本台账；设置搜索文件中的多词搜索、弹幕显示方式及 IPTV 目录并行改动未纳入本轮。
   - **验证**：本轮 Dart 文件仅做单文件格式化；App `dart analyze lib test` 为 **No issues found**；`flutter test --no-pub test/vod test/features/settings/settings_search_test.dart` **111/111** 通过。新增回归覆盖暂停后立即恢复、DASH 单 essence 拒绝落盘、账号切换动态隔离，以及接口类型和 App 扫码登录搜索命中。
   - **多平台与限制**：修复位于 VOD 控制器、登录会话和设置搜索层，不区分桌面、平板、手机、TV 或浅色/深色/自定义主题。未构建 APK/桌面产物、未截图或运行 UI，未做真实慢网恢复、进程中断、大字号/TV/触控/读屏验收；自动测试不能替代这些运行时验收。DASH 音视频轨下载仍不在本轮范围。
+
+- 2026-11-27：第九十四轮（Bilibili 登录轮询、个人页状态隔离、TV 方向键与进度条无障碍）⇒
+  - **扫码登录轮询**：二维码登录的轮询增加在途保护，慢请求不会与下一次定时轮询重叠；重新发起登录时推进请求代次，旧二维码或旧轮询的迟到响应不能覆盖新尝试。
+  - **个人页账号状态**：账号读取中显示骨架，读取失败显示可重试错误，不再把加载或失败误报为未登录；稍后再看、历史、收藏等个人页签切换时清除共享的页内筛选，避免筛选条件跨页签泄漏。
+  - **TV 方向键**：剧集播放页在 TV 上把方向键交还焦点遍历；控制栏隐藏时方向键仅负责唤醒控制栏。桌面键盘继续保留左右seek、上下音量、逗号/句号倍率与统计信息快捷键。
+  - **进度条键盘与读屏**：自定义 Bilibili 进度条可聚焦，左右方向键每次 seek 5 秒，Home/End 跳到首尾，并暴露焦点环与读屏增减语义；鼠标、触控和拖动逻辑保持不变。
+  - **下载生命周期**：下载失败后的自动重试调度先检查 provider 是否仍挂载，避免已释放容器中的迟到失败路径读取无效 `Ref`。
+  - **配置与主要文件**：无新增持久化配置、Slang key、依赖或主题 token。修改 `modules/vod/widgets/vod_app_login_dialog.dart`、`modules/vod/pages/vod_personal_page.dart`、`vod_season_page.dart`、`modules/vod/widgets/vod_player_chrome.dart`、`modules/vod/controller/vod_downloads.dart`、`test/vod/vod_seek_bar_test.dart` 与本台账；个人页和剧集页既有 `PageLayoutScope` 并行改动未纳入本轮。
+  - **验证**：本轮六个 Dart 文件仅做单文件格式化检查，结果为 0 个变更；App `dart analyze lib test` 为 **No issues found**；`flutter test --no-pub test/vod` **101/101** 通过。新增回归覆盖进度条聚焦、方向键、Home/End seek；下载测试覆盖 provider 释放后的迟到失败路径。
+  - **多平台与限制**：修复位于 VOD 页面、登录弹窗、播放器控件和下载控制器，不区分桌面、平板、手机、TV 或浅色/深色/自定义主题。未构建 APK/桌面产物、未截图或运行 UI，未做真实扫码慢网、账号读取失败、TV 遥控器、触控、大字号和读屏验收；自动测试不能替代这些运行时验收。DASH 音视频轨下载仍不在本轮范围。

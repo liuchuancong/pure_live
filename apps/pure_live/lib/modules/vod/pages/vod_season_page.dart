@@ -1708,28 +1708,39 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
     } else {
       body = _page(season);
     }
+    final tv = _isTv;
     return CallbackShortcuts(
       bindings: {
         const SingleActivator(LogicalKeyboardKey.space): _togglePlay,
         const SingleActivator(LogicalKeyboardKey.keyF): _toggleFullscreen,
         const SingleActivator(LogicalKeyboardKey.f11): _toggleFullscreen,
         // The stream's own figures: the key every player answers to.
-        const SingleActivator(LogicalKeyboardKey.keyI): () => ref.read(playerStatsVisibleProvider.notifier).toggle(),
-        // The same keys the archive page answers with: the arrows step the
-        // episode and the sound, the comma and the period walk the rate,
-        // and a held arrow keeps growing the step so a long skip is one key.
-        const SingleActivator(LogicalKeyboardKey.arrowLeft): () {
-          _wake();
-          _keySeek(-1);
+        if (!tv)
+          const SingleActivator(LogicalKeyboardKey.keyI): () => ref.read(playerStatsVisibleProvider.notifier).toggle(),
+        // A remote's arrows belong to the focus walk while the chrome is up.
+        // When it is down they only raise it, the same contract as the archive
+        // page; a desktop keyboard keeps the seek and volume steps.
+        if (tv && !_controlsVisible) ...{
+          const SingleActivator(LogicalKeyboardKey.arrowUp): _wake,
+          const SingleActivator(LogicalKeyboardKey.arrowDown): _wake,
+          const SingleActivator(LogicalKeyboardKey.arrowLeft): _wake,
+          const SingleActivator(LogicalKeyboardKey.arrowRight): _wake,
+          const SingleActivator(LogicalKeyboardKey.select): _wake,
         },
-        const SingleActivator(LogicalKeyboardKey.arrowRight): () {
-          _wake();
-          _keySeek(1);
-        },
-        const SingleActivator(LogicalKeyboardKey.arrowUp): _nudgeUp,
-        const SingleActivator(LogicalKeyboardKey.arrowDown): _nudgeDown,
-        const SingleActivator(LogicalKeyboardKey.comma): () => unawaited(_stepSpeed(-1)),
-        const SingleActivator(LogicalKeyboardKey.period): () => unawaited(_stepSpeed(1)),
+        if (!tv)
+          const SingleActivator(LogicalKeyboardKey.arrowLeft): () {
+            _wake();
+            _keySeek(-1);
+          },
+        if (!tv)
+          const SingleActivator(LogicalKeyboardKey.arrowRight): () {
+            _wake();
+            _keySeek(1);
+          },
+        if (!tv) const SingleActivator(LogicalKeyboardKey.arrowUp): _nudgeUp,
+        if (!tv) const SingleActivator(LogicalKeyboardKey.arrowDown): _nudgeDown,
+        if (!tv) const SingleActivator(LogicalKeyboardKey.comma): () => unawaited(_stepSpeed(-1)),
+        if (!tv) const SingleActivator(LogicalKeyboardKey.period): () => unawaited(_stepSpeed(1)),
         const SingleActivator(LogicalKeyboardKey.escape): _leave,
       },
       child: Focus(

@@ -86,6 +86,7 @@ final class _VodPersonalPageState extends ConsumerState<VodPersonalPage> {
   @override
   void initState() {
     super.initState();
+    _clearInlineFilter();
     WidgetsBinding.instance.addPostFrameCallback((_) => _openFollowingIfNeeded());
   }
 
@@ -93,6 +94,7 @@ final class _VodPersonalPageState extends ConsumerState<VodPersonalPage> {
   void didUpdateWidget(VodPersonalPage oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.tab != _tab) {
+      _clearInlineFilter();
       setState(() {
         _tab = widget.tab;
         _managing = false;
@@ -100,6 +102,10 @@ final class _VodPersonalPageState extends ConsumerState<VodPersonalPage> {
       });
       WidgetsBinding.instance.addPostFrameCallback((_) => _openFollowingIfNeeded());
     }
+  }
+
+  void _clearInlineFilter() {
+    ref.read(inlineFilterProvider(NavigationItem.vodPersonal).notifier).clear();
   }
 
   void _open(String bvid) {
@@ -119,6 +125,7 @@ final class _VodPersonalPageState extends ConsumerState<VodPersonalPage> {
 
   void _selectTab(VodPersonalTab tab) {
     if (_tab == tab) return;
+    _clearInlineFilter();
     setState(() {
       _tab = tab;
       _managing = false;
@@ -384,8 +391,11 @@ final class _VodPersonalPageState extends ConsumerState<VodPersonalPage> {
     final theme = DsTheme.of(context);
     final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
     final account = ref.watch(vodAccountProvider);
-    final loggedIn = account.value?.isLogin ?? false;
-    final name = account.value?.name;
+    final login = account.value;
+    final loggedIn = login?.isLogin ?? false;
+    final accountLoading = account.isLoading && login == null;
+    final accountFailed = account.hasError && login == null;
+    final name = login?.name;
     final history = ref.watch(vodHistoryProvider);
     final favourites = ref.watch(vodFavouritesProvider);
     // The platform's two lists are asked on their first watch: read
@@ -476,7 +486,18 @@ final class _VodPersonalPageState extends ConsumerState<VodPersonalPage> {
             ),
           ),
         Expanded(
-          child: !loggedIn && _tab.needsLogin
+          child: accountLoading && _tab.needsLogin
+              ? const Padding(padding: EdgeInsets.all(DsSpace.s16), child: SkeletonRows(rows: 5))
+              : accountFailed && _tab.needsLogin
+              ? Center(
+                  child: DsEmptyState(
+                    icon: const DsIcon(DsIcons.cloudOff),
+                    title: Text(t.common.loadFailed),
+                    description: Text('${account.error}'),
+                    actions: [DsButton(onPressed: () => ref.invalidate(vodAccountProvider), child: Text(t.vod.retry))],
+                  ),
+                )
+              : !loggedIn && _tab.needsLogin
               ? _SignInState(tab: _tab)
               : switch (_tab) {
                   VodPersonalTab.toView => _RemoteVideoList(

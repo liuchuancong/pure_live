@@ -1,4 +1,5 @@
 import 'package:desen_ui/desen_ui.dart';
+import 'package:flutter/services.dart' show KeyDownEvent, KeyEvent, KeyRepeatEvent, LogicalKeyboardKey;
 import 'package:flutter/widgets.dart';
 import 'package:live_cache/live_cache.dart' show ImageCachePolicies;
 import 'package:live_vod/live_vod.dart' show VodChapter, VodSeekPreview;
@@ -170,10 +171,45 @@ final class _VodSeekBarState extends State<VodSeekBar> {
   double? _hoverSeconds;
   double? _dragSeconds;
   bool _hovering = false;
+  final FocusNode _focusNode = FocusNode(debugLabel: 'vod-seek-bar');
+  bool _focused = false;
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    super.dispose();
+  }
 
   double get _total => widget.duration.inMilliseconds.toDouble();
 
   bool get _enabled => _total > 0;
+
+  void _commit(double seconds) {
+    if (!_enabled) return;
+    widget.onSeek(seconds.clamp(0.0, _total / 1000));
+  }
+
+  void _nudge(double seconds) => _commit(widget.position.inMilliseconds / 1000 + seconds);
+
+  String _valueAt(double seconds) => vodDurationText(Duration(seconds: seconds.clamp(0.0, _total / 1000).round()));
+
+  KeyEventResult _onKey(FocusNode node, KeyEvent event) {
+    if (event is! KeyDownEvent && event is! KeyRepeatEvent) return KeyEventResult.ignored;
+    if (!_enabled) return KeyEventResult.ignored;
+    switch (event.logicalKey) {
+      case LogicalKeyboardKey.arrowLeft:
+        _nudge(-5);
+      case LogicalKeyboardKey.arrowRight:
+        _nudge(5);
+      case LogicalKeyboardKey.home:
+        _commit(0);
+      case LogicalKeyboardKey.end:
+        _commit(_total / 1000);
+      default:
+        return KeyEventResult.ignored;
+    }
+    return KeyEventResult.handled;
+  }
 
   double _secondsAt(double x, double width) {
     if (width <= 0 || !_enabled) return 0;
@@ -202,101 +238,122 @@ final class _VodSeekBarState extends State<VodSeekBar> {
     return Semantics(
       label: widget.semanticLabel,
       value: '${vodDurationText(widget.position)} / ${vodDurationText(widget.duration)}',
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final width = constraints.maxWidth.isFinite ? constraints.maxWidth : 0.0;
-          final bubble = _hovering && shown != null
-              ? PositionedDirectional(
-                  bottom: _hitHeight,
-                  // The bubble's own width, pinned: a start-only position lets
-                  // the column size itself against no constraints at all, and
-                  // a box the mouse tracker meets before its layout has a
-                  // size is the hit test that throws.
-                  width: _frameWidth,
-                  start: (shown / (_total / 1000) * width - _frameWidth / 2).clamp(
-                    0.0,
-                    (width - _frameWidth).clamp(0.0, width),
-                  ),
-                  child: _bubble(context, shown),
-                )
-              : const SizedBox.shrink();
-          return MouseRegion(
-            cursor: SystemMouseCursors.click,
-            // The bar can fold while the pointer stands on it: the tracker
-            // still walks the callbacks of the region it just lost, and a
-            // setState on a disposed state inside the tracker's own update
-            // phase is the throw the whole frame's mouse pass dies on —
-            // every hover after it re-asserts the poisoned phase.
-            onEnter: (_) {
-              if (mounted) setState(() => _hovering = true);
-            },
-            onExit: (_) {
-              if (!mounted) return;
-              setState(() {
-                _hovering = false;
-                _hoverSeconds = null;
-              });
-            },
-            onHover: (event) {
-              if (mounted) setState(() => _hoverSeconds = _secondsAt(event.localPosition.dx, width));
-            },
-            child: GestureDetector(
-              behavior: HitTestBehavior.translucent,
-              // The tap commits when the finger leaves: a press that turns
-              // into a drag must not also jump the picture to where it began.
-              onTapUp: (tap) => widget.onSeek(_secondsAt(tap.localPosition.dx, width)),
-              onHorizontalDragStart: (start) {
-                final seconds = _secondsAt(start.localPosition.dx, width);
-                setState(() => _dragSeconds = seconds);
-                widget.onScrub?.call(seconds);
-              },
-              onHorizontalDragUpdate: (move) {
-                final seconds = _secondsAt(move.localPosition.dx, width);
-                setState(() => _dragSeconds = seconds);
-                widget.onScrub?.call(seconds);
-              },
-              onHorizontalDragEnd: (_) {
-                final seconds = _dragSeconds;
-                setState(() => _dragSeconds = null);
-                widget.onScrub?.call(null);
-                if (seconds != null) widget.onSeek(seconds);
-              },
-              onHorizontalDragCancel: () {
-                setState(() => _dragSeconds = null);
-                widget.onScrub?.call(null);
-              },
-              child: Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  SizedBox(
-                    height: _hitHeight,
-                    child: CustomPaint(
-                      size: Size.infinite,
-                      painter: _SeekLinePainter(
-                        played: widget.position.inMilliseconds / _total,
-                        scrub: _dragSeconds == null ? null : _dragSeconds! * 1000 / _total,
-                        buffered: [
-                          for (final range in widget.buffered)
-                            (start: range.start.inMilliseconds / _total, end: range.end.inMilliseconds / _total),
-                        ],
-                        marks: [for (final chapter in widget.chapters) chapter.at.inMilliseconds / _total],
-                        thickness: thickness,
-                        // The room's own ink: a white track, a white 30%
-                        // buffer and a white fill — the theme's accent never
-                        // touches the line that runs over a picture.
-                        track: OnVideoColors.track,
-                        held: OnVideoColors.foreground.withValues(alpha: 0.30),
-                        playedColor: OnVideoColors.foreground,
-                        markColor: OnVideoColors.mark,
-                      ),
-                    ),
-                  ),
-                  bubble,
-                ],
-              ),
-            ),
-          );
+      onIncrease: _enabled ? () => _nudge(5) : null,
+      onDecrease: _enabled ? () => _nudge(-5) : null,
+      increasedValue: _enabled ? _valueAt(widget.position.inMilliseconds / 1000 + 5) : null,
+      decreasedValue: _enabled ? _valueAt(widget.position.inMilliseconds / 1000 - 5) : null,
+      child: Focus(
+        focusNode: _focusNode,
+        canRequestFocus: _enabled,
+        onFocusChange: (focused) {
+          if (_focused == focused) return;
+          setState(() => _focused = focused);
         },
+        onKeyEvent: _onKey,
+        child: Container(
+          foregroundDecoration: _focused
+              ? BoxDecoration(
+                  border: Border.all(color: OnVideoColors.foreground, width: 2),
+                  borderRadius: BorderRadius.circular(4),
+                )
+              : null,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final width = constraints.maxWidth.isFinite ? constraints.maxWidth : 0.0;
+              final bubble = _hovering && shown != null
+                  ? PositionedDirectional(
+                      bottom: _hitHeight,
+                      // The bubble's own width, pinned: a start-only position lets
+                      // the column size itself against no constraints at all, and
+                      // a box the mouse tracker meets before its layout has a
+                      // size is the hit test that throws.
+                      width: _frameWidth,
+                      start: (shown / (_total / 1000) * width - _frameWidth / 2).clamp(
+                        0.0,
+                        (width - _frameWidth).clamp(0.0, width),
+                      ),
+                      child: _bubble(context, shown),
+                    )
+                  : const SizedBox.shrink();
+              return MouseRegion(
+                cursor: SystemMouseCursors.click,
+                // The bar can fold while the pointer stands on it: the tracker
+                // still walks the callbacks of the region it just lost, and a
+                // setState on a disposed state inside the tracker's own update
+                // phase is the throw the whole frame's mouse pass dies on —
+                // every hover after it re-asserts the poisoned phase.
+                onEnter: (_) {
+                  if (mounted) setState(() => _hovering = true);
+                },
+                onExit: (_) {
+                  if (!mounted) return;
+                  setState(() {
+                    _hovering = false;
+                    _hoverSeconds = null;
+                  });
+                },
+                onHover: (event) {
+                  if (mounted) setState(() => _hoverSeconds = _secondsAt(event.localPosition.dx, width));
+                },
+                child: GestureDetector(
+                  behavior: HitTestBehavior.translucent,
+                  // The tap commits when the finger leaves: a press that turns
+                  // into a drag must not also jump the picture to where it began.
+                  onTapUp: (tap) => widget.onSeek(_secondsAt(tap.localPosition.dx, width)),
+                  onHorizontalDragStart: (start) {
+                    final seconds = _secondsAt(start.localPosition.dx, width);
+                    setState(() => _dragSeconds = seconds);
+                    widget.onScrub?.call(seconds);
+                  },
+                  onHorizontalDragUpdate: (move) {
+                    final seconds = _secondsAt(move.localPosition.dx, width);
+                    setState(() => _dragSeconds = seconds);
+                    widget.onScrub?.call(seconds);
+                  },
+                  onHorizontalDragEnd: (_) {
+                    final seconds = _dragSeconds;
+                    setState(() => _dragSeconds = null);
+                    widget.onScrub?.call(null);
+                    if (seconds != null) widget.onSeek(seconds);
+                  },
+                  onHorizontalDragCancel: () {
+                    setState(() => _dragSeconds = null);
+                    widget.onScrub?.call(null);
+                  },
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      SizedBox(
+                        height: _hitHeight,
+                        child: CustomPaint(
+                          size: Size.infinite,
+                          painter: _SeekLinePainter(
+                            played: widget.position.inMilliseconds / _total,
+                            scrub: _dragSeconds == null ? null : _dragSeconds! * 1000 / _total,
+                            buffered: [
+                              for (final range in widget.buffered)
+                                (start: range.start.inMilliseconds / _total, end: range.end.inMilliseconds / _total),
+                            ],
+                            marks: [for (final chapter in widget.chapters) chapter.at.inMilliseconds / _total],
+                            thickness: thickness,
+                            // The room's own ink: a white track, a white 30%
+                            // buffer and a white fill — the theme's accent never
+                            // touches the line that runs over a picture.
+                            track: OnVideoColors.track,
+                            held: OnVideoColors.foreground.withValues(alpha: 0.30),
+                            playedColor: OnVideoColors.foreground,
+                            markColor: OnVideoColors.mark,
+                          ),
+                        ),
+                      ),
+                      bubble,
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
       ),
     );
   }

@@ -37,6 +37,8 @@ final class _VodAppLoginDialogState extends ConsumerState<_VodAppLoginDialog> {
   bool _expired = false;
   bool _scanned = false;
   bool _completing = false;
+  bool _polling = false;
+  int _attempt = 0;
 
   @override
   void initState() {
@@ -53,7 +55,9 @@ final class _VodAppLoginDialogState extends ConsumerState<_VodAppLoginDialog> {
   }
 
   void _start() {
+    final attempt = ++_attempt;
     _timer?.cancel();
+    _polling = false;
     setState(() {
       _url = null;
       _authCode = null;
@@ -62,30 +66,31 @@ final class _VodAppLoginDialogState extends ConsumerState<_VodAppLoginDialog> {
       _scanned = false;
       _completing = false;
     });
-    unawaited(_issue());
-    _timer = Timer.periodic(_pollInterval, (_) => unawaited(_poll()));
+    unawaited(_issue(attempt));
+    _timer = Timer.periodic(_pollInterval, (_) => unawaited(_poll(attempt)));
   }
 
-  Future<void> _issue() async {
+  Future<void> _issue(int attempt) async {
     try {
       final qr = await _login.requestQr(deviceId: _deviceId);
-      if (!mounted || _completing) return;
+      if (!mounted || attempt != _attempt || _completing) return;
       setState(() {
         _url = qr.url;
         _authCode = qr.authCode;
       });
     } on Object catch (error) {
-      if (!mounted) return;
+      if (!mounted || attempt != _attempt) return;
       setState(() => _failure = _login.failureText(error));
     }
   }
 
-  Future<void> _poll() async {
+  Future<void> _poll(int attempt) async {
     final authCode = _authCode;
-    if (authCode == null || _completing || !mounted) return;
+    if (authCode == null || _polling || _completing || !mounted || attempt != _attempt) return;
+    _polling = true;
     try {
       final poll = await _login.poll(authCode: authCode, deviceId: _deviceId);
-      if (!mounted || _completing) return;
+      if (!mounted || attempt != _attempt || _completing) return;
       if (poll.state == 0 && poll.result != null) {
         _completing = true;
         _timer?.cancel();
@@ -104,6 +109,8 @@ final class _VodAppLoginDialogState extends ConsumerState<_VodAppLoginDialog> {
     } on Object {
       // A slow poll is retried by the timer; only the QR issue failure is
       // reported.
+    } finally {
+      if (attempt == _attempt) _polling = false;
     }
   }
 
