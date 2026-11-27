@@ -1047,7 +1047,6 @@ final class VodVideoRow extends ConsumerWidget {
   }
 }
 
-
 /// One capsule of the action row under a video: the glyph, the count in its
 /// quiet numeric voice, and — where the page has a verb behind it — the
 /// pressed answer. The three states speak the same shape: a capsule at rest
@@ -1076,15 +1075,19 @@ final class VodStatPill extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
-    final tone = active ? colors.accentText : onPressed == null ? colors.textMuted : colors.text;
+    final tone = active
+        ? colors.accentText
+        : onPressed == null
+        ? colors.textMuted
+        : colors.text;
     return DsPressable(
       semanticLabel: '$label $value',
       onPressed: onPressed,
       builder: (context, states, _) {
         final lit = onPressed != null && states.contains(WidgetState.hovered);
         return Container(
-          height: 32,
-          padding: const EdgeInsets.symmetric(horizontal: DsSpace.s12),
+          constraints: const BoxConstraints(minHeight: 32),
+          padding: const EdgeInsets.symmetric(horizontal: DsSpace.s12, vertical: DsSpace.s6),
           decoration: BoxDecoration(
             color: active
                 ? colors.accentTint
@@ -1099,7 +1102,12 @@ final class VodStatPill extends StatelessWidget {
             spacing: DsSpace.s4,
             children: [
               DsIcon(icon, size: 16, color: tone),
-              Text(value, style: theme.typography.numeric(theme.typography.caption).copyWith(color: tone, fontWeight: FontWeight.w600)),
+              Text(
+                value,
+                style: theme.typography
+                    .numeric(theme.typography.caption)
+                    .copyWith(color: tone, fontWeight: FontWeight.w600),
+              ),
             ],
           ),
         );

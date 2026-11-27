@@ -17968,6 +17968,7 @@ extension on Translations {
 			'vod.savedVideo' => '已收藏',
 			'vod.saveAdded' => '已加入收藏',
 			'vod.saveRemoved' => '已取消收藏',
+			'vod.saveFailed' => '收藏更改未保存，请重试',
 			'vod.downloadCancelled' => '已取消下载',
 			'vod.previewTitle' => '下载预览',
 			'vod.previewUnavailable' => '这个分P还没有下载完成的文件',

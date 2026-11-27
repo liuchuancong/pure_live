@@ -9083,6 +9083,7 @@ extension on TranslationsEn {
 			'vod.savedVideo' => 'Favourited',
 			'vod.saveAdded' => 'Added to favourites',
 			'vod.saveRemoved' => 'Removed from favourites',
+			'vod.saveFailed' => 'Favourite changes were not saved; please retry',
 			'vod.downloadCancelled' => 'Download cancelled',
 			'vod.previewTitle' => 'Download preview',
 			'vod.previewUnavailable' => 'This part has no finished file yet',

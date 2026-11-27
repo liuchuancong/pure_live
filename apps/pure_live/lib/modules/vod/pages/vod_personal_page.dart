@@ -145,9 +145,18 @@ final class _VodPersonalPageState extends ConsumerState<VodPersonalPage> {
     variant: DsButtonVariant.secondary,
     size: DsSize.sm,
     semanticLabel: label,
-    onPressed: () => unawaited(onRemove()),
+    onPressed: () => unawaited(_remove(onRemove)),
     icon: const DsIcon(DsIcons.trash2, size: 16),
   );
+
+  Future<void> _remove(Future<void> Function() onRemove) async {
+    try {
+      await onRemove();
+    } on Object {
+      if (!mounted) return;
+      showDsToast(context: context, title: context.t.vod.saveFailed, status: DsStatus.danger);
+    }
+  }
 
   /// Leaves the batch mode, the ticked set with it.
   void _leaveManaging() => setState(() {
@@ -179,10 +188,16 @@ final class _VodPersonalPageState extends ConsumerState<VodPersonalPage> {
     );
     if (!confirmed || !mounted) return;
     final selected = Set<String>.from(_selected);
-    if (_tab == VodPersonalTab.favourites) {
-      await ref.read(vodFavouritesProvider.notifier).removeMany(selected);
-    } else {
-      await ref.read(vodHistoryProvider.notifier).removeMany(selected);
+    try {
+      if (_tab == VodPersonalTab.favourites) {
+        await ref.read(vodFavouritesProvider.notifier).removeMany(selected);
+      } else {
+        await ref.read(vodHistoryProvider.notifier).removeMany(selected);
+      }
+    } on Object {
+      if (!mounted) return;
+      showDsToast(context: context, title: context.t.vod.saveFailed, status: DsStatus.danger);
+      return;
     }
     _leaveManaging();
   }

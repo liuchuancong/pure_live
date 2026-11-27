@@ -532,3 +532,11 @@ Windows 窗口全屏入口（第十五轮改）：播放行「全屏｜窗口全
   - **配置与主要文件**：无新增持久化配置、Slang key、依赖或主题 token；评论账号/请求代次和下载停止意图均为运行时状态。修改 `modules/vod/controller/vod_social.dart`、`modules/vod/controller/vod_downloads.dart`、`modules/vod/pages/vod_video_page.dart`、`modules/vod/pages/vod_downloads_page.dart`、`test/vod/vod_social_test.dart` 与本台账；下载页其他并行改动未纳入本轮。
   - **验证**：五个 Dart 文件仅做单文件格式化；App `dart analyze lib` 为 **No issues found**；`flutter test --no-pub test/vod` **88/88** 通过；本轮精确路径 `git diff --check` 无空白错误。新增评论失败页重试、第二页失败保留第一页、跨视频并发读取、账号切换迟到响应四项回归。
   - **多平台与限制**：修复位于 VOD 运行时和现有下载操作行，不区分桌面、平板、手机、TV 或浅色/深色/自定义主题。未构建 APK/桌面产物、未截图或运行 UI，未做真实账号切换、慢网暂停/删除、排队任务操作、大字体/TV/触控/读屏验收；自动测试不能替代这些运行时验收。Bilibili 原生收藏、投币、评论写入和 DASH 轨下载仍不在本轮范围。
+
+- 2026-11-27：第九十一轮（Bilibili 本地收藏可靠性、点赞数字与统计胶囊适配）⇒
+  - **收藏写入可靠性**：本地收藏由乐观更新改为串行写入队列，快速连续点击按调用顺序持久化，写失败回滚到操作前状态并抛出错误；视频详情页与个人页不再把失败提示为成功。批量删除合并为一次最终快照写入，减少磁盘写入并避免中间状态。
+  - **点赞数字即时一致**：详情页记录首次读取的点赞基线，点赞或取消点赞后按当前状态与基线差值更新展示数字；请求失败回滚时数字同步恢复，初始读取完成前不开放点赞，避免把未知状态当成未点赞。
+  - **大字号统计胶囊**：`VodStatPill` 取消固定 32px 高度，改为最小高度 32px 加纵向留白；默认字号保持原观感，系统大字号或自定义字体放大时胶囊随内容增高。
+  - **配置与主要文件**：新增 `vod.saveFailed` 中英文 Slang key；无新增持久化配置、依赖或主题 token，收藏队列和点赞基线均为运行时状态。修改 `modules/vod/controller/vod_library.dart`、`modules/vod/pages/vod_video_page.dart`、`modules/vod/pages/vod_personal_page.dart`、`modules/vod/widgets/vod_widgets.dart`、`test/vod/vod_library_history_test.dart`、VOD 中英文文案、生成翻译文件与本台账；个人页既有 `PageLayoutScope` 并行改动未纳入本轮。
+  - **验证**：五个 Dart 文件仅做单文件格式化并重新生成 Slang；App `dart analyze lib` 为 **No issues found**；`flutter test --no-pub test/vod` **91/91** 通过。新增收藏写失败回滚、快速连续切换顺序、批量删除单次写入三项回归。
+  - **多平台与限制**：收藏与点赞逻辑不区分平台或主题；统计胶囊沿用现有 desen_ui token，默认尺寸不变并允许大字号自然增高。未构建 APK/桌面产物、未截图或运行 UI，未做真实存储失败、慢网点赞、大字体/TV/触控/读屏验收；自动测试不能替代这些运行时验收。Bilibili 原生收藏、投币、评论写入和 DASH 轨下载仍不在本轮范围。

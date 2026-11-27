@@ -1,4 +1,4 @@
-import 'dart:async' show StreamSubscription, Timer, unawaited;
+import 'dart:async' show Completer, StreamSubscription, Timer, unawaited;
 import 'dart:convert' show jsonDecode, jsonEncode;
 
 import 'package:flutter/foundation.dart' show immutable;
@@ -110,6 +110,12 @@ final class VodSavedVideo {
 
 /// The archives the viewer collected, newest first.
 final class VodFavouritesController extends Notifier<List<VodSavedVideo>> {
+  VodFavouritesController({Future<void> Function(String key, String value)? write})
+    : _write = write ?? StoragePrefs.setString;
+
+  final Future<void> Function(String key, String value) _write;
+  Future<void> _pending = Future<void>.value();
+
   @override
   List<VodSavedVideo> build() {
     try {
@@ -127,42 +133,73 @@ final class VodFavouritesController extends Notifier<List<VodSavedVideo>> {
   bool contains(String bvid) => state.any((video) => video.bvid == bvid);
 
   /// Collects [video], or drops it when it is already collected.
-  Future<bool> toggle(VodSavedVideo video) async {
+  Future<bool> toggle(VodSavedVideo video) => _enqueue(() async {
+    final before = state;
     final collected = contains(video.bvid);
-    state = collected
+    final next = collected
         ? [
-            for (final entry in state)
+            for (final entry in before)
               if (entry.bvid != video.bvid) entry,
           ]
-        : [video, ...state];
-    await _save();
-    return !collected;
-  }
+        : [video, ...before];
+    state = next;
+    try {
+      await _persist(next);
+      return !collected;
+    } on Object {
+      if (ref.mounted) state = before;
+      rethrow;
+    }
+  });
 
   /// Drops one archive.
-  Future<void> remove(String bvid) async {
-    state = [
-      for (final entry in state)
+  Future<void> remove(String bvid) => _enqueue(() async {
+    final before = state;
+    final next = [
+      for (final entry in before)
         if (entry.bvid != bvid) entry,
     ];
-    await _save();
-  }
-
-  /// Drops the selected archives, one removal each — the history's
-  /// 管理 mode shares this verb.
-  Future<void> removeMany(Iterable<String> bvids) async {
-    for (final bvid in bvids) {
-      await remove(bvid);
-    }
-  }
-
-  Future<void> _save() async {
+    state = next;
     try {
-      await StoragePrefs.setString(kVodFavouritesKey, jsonEncode([for (final video in state) video.toJson()]));
+      await _persist(next);
     } on Object {
-      // A preference; a closed store loses it.
+      if (ref.mounted) state = before;
+      rethrow;
     }
+  });
+
+  /// Drops the selected archives in one preference write.
+  Future<void> removeMany(Iterable<String> bvids) => _enqueue(() async {
+    final removed = bvids.toSet();
+    if (removed.isEmpty) return;
+    final before = state;
+    final next = [
+      for (final entry in before)
+        if (!removed.contains(entry.bvid)) entry,
+    ];
+    state = next;
+    try {
+      await _persist(next);
+    } on Object {
+      if (ref.mounted) state = before;
+      rethrow;
+    }
+  });
+
+  Future<T> _enqueue<T>(Future<T> Function() action) {
+    final result = Completer<T>();
+    _pending = _pending.then((_) async {
+      try {
+        result.complete(await action());
+      } on Object catch (error, stack) {
+        result.completeError(error, stack);
+      }
+    });
+    return result.future;
   }
+
+  Future<void> _persist(List<VodSavedVideo> videos) =>
+      _write(kVodFavouritesKey, jsonEncode([for (final video in videos) video.toJson()]));
 }
 
 /// The collected archives.

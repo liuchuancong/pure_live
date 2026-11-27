@@ -178,6 +178,7 @@
   "savedVideo": "Favourited",
   "saveAdded": "Added to favourites",
   "saveRemoved": "Removed from favourites",
+  "saveFailed": "Favourite changes were not saved; please retry",
   "downloadCancelled": "Download cancelled",
   "previewTitle": "Download preview",
   "previewUnavailable": "This part has no finished file yet",

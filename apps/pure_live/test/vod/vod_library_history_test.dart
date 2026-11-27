@@ -3,6 +3,7 @@
 // each one a preference write the store must answer, and each parse a
 // malformed record must not break.
 
+import 'dart:async' show Completer;
 import 'dart:convert' show jsonDecode, jsonEncode;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -22,6 +23,87 @@ Future<ProviderContainer> _container([Map<String, Object?> seed = const {}]) asy
 }
 
 void main() {
+  group('favourites', () {
+    test('a failed write rolls the collection back and reports the failure', () async {
+      final container = ProviderContainer(
+        overrides: [
+          vodFavouritesProvider.overrideWith(
+            () => VodFavouritesController(write: (_, _) async => throw StateError('store closed')),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+      final controller = container.read(vodFavouritesProvider.notifier);
+      final video = VodSavedVideo(bvid: 'BV1', title: '甲', updatedAt: DateTime(2026));
+
+      await expectLater(controller.toggle(video), throwsStateError);
+
+      expect(container.read(vodFavouritesProvider), isEmpty);
+    });
+
+    test('rapid toggles persist in order and leave the final verdict', () async {
+      await StoragePrefs.initSeeded({});
+      final gate = Completer<void>();
+      final writes = <String>[];
+      var first = true;
+      final container = ProviderContainer(
+        overrides: [
+          vodFavouritesProvider.overrideWith(
+            () => VodFavouritesController(
+              write: (_, value) async {
+                writes.add(value);
+                if (first) {
+                  first = false;
+                  await gate.future;
+                }
+              },
+            ),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+      final controller = container.read(vodFavouritesProvider.notifier);
+      final video = VodSavedVideo(bvid: 'BV1', title: '甲', updatedAt: DateTime(2026));
+
+      final added = controller.toggle(video);
+      final removed = controller.toggle(video);
+      await pumpEventQueue();
+      expect(writes, hasLength(1));
+      gate.complete();
+      expect(await added, isTrue);
+      expect(await removed, isFalse);
+
+      expect(writes, hasLength(2));
+      expect(jsonDecode(writes.last), isEmpty);
+      expect(container.read(vodFavouritesProvider), isEmpty);
+    });
+
+    test('batch removal writes the final collection once', () async {
+      await StoragePrefs.initSeeded({});
+      final writes = <String>[];
+      final container = ProviderContainer(
+        overrides: [
+          vodFavouritesProvider.overrideWith(
+            () => VodFavouritesController(write: (_, value) async => writes.add(value)),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+      final controller = container.read(vodFavouritesProvider.notifier);
+      final first = VodSavedVideo(bvid: 'BV1', title: '甲', updatedAt: DateTime(2026));
+      final second = VodSavedVideo(bvid: 'BV2', title: '乙', updatedAt: DateTime(2026));
+      await controller.toggle(first);
+      await controller.toggle(second);
+      writes.clear();
+
+      await controller.removeMany(['BV1', 'BV2', 'missing']);
+
+      expect(writes, hasLength(1));
+      expect(jsonDecode(writes.single), isEmpty);
+      expect(container.read(vodFavouritesProvider), isEmpty);
+    });
+  });
+
   group('search history', () {
     test('record puts the newest word first and drops an older copy', () async {
       final container = await _container();

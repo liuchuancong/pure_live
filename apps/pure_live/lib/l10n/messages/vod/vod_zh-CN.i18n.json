@@ -178,6 +178,7 @@
   "savedVideo": "已收藏",
   "saveAdded": "已加入收藏",
   "saveRemoved": "已取消收藏",
+  "saveFailed": "收藏更改未保存，请重试",
   "downloadCancelled": "已取消下载",
   "previewTitle": "下载预览",
   "previewUnavailable": "这个分P还没有下载完成的文件",

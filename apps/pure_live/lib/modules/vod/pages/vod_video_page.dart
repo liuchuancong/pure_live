@@ -315,6 +315,8 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
   /// reason: the leaving page reads its own field, not `ref`.
   PresentationMode _presentationMode = PresentationMode.normal;
 
+  ({int aid, bool liked})? _likeBaseline;
+
   bool get _effectivelyMuted => _muted || _globalMute;
 
   _VideoMediaIdentity _identityOf(VodPart part) =>
@@ -1864,13 +1866,18 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
   Future<void> _toggleFavourite() async {
     final detail = _detail;
     if (detail == null) return;
-    final added = await ref.read(vodFavouritesProvider.notifier).toggle(VodSavedVideo.ofDetail(detail));
-    if (!mounted) return;
-    showDsToast(
-      context: context,
-      title: added ? context.t.vod.saveAdded : context.t.vod.saveRemoved,
-      status: DsStatus.success,
-    );
+    try {
+      final added = await ref.read(vodFavouritesProvider.notifier).toggle(VodSavedVideo.ofDetail(detail));
+      if (!mounted) return;
+      showDsToast(
+        context: context,
+        title: added ? context.t.vod.saveAdded : context.t.vod.saveRemoved,
+        status: DsStatus.success,
+      );
+    } on Object {
+      if (!mounted) return;
+      showDsToast(context: context, title: context.t.vod.saveFailed, status: DsStatus.danger);
+    }
   }
 
   /// Flips the viewer's like on the archive on the picture; a refusal puts
@@ -3951,6 +3958,9 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
     // uploader's. A guest reads null and keeps the read-only shapes.
     final writable = ref.watch(vodWriteReadyProvider);
     final liked = writable && detail.aid > 0 ? ref.watch(vodLikeProvider(detail.aid)) : null;
+    if (liked == null || _likeBaseline?.aid != detail.aid) {
+      _likeBaseline = liked == null ? null : (aid: detail.aid, liked: liked);
+    }
     final followed = writable && (detail.uploaderMid ?? 0) > 0
         ? ref.watch(vodFollowUpProvider(detail.uploaderMid!))
         : null;
@@ -4155,14 +4165,21 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
             // row's far end, where a viewer's eye lands last.
             LayoutBuilder(
               builder: (context, constraints) {
+                int displayedLikeCount(int count) {
+                  final baseline = _likeBaseline;
+                  if (liked == null || baseline?.aid != detail.aid) return count;
+                  final total = count + (liked ? 1 : 0) - (baseline!.liked ? 1 : 0);
+                  return total < 0 ? 0 : total;
+                }
+
                 final actionPills = <Widget>[
                   if (detail.likeCount case final count?)
                     VodStatPill(
                       icon: DsIcons.thumbsUp,
                       label: t.vod.likes,
-                      value: AudienceFormat.format(count),
+                      value: AudienceFormat.format(displayedLikeCount(count)),
                       active: writable && liked == true,
-                      onPressed: writable && detail.aid > 0 ? () => unawaited(_toggleLike()) : null,
+                      onPressed: writable && detail.aid > 0 && liked != null ? () => unawaited(_toggleLike()) : null,
                     ),
                   if (detail.coinCount case final count?)
                     VodStatPill(icon: DsIcons.coins, label: t.vod.coins, value: AudienceFormat.format(count)),
