@@ -164,7 +164,7 @@ final class _PgcFeedView extends ConsumerWidget {
       hasMore: feed.hasMore,
       onLoadMore: () => controller.loadMore(type),
       error: feed.error?.message,
-      onRetry: () => controller.refresh(type),
+      onRetry: () => controller.retry(type),
       onRefresh: () => controller.refresh(type),
       refreshError: feed.error?.message,
       emptyIcon: DsIcons.clapperboard,

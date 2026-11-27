@@ -433,7 +433,7 @@ final class VodFollowUpController extends Notifier<bool?> {
       state = followed;
     } on Object {
       // The read failing leaves the chip without a verdict, not broken.
-      if (!ref.mounted) return;
+      if (!ref.mounted || generation != _generation) return;
       state = null;
     }
   }

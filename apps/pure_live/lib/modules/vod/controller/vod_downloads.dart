@@ -537,6 +537,8 @@ final class VodDownloadsController extends Notifier<List<VodDownloadItem>> {
       case VodDownloadPhase.running:
         _stops[id] = _VodStop.pause;
         _clients[id]?.close(force: true);
+        _replace(item.copyWith(phase: VodDownloadPhase.paused, speed: 0));
+        await _persist();
       case VodDownloadPhase.queued:
         _replace(item.copyWith(phase: VodDownloadPhase.paused, speed: 0));
         await _persist();
@@ -575,6 +577,7 @@ final class VodDownloadsController extends Notifier<List<VodDownloadItem>> {
     var stopped = false;
     for (final item in _items) {
       if (_dropping.contains(item.id) || _stops[item.id] == _VodStop.drop) continue;
+      _retryTimers.remove(item.id)?.cancel();
       switch (item.phase) {
         case VodDownloadPhase.queued:
           _replace(item.copyWith(phase: VodDownloadPhase.paused));

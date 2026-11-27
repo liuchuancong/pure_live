@@ -540,3 +540,13 @@ Windows 窗口全屏入口（第十五轮改）：播放行「全屏｜窗口全
   - **配置与主要文件**：新增 `vod.saveFailed` 中英文 Slang key；无新增持久化配置、依赖或主题 token，收藏队列和点赞基线均为运行时状态。修改 `modules/vod/controller/vod_library.dart`、`modules/vod/pages/vod_video_page.dart`、`modules/vod/pages/vod_personal_page.dart`、`modules/vod/widgets/vod_widgets.dart`、`test/vod/vod_library_history_test.dart`、VOD 中英文文案、生成翻译文件与本台账；个人页既有 `PageLayoutScope` 并行改动未纳入本轮。
   - **验证**：五个 Dart 文件仅做单文件格式化并重新生成 Slang；App `dart analyze lib` 为 **No issues found**；`flutter test --no-pub test/vod` **91/91** 通过。新增收藏写失败回滚、快速连续切换顺序、批量删除单次写入三项回归。
   - **多平台与限制**：收藏与点赞逻辑不区分平台或主题；统计胶囊沿用现有 desen_ui token，默认尺寸不变并允许大字号自然增高。未构建 APK/桌面产物、未截图或运行 UI，未做真实存储失败、慢网点赞、大字体/TV/触控/读屏验收；自动测试不能替代这些运行时验收。Bilibili 原生收藏、投币、评论写入和 DASH 轨下载仍不在本轮范围。
+
+- 2026-11-27：第九十二轮（Bilibili 失败页重试、搜索状态恢复、下载暂停与历史写入竞态）⇒
+  - **搜索失败页重试**：新搜索请求开始时固定当前页码，首页失败不再沿用旧查询的下一页；重试始终请求失败页并保留已加载结果。
+  - **影视目录重试**：新增独立 `retry()` 重试失败 cursor，失败不再永久关闭 `hasMore`；目录错误按钮从整目录刷新改为失败页重试，已加载剧集保留。
+  - **搜索页状态恢复**：重新进入页面时恢复上次结果类型、排序和时长条件；同一页面实例的路由查询词变化会更新输入框并在帧后重新搜索。
+  - **社交与下载停止**：旧关注读取失败不再清除读取期间产生的乐观关注状态；运行中任务暂停立即发布并持久化 paused，暂停全部会取消尚未执行的自动重试定时器。
+  - **历史清空可靠性**：历史保存、单条删除和清空串行执行；清空扫描存储中的全部进度键并取消待刷新，不再遗漏页面防抖刷新期间刚写入的记录。
+  - **配置与主要文件**：无新增持久化配置、Slang key、依赖或主题 token。修改 `modules/vod/controller/vod_controller.dart`、`vod_pgc.dart`、`vod_social.dart`、`vod_downloads.dart`、`vod_library.dart`、`modules/vod/pages/vod_search_page.dart`、`vod_pgc_page.dart`、`test/vod/vod_search_and_pgc_test.dart`、`vod_social_test.dart`、`vod_downloads_test.dart`、`vod_library_history_test.dart` 与本台账；两个页面既有 `PageLayoutScope` 并行改动未纳入本轮。
+  - **验证**：本轮 Dart 文件仅做单文件格式化；App `dart analyze lib` 为 **No issues found**；`flutter test --no-pub test/vod` **97/97** 通过。新增回归覆盖替换搜索首页失败、影视失败 cursor、搜索页恢复所需状态、旧关注读取失败、运行中暂停落库、暂停全部取消重试和立即清空新历史。
+  - **多平台与限制**：修复位于 VOD 控制器和现有页面状态，不区分桌面、平板、手机、TV 或浅色/深色/自定义主题。未构建 APK/桌面产物、未截图或运行 UI，未做真实搜索深链、慢网暂停、进程中断恢复、大字号/TV/触控/读屏验收；自动测试不能替代这些运行时验收。DASH 音视频轨下载仍不在本轮范围。

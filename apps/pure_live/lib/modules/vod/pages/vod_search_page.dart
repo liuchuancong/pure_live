@@ -72,13 +72,17 @@ final class VodSearchPage extends ConsumerStatefulWidget {
 
 final class _VodSearchPageState extends ConsumerState<VodSearchPage> {
   final TextEditingController _search = TextEditingController();
-  VodSearchKind _kind = VodSearchKind.video;
-  String _order = 'totalrank';
-  int _duration = 0;
+  late VodSearchKind _kind;
+  late String _order;
+  late int _duration;
 
   @override
   void initState() {
     super.initState();
+    final controller = ref.read(vodProvider.notifier);
+    _kind = ref.read(vodProvider).kind;
+    _order = controller.order;
+    _duration = controller.duration;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       // Re-entering the page shows the last search's results; the field then
       // names the words they answer to, instead of sitting empty under a
@@ -100,6 +104,20 @@ final class _VodSearchPageState extends ConsumerState<VodSearchPage> {
       );
       _run();
     }
+  }
+
+  @override
+  void didUpdateWidget(VodSearchPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final word = widget.initialWord;
+    if (word == null || word == oldWidget.initialWord) return;
+    _search.value = TextEditingValue(
+      text: word,
+      selection: TextSelection.collapsed(offset: word.length),
+    );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _run();
+    });
   }
 
   @override

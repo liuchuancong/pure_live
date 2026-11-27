@@ -71,6 +71,9 @@ final class VodController extends Notifier<VodState> {
   String _order = 'totalrank';
   int _duration = 0;
 
+  String get order => _order;
+  int get duration => _duration;
+
   @override
   VodState build() {
     ref.watch(vodClientProvider);
@@ -118,7 +121,7 @@ final class VodController extends Notifier<VodState> {
       videos: page == 1 ? const [] : state.videos,
       seasons: page == 1 ? const [] : state.seasons,
       users: page == 1 ? const [] : state.users,
-      nextPage: state.nextPage,
+      nextPage: page,
       hasMore: state.hasMore,
       loading: true,
       error: null,

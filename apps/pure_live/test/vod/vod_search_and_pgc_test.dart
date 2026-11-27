@@ -167,6 +167,56 @@ void main() {
       expect(attempts, 2);
     });
 
+    test('a failed replacement first page retries page one, not the old cursor', () async {
+      var oldQueryAttempts = 0;
+      var newQueryAttempts = 0;
+      http.route('search/type', (url) async {
+        final query = url.queryParameters['keyword'];
+        final page = int.parse(url.queryParameters['page'] ?? '1');
+        if (query == '旧问题') {
+          oldQueryAttempts += 1;
+          return _ok(
+            jsonEncode({
+              'code': 0,
+              'data': {
+                'result': [videoRow('BV$page', '旧问题第 $page 页')],
+                'numResults': 45,
+              },
+            }),
+          );
+        }
+        newQueryAttempts += 1;
+        if (newQueryAttempts == 1) throw StateError('the replacement head is down');
+        expect(page, 1);
+        return _ok(
+          jsonEncode({
+            'code': 0,
+            'data': {
+              'result': [videoRow('BV_new', '新问题首页')],
+              'numResults': 1,
+            },
+          }),
+        );
+      });
+      final container = containerWith();
+      final notifier = container.read(vodProvider.notifier);
+
+      await notifier.search('旧问题');
+      await notifier.loadMore();
+      expect(container.read(vodProvider).nextPage, 3);
+      await notifier.search('新问题');
+      expect(container.read(vodProvider).nextPage, 1);
+      expect(container.read(vodProvider).error, isNotNull);
+
+      await notifier.retry();
+      final retried = container.read(vodProvider);
+      expect(retried.videos.single.bvid, 'BV_new');
+      expect(retried.nextPage, 2);
+      expect(retried.error, isNull);
+      expect(oldQueryAttempts, 2);
+      expect(newQueryAttempts, 2);
+    });
+
     test('an account change drains the previous account response', () async {
       final gate = Completer<void>();
       http.route('search/type', (url) async {
@@ -314,6 +364,59 @@ void main() {
       expect(second.cursor, 12);
     });
 
+    test('a failed later page retries its cursor and keeps the loaded seasons', () async {
+      var attempts = 0;
+      http.route('pgc/page/web', (url) async {
+        attempts += 1;
+        if (attempts == 2) throw StateError('the second page is down');
+        if (attempts == 1) {
+          return _ok(
+            jsonEncode({
+              'code': 0,
+              'data': {
+                'items': [
+                  {'season_id': 1, 'season_title': '第一部'},
+                ],
+                'coursor': 12,
+                'has_next': true,
+              },
+            }),
+          );
+        }
+        expect(url.queryParameters['coursor'], '12');
+        return _ok(
+          jsonEncode({
+            'code': 0,
+            'data': {
+              'items': [
+                {'season_id': 2, 'season_title': '第二部'},
+              ],
+              'coursor': 24,
+              'has_next': true,
+            },
+          }),
+        );
+      });
+      final container = containerWith();
+      final notifier = container.read(vodPgcProvider.notifier);
+
+      await notifier.open(1);
+      await notifier.loadMore(1);
+      final failed = notifier.of(1);
+      expect(failed.seasons.map((season) => season.seasonId), [1]);
+      expect(failed.cursor, 12);
+      expect(failed.hasMore, isTrue);
+      expect(failed.error, isNotNull);
+
+      await notifier.retry(1);
+      final retried = notifier.of(1);
+      expect(retried.seasons.map((season) => season.seasonId), [1, 2]);
+      expect(retried.cursor, 24);
+      expect(retried.hasMore, isTrue);
+      expect(retried.error, isNull);
+      expect(attempts, 3);
+    });
+
     test("a failed page lands as the catalogue's error, and a refresh starts over", () async {
       var attempts = 0;
       http.route('pgc/page/web', (url) async {
@@ -337,7 +440,7 @@ void main() {
 
       await notifier.open(1);
       expect(notifier.of(1).error, isNotNull);
-      expect(notifier.of(1).hasMore, isFalse);
+      expect(notifier.of(1).hasMore, isTrue);
 
       await notifier.refresh(1);
       final refreshed = notifier.of(1);

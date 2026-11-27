@@ -254,6 +254,18 @@ void main() {
       expect(StoragePrefs.getString('${kVodProgressPrefix}c'), isNotNull);
     });
 
+    test('clear drops a checkpoint saved since the last page refresh', () async {
+      final container = await _container();
+      final controller = container.read(vodHistoryProvider.notifier);
+      await controller.save(bvid: 'fresh', cid: 9, seconds: 12, title: '刚写', durationSeconds: 60);
+      expect(StoragePrefs.getString('${kVodProgressPrefix}fresh'), isNotNull);
+
+      await controller.clear();
+
+      expect(StoragePrefs.getString('${kVodProgressPrefix}fresh'), isNull);
+      expect(container.read(vodHistoryProvider), isEmpty);
+    });
+
     test('clear drops every record', () async {
       final container = await _container({
         '${kVodProgressPrefix}a': jsonEncode({'title': '甲', 'seconds': 10.0, 'completed': false, 'updatedAt': 1000}),

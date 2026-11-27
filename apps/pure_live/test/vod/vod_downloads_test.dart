@@ -1,10 +1,15 @@
-import 'dart:convert' show jsonDecode, jsonEncode;
+import 'dart:async' show Completer;
+import 'dart:convert' show jsonDecode, jsonEncode, utf8;
 import 'dart:io' show Directory, File, FileLock, FileMode, FileSystemException;
+import 'dart:typed_data' show Uint8List;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:live_net/live_net.dart' show LiveHttp, LiveRequest, LiveResponse, LiveStreamedResponse;
 import 'package:live_storage/live_storage.dart';
+import 'package:live_vod/live_vod.dart' show BilibiliVodClient;
 import 'package:path/path.dart' as p;
+import 'package:pure_live/modules/vod/controller/vod_controller.dart' show vodClientProvider;
 import 'package:pure_live/modules/vod/controller/vod_download.dart' show freeDownloadFile;
 import 'package:pure_live/modules/vod/controller/vod_downloads.dart';
 import 'package:pure_live/modules/vod/controller/vod_settings.dart' show VodQualityChoice;
@@ -139,6 +144,55 @@ void main() {
     expect(tasks.single.phase, VodDownloadPhase.paused);
   });
 
+  test('pausing a running task persists the pause before its worker exits', () async {
+    final queued = item('BV1test:9001');
+    await StoragePrefs.setString(kVodDownloadsKey, jsonEncode([queued.toJson()]));
+    final gate = Completer<String>();
+    final answer = jsonEncode({
+      'code': 0,
+      'data': {
+        'quality': 64,
+        'durl': [
+          {'url': 'https://cdn/video.mp4'},
+        ],
+      },
+    });
+    final stub = _DownloadHttp()
+      ..handlers['/x/player/playurl'] = ((_) => answer)
+      ..hold('/x/player/playurl', gate);
+    final container = ProviderContainer(overrides: [vodClientProvider.overrideWithValue(BilibiliVodClient(stub))]);
+    addTearDown(container.dispose);
+    final controller = container.read(vodDownloadsProvider.notifier);
+    await pumpEventQueue();
+    expect(container.read(vodDownloadsProvider).single.phase, VodDownloadPhase.running);
+
+    await controller.pause(queued.id);
+
+    expect(container.read(vodDownloadsProvider).single.phase, VodDownloadPhase.paused);
+    final stored = (jsonDecode(StoragePrefs.getString(kVodDownloadsKey)!) as List).single as Map<String, Object?>;
+    expect(stored['phase'], 'paused');
+    gate.complete(answer);
+    await pumpEventQueue();
+  });
+
+  test('pause all cancels a failed task waiting to retry', () async {
+    final failed = item('BV1test:9001', phase: VodDownloadPhase.failed);
+    await StoragePrefs.setString(kVodDownloadsKey, jsonEncode([failed.toJson()]));
+    final stub = _DownloadHttp()..handlers['/x/player/playurl'] = (_) => throw StateError('offline');
+    final container = ProviderContainer(overrides: [vodClientProvider.overrideWithValue(BilibiliVodClient(stub))]);
+    addTearDown(container.dispose);
+    container.read(vodDownloadRetryProvider.notifier).select(1);
+    final controller = container.read(vodDownloadsProvider.notifier);
+    await controller.resume(failed.id);
+    await pumpEventQueue();
+    expect(controller.hasPendingRetry(failed.id), isTrue);
+
+    await controller.pauseAll();
+
+    expect(controller.hasPendingRetry(failed.id), isFalse);
+    expect(container.read(vodDownloadsProvider).single.phase, VodDownloadPhase.failed);
+  });
+
   test('a cinema episode task survives a JSON round trip and is found by its ep key', () {
     const source = VodDownloadItem(
       id: 'ep456:9001',
@@ -222,4 +276,32 @@ void main() {
 
     expect(target.path, p.join(folder.path, '标题_2.mp4'));
   });
+}
+
+final class _DownloadHttp implements LiveHttp {
+  final Map<String, String Function(LiveRequest)> handlers = {};
+  final List<LiveRequest> seen = [];
+  final Map<String, Completer<String>> _gates = {};
+
+  void hold(String path, Completer<String> gate) => _gates[path] = gate;
+
+  @override
+  Future<LiveResponse> send(LiveRequest request) async {
+    seen.add(request);
+    final answer = handlers[request.url.path]?.call(request);
+    if (answer == null) throw StateError('no answer for ${request.url.path}');
+    final body = answer;
+    final gate = _gates[request.url.path];
+    return LiveResponse(
+      statusCode: 200,
+      headers: const {'content-type': 'application/json'},
+      bodyBytes: Uint8List.fromList(utf8.encode(gate == null ? body : await gate.future)),
+    );
+  }
+
+  @override
+  Future<LiveStreamedResponse> open(LiveRequest request) => throw UnsupportedError('the client buffers');
+
+  @override
+  void close() {}
 }

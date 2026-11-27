@@ -41,7 +41,10 @@ final class VodPgcController extends Notifier<Map<int, VodSeasonFeedState>> {
     await _load(type, 0);
   }
 
-  /// Reads [type]'s next page when the last answer named one.
+  /// Reads the cursor that failed again without discarding loaded seasons.
+  Future<void> retry(int type) => _load(type, of(type).cursor);
+
+  /// Reads the catalogue's next page when the last answer named one.
   Future<void> loadMore(int type) async {
     final feed = of(type);
     if (feed.loading || !feed.hasMore || !feed.loaded) return;
@@ -82,13 +85,7 @@ final class VodPgcController extends Notifier<Map<int, VodSeasonFeedState>> {
       if (open == null) return;
       state = {
         ...state,
-        type: _with(
-          open,
-          loading: false,
-          hasMore: false,
-          loaded: true,
-          error: failure is VodFailure ? failure : VodFailure(failure.toString()),
-        ),
+        type: _with(open, loading: false, error: failure is VodFailure ? failure : VodFailure(failure.toString())),
       };
     }
   }

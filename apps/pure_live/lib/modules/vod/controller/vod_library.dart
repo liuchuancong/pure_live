@@ -247,6 +247,7 @@ final class VodHistoryController extends Notifier<List<VodHistoryEntry>> {
   /// only the writers racing it; a minute later watching the archive again
   /// brings the record back, the way it should.
   final Map<String, DateTime> _tombstones = {};
+  Future<void> _pending = Future<void>.value();
 
   @override
   List<VodHistoryEntry> build() {
@@ -267,6 +268,28 @@ final class VodHistoryController extends Notifier<List<VodHistoryEntry>> {
   /// 个人 page reads, so it carries the archive's metadata; finishing marks
   /// the record done rather than clearing it.
   Future<void> save({
+    required String bvid,
+    required int cid,
+    required double seconds,
+    required String title,
+    required double durationSeconds,
+    String? cover,
+    String? uploader,
+    bool completed = false,
+  }) => _enqueue(
+    () => _save(
+      bvid: bvid,
+      cid: cid,
+      seconds: seconds,
+      title: title,
+      durationSeconds: durationSeconds,
+      cover: cover,
+      uploader: uploader,
+      completed: completed,
+    ),
+  );
+
+  Future<void> _save({
     required String bvid,
     required int cid,
     required double seconds,
@@ -374,7 +397,9 @@ final class VodHistoryController extends Notifier<List<VodHistoryEntry>> {
   }
 
   /// Drops one archive's entry.
-  Future<void> remove(String bvid) async {
+  Future<void> remove(String bvid) => _enqueue(() => _remove(bvid));
+
+  Future<void> _remove(String bvid) async {
     // The prefix is a constant, the bvid is not: the manifest gate treats
     // this as a computed key and lists it for review instead of demanding a
     // static entry.
@@ -395,11 +420,36 @@ final class VodHistoryController extends Notifier<List<VodHistoryEntry>> {
     }
   }
 
-  /// Drops every entry.
-  Future<void> clear() async {
-    for (final entry in state) {
-      await remove(entry.bvid);
+  /// Drops every entry, including checkpoints written since the last refresh.
+  Future<void> clear() => _enqueue(() async {
+    final bvids = {
+      for (final entry in state) entry.bvid,
+      for (final key in StoragePrefs.snapshot().keys)
+        if (key.startsWith(kVodProgressPrefix)) key.substring(kVodProgressPrefix.length),
+    };
+    final now = DateTime.now();
+    for (final bvid in bvids) {
+      _tombstones[bvid] = now;
+      try {
+        await StoragePrefs.remove('$kVodProgressPrefix$bvid');
+      } on Object {
+        // A preference; a closed store loses it.
+      }
     }
+    _reload?.cancel();
+    state = const [];
+  });
+
+  Future<T> _enqueue<T>(Future<T> Function() action) {
+    final result = Completer<T>();
+    _pending = _pending.then((_) async {
+      try {
+        result.complete(await action());
+      } on Object catch (error, stack) {
+        result.completeError(error, stack);
+      }
+    });
+    return result.future;
   }
 
   static List<VodHistoryEntry> _read() {

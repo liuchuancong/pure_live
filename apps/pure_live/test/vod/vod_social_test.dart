@@ -121,6 +121,24 @@ void main() {
       expect(container.read(vodFollowUpProvider(7)), isTrue);
     });
 
+    test('a stale read failure does not erase the flip', () async {
+      final stub = _RouteStub();
+      final gate = Completer<String>();
+      stub.hold('/x/relation', gate);
+      stub.routes['/x/relation/modify'] = '{"code":0}';
+      final container = signedIn(stub);
+      addTearDown(container.dispose);
+      container.listen(vodFollowUpProvider(7), (_, _) {});
+
+      final controller = container.read(vodFollowUpProvider(7).notifier);
+      await controller.toggle();
+      expect(container.read(vodFollowUpProvider(7)), isTrue);
+
+      gate.complete('not json');
+      await pumpEventQueue();
+      expect(container.read(vodFollowUpProvider(7)), isTrue);
+    });
+
     test('a stale read does not revert the flip', () async {
       final stub = _RouteStub();
       final gate = Completer<String>();
@@ -376,10 +394,9 @@ void main() {
       final flying = controller.open(9);
       await pumpEventQueue();
 
-      container.updateOverrides([
-        vodClientProvider.overrideWith((ref) => BilibiliVodClient(stub, cookie: 'SESSDATA=new')),
-      ]);
-      container.invalidate(vodCommentsProvider);
+      container
+        ..updateOverrides([vodClientProvider.overrideWith((ref) => BilibiliVodClient(stub, cookie: 'SESSDATA=new'))])
+        ..invalidate(vodCommentsProvider);
       await pumpEventQueue();
       expect(container.read(vodCommentsProvider), isEmpty);
 
