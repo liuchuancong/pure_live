@@ -427,8 +427,11 @@ final class MusicPlaylistsController extends Notifier<List<MusicPlaylist>> {
   /// The reference's moveListMusics: the songs join [toId] — deduped,
   /// positioned by the addToTop preference — and leave [fromId].
   Future<int> moveTracks(String fromId, String toId, Iterable<audio.MusicTrack> tracks) async {
-    final added = await addTracks(toId, tracks);
-    await removeTracks(fromId, tracks);
+    if (fromId == toId || find(fromId) == null || find(toId) == null) return 0;
+    final moving = tracks.toList();
+    if (moving.isEmpty) return 0;
+    final added = await addTracks(toId, moving);
+    await removeTracks(fromId, moving);
     return added;
   }
 

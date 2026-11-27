@@ -85,6 +85,17 @@ void main() {
     expect(imported.tracks.first.duration, const Duration(seconds: 61));
   });
 
+  test('moving songs keeps the source when the destination is missing or identical', () async {
+    final source = (await controller.create('源歌单'))!;
+    await controller.addTracks(source.id, [_track('a'), _track('b')]);
+
+    expect(await controller.moveTracks(source.id, 'missing', [_track('a')]), 0);
+    expect(controller.find(source.id)!.tracks.map((track) => track.id), ['a', 'b']);
+
+    expect(await controller.moveTracks(source.id, source.id, [_track('a')]), 0);
+    expect(controller.find(source.id)!.tracks.map((track) => track.id), ['a', 'b']);
+  });
+
   test('a file that is not a playlist is refused', () async {
     final directory = await Directory.systemTemp.createTemp('music_playlist_test');
     addTearDown(() => directory.delete(recursive: true));

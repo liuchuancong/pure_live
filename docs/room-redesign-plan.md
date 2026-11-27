@@ -448,3 +448,10 @@ Windows 窗口全屏入口（第十五轮改）：播放行「全屏｜窗口全
   - **配置与主要文件**：无新增持久化配置、Slang key、依赖或主题 token；SSE 快照、小窗回调身份、截图单飞和同步代次均为运行时状态。修改 `shared/player/floating_video.dart`、`player_screenshot.dart`、`features/media_preview/media_preview_page.dart`、`modules/vod/pages/vod_video_page.dart`、`vod_season_page.dart`、`modules/huya/pages/huya_video_player_page.dart`、`modules/hongguo/pages/hongguo_player_page.dart`、`modules/iptv/pages/iptv_play_page.dart`、`modules/live/archive/archive_player_page.dart`、`modules/music/controller/playback/music_open_api.dart`、`controller/sources/music_audio_cache.dart`、`controller/sync/music_sync.dart`、对应四个测试文件与本台账。
   - **验证**：当前完整工作树 App `dart analyze lib test` 为 **No issues found**；`flutter test --no-pub` 全量 **1322/1322** 通过，小窗聚焦 **4/4** 通过；隔离补丁 `git diff --check` 无空白错误。尝试在 HEAD 独立工作树复验时，基线缺少当前工作树已有的背景模块与 live_device 等源码/包，分析和 Flutter 测试分别因依赖解析与 native-assets 工具崩溃未能完成，因此不声称隔离基线验证通过。
   - **多平台与限制**：修复位于共享播放和音乐运行时，不区分桌面、平板、手机、TV 或浅色/深色/自定义主题。未构建 APK/桌面产物、未截图或运行 UI，未做真实小窗快速切换、播放中交接、SSE 长连接、同步重连、缓存并发、多窗口、TV、触控、大字体或读屏验收；截图单飞尚无独立回归。自动测试不能替代这些运行时验收，仓外 media_core 无本轮修改。
+
+- 2026-11-27：第八十一轮（歌单搬移目标校验与本地列表同步审查）⇒
+  - **歌单搬移防丢失**：`moveTracks` 在源歌单不存在、目标歌单不存在或两者相同时直接返回，不再出现目标无效仍删除源歌曲、同歌单搬移清空选中歌曲的数据丢失路径。输入迭代器先固化为列表，再加入目标和移出源，避免一次性序列被重复消费。
+  - **审查未采纳项**：本地列表与 LX 同步的 `pushListsChanged()` 目前没有调用方，但直接接自动推送需要同时处理远端覆盖回环、断线状态和批量编辑合并；本轮不把未验证的监听广播接入。恢复下载任务缺少重试重解析器，受仓外 `media_core_audio` 固定 Git 版本 API 限制，未做依赖逃逸或破坏 resume 语义的重建。
+  - **配置与主要文件**：无新增持久化配置、Slang key、依赖或主题 token。修改 `modules/music/controller/library/music_playlists.dart`、`test/music/music_playlists_test.dart` 与本台账。
+  - **验证**：两个修改文件单文件格式化无变化；App `dart analyze lib test` 为 **No issues found**；歌单聚焦回归 **6/6** 通过。本轮未重跑 App 全量测试。
+  - **多平台与限制**：修复位于音乐数据层，不区分桌面、平板、手机、TV 或浅色/深色/自定义主题。未构建 APK/桌面产物、未截图或运行 UI，未做真实批量搬移、失效目标竞态、同步自动推送、恢复下载重试、多窗口、TV、触控、大字体或读屏验收；自动测试不能替代这些运行时验收，仓外 media_core 无本轮修改。
