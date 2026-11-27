@@ -314,8 +314,9 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
     }
     if (handle.state.hasError || !handle.state.canPlay || (_transport?.isPlaying ?? false)) return;
     try {
+      final coverDepth = _routeCoverDepth;
       await handle.play();
-      if (generation != _routePauseGeneration) await handle.pause();
+      if (generation != _routePauseGeneration && _routeCoverDepth > coverDepth) await handle.pause();
     } on Object {
       // The route's return does not turn a refused play into a page failure.
     }

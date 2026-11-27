@@ -590,6 +590,7 @@ final class RecorderEngine {
     bool requireEnabled = false,
   }) async {
     if (_sessions.containsKey(task.id)) return 'already recording';
+    if (isPostProcessing(task.id)) return 'busy';
     // The permission prompt belongs to the action that needs it.
     unawaited(requestUserNotificationPermission());
     final settings = _ref.read(recordingSettingsProvider);

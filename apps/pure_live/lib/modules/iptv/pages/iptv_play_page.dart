@@ -442,8 +442,9 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
       return;
     }
     try {
+      final coverDepth = _routeCoverDepth;
       await playback.resume();
-      if (generation != _routePauseGeneration) await playback.pause();
+      if (generation != _routePauseGeneration && _routeCoverDepth > coverDepth) await playback.pause();
     } on Object {
       // Returning to the channel does not turn a refused resume into a failure.
     }
