@@ -107,7 +107,7 @@ final class MusicSyncClient {
   final StreamController<MusicSyncStatus> _status = StreamController<MusicSyncStatus>.broadcast();
   final StreamController<String> _messages = StreamController<String>.broadcast();
   final Map<String, Completer<Object?>> _pending = <String, Completer<Object?>>{};
-  final Map<String, void Function(List<Object?> args)> _callbacks = <String, void Function(List<Object?> args)>{};
+  final Map<String, Object? Function(List<Object?> args)> _callbacks = <String, Object? Function(List<Object?> args)>{};
   final Map<String, List<String>> _callCallbacks = <String, List<String>>{};
   final Map<String, Timer> _callbackTimers = <String, Timer>{};
   final Map<String, Object? Function(List<Object?> args)> _handlers = <String, Object? Function(List<Object?> args)>{};
@@ -342,18 +342,66 @@ final class MusicSyncClient {
       case final MusicSyncRpcResponse response:
         final completer = _pending.remove(response.name);
         if (completer == null) return;
-        // Keep function slots through the call's timeout: the protocol has
-        // no separate callback-completion frame.
+        // The remote may invoke callbacks after the call response, so keep
+        // their handlers until the call timeout.
         if (response.error == null) {
           completer.complete(response.result);
         } else {
           completer.completeError(Exception(response.errorMessage));
         }
       case final MusicSyncRpcCallbackRequest callback:
-        final handler = _callbacks[callback.name];
-        if (handler != null) handler(callback.args);
+        _answerCallback(socket, callback);
       default:
         break;
+    }
+  }
+
+  void _answerCallback(LiveWebSocketClient socket, MusicSyncRpcCallbackRequest callback) {
+    final handler = _callbacks[callback.name];
+    if (handler == null) {
+      _sendCallbackError(socket, callback, '${callback.name} is released');
+      return;
+    }
+    try {
+      final result = handler(callback.args);
+      if (result is Future) {
+        unawaited(_completeCallback(socket, callback, result));
+      } else {
+        _sendCallbackReply(socket, callback, result);
+      }
+    } on Object catch (error) {
+      _sendCallbackError(socket, callback, error.toString());
+    }
+  }
+
+  Future<void> _completeCallback(
+    LiveWebSocketClient socket,
+    MusicSyncRpcCallbackRequest callback,
+    Future<dynamic> future,
+  ) async {
+    try {
+      final result = await future;
+      _sendCallbackReply(socket, callback, result);
+    } on Object catch (error) {
+      _sendCallbackError(socket, callback, error.toString());
+    }
+  }
+
+  void _sendCallbackReply(LiveWebSocketClient socket, MusicSyncRpcCallbackRequest callback, Object? result) {
+    if (!identical(_socket, socket) || !socket.isConnected) return;
+    try {
+      socket.send(musicSyncEncodeFrame(callback.reply(result)));
+    } on Object {
+      _onClosed(socket);
+    }
+  }
+
+  void _sendCallbackError(LiveWebSocketClient socket, MusicSyncRpcCallbackRequest callback, String message) {
+    if (!identical(_socket, socket) || !socket.isConnected) return;
+    try {
+      socket.send(musicSyncEncodeFrame(callback.replyError(message)));
+    } on Object {
+      _onClosed(socket);
     }
   }
 

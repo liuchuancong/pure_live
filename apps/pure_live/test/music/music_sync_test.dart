@@ -105,6 +105,14 @@ void main() {
       expect(parsed.name, 'func_0_abc');
       expect(parsed.args, ['merge_remote_local']);
       expect(parsed.reply(null), jsonEncode([3, 'func_0_abc', null, null]));
+      expect(
+        parsed.replyError('released'),
+        jsonEncode([
+          3,
+          'func_0_abc',
+          <String, Object?>{'message': 'released'},
+        ]),
+      );
     });
 
     test('bare ping is not a frame', () {
@@ -347,6 +355,163 @@ void main() {
         ..add(musicSyncEncodeRequest('barrier', const [], const []));
       await barrier.future.timeout(const Duration(seconds: 2));
       expect(invoked, isFalse);
+    });
+
+    test('callback requests are answered with the handler result', () async {
+      final accepted = Completer<WebSocket>();
+      final outgoing = Completer<List<Object?>>();
+      final callbackResponse = Completer<List<Object?>>();
+      server.listen((request) async {
+        final socket = await WebSocketTransformer.upgrade(request);
+        accepted.complete(socket);
+        socket.listen((data) {
+          final frame = jsonDecode(data as String);
+          if (frame is! List || frame.isEmpty) return;
+          if (frame.first == 0) outgoing.complete(frame.cast<Object?>());
+          if (frame.first == 3) callbackResponse.complete(frame.cast<Object?>());
+        });
+      });
+      await client.connect(address, keyInfo);
+      final call = client.call('wait', [(List<Object?> args) => 'ack:${args.single}']);
+      final request = await outgoing.future.timeout(const Duration(seconds: 2));
+      final callbackName = (request[3]! as List).single as String;
+      final socket = await accepted.future;
+
+      socket.add(
+        jsonEncode([
+          2,
+          callbackName,
+          const <Object?>['ok'],
+        ]),
+      );
+      expect(await callbackResponse.future.timeout(const Duration(seconds: 2)), [3, callbackName, null, 'ack:ok']);
+      socket.add(jsonEncode([1, request[1], null, null]));
+      await call;
+    });
+
+    test('async callbacks are acknowledged only after their work completes', () async {
+      final accepted = Completer<WebSocket>();
+      final outgoing = Completer<List<Object?>>();
+      final started = Completer<void>();
+      final callbackResponse = Completer<List<Object?>>();
+      final gate = Completer<String>();
+      server.listen((request) async {
+        final socket = await WebSocketTransformer.upgrade(request);
+        accepted.complete(socket);
+        socket.listen((data) {
+          final frame = jsonDecode(data as String);
+          if (frame is! List || frame.isEmpty) return;
+          if (frame.first == 0) outgoing.complete(frame.cast<Object?>());
+          if (frame.first == 3) callbackResponse.complete(frame.cast<Object?>());
+        });
+      });
+      await client.connect(address, keyInfo);
+      final call = client.call('wait', [
+        (_) {
+          started.complete();
+          return gate.future;
+        },
+      ]);
+      final request = await outgoing.future.timeout(const Duration(seconds: 2));
+      final callbackName = (request[3]! as List).single as String;
+      final socket = await accepted.future;
+
+      socket.add(jsonEncode([2, callbackName, const <Object?>[]]));
+      await started.future.timeout(const Duration(seconds: 2));
+      expect(callbackResponse.isCompleted, isFalse);
+      gate.complete('ready');
+      expect(await callbackResponse.future.timeout(const Duration(seconds: 2)), [3, callbackName, null, 'ready']);
+      socket.add(jsonEncode([1, request[1], null, null]));
+      await call;
+    });
+
+    test('throwing and released callbacks receive error responses', () async {
+      final accepted = Completer<WebSocket>();
+      final outgoing = Completer<List<Object?>>();
+      final responses = <List<Object?>>[];
+      final both = Completer<void>();
+      server.listen((request) async {
+        final socket = await WebSocketTransformer.upgrade(request);
+        accepted.complete(socket);
+        socket.listen((data) {
+          final frame = jsonDecode(data as String);
+          if (frame is! List || frame.isEmpty) return;
+          if (frame.first == 0) outgoing.complete(frame.cast<Object?>());
+          if (frame.first == 3) {
+            responses.add(frame.cast<Object?>());
+            if (responses.length == 2 && !both.isCompleted) both.complete();
+          }
+        });
+      });
+      await client.connect(address, keyInfo);
+      final call = client.call('wait', [(_) => throw StateError('callback failed')]);
+      final request = await outgoing.future.timeout(const Duration(seconds: 2));
+      final callbackName = (request[3]! as List).single as String;
+      final socket = await accepted.future;
+
+      socket
+        ..add(jsonEncode([2, callbackName, const <Object?>[]]))
+        ..add(jsonEncode([2, 'func_released', const <Object?>[]]));
+      await both.future.timeout(const Duration(seconds: 2));
+      expect(responses[0][2], isA<Map<Object?, Object?>>());
+      expect((responses[0][2]! as Map<Object?, Object?>)['message'], contains('callback failed'));
+      expect(responses[1][1], 'func_released');
+      expect((responses[1][2]! as Map<Object?, Object?>)['message'], 'func_released is released');
+      socket.add(jsonEncode([1, request[1], null, null]));
+      await call;
+    });
+
+    test('a late async callback reply is not sent into a replacement socket', () async {
+      final first = Completer<WebSocket>();
+      final second = Completer<WebSocket>();
+      final outgoing = Completer<List<Object?>>();
+      final started = Completer<void>();
+      final gate = Completer<String>();
+      final barrier = Completer<List<Object?>>();
+      final replacementCallbacks = <List<Object?>>[];
+      var connections = 0;
+      server.listen((request) async {
+        final socket = await WebSocketTransformer.upgrade(request);
+        if (connections++ == 0) {
+          first.complete(socket);
+          socket.listen((data) {
+            final frame = jsonDecode(data as String);
+            if (frame is List && frame.isNotEmpty && frame.first == 0 && !outgoing.isCompleted) {
+              outgoing.complete(frame.cast<Object?>());
+            }
+          });
+        } else {
+          second.complete(socket);
+          socket.listen((data) {
+            final frame = jsonDecode(data as String);
+            if (frame is! List || frame.isEmpty) return;
+            final response = frame.cast<Object?>();
+            if (response.first == 3) replacementCallbacks.add(response);
+            if (response.first == 1 && response[1] == 'barrier' && !barrier.isCompleted) barrier.complete(response);
+          });
+        }
+      });
+      await client.connect(address, keyInfo);
+      final call = client.call('wait', [
+        (_) {
+          started.complete();
+          return gate.future;
+        },
+      ]);
+      final failed = expectLater(call, throwsA(isA<Exception>()));
+      final request = await outgoing.future.timeout(const Duration(seconds: 2));
+      final callbackName = (request[3]! as List).single as String;
+      final original = await first.future;
+      original.add(jsonEncode([2, callbackName, const <Object?>[]]));
+      await started.future.timeout(const Duration(seconds: 2));
+
+      await original.close();
+      await failed;
+      final replacement = await second.future.timeout(const Duration(seconds: 3));
+      gate.complete('late');
+      replacement.add(musicSyncEncodeRequest('barrier', const [], const []));
+      await barrier.future.timeout(const Duration(seconds: 2));
+      expect(replacementCallbacks, isEmpty);
     });
 
     test('async handlers are acknowledged only after their work completes', () async {

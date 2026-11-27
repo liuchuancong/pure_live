@@ -489,3 +489,12 @@ Windows 窗口全屏入口（第十五轮改）：播放行「全屏｜窗口全
   - **配置与主要文件**：无新增持久化配置、Slang key、依赖或主题 token；异步处理与 socket 身份均属运行时状态。修改 `modules/music/controller/sync/music_sync_client.dart`、`modules/music/controller/sync/music_sync.dart`、`test/music/music_sync_test.dart` 与本台账。
   - **验证**：三个修改文件仅做单文件格式化；音乐同步聚焦回归 **26/26** 通过；App `dart analyze lib test` 为 **No issues found**；App 全量测试 **1332/1332（4 分 16 秒）** 通过；`git diff --check` 通过。仓外 media_core 已有并行改动，本轮未修改。
   - **多平台与限制**：修复位于音乐同步运行时，不区分桌面、平板、手机、TV 或浅色/深色/自定义主题。未构建 APK/桌面产物、未截图或运行 UI，未做真实 LX 服务并发写入、落盘失败、长连接重连、多窗口、TV、触控、大字体或读屏验收；自动测试不能替代这些运行时验收。
+
+- 2026-11-27：第八十六轮（LX 同步回调应答与 RSA 安全随机）⇒
+  - **协议依据**：核对 `message2call@2.0.3` 的数组 wire 后确认，远端执行本地函数回调后必须收到 `CALLBACK_RESPONSE`；回调返回值、异步结果或异常都需要回帧，已释放回调则返回 `${name} is released`。本轮修复 PureLive 当前采用的 2.x wire，不把旧版 0.1.3 对象协议混入同一解析路径。
+  - **回调应答**：`MusicSyncClient` 现在等待同步与异步回调完成并发送类型 3 结果帧；同步异常和 Future 异常转为回调 error，未知回调返回 released error。回调应答绑定原 socket 身份，旧连接的迟到结果不会写入 replacement socket。
+  - **RSA 随机源**：首次授权生成 RSA 密钥时的 Fortuna 种子由时间戳线性同余改为 `Random.secure()` 的 32 字节系统安全随机数，避免同一时间窗内授权密钥可预测。
+  - **回归覆盖**：新增回调结果应答、异步回调完成后才应答、异常与已释放回调错误应答、旧 socket 的迟到异步回调不进入新连接四项本地 HTTP/WebSocket 集成回归；wire 单测补充 `replyError` 帧断言。
+  - **配置与主要文件**：无新增持久化配置、Slang key、依赖或主题 token；回调结果与 socket 身份均属运行时状态。修改 `modules/music/controller/sync/music_sync_client.dart`、`music_sync_codec.dart`、`music_sync_wire.dart`、`test/music/music_sync_test.dart` 与本台账。
+  - **验证**：四个修改文件仅做单文件格式化；音乐同步聚焦回归 **30/30** 通过；App `dart analyze lib test` 为 **No issues found**；App 全量测试 **1336/1336（4 分 25 秒）** 通过；`git diff --check` 通过。仓外 media_core 无本轮修改。
+  - **多平台与限制**：修复位于音乐同步运行时，不区分桌面、平板、手机、TV 或浅色/深色/自定义主题。未构建 APK/桌面产物、未截图或运行 UI，未做真实 LX 服务回调、授权失败、长连接重连、多窗口、TV、触控、大字体或读屏验收；本地 LX Desktop checkout 锁定的 0.1.3 与当前 2.x wire 不同，真实跨版本互通仍需以目标服务版本抓包联调，自动测试不能替代这些运行时验收。

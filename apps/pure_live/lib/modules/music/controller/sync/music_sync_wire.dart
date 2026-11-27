@@ -90,6 +90,13 @@ final class MusicSyncRpcCallbackRequest {
 
   /// Answers the callback.
   String reply(Object? result) => jsonEncode([3, name, null, result]);
+
+  /// Answers the callback with a failure.
+  String replyError(String message) => jsonEncode([
+    3,
+    name,
+    <String, Object?>{'message': message},
+  ]);
 }
 
 /// Encodes a call the remote should run:

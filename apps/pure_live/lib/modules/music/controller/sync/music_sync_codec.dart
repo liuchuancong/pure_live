@@ -174,14 +174,8 @@ BigInt _crtDq(RSAPrivateKey key) => key.privateExponent! % (key.q! - BigInt.one)
 BigInt _crtQInv(RSAPrivateKey key) => key.q!.modInverse(key.p!);
 
 Uint8List _seed() {
-  final seed = Uint8List(32);
-  final now = DateTime.now().microsecondsSinceEpoch;
-  var state = now & 0xFFFFFFFF;
-  for (var i = 0; i < seed.length; i++) {
-    state = (state * 1103515245 + 12345) & 0xFFFFFFFF;
-    seed[i] = (state >> 16) & 0xFF;
-  }
-  return seed;
+  final random = Random.secure();
+  return Uint8List.fromList(List<int>.generate(32, (_) => random.nextInt(256)));
 }
 
 // --- Minimal DER encoding; only the two shapes the protocol needs. ---
