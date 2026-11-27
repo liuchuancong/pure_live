@@ -434,6 +434,8 @@ final class VodDownloadsController extends Notifier<List<VodDownloadItem>> {
       }
     }
     ref.listen(vodDownloadSettingsProvider, (_, _) => _pump());
+    ref.listen(vodDownloadRetryProvider, (_, _) => _rescheduleRetries());
+    ref.listen(vodDownloadRetryDelayProvider, (_, _) => _rescheduleRetries());
     ref.onDispose(() {
       _persistTimer?.cancel();
       for (final timer in _retryTimers.values) {
@@ -867,6 +869,8 @@ final class VodDownloadsController extends Notifier<List<VodDownloadItem>> {
       if (!ref.mounted) return;
       final retry = _items.where((row) => row.id == id).firstOrNull;
       if (retry == null || retry.phase != VodDownloadPhase.failed) return;
+      final limit = ref.read(vodDownloadRetryProvider);
+      if (retry.attempts >= limit) return;
       _replace(retry.copyWith(phase: VodDownloadPhase.queued, attempts: retry.attempts + 1, speed: 0));
       unawaited(_persist());
       _pump();
@@ -874,6 +878,14 @@ final class VodDownloadsController extends Notifier<List<VodDownloadItem>> {
     // The failed row was published before the wait began; publish again so
     // its caption can say when the queue will come back for it.
     _publish();
+  }
+
+  void _rescheduleRetries() {
+    final pending = _retryTimers.keys.toList();
+    for (final id in pending) {
+      _retryTimers.remove(id)?.cancel();
+    }
+    pending.forEach(_scheduleRetry);
   }
 
   /// Whether [id] is waiting out an automatic retry.

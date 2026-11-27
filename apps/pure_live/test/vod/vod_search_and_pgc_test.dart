@@ -313,6 +313,74 @@ void main() {
   });
 
   group('the cinema catalogues', () {
+    test('an account change drops the old catalogue and accepts a fresh walk', () async {
+      final oldAccount = Completer<String>();
+      var calls = 0;
+      http.route('pgc/page/web', (url) async {
+        calls += 1;
+        if (calls == 1) {
+          return await oldAccount.future.then(
+            (_) => _ok(
+              jsonEncode({
+                'code': 0,
+                'data': {
+                  'items': [
+                    {'season_id': 1, 'season_title': '旧账号'},
+                  ],
+                  'coursor': 12,
+                  'has_next': true,
+                },
+              }),
+            ),
+          );
+        }
+        return _ok(
+          jsonEncode({
+            'code': 0,
+            'data': {
+              'items': [
+                {'season_id': 2, 'season_title': '新账号'},
+              ],
+              'coursor': 24,
+              'has_next': false,
+            },
+          }),
+        );
+      });
+      final container = containerWith();
+      final notifier = container.read(vodPgcProvider.notifier);
+      final flying = notifier.open(1);
+      await _settle();
+      expect(notifier.of(1).loading, isTrue);
+
+      container.updateOverrides([
+        vodClientProvider.overrideWithValue(
+          BilibiliVodClient(http, cookie: 'SESSDATA=new', log: appLog.forCategory('vod.api')),
+        ),
+      ]);
+      await _settle();
+      expect(container.read(vodPgcProvider), isEmpty);
+      await notifier.open(1);
+      expect(notifier.of(1).seasons.single.seasonId, 2);
+
+      oldAccount.complete(
+        jsonEncode({
+          'code': 0,
+          'data': {
+            'items': [
+              {'season_id': 1, 'season_title': '旧账号'},
+            ],
+            'coursor': 12,
+            'has_next': true,
+          },
+        }),
+      );
+      await flying;
+      await _settle();
+      expect(notifier.of(1).seasons.single.seasonId, 2);
+      expect(notifier.of(1).loading, isFalse);
+    });
+
     test('a catalogue opens, walks its cursor and ends where the cursor repeats', () async {
       var call = 0;
       http.route('pgc/page/web', (url) async {

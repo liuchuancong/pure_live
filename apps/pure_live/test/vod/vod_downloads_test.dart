@@ -245,6 +245,10 @@ void main() {
     final stub = _DownloadHttp()..handlers['/x/player/playurl'] = (_) => throw StateError('offline');
     final container = ProviderContainer(overrides: [vodClientProvider.overrideWithValue(BilibiliVodClient(stub))]);
     addTearDown(container.dispose);
+    addTearDown(() {
+      container.read(vodDownloadRetryProvider.notifier).select(0);
+      container.read(vodDownloadRetryDelayProvider.notifier).select(10);
+    });
     container.read(vodDownloadRetryProvider.notifier).select(1);
     final controller = container.read(vodDownloadsProvider.notifier);
     await controller.resume(failed.id);
@@ -255,6 +259,53 @@ void main() {
 
     expect(controller.hasPendingRetry(failed.id), isFalse);
     expect(container.read(vodDownloadsProvider).single.phase, VodDownloadPhase.failed);
+  });
+
+  test('turning retries off cancels the waiting row', () async {
+    final failed = item('BV1test:9001', phase: VodDownloadPhase.failed);
+    final stub = _DownloadHttp()..handlers['/x/player/playurl'] = (_) => throw StateError('offline');
+    await StoragePrefs.setString(kVodDownloadsKey, jsonEncode([failed.toJson()]));
+    final container = ProviderContainer(overrides: [vodClientProvider.overrideWithValue(BilibiliVodClient(stub))]);
+    addTearDown(container.dispose);
+    addTearDown(() {
+      container.read(vodDownloadRetryProvider.notifier).select(0);
+      container.read(vodDownloadRetryDelayProvider.notifier).select(10);
+    });
+    container.read(vodDownloadRetryProvider.notifier).select(1);
+    final controller = container.read(vodDownloadsProvider.notifier);
+    await controller.resume(failed.id);
+    await pumpEventQueue();
+    expect(controller.hasPendingRetry(failed.id), isTrue);
+
+    container.read(vodDownloadRetryProvider.notifier).select(0);
+
+    expect(controller.hasPendingRetry(failed.id), isFalse);
+    expect(container.read(vodDownloadsProvider).single.phase, VodDownloadPhase.failed);
+    expect(stub.seen.where((request) => request.url.path == '/x/player/playurl'), hasLength(1));
+  });
+
+  test('a shorter retry delay reschedules the waiting row', () async {
+    final failed = item('BV1test:9001', phase: VodDownloadPhase.failed);
+    final stub = _DownloadHttp()..handlers['/x/player/playurl'] = (_) => throw StateError('offline');
+    await StoragePrefs.setString(kVodDownloadsKey, jsonEncode([failed.toJson()]));
+    final container = ProviderContainer(overrides: [vodClientProvider.overrideWithValue(BilibiliVodClient(stub))]);
+    addTearDown(container.dispose);
+    addTearDown(() {
+      container.read(vodDownloadRetryProvider.notifier).select(0);
+      container.read(vodDownloadRetryDelayProvider.notifier).select(10);
+    });
+    container.read(vodDownloadRetryProvider.notifier).select(1);
+    container.read(vodDownloadRetryDelayProvider.notifier).select(60);
+    final controller = container.read(vodDownloadsProvider.notifier);
+    await controller.resume(failed.id);
+    await pumpEventQueue();
+    expect(controller.hasPendingRetry(failed.id), isTrue);
+
+    container.read(vodDownloadRetryDelayProvider.notifier).select(5);
+    await Future<void>.delayed(const Duration(milliseconds: 5200));
+    await pumpEventQueue();
+
+    expect(stub.seen.where((request) => request.url.path == '/x/player/playurl'), hasLength(2));
   });
 
   test('a cinema episode task survives a JSON round trip and is found by its ep key', () {

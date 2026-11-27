@@ -580,3 +580,12 @@ Windows 窗口全屏入口（第十五轮改）：播放行「全屏｜窗口全
   - **配置与主要文件**：无新增 Slang key、依赖或主题 token；跳过点偏好键由整稿键扩展为分P键，并保留旧键读取。修改 `modules/vod/controller/vod_controller.dart`、`vod_library.dart`、`modules/vod/pages/vod_page.dart`、`vod_season_page.dart`、`vod_video_page.dart`、`test/vod/vod_library_history_test.dart`、`vod_signed_walks_test.dart` 与本台账；三个页面既有 `PageLayoutScope` 并行改动未纳入本轮。
   - **验证**：本轮 Dart 文件仅做单文件格式化；App `dart analyze lib test` 为 **No issues found**；`flutter test --no-pub test/vod` **104/104** 通过，全量 `flutter test --no-pub` **1367/1367** 通过。新增回归覆盖分P跳过点隔离与旧记录回退、零秒续播点、最后一集不等于已完成、账号切换浏览源与迟到响应隔离。
   - **多平台与限制**：修复位于 VOD 状态与播放页逻辑，不区分桌面、平板、手机、TV 或浅色/深色/自定义主题。未构建 APK/桌面产物、未截图或运行 UI，未做真实多P播放结束、剧集切集、账号慢请求、TV 遥控器和读屏验收；自动测试不能替代这些运行时验收。DASH 音视频轨下载仍不在本轮范围。
+
+- 2026-11-28：第九十六轮（Bilibili 分区/影视账号重载、PGC 迟到响应与下载重试设置）⇒
+  - **页面账号重载**：已打开的分区页和影视页监听 VOD 客户端变化，自动重新请求当前分区或当前影视分类；页面只观看 feed 状态，不直接承担请求代次管理。
+  - **PGC 账号隔离**：影视控制器随账号变化清空全部目录缓存并推进请求代次，旧账号的成功或失败响应不能覆盖新账号目录。
+  - **下载重试设置**：关闭自动重试会取消全部等待中的重试计时器；调整重试间隔会按新值重新排程；计时器触发时再次校验当前重试次数上限。
+  - **参考结论**：核对 newBV 的 `PlayRelated` 与 PGC 详情链路后确认影视详情不产生相关视频列表，空列表会回退下一集/结束行为；PureLive 现有下一集语义已一致，未新增猜测接口或把 PGC `aid` 当作 `bvid` 请求。
+  - **配置与主要文件**：无新增持久化配置、Slang key、依赖或主题 token。修改 `modules/vod/controller/vod_pgc.dart`、`vod_downloads.dart`、`modules/vod/pages/vod_regions_page.dart`、`vod_pgc_page.dart`、`test/vod/vod_search_and_pgc_test.dart`、`vod_downloads_test.dart`、新增 `test/vod/vod_account_reload_test.dart` 与本台账；两个页面既有 `PageLayoutScope` 并行改动未纳入本轮。
+  - **验证**：本轮 Dart 文件仅做单文件格式化；App `dart analyze lib test` 为 **No issues found**；`flutter test --no-pub test/vod` **109/109** 通过。新增回归覆盖分区/影视页面账号切换重载、PGC 旧账号迟到成功隔离、关闭重试取消等待、缩短间隔后按新值重试。
+  - **多平台与限制**：修复位于 VOD 页面监听、控制器状态和下载计时器，不区分桌面、平板、手机、TV 或浅色/深色/自定义主题。未构建 APK/桌面产物、未截图或运行 UI，未做真实账号切换慢网、电视遥控器、触控、大字号和读屏验收；自动测试不能替代这些运行时验收。DASH 音视频轨下载仍不在本轮范围。

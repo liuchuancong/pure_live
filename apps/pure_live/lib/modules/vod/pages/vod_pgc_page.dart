@@ -8,6 +8,7 @@ import 'package:live_cache/live_cache.dart' show ImageCachePolicies;
 import 'package:live_vod/live_vod.dart';
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/modules/vod/controller/vod_controller.dart' show vodClientProvider;
 import 'package:pure_live/modules/vod/controller/vod_library.dart' show VodSeasonProgress, vodSeasonProgressProvider;
 import 'package:pure_live/modules/vod/controller/vod_pgc.dart';
 import 'package:pure_live/modules/vod/widgets/vod_toolbar.dart' show VodFeedToolbar, kVodFeedTabsStyle;
@@ -85,6 +86,7 @@ final class _VodPgcPageState extends ConsumerState<VodPgcPage> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen(vodClientProvider, (_, _) => _ensure(_type));
     final t = context.t;
     final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
     // The one series the viewer last left unfinished: a single card above the

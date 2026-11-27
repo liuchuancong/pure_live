@@ -28,8 +28,14 @@ VodSeasonFeedState _seasonFeedInitial() =>
 /// the next one asks with, and the walk ends when the catalogue says so or
 /// when a cursor repeats (a catalogue cannot be walked in place).
 final class VodPgcController extends Notifier<Map<int, VodSeasonFeedState>> {
+  int _generation = 0;
+
   @override
-  Map<int, VodSeasonFeedState> build() => const {};
+  Map<int, VodSeasonFeedState> build() {
+    ref.watch(vodClientProvider);
+    _generation++;
+    return const {};
+  }
 
   /// The catalogue of [type], or the empty page before it is read.
   VodSeasonFeedState of(int type) => state[type] ?? _seasonFeedInitial();
@@ -57,10 +63,11 @@ final class VodPgcController extends Notifier<Map<int, VodSeasonFeedState>> {
   Future<void> _load(int type, int cursor) async {
     final current = of(type);
     if (current.loading) return;
+    final generation = _generation;
     state = {...state, type: _with(current, loading: true, clearError: true)};
     try {
       final answer = await ref.read(vodClientProvider).pgcFeed(type: type, cursor: cursor);
-      if (!ref.mounted) return;
+      if (!ref.mounted || generation != _generation) return;
       final open = state[type];
       if (open == null) return;
       final seasons = cursor == 0 ? answer.seasons : [...open.seasons];
@@ -80,7 +87,7 @@ final class VodPgcController extends Notifier<Map<int, VodSeasonFeedState>> {
         ),
       };
     } on Object catch (failure) {
-      if (!ref.mounted) return;
+      if (!ref.mounted || generation != _generation) return;
       final open = state[type];
       if (open == null) return;
       state = {

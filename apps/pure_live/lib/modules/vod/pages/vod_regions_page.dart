@@ -125,6 +125,7 @@ final class _VodRegionsPageState extends ConsumerState<VodRegionsPage> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen(vodClientProvider, (_, _) => _ensureFeed(_key));
     final t = context.t;
     final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
     return Column(
