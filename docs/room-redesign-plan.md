@@ -524,3 +524,11 @@ Windows 窗口全屏入口（第十五轮改）：播放行「全屏｜窗口全
   - **配置与主要文件**：无新增持久化配置、Slang key、依赖或主题 token；请求代次、写入互斥和分页终止均为运行时状态。修改 `modules/vod/controller/vod_controller.dart`、`modules/vod/controller/vod_social.dart`、`modules/vod/pages/vod_uploader_page.dart`、`test/vod/vod_search_and_pgc_test.dart`、`vod_signed_walks_test.dart`、`vod_social_test.dart` 与本台账；共享工作树其他并行改动保留。
   - **验证**：六个 Dart 文件仅做单文件格式化；App `dart analyze lib` 为 **No issues found**；`flutter test test/vod` **85/85** 通过。新增回归覆盖搜索失败页重试、搜索与 UP 账号切换迟到响应、UP 重复页终止、UP 失败页重试，以及点赞/关注在途重复触发。
   - **多平台与限制**：沿用现有 desen_ui 和浅色/深色/自定义主题；UP 头部按 420px 内容宽降级，桌面和平板保持原布局。未构建 APK/桌面产物、未截图或运行 UI，未做真实账号切换、慢网连续点击、窄屏/大字体/TV/触控/读屏验收；自动测试不能替代这些运行时验收。Bilibili 原生收藏、投币、评论写入和 DASH 轨下载仍不在本轮范围。
+
+- 2026-11-27：第九十轮（Bilibili 评论账号隔离、失败页重试与下载主动停止）⇒
+  - **评论账号隔离**：评论控制器监听 VOD 客户端身份变化并递增账号代次；切换账号时清空按视频缓存的评论，旧账号迟到的成功或失败响应均不能写回新状态。每个视频持有独立请求代次，不同视频的并发读取互不取消。
+  - **评论分页与排序**：新增独立 `retry()` 重试当前失败页并保留此前评论，失败不再把 `hasMore` 置为 false；手动刷新仍从第一页开始。评论请求进行中禁用最热/最新切换，避免点击被静默忽略。
+  - **下载主动停止**：暂停或删除正在运行的任务时，连接关闭异常不再发布为失败，也不调度自动重试；最终状态统一由停止意图转为 paused 或删除记录。排队任务移除无效的“恢复”按钮，仅暂停任务显示该操作。
+  - **配置与主要文件**：无新增持久化配置、Slang key、依赖或主题 token；评论账号/请求代次和下载停止意图均为运行时状态。修改 `modules/vod/controller/vod_social.dart`、`modules/vod/controller/vod_downloads.dart`、`modules/vod/pages/vod_video_page.dart`、`modules/vod/pages/vod_downloads_page.dart`、`test/vod/vod_social_test.dart` 与本台账；下载页其他并行改动未纳入本轮。
+  - **验证**：五个 Dart 文件仅做单文件格式化；App `dart analyze lib` 为 **No issues found**；`flutter test --no-pub test/vod` **88/88** 通过；本轮精确路径 `git diff --check` 无空白错误。新增评论失败页重试、第二页失败保留第一页、跨视频并发读取、账号切换迟到响应四项回归。
+  - **多平台与限制**：修复位于 VOD 运行时和现有下载操作行，不区分桌面、平板、手机、TV 或浅色/深色/自定义主题。未构建 APK/桌面产物、未截图或运行 UI，未做真实账号切换、慢网暂停/删除、排队任务操作、大字体/TV/触控/读屏验收；自动测试不能替代这些运行时验收。Bilibili 原生收藏、投币、评论写入和 DASH 轨下载仍不在本轮范围。

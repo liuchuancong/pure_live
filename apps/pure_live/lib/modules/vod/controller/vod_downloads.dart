@@ -782,7 +782,7 @@ final class VodDownloadsController extends Notifier<List<VodDownloadItem>> {
       if (_stops.containsKey(id)) throw const _Stopped();
       await _saveDanmaku(id, file, item.cid, generation);
     } on Object catch (error) {
-      if (_isCurrent(id, generation) && error is! _Stopped && !stopped) {
+      if (_isCurrent(id, generation) && error is! _Stopped && !stopped && !_stops.containsKey(id)) {
         item = item.copyWith(received: received, speed: 0, phase: VodDownloadPhase.failed, error: '$error');
         _replace(item);
         _scheduleRetry(item.id);

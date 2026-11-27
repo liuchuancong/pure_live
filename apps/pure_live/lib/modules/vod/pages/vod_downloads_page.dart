@@ -182,9 +182,7 @@ Widget _vodTaskCard(BuildContext context, WidgetRef ref, VodDownloadItem task, {
     playable: task.phase == VodDownloadPhase.done,
     actions: DownloadRowActions(
       onPause: task.phase == VodDownloadPhase.running ? () => unawaited(controller.pause(task.id)) : null,
-      onResume: task.phase == VodDownloadPhase.queued || task.phase == VodDownloadPhase.paused
-          ? () => unawaited(controller.resume(task.id))
-          : null,
+      onResume: task.phase == VodDownloadPhase.paused ? () => unawaited(controller.resume(task.id)) : null,
       onRetry: task.phase == VodDownloadPhase.failed ? () => unawaited(controller.resume(task.id)) : null,
       onPlay: task.phase == VodDownloadPhase.done ? () => unawaited(_openVodPreview(context, ref, task)) : null,
     ),

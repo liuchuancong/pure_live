@@ -4492,7 +4492,7 @@ final class _CommentsSectionState extends ConsumerState<_CommentsSection> {
             // The reference's two orders; a pick restarts from the first page.
             DsSegmentedControl<int>(
               value: state?.sort ?? VodCommentsController.sortHot,
-              onChanged: (sort) => unawaited(controller.setSort(widget.aid, sort)),
+              onChanged: (state?.loading ?? false) ? null : (sort) => unawaited(controller.setSort(widget.aid, sort)),
               semanticLabel: t.vod.comments,
               segments: [
                 DsSegment(value: VodCommentsController.sortHot, label: Text(t.vod.commentsHot)),
@@ -4509,7 +4509,7 @@ final class _CommentsSectionState extends ConsumerState<_CommentsSection> {
             action: DsButton(
               variant: DsButtonVariant.secondary,
               size: DsSize.sm,
-              onPressed: () => unawaited(controller.refresh(widget.aid)),
+              onPressed: () => unawaited(controller.retry(widget.aid)),
               child: Text(t.vod.retry),
             ),
           ),

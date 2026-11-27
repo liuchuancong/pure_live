@@ -225,8 +225,16 @@ final class VodCommentsController extends Notifier<Map<int, VodCommentsState>> {
   static const int sortHot = 1;
   static const int sortNewest = 2;
 
+  int _generation = 0;
+  final Map<int, int> _requests = {};
+
   @override
-  Map<int, VodCommentsState> build() => const {};
+  Map<int, VodCommentsState> build() {
+    ref.watch(vodClientProvider);
+    _generation++;
+    _requests.clear();
+    return const {};
+  }
 
   /// The comments of [aid], or the empty page before they are read.
   VodCommentsState of(int aid) => state[aid] ?? _commentsInitial();
@@ -245,8 +253,11 @@ final class VodCommentsController extends Notifier<Map<int, VodCommentsState>> {
     await _load(aid, comments.nextPage);
   }
 
-  /// Reads the first page again (the retry button).
+  /// Reads the first page again as a manual refresh.
   Future<void> refresh(int aid) => _load(aid, 1);
+
+  /// Retries the page that failed without discarding earlier comments.
+  Future<void> retry(int aid) => _load(aid, of(aid).nextPage);
 
   /// Reads [aid]'s comments in [sort] order, from the first page.
   Future<void> setSort(int aid, int sort) async {
@@ -263,12 +274,14 @@ final class VodCommentsController extends Notifier<Map<int, VodCommentsState>> {
     final current = of(aid);
     if (current.loading) return;
     final sort = current.sort;
+    final generation = ++_generation;
+    _requests[aid] = generation;
     state = {...state, aid: _with(current, loading: true, clearError: true)};
     try {
       final answer = await ref.read(vodClientProvider).comments(aid, page: page, sort: sort);
-      if (!ref.mounted) return;
+      if (!ref.mounted || _requests[aid] != generation) return;
       final open = state[aid];
-      if (open == null) return;
+      if (open == null || open.sort != sort) return;
       final comments = page == 1 ? answer.comments : [...open.comments];
       if (page > 1) {
         final seen = {for (final comment in comments) comment.id};
@@ -288,17 +301,12 @@ final class VodCommentsController extends Notifier<Map<int, VodCommentsState>> {
         ),
       };
     } on Object catch (failure) {
-      if (!ref.mounted) return;
+      if (!ref.mounted || _requests[aid] != generation) return;
       final open = state[aid];
-      if (open == null) return;
+      if (open == null || open.sort != sort) return;
       state = {
         ...state,
-        aid: _with(
-          open,
-          loading: false,
-          hasMore: false,
-          error: failure is VodFailure ? failure : VodFailure(failure.toString()),
-        ),
+        aid: _with(open, loading: false, error: failure is VodFailure ? failure : VodFailure(failure.toString())),
       };
     }
   }

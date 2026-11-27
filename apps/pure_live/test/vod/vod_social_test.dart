@@ -257,7 +257,7 @@ void main() {
       expect(stub.seen.length, 4);
     });
 
-    test('a failure names itself and the retry reads the head again', () async {
+    test('a failure names itself and the retry reads the failed page', () async {
       final stub = _RouteStub()..routes['/x/v2/reply'] = '{"code":-404,"message":"啥都木有"}';
       final container = signedIn(stub);
       addTearDown(container.dispose);
@@ -267,10 +267,9 @@ void main() {
       await controller.open(3);
       var page = controller.of(3);
       expect(page.error, isNotNull);
-      expect(page.hasMore, isFalse);
+      expect(page.hasMore, isTrue);
       expect(page.loading, isFalse);
 
-      // The retry reads the first page again.
       stub.routes['/x/v2/reply'] = jsonReply(
         replies: [
           {
@@ -281,10 +280,113 @@ void main() {
         ],
         count: 1,
       );
-      await controller.refresh(3);
+      await controller.retry(3);
       page = controller.of(3);
       expect(page.error, isNull);
       expect(page.comments.single.id, 4);
+      expect(stub.seen.last.url.queryParameters['pn'], '1');
+    });
+
+    test('a failed later page retries itself and keeps earlier comments', () async {
+      final stub = _RouteStub();
+      var secondAttempts = 0;
+      stub.handlers['/x/v2/reply'] = (request) {
+        final page = int.parse(request.url.queryParameters['pn'] ?? '1');
+        if (page == 2 && ++secondAttempts == 1) return '{"code":-404,"message":"第二页故障"}';
+        return jsonReply(
+          replies: [
+            {
+              'rpid': page,
+              'member': {'uname': '第$page页'},
+              'content': {'message': '评论$page'},
+            },
+          ],
+          count: 100,
+        );
+      };
+      final container = signedIn(stub);
+      addTearDown(container.dispose);
+      container.listen(vodCommentsProvider, (_, _) {});
+      final controller = container.read(vodCommentsProvider.notifier);
+
+      await controller.open(9);
+      await controller.loadMore(9);
+      expect(controller.of(9).comments.map((comment) => comment.id), [1]);
+      expect(controller.of(9).nextPage, 2);
+      expect(controller.of(9).error, isNotNull);
+
+      await controller.retry(9);
+      expect(controller.of(9).comments.map((comment) => comment.id), [1, 2]);
+      expect(controller.of(9).nextPage, 3);
+      expect(controller.of(9).error, isNull);
+      expect(secondAttempts, 2);
+    });
+
+    test('different videos finish their own in-flight reads', () async {
+      final stub = _RouteStub();
+      final gate = Completer<String>();
+      stub.hold('/x/v2/reply', gate);
+      stub.routes['/x/v2/reply'] = jsonReply(
+        replies: [
+          {
+            'rpid': 8,
+            'member': {'uname': '甲'},
+            'content': {'message': '同一条接口'},
+          },
+        ],
+        count: 1,
+      );
+      final container = signedIn(stub);
+      addTearDown(container.dispose);
+      container.listen(vodCommentsProvider, (_, _) {});
+      final controller = container.read(vodCommentsProvider.notifier);
+
+      final first = controller.open(9);
+      final second = controller.open(10);
+      await pumpEventQueue();
+      gate.complete(stub.routes['/x/v2/reply']!);
+      await Future.wait([first, second]);
+
+      expect(controller.of(9).comments.single.id, 8);
+      expect(controller.of(9).loading, isFalse);
+      expect(controller.of(10).comments.single.id, 8);
+      expect(controller.of(10).loading, isFalse);
+    });
+
+    test('an account change clears comments and drains the old response', () async {
+      final stub = _RouteStub();
+      final gate = Completer<String>();
+      stub.hold('/x/v2/reply', gate);
+      stub.routes['/x/v2/reply'] = jsonReply(
+        replies: [
+          {
+            'rpid': 8,
+            'member': {'uname': '旧账号'},
+            'content': {'message': '旧评论'},
+          },
+        ],
+        count: 1,
+      );
+      final container = ProviderContainer(
+        overrides: [vodClientProvider.overrideWith((ref) => BilibiliVodClient(stub, cookie: 'SESSDATA=old'))],
+      );
+      addTearDown(container.dispose);
+      container.listen(vodCommentsProvider, (_, _) {});
+      final controller = container.read(vodCommentsProvider.notifier);
+      final flying = controller.open(9);
+      await pumpEventQueue();
+
+      container.updateOverrides([
+        vodClientProvider.overrideWith((ref) => BilibiliVodClient(stub, cookie: 'SESSDATA=new')),
+      ]);
+      container.invalidate(vodCommentsProvider);
+      await pumpEventQueue();
+      expect(container.read(vodCommentsProvider), isEmpty);
+
+      gate.complete(stub.routes['/x/v2/reply']!);
+      await flying;
+      await pumpEventQueue();
+      expect(container.read(vodCommentsProvider), isEmpty);
     });
   });
 }
@@ -297,6 +399,7 @@ String jsonReply({required List<Map<String, Object?>> replies, required int coun
 /// stale-read race.
 final class _RouteStub implements LiveHttp {
   final Map<String, String> routes = {};
+  final Map<String, String Function(LiveRequest)> handlers = {};
   final List<LiveRequest> seen = [];
   final Map<String, Completer<String>> _gates = {};
 
@@ -305,7 +408,7 @@ final class _RouteStub implements LiveHttp {
   @override
   Future<LiveResponse> send(LiveRequest request) async {
     seen.add(request);
-    final body = routes[request.url.path];
+    final body = handlers[request.url.path]?.call(request) ?? routes[request.url.path];
     if (body == null) throw StateError('no answer for ${request.url.path}');
     final gate = _gates[request.url.path];
     final answer = gate == null ? body : await gate.future;
