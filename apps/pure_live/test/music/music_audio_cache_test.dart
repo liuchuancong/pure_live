@@ -251,6 +251,19 @@ void main() {
       expect(again.uri.isScheme('file'), isTrue);
     });
 
+    test('a rejected response is closed and never leaves a partial cache file', () async {
+      final wrapped = wearing();
+      http.statusCode = 403;
+      inner.answer = audio.TrackSource(uri: Uri.parse('https://cdn.example/forbidden.mp3'));
+
+      final resolved = await wrapped.resolveTrackSource(_track(), quality: audio.MusicQuality.k128);
+      expect(resolved.isLocal, isFalse);
+      await _until(() => http.closes == 1);
+      expect(http.closes, 1);
+      expect(File('${root.path}/music-audio/kw_977_128k.audio').existsSync(), isFalse);
+      expect(File('${root.path}/music-audio/kw_977_128k.audio.part').existsSync(), isFalse);
+    });
+
     test('a moved cache directory is read instead of the previous root', () async {
       Future<Directory> directoryWithBytes(int size) async {
         final directory = await root.createTemp('cache-move');
@@ -434,13 +447,15 @@ final class _StubSource extends audio.MusicSource {
 final class _StubHttp implements LiveHttp {
   Uint8List? body;
   int opens = 0;
+  int closes = 0;
+  int statusCode = 200;
   bool holdOpen = false;
   bool cancelled = false;
 
   @override
   Future<LiveStreamedResponse> open(LiveRequest request) async {
     opens += 1;
-    if (!holdOpen) return _StubStreamed(body ?? Uint8List(0), null);
+    if (!holdOpen) return _StubStreamed(body ?? Uint8List(0), null, statusCode, () => closes++);
     final controller = StreamController<Uint8List>();
     unawaited(
       request.cancelToken.whenCancel.then((_) {
@@ -449,7 +464,7 @@ final class _StubHttp implements LiveHttp {
         unawaited(controller.close());
       }),
     );
-    return _StubStreamed(null, controller.stream);
+    return _StubStreamed(null, controller.stream, 200, () => closes++);
   }
 
   @override
@@ -461,13 +476,14 @@ final class _StubHttp implements LiveHttp {
 
 /// A streamed answer over an in-memory body.
 final class _StubStreamed implements LiveStreamedResponse {
-  _StubStreamed(this.body, this._stream);
+  _StubStreamed(this.body, this._stream, this.statusCode, this._onClose);
 
   final Uint8List? body;
   final Stream<Uint8List>? _stream;
+  final void Function() _onClose;
 
   @override
-  int get statusCode => 200;
+  final int statusCode;
 
   @override
   Map<String, String> get headers => const {};
@@ -476,5 +492,5 @@ final class _StubStreamed implements LiveStreamedResponse {
   Stream<Uint8List> get stream => _stream ?? Stream<Uint8List>.value(body ?? Uint8List(0));
 
   @override
-  Future<void> close() async {}
+  Future<void> close() async => _onClose();
 }

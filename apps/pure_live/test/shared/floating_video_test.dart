@@ -55,22 +55,67 @@ void main() {
     addTearDown(tester.view.reset);
     await pumpApp(tester);
 
-    final first = FloatingVideoWindow.show(await handoff());
+    var firstCloses = 0;
+    var secondCloses = 0;
+    final first = FloatingVideoWindow.show(
+      FloatingVideoHandoff(
+        title: '第一个视频',
+        open: (kernel) async => throw StateError('no engine in tests'),
+        onClose: (_, {required reopen}) => firstCloses++,
+      ),
+    );
     await tester.pump();
     expect(await first, isTrue);
     await tester.pump();
 
-    final second = FloatingVideoWindow.show(await handoff());
+    final second = FloatingVideoWindow.show(
+      FloatingVideoHandoff(
+        title: '第二个视频',
+        open: (kernel) async => throw StateError('no engine in tests'),
+        onClose: (_, {required reopen}) => secondCloses++,
+      ),
+    );
     await tester.pump();
     await tester.pump();
     expect(await second, isTrue);
     await tester.pump();
-    // One window at a time: the old entry went with the supersede.
+    // One window at a time: the old entry went with the supersede, and its
+    // later disposal must not erase the replacement's close callback.
     expect(find.byType(FloatingVideoView), findsOneWidget);
+    expect(firstCloses, 1);
 
     FloatingVideoWindow.dismiss();
     await tester.pump();
     expect(FloatingVideoWindow.isShowing, isFalse);
+    expect(secondCloses, 1);
+  });
+
+  testWidgets('an inserted entry is removed before its first build when replaced', (tester) async {
+    tester.view.physicalSize = const Size(1200, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await pumpApp(tester);
+
+    final first = FloatingVideoWindow.show(
+      FloatingVideoHandoff(title: '尚未构建的旧窗口', open: (kernel) async => throw StateError('no engine in tests')),
+    );
+    late Future<bool> second;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      second = FloatingVideoWindow.show(
+        FloatingVideoHandoff(title: '取而代之的新窗口', open: (kernel) async => throw StateError('no engine in tests')),
+      );
+    });
+    await tester.pump();
+    expect(await first, isTrue);
+    await tester.pump();
+    expect(await second, isTrue);
+    await tester.pump();
+
+    expect(find.byType(FloatingVideoView), findsOneWidget);
+    expect(find.text('取而代之的新窗口'), findsNWidgets(2));
+    expect(find.text('尚未构建的旧窗口'), findsNothing);
+    FloatingVideoWindow.dismiss();
+    await tester.pump();
   });
 
   testWidgets('a handoff waiting for its frame is replaced by the newest one', (tester) async {
@@ -96,7 +141,7 @@ void main() {
       ),
     );
     await tester.pump();
-    expect(await first, isTrue);
+    expect(await first, isFalse);
     expect(await second, isTrue);
     await tester.pump();
 

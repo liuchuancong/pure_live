@@ -120,6 +120,13 @@ final class _ApiAnswer {
   final Object? body;
 }
 
+final class _ApiSubscription {
+  _ApiSubscription(this.keys, this.status);
+
+  final List<String> keys;
+  Map<String, Object?> status;
+}
+
 /// lx-music's local open API: an HTTP endpoint other devices and scripts use
 /// to drive and read the player. The routes are the reference's (`/status`,
 /// `/lyric`, `/lyric-all`, `/toggle`, `/play`, `/pause`, `/skip`, `/back`,
@@ -146,8 +153,7 @@ final class MusicOpenApi {
   final MusicFavouritesController _favourites;
   final bool Function(audio.MusicTrack track) _isFavourite;
   HttpServer? _server;
-  final Map<HttpResponse, List<String>> _subscribers = {};
-  Map<String, Object?> _lastStatus = const {};
+  final Map<HttpResponse, _ApiSubscription> _subscribers = {};
   audio.LyricDocument? _lyric;
   String? _lyricKey;
   bool _pushing = false;
@@ -299,21 +305,22 @@ final class MusicOpenApi {
   Future<void> _serveSubscription(HttpRequest request) async {
     final response = request.response;
     final keys = musicOpenApiParseFilter(request.uri.queryParameters['filter']);
-    response.statusCode = 200;
-    response.headers
-      ..contentType = ContentType('text', 'event-stream')
-      ..add('Connection', 'keep-alive')
-      ..add('Cache-Control', 'no-cache')
-      ..add('Access-Control-Allow-Origin', '*');
-    _subscribers[response] = keys;
-    unawaited(response.done.then((_) => _subscribers.remove(response)));
+    response
+      ..statusCode = 200
+      ..bufferOutput = false
+      ..headers.chunkedTransferEncoding = true
+      ..headers.contentType = ContentType('text', 'event-stream')
+      ..headers.add('Connection', 'keep-alive')
+      ..headers.add('Cache-Control', 'no-cache')
+      ..headers.add('Access-Control-Allow-Origin', '*');
     final status = await _playerStatus();
-    _lastStatus = status;
+    _subscribers[response] = _ApiSubscription(keys, status);
+    unawaited(response.done.then((_) => _subscribers.remove(response)));
     response.write(_eventsText(keys, status));
     await response.flush();
   }
 
-  /// Pushes what changed since the last write to every subscriber; the
+  /// Pushes what changed since each subscriber's own last snapshot; the
   /// player and the favourites both call in. Coalesces a change arriving
   /// while a push is still writing — position ticks outpace the lyric read.
   void pushPlayerStatus() {
@@ -331,14 +338,16 @@ final class MusicOpenApi {
       while (true) {
         _pushPending = false;
         final status = await _playerStatus();
-        final changed = <String, Object?>{
-          for (final entry in status.entries)
-            if (_lastStatus[entry.key] != entry.value) entry.key: entry.value,
-        };
-        _lastStatus = status;
-        if (changed.isNotEmpty && _subscribers.isNotEmpty) {
+        if (_subscribers.isNotEmpty) {
           for (final subscriber in _subscribers.keys.toList(growable: false)) {
-            final text = _eventsText(_subscribers[subscriber]!, changed);
+            final subscription = _subscribers[subscriber];
+            if (subscription == null) continue;
+            final changed = <String, Object?>{
+              for (final entry in status.entries)
+                if (subscription.status[entry.key] != entry.value) entry.key: entry.value,
+            };
+            subscription.status = status;
+            final text = _eventsText(subscription.keys, changed);
             if (text.isEmpty) continue;
             try {
               subscriber.write(text);

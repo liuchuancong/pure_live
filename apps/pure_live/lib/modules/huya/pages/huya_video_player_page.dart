@@ -764,14 +764,11 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
         resume: handle.position,
         rate: handle.rate,
         muted: handle.muted,
-        open: (kernel) async {
-          final fresh = await kernel.create(
-            config: const PlayerConfig(name: 'floating-video'),
-            preferredBackend: backend,
-          );
-          await fresh.open(source, autoPlay: true);
-          return fresh;
-        },
+        open: (kernel) => kernel.create(
+          source: source,
+          config: PlayerConfig(name: 'floating-video', playbackRate: handle.rate, muted: handle.muted),
+          preferredBackend: backend,
+        ),
         onClose: (position, {required reopen}) {
           // The page is gone by then, so the walk's own store takes the
           // position the same way the controller would have.

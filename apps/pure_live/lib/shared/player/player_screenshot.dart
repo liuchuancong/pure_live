@@ -5,6 +5,8 @@ import 'package:media_core/media_core.dart'
     show PlayerHandle, PlayerHandleLifecycle, PlayerScreenshot, ScreenshotOptions, ScreenshotWriter;
 import 'package:pure_live/app/logging/app_log.dart' show appLog;
 
+final Expando<Future<File?>> _captures = Expando<Future<File?>>();
+
 /// Saves the frame a player is showing into [folder] and answers the file it
 /// wrote, or null when nothing landed.
 ///
@@ -19,6 +21,16 @@ import 'package:pure_live/app/logging/app_log.dart' show appLog;
 /// one folder produce names a viewer can tell apart.
 Future<File?> capturePlayerFrame(PlayerHandle handle, Directory folder, {required String prefix}) async {
   if (!handle.canCaptureScreenshot) return null;
+  final pending = _captures[handle];
+  if (pending != null) return await pending;
+  final operation = _capturePlayerFrame(handle, folder, prefix: prefix);
+  _captures[handle] = operation;
+  return await operation.whenComplete(() {
+    if (identical(_captures[handle], operation)) _captures[handle] = null;
+  });
+}
+
+Future<File?> _capturePlayerFrame(PlayerHandle handle, Directory folder, {required String prefix}) async {
   try {
     final PlayerScreenshot? shot;
     shot = await handle.captureScreenshot(options: const ScreenshotOptions(timeout: Duration(seconds: 4)));

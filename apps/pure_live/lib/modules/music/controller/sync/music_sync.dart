@@ -92,6 +92,7 @@ final class MusicSyncState {
 /// The sync session's controller.
 final class MusicSyncController extends Notifier<MusicSyncState> {
   MusicSyncClient? _client;
+  int _connectionGeneration = 0;
 
   /// The live client's status pipe; cancelled with the client itself in
   /// [_teardown], so a replaced session leaves no listening tail.
@@ -99,7 +100,10 @@ final class MusicSyncController extends Notifier<MusicSyncState> {
 
   @override
   MusicSyncState build() {
-    ref.onDispose(_teardown);
+    ref.onDispose(() {
+      _connectionGeneration++;
+      unawaited(_teardown());
+    });
     return MusicSyncState(
       host: StoragePrefs.getString(kMusicSyncHostKey) ?? '',
       authCode: StoragePrefs.getString(kMusicSyncAuthCodeKey) ?? '',
@@ -199,6 +203,9 @@ final class MusicSyncController extends Notifier<MusicSyncState> {
 
   /// Connects, auths, opens the socket and wires the handlers.
   Future<void> connect() async {
+    final generation = ++_connectionGeneration;
+    await _teardown();
+    if (generation != _connectionGeneration) return;
     final address = MusicSyncAddress.parse(state.host);
     if (address == null) {
       state = state.copyWith(status: MusicSyncStatus.failed, note: MusicSyncNote.invalidAddress);
@@ -207,7 +214,6 @@ final class MusicSyncController extends Notifier<MusicSyncState> {
     // The reference records the address the moment sync is switched on,
     // whether or not the connection then succeeds.
     unawaited(_recordHostHistory(state.host.trim()));
-    await _teardown();
     final http = ref.read(networkFactoryProvider).create(profile: ClientProfile.api);
     final client = MusicSyncClient(http: http, deviceName: musicSyncDeviceName());
     _client = client;
@@ -215,12 +221,25 @@ final class MusicSyncController extends Notifier<MusicSyncState> {
       if (_client == client) state = state.copyWith(status: status);
     });
     _registerHandlers(client);
+    bool isCurrent() => generation == _connectionGeneration && _client == client;
     try {
       await client.readServerId(address);
+      if (!isCurrent()) {
+        await client.dispose();
+        return;
+      }
       final keyInfo = await client.auth(address, state.authCode, musicSyncReadKeyInfo());
+      if (!isCurrent()) {
+        await client.dispose();
+        return;
+      }
       await musicSyncWriteKeyInfo(keyInfo);
+      if (!isCurrent()) {
+        await client.dispose();
+        return;
+      }
       await client.connect(address, keyInfo);
-      if (_client == client) {
+      if (isCurrent()) {
         state = state.copyWith(
           status: MusicSyncStatus.connected,
           serverName: keyInfo.serverName,
@@ -231,15 +250,25 @@ final class MusicSyncController extends Notifier<MusicSyncState> {
           // ignore: avoid_redundant_argument_values
           note: null,
         );
+      } else {
+        await client.dispose();
       }
     } on Object catch (error) {
-      if (_client == client) state = state.copyWith(status: MusicSyncStatus.failed, message: error.toString());
-      await _teardown();
+      if (isCurrent()) {
+        state = state.copyWith(status: MusicSyncStatus.failed, message: error.toString());
+        await _teardown();
+      } else {
+        await client.dispose();
+      }
     }
   }
 
   /// Closes the session.
-  Future<void> disconnect() => _teardown();
+  Future<void> disconnect() async {
+    final generation = ++_connectionGeneration;
+    await _teardown();
+    if (generation == _connectionGeneration) state = state.copyWith(status: MusicSyncStatus.idle);
+  }
 
   void _registerHandlers(MusicSyncClient client) {
     client

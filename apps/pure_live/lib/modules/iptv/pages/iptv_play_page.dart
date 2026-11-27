@@ -1294,14 +1294,13 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
     final ok = await FloatingVideoWindow.show(
       FloatingVideoHandoff(
         title: channel.entry.name,
-        open: (kernel) async {
-          final fresh = await kernel.create(
-            config: const PlayerConfig(name: 'floating-video'),
-            preferredBackend: backend,
-          );
-          await fresh.open(source, autoPlay: true);
-          return fresh;
-        },
+        rate: handle.rate,
+        muted: handle.muted,
+        open: (kernel) => kernel.create(
+          source: source,
+          config: PlayerConfig(name: 'floating-video', playbackRate: handle.rate, muted: handle.muted),
+          preferredBackend: backend,
+        ),
         onClose: (position, {required reopen}) {
           if (reopen) {
             final root = rootNavigatorKey.currentContext;

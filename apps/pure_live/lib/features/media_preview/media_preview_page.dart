@@ -427,14 +427,11 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
         resume: handle.position,
         rate: handle.rate,
         muted: handle.muted,
-        open: (kernel) async {
-          final fresh = await kernel.create(
-            config: const PlayerConfig(name: 'floating-video'),
-            preferredBackend: backend,
-          );
-          await fresh.open(source, autoPlay: true);
-          return fresh;
-        },
+        open: (kernel) => kernel.create(
+          source: source,
+          config: PlayerConfig(name: 'floating-video', playbackRate: handle.rate, muted: handle.muted),
+          preferredBackend: backend,
+        ),
         onClose: (position, {required reopen}) {
           if (reopen) {
             final root = rootNavigatorKey.currentContext;

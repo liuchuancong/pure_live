@@ -89,29 +89,37 @@ final class FloatingVideoWindow {
   /// "nothing was handed over" and keep its own playback.
   static Future<bool> show(FloatingVideoHandoff handoff) {
     if (_entry != null) {
-      // One at a time: the old window's close path runs first, checkpointing
-      // its position, then this handoff takes the overlay on the next frame.
-      final previous = _activeClose;
-      _activeClose = null;
-      previous?.call();
+      if (_activeClose == null) {
+        _removeEntry();
+      } else {
+        // One at a time: the old window's close path runs first, checkpointing
+        // its position, then this handoff takes the overlay on the next frame.
+        final previous = _activeClose;
+        _activeClose = null;
+        previous?.call();
+      }
     }
     if (_scheduled) {
-      final completer = _showCompleter!;
+      final replaced = _showCompleter!;
       final previous = _handoff;
+      final latest = Completer<bool>();
       _handoff = handoff;
+      _showCompleter = latest;
+      if (!replaced.isCompleted) replaced.complete(false);
       previous?.onClose?.call(previous.resume, reopen: false);
-      return completer.future;
+      return latest.future;
     }
     _scheduled = true;
-    _showCompleter = Completer<bool>();
+    final completer = Completer<bool>();
+    _showCompleter = completer;
     final generation = ++_generation;
-    final completer = _showCompleter!;
     _handoff = handoff;
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      final pending = _showCompleter;
       void abort() {
         _scheduled = false;
-        if (_showCompleter == completer) _showCompleter = null;
-        if (!completer.isCompleted) completer.complete(false);
+        if (_showCompleter == pending) _showCompleter = null;
+        if (pending != null && !pending.isCompleted) pending.complete(false);
       }
 
       if (generation != _generation) {
@@ -136,8 +144,8 @@ final class FloatingVideoWindow {
       overlay.insert(entry);
       _entry = entry;
       _scheduled = false;
-      if (_showCompleter == completer) _showCompleter = null;
-      if (!completer.isCompleted) completer.complete(true);
+      if (_showCompleter == pending) _showCompleter = null;
+      if (pending != null && !pending.isCompleted) pending.complete(true);
     });
     return completer.future;
   }
@@ -164,7 +172,7 @@ final class FloatingVideoWindow {
     final entry = _entry;
     _entry = null;
     _handoff = null;
-    if (entry != null && entry.mounted) entry.remove();
+    if (entry != null) entry.remove();
   }
 
   static FloatingVideoHandoff? _handoff;
@@ -198,20 +206,24 @@ final class _FloatingVideoViewState extends ConsumerState<FloatingVideoView> {
   /// The width the viewer pulled, or null to follow the size preset.
   double? _width;
   Offset? _origin;
+  late final void Function() _closeCallback;
 
   @override
   void initState() {
     super.initState();
     _kernel = ref.read(floatingVideoKernelProvider);
-    FloatingVideoWindow._activeClose = () {
+    _closeCallback = () {
       if (mounted) _close(reopen: false);
     };
+    FloatingVideoWindow._activeClose = _closeCallback;
     unawaited(_open());
   }
 
   @override
   void dispose() {
-    FloatingVideoWindow._activeClose = null;
+    if (identical(FloatingVideoWindow._activeClose, _closeCallback)) {
+      FloatingVideoWindow._activeClose = null;
+    }
     unawaited(_transportSub?.cancel() ?? Future<void>.value());
     unawaited(_geometrySub?.cancel() ?? Future<void>.value());
     final kernel = _kernel;
@@ -230,29 +242,39 @@ final class _FloatingVideoViewState extends ConsumerState<FloatingVideoView> {
     if (handoff == null || kernel == null) return;
     try {
       final handle = await handoff.open(kernel);
-      if (!mounted) {
-        silencePlayer(handle);
-        unawaited(kernel.release(handle.id));
-        return;
+      var published = false;
+      try {
+        if (!mounted) return;
+        final rate = handoff.rate;
+        if (rate != null && rate != 1) await handle.setRate(rate);
+        if (!mounted) return;
+        final muted = handoff.muted;
+        if (muted != null) await handle.setMute(muted: muted);
+        if (!mounted) return;
+        final resume = handoff.resume;
+        if (resume > Duration.zero) await handle.seek(resume);
+        if (!mounted) return;
+        await handle.play();
+        if (!mounted) return;
+        _playing = handle.isPlaying;
+        _transportSub = handle.playbackStream.listen((_) {
+          final now = handle.isPlaying;
+          if (!mounted || now == _playing) return;
+          setState(() => _playing = now);
+        });
+        _geometrySub = handle.geometryController.state.listen((_) {
+          final detected = handle.combinedSnapshot.geometry.aspectRatio;
+          if (!mounted || detected == _aspect) return;
+          setState(() => _aspect = detected);
+        });
+        setState(() => _handle = handle);
+        published = true;
+      } finally {
+        if (!published) {
+          silencePlayer(handle);
+          unawaited(kernel.release(handle.id));
+        }
       }
-      setState(() => _handle = handle);
-      final rate = handoff.rate;
-      if (rate != null && rate != 1) unawaited(handle.setRate(rate));
-      final muted = handoff.muted;
-      if (muted != null) unawaited(handle.setMute(muted: muted));
-      final resume = handoff.resume;
-      if (resume > Duration.zero) unawaited(handle.seek(resume));
-      _playing = handle.isPlaying;
-      _transportSub = handle.playbackStream.listen((_) {
-        final now = handle.isPlaying;
-        if (!mounted || now == _playing) return;
-        setState(() => _playing = now);
-      });
-      _geometrySub = handle.geometryController.state.listen((_) {
-        final detected = handle.combinedSnapshot.geometry.aspectRatio;
-        if (!mounted || detected == _aspect) return;
-        setState(() => _aspect = detected);
-      });
     } on Object {
       if (mounted) setState(() => _failed = true);
     }

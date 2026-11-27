@@ -1249,14 +1249,11 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
         resume: handle.position,
         rate: handle.rate,
         muted: handle.muted,
-        open: (kernel) async {
-          final fresh = await kernel.create(
-            config: const PlayerConfig(name: 'floating-video'),
-            preferredBackend: backend,
-          );
-          await fresh.open(source, autoPlay: true);
-          return fresh;
-        },
+        open: (kernel) => kernel.create(
+          source: source,
+          config: PlayerConfig(name: 'floating-video', playbackRate: handle.rate, muted: handle.muted),
+          preferredBackend: backend,
+        ),
         onClose: (position, {required reopen}) {
           // The page is gone by then, but its progress fields survive as
           // plain data: the write lands in the same local history row (and,

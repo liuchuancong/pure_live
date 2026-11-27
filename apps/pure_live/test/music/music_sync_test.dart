@@ -1,16 +1,23 @@
 import 'dart:convert' show jsonDecode, jsonEncode;
 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:live_storage/live_storage.dart';
 import 'package:media_core_audio/media_core_audio.dart' as audio;
 import 'package:pure_live/modules/music/controller/library/music_playlists.dart' show MusicPlaylist;
 import 'package:pure_live/modules/music/controller/sync/music_sync.dart'
-    show kMusicSyncHostHistoryLimit, musicSyncNextHostHistory;
+    show MusicSyncNote, MusicSyncStatus, kMusicSyncHostHistoryLimit, musicSyncNextHostHistory, musicSyncProvider;
 import 'package:pure_live/modules/music/controller/sync/music_sync_client.dart';
 import 'package:pure_live/modules/music/controller/sync/music_sync_codec.dart';
 import 'package:pure_live/modules/music/controller/sync/music_sync_data.dart';
 import 'package:pure_live/modules/music/controller/sync/music_sync_wire.dart';
 
 void main() {
+  setUpAll(() async {
+    await StorageStores.openInMemory();
+    await StoragePrefs.init();
+  });
+
   group('codec', () {
     test('auth key derives 16 ASCII characters', () {
       final key = musicSyncAuthKey('abcd1234');
@@ -160,6 +167,21 @@ void main() {
   });
 
   group('client surface', () {
+    test('the newest connect supersedes an earlier attempt before it opens a client', () async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+      final controller = container.read(musicSyncProvider.notifier);
+      await controller.setHost('127.0.0.1:1');
+      final earlier = controller.connect();
+      await controller.setHost('');
+      final latest = controller.connect();
+      await Future.wait([earlier, latest]);
+
+      final state = container.read(musicSyncProvider);
+      expect(state.status, MusicSyncStatus.failed);
+      expect(state.note, MusicSyncNote.invalidAddress);
+    });
+
     test('the host history keeps the reference add semantics', () {
       final grown = musicSyncNextHostHistory(const ['a', 'b'], 'c');
       expect(grown, ['c', 'a', 'b']);

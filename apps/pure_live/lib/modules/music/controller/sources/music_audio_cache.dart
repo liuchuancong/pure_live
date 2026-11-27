@@ -2,7 +2,7 @@ import 'dart:async' show unawaited;
 import 'dart:io' show Directory, File, FileSystemException, Platform;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:live_net/live_net.dart' show CancelToken, LiveHttp, LiveRequest;
+import 'package:live_net/live_net.dart' show CancelToken, LiveHttp, LiveRequest, LiveStreamedResponse;
 import 'package:media_core_audio/media_core_audio.dart' as audio;
 import 'package:pure_live/app/logging/app_log.dart' show appLog;
 
@@ -321,8 +321,9 @@ final class CachedTrackSource extends audio.MusicSource {
     final files = cache.files as DirectoryMusicCacheFiles;
     final token = CancelToken();
     cache.trackDownload(key, token);
+    LiveStreamedResponse? response;
     try {
-      final response = await env.http.open(
+      response = await env.http.open(
         LiveRequest.custom(
           method: 'GET',
           url: source.uri,
@@ -351,6 +352,14 @@ final class CachedTrackSource extends audio.MusicSource {
       appLog.forCategory('music.cache').warning('audio cache download failed', fields: {'key': key, 'error': '$error'});
       token.cancel();
       if (cache.releaseDownload(key, token)) await cache.abort(key);
+    } finally {
+      try {
+        await response?.close();
+      } on Object catch (error) {
+        appLog
+            .forCategory('music.cache')
+            .warning('audio cache response close failed', fields: {'key': key, 'error': '$error'});
+      }
     }
   }
 

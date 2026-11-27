@@ -174,6 +174,39 @@ void main() {
       expect((await second)['lyric'], '[00:00.00]网易');
     });
 
+    test('each subscription keeps its own last status', () async {
+      playback = const audio.AudioPlaybackState(
+        track: audio.MusicTrack(id: '1', sourceId: 'kw', title: 'First', artist: 'Singer'),
+      );
+      final firstPending = _subscribe(port, 'name');
+      await _until(() => loads.length == 1);
+      loads[0].complete(
+        const audio.LyricDocument(
+          lines: [audio.LyricLine(start: Duration.zero, text: '')],
+        ),
+      );
+      final first = await firstPending;
+      addTearDown(first.close);
+      expect(await first.nextEvent(), {'event': 'name', 'data': '"First"'});
+
+      playback = const audio.AudioPlaybackState(
+        track: audio.MusicTrack(id: '2', sourceId: 'kw', title: 'Second', artist: 'Singer'),
+      );
+      final secondPending = _subscribe(port, 'name');
+      await _until(() => loads.length == 2);
+      loads[1].complete(
+        const audio.LyricDocument(
+          lines: [audio.LyricLine(start: Duration.zero, text: '')],
+        ),
+      );
+      final second = await secondPending;
+      addTearDown(second.close);
+      expect(await second.nextEvent(), {'event': 'name', 'data': '"Second"'});
+
+      api.pushPlayerStatus();
+      expect(await first.nextEvent(), {'event': 'name', 'data': '"Second"'});
+    });
+
     test('a late lyric cannot replace the current song or its cached document', () async {
       playback = const audio.AudioPlaybackState(
         track: audio.MusicTrack(id: '1', sourceId: 'kw', title: 'First', artist: 'Singer'),
@@ -213,6 +246,42 @@ Future<String> _request(int port, String path) async {
     return await response.transform(utf8.decoder).join();
   } finally {
     client.close(force: true);
+  }
+}
+
+Future<_SseClient> _subscribe(int port, String filter) async {
+  final client = HttpClient();
+  final request = await client.getUrl(Uri.parse('http://127.0.0.1:$port/subscribe-player-status?filter=$filter'));
+  final response = await request.close();
+  return _SseClient(client, response);
+}
+
+final class _SseClient {
+  _SseClient(this._client, HttpClientResponse response)
+    : _lines = StreamIterator(response.transform(utf8.decoder).transform(const LineSplitter()));
+
+  final HttpClient _client;
+  final StreamIterator<String> _lines;
+
+  Future<Map<String, String>> nextEvent() async {
+    final event = <String, String>{};
+    while (await _lines.moveNext()) {
+      final line = _lines.current;
+      if (line.isEmpty) {
+        if (event.isNotEmpty) return event;
+        continue;
+      }
+      final separator = line.indexOf(':');
+      if (separator <= 0) continue;
+      final value = line.substring(separator + 1);
+      event[line.substring(0, separator)] = value.startsWith(' ') ? value.substring(1) : value;
+    }
+    throw StateError('the event stream closed');
+  }
+
+  Future<void> close() async {
+    await _lines.cancel();
+    _client.close(force: true);
   }
 }
 

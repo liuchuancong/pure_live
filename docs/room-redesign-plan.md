@@ -437,3 +437,14 @@ Windows 窗口全屏入口（第十五轮改）：播放行「全屏｜窗口全
   - **配置与主要文件**：无新增持久化配置、Slang key、依赖或主题 token；generation、同步 Future 队列、下载取消令牌和解析来源归属均为运行时状态。修改 `shared/player/floating_video.dart`、`shared/player/player_screenshot.dart`、`modules/music/controller/music_source.dart`、`modules/music/controller/library/music_downloads.dart`、`modules/music/controller/playback/music_open_api.dart`、`music_playback.dart`、`modules/music/controller/sources/music_audio_cache.dart`、`test/shared/floating_video_test.dart`、`test/music/music_open_api_test.dart`、`music_audio_cache_test.dart` 与本台账。
   - **验证**：本轮 Dart 文件仅做单文件格式化；App `dart analyze lib test` 为 **No issues found**；聚焦回归 **31/31**、音乐加共享播放器回归 **248/248**、App 全量测试 **1318/1318（3 分 48 秒）** 通过。仓外 media_core 无本轮修改。
   - **多平台与限制**：修复位于共享播放与音乐运行时，不区分桌面、平板、手机、TV 或浅色/深色/自定义主题。未构建 APK/桌面产物、未截图或运行 UI，未做真实模块切换重建、开放 API 热重绑、自动换源下载歌词、缓存取消同时重开、多窗口、TV、触控、大字体或读屏验收；自动测试不能替代这些运行时验收。
+
+- 2026-11-27：第八十轮（开放 API 实时传输、小窗生命周期与音乐资源竞态）⇒
+  - **开放 API 实时传输**：SSE 响应关闭缓冲并启用 chunked 编码，事件能立即到达订阅方；每个订阅保存各自的状态快照，新接入的订阅不会因旧订阅已经推进而漏掉下一次状态变化。订阅断开时移除对应响应。
+  - **小窗交接与销毁**：同一帧内多次交接时，旧调用方收到 `false`、最新调用方收到 `true`，被替换 handoff 执行一次关闭回调；`OverlayEntry` 尚未首次构建时也能移除，避免插入后立即替换留下不可达覆盖层。关闭回调按实例身份清理，旧视图销毁不能清掉新窗口的回调。
+  - **小窗启动顺序**：先应用倍率、静音和恢复位置，再开始播放；启动任一步失败或视图提前销毁时，静音并释放尚未发布的 handle。七个 VOD 类入口统一通过 `PlayerKernel.create(source:)` 打开，避免绕过注册句柄的失败释放路径，并保留 IPTV 倍率与静音。
+  - **共享截图**：同一个播放器 handle 的并发截图共享一次在途捕获，完成后清除单飞记录；保留 media_core 截图写入、格式和失败日志链路。
+  - **音乐缓存与同步**：音频缓存关闭所有已取得的流式响应，包括非 200 和流读取失败路径，并保持取消令牌的提交所有权检查。同步连接引入代次守卫，旧认证/连接结果不能关闭新客户端或覆盖新状态；断开完成后也不会把更新的连接改回 idle。
+  - **回归覆盖**：新增 SSE 双订阅独立快照、小窗插入未构建即替换、同帧交接返回值、缓存拒绝响应关闭、最新同步连接获胜五项回归。
+  - **配置与主要文件**：无新增持久化配置、Slang key、依赖或主题 token；SSE 快照、小窗回调身份、截图单飞和同步代次均为运行时状态。修改 `shared/player/floating_video.dart`、`player_screenshot.dart`、`features/media_preview/media_preview_page.dart`、`modules/vod/pages/vod_video_page.dart`、`vod_season_page.dart`、`modules/huya/pages/huya_video_player_page.dart`、`modules/hongguo/pages/hongguo_player_page.dart`、`modules/iptv/pages/iptv_play_page.dart`、`modules/live/archive/archive_player_page.dart`、`modules/music/controller/playback/music_open_api.dart`、`controller/sources/music_audio_cache.dart`、`controller/sync/music_sync.dart`、对应四个测试文件与本台账。
+  - **验证**：当前完整工作树 App `dart analyze lib test` 为 **No issues found**；`flutter test --no-pub` 全量 **1322/1322** 通过，小窗聚焦 **4/4** 通过；隔离补丁 `git diff --check` 无空白错误。尝试在 HEAD 独立工作树复验时，基线缺少当前工作树已有的背景模块与 live_device 等源码/包，分析和 Flutter 测试分别因依赖解析与 native-assets 工具崩溃未能完成，因此不声称隔离基线验证通过。
+  - **多平台与限制**：修复位于共享播放和音乐运行时，不区分桌面、平板、手机、TV 或浅色/深色/自定义主题。未构建 APK/桌面产物、未截图或运行 UI，未做真实小窗快速切换、播放中交接、SSE 长连接、同步重连、缓存并发、多窗口、TV、触控、大字体或读屏验收；截图单飞尚无独立回归。自动测试不能替代这些运行时验收，仓外 media_core 无本轮修改。
