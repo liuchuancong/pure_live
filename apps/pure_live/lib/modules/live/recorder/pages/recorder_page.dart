@@ -727,6 +727,10 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
   Future<void> _deleteTask(RecordingTask task) async {
     final engine = ref.read(recorderEngineProvider);
     if (engine.isRecording(task.id)) await engine.stop(task.id);
+    if (engine.isPostProcessing(task.id)) {
+      if (mounted) showDsToast(context: context, title: context.t.recorder.stateProcessing, status: DsStatus.info);
+      return;
+    }
     await ref.read(recordingTasksProvider.notifier).remove(task.id);
   }
 

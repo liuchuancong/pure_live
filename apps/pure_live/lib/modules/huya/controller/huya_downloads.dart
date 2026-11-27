@@ -227,7 +227,12 @@ final class HuyaDownloadsController extends Notifier<List<HuyaDownloadItem>> {
       final quality = _qualityOf(detail.qualities, qualityId);
       final extension = p.extension(quality.url).replaceFirst('.', '');
       final name = vodDownloadFileName(title: title, part: '', extension: extension);
-      final target = freeDownloadFile(directory, name);
+      final sameTarget =
+          existing != null && p.extension(existing.filePath).toLowerCase() == '.$extension'.toLowerCase();
+      final target = existing != null && sameTarget ? File(existing.filePath) : freeDownloadFile(directory, name);
+      if (!sameTarget && existing != null && !await _delete(File('${existing.filePath}.part'))) {
+        throw FileSystemException('Cannot remove obsolete download part', existing.filePath);
+      }
       final item = HuyaDownloadItem(
         videoId: videoId,
         title: title,
@@ -500,8 +505,9 @@ final class HuyaDownloadsController extends Notifier<List<HuyaDownloadItem>> {
       await _delete(target);
       if (_stops.containsKey(videoId)) throw const _HuyaStopped();
       await scratch.rename(target.path);
+      item = item.copyWith(received: received, speed: 0, phase: HuyaDownloadPhase.done);
+      _replace(item);
       if (_stops.containsKey(videoId)) throw const _HuyaStopped();
-      _replace(item.copyWith(received: received, speed: 0, phase: HuyaDownloadPhase.done));
     } on Object catch (error) {
       if (_isCurrent(videoId, generation) && error is! _HuyaStopped && !stopped) {
         _replace(item.copyWith(received: received, speed: 0, phase: HuyaDownloadPhase.failed, error: '$error'));
@@ -528,7 +534,7 @@ final class HuyaDownloadsController extends Notifier<List<HuyaDownloadItem>> {
           }
         } else {
           _deleteFiles.remove(videoId);
-          if (stop == _HuyaStop.pause) {
+          if (stop == _HuyaStop.pause && item.phase != HuyaDownloadPhase.done) {
             _replace(item.copyWith(received: received, speed: 0, phase: HuyaDownloadPhase.paused));
           }
           await _persist();

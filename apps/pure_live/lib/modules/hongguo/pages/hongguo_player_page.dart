@@ -252,6 +252,11 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
   /// The window's observer, kept for `dispose` where the provider scope may
   /// already be gone.
   RouteObserver<ModalRoute<void>>? _routeObserver;
+  ModalRoute<void>? _route;
+  bool _routeCovered = false;
+  int _routeCoverDepth = 0;
+  bool _routeResumeWhenReady = false;
+  bool _routeAutoplayRequested = false;
 
   /// The episode a covered route paused, kept apart from the background gate.
   PlayerId? _routePausedHandleId;
@@ -371,19 +376,21 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
   void didChangeDependencies() {
     super.didChangeDependencies();
     final route = ModalRoute.of(context);
-    if (route is ModalRoute<void>) {
-      // The field is not promoted by flow analysis, so name the type.
-      // ignore: omit_local_variable_types
-      final RouteObserver<ModalRoute<void>> observer = _routeObserver ?? ref.read(routeObserverProvider);
-      _routeObserver = observer;
-      observer.subscribe(this, route);
-    }
+    if (route is! ModalRoute<void> || identical(route, _route)) return;
+    if (_route != null) _routeObserver?.unsubscribe(this);
+    _route = route;
+    final observer = ref.read(routeObserverProvider);
+    _routeObserver = observer;
+    observer.subscribe(this, route);
   }
 
   /// Another page covers this one: the picture pauses rather than playing
   /// under it.
   @override
   void didPushNext() {
+    _routeCoverDepth++;
+    _routeCovered = true;
+    if (_routeCoverDepth != 1) return;
     final generation = ++_routePauseGeneration;
     final handle = _handle;
     if (handle == null || _routePausedHandleId != null || !(_transport?.isPlaying ?? false)) return;
@@ -395,14 +402,63 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
 
   @override
   void didPopNext() {
+    if (_routeCoverDepth > 0) _routeCoverDepth--;
+    if (_routeCoverDepth > 0) return;
+    final covered = _routeCovered;
     final generation = ++_routePauseGeneration;
     final pausedHandleId = _routePausedHandleId;
     final pause = _routePause;
     final handle = _handle;
+    final opening = pausedHandleId == null && (_opening || handle == null);
+    _routeCovered = false;
+    _routeResumeWhenReady = opening && covered && _routeAutoplayRequested && !_sleepStopped;
     _routePausedHandleId = null;
     _routePause = null;
+    if (_routeResumeWhenReady) return;
     if (pausedHandleId == null || handle == null || handle.id != pausedHandleId) return;
     unawaited(_resumeAfterRoute(handle, pause, generation));
+  }
+
+  Future<void> _pauseForRoute(PlayerHandle handle) async {
+    if (!_routeCovered) return;
+    final pending = _routePause;
+    if (pending != null) {
+      await pending;
+      return;
+    }
+    final generation = _routePauseGeneration;
+    _routePausedHandleId = handle.id;
+    _routePause = handle.pause().catchError((Object _) {
+      if (_routePauseGeneration == generation) _routePausedHandleId = null;
+    });
+    await _routePause;
+  }
+
+  Future<void> _settleRouteAutoplay(PlayerHandle handle) async {
+    if (_sleepStopped || !_routeAutoplayRequested) {
+      _routeResumeWhenReady = false;
+      return;
+    }
+    if (_routeCovered) {
+      _routeResumeWhenReady = true;
+      await _pauseForRoute(handle);
+      if (_routeCovered) {
+        if (_routePausedHandleId == null) {
+          _routePausedHandleId = handle.id;
+          _routePause = Future<void>.value();
+        }
+        return;
+      }
+      _routePausedHandleId = null;
+      _routePause = null;
+    }
+    if (!_routeResumeWhenReady) return;
+    _routeResumeWhenReady = false;
+    try {
+      if (!handle.state.hasError && handle.state.canPlay && !(handle.playIntent ?? false)) await handle.play();
+    } on Object {
+      // Returning to the page does not turn a refused play into a page failure.
+    }
   }
 
   Future<void> _resumeAfterRoute(PlayerHandle handle, Future<void>? pause, int generation) async {
@@ -448,6 +504,14 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
   void dispose() {
     _disposed = true;
     _routePauseGeneration++;
+    _routeCovered = false;
+    _routeCoverDepth = 0;
+    _routeResumeWhenReady = false;
+    _routeAutoplayRequested = false;
+    _routePausedHandleId = null;
+    _routePause = null;
+    if (_route != null) _routeObserver?.unsubscribe(this);
+    _route = null;
     ref.read(audioArbiterProvider.notifier).release(AudioOwner(AudioOwnerKind.audiobook, 'hongguo:${widget.seriesId}'));
     _backgroundGate?.dispose();
     _backgroundGate = null;
@@ -464,7 +528,6 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
       unawaited(_kernel.release(handle.id));
     }
     WidgetsBinding.instance.removeObserver(this);
-    _routeObserver?.unsubscribe(this);
     _saveProgress(force: true);
     _hideTimer?.cancel();
     _hideTimer = null;
@@ -567,6 +630,11 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
       _finished = false;
       if (!recovering) _sleepStopped = false;
     });
+    _routeAutoplayRequested = autoplay && !_sleepStopped;
+    _routePauseGeneration++;
+    _routePausedHandleId = null;
+    _routePause = null;
+    _routeResumeWhenReady = false;
     final client = ref.read(hongguoClientProvider);
     // The episode being left stops before the next address is fetched, so a
     // failed switch cannot leave it sounding under the new episode's page.
@@ -632,7 +700,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
           format: SourceFormat.fromUri(uri),
           title: _detail?.meta.title ?? episode.title,
         ),
-        autoPlay: autoplay && !_sleepStopped,
+        autoPlay: autoplay && !_sleepStopped && !_routeCovered,
       );
       await handle.setVolume(_volume);
       await handle.setMute(muted: _effectivelyMuted);
@@ -644,6 +712,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
         await handle.seek(Duration(milliseconds: (seekTo * 1000).round()));
       }
       if (!mounted || _disposed) return;
+      await _settleRouteAutoplay(handle);
       setState(() {
         _opening = false;
         _error = null;
@@ -897,6 +966,8 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
     _routePauseGeneration++;
     _routePausedHandleId = null;
     _routePause = null;
+    _routeResumeWhenReady = false;
+    _routeAutoplayRequested = false;
     _sleep.cancel();
     _sleepTicker?.cancel();
     _sleepTicker = null;
@@ -944,7 +1015,10 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
         if (state.isPlaying) _error = null;
       });
       _saveProgress();
-      if (state.isPlaying) _scheduleHide();
+      if (state.isPlaying) {
+        _scheduleHide();
+        if (_routeCovered) unawaited(_pauseForRoute(handle));
+      }
       final detail = _detail;
       final episode = _episode;
       if (state.initialized &&

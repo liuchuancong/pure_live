@@ -281,6 +281,7 @@ final class RecorderEngine {
   /// Cache trimming and clearing skip these: a take leaves [_sessions] the
   /// moment its capture ends, and the join runs after that.
   final Set<String> _finalizing = <String>{};
+  final Set<String> _finalizingTasks = <String>{};
   final Set<Future<void>> _finalizeTasks = <Future<void>>{};
   final Map<String, FfmpegExecution> _finalizeExecutions = <String, FfmpegExecution>{};
   final Set<String> _finalizeCancelled = <String>{};
@@ -296,6 +297,9 @@ final class RecorderEngine {
 
   /// Whether the task behind [taskId] is being captured right now.
   bool isRecording(String taskId) => _sessions.containsKey(taskId);
+
+  /// Whether this window is still joining, renaming or archiving [taskId].
+  bool isPostProcessing(String taskId) => _finalizingTasks.contains(taskId);
 
   /// How many chat lines the take of [taskId] has written into its sidecar.
   ///
@@ -340,7 +344,7 @@ final class RecorderEngine {
   /// settings have them. Answers null when the work began, and the reason it
   /// did not when it did not.
   Future<String?> retryFinalize(RecordingTask task) async {
-    if (isRecording(task.id) || task.postProcessing) return 'busy';
+    if (isRecording(task.id) || isPostProcessing(task.id) || task.postProcessing) return 'busy';
     if (!_retries.add(task.id)) return 'busy';
     final root = _takeDirectoryOf(task.filePath);
     if (root == null || !root.existsSync()) {
@@ -394,6 +398,7 @@ final class RecorderEngine {
     );
     final settings = _ref.read(recordingSettingsProvider);
     _finalizing.add(p.normalize(root.path));
+    _finalizingTasks.add(task.id);
     final tracked = _finalizeRecording(
       target,
       repository: repo,
@@ -407,7 +412,12 @@ final class RecorderEngine {
       initialWarning: '',
     ).catchError((Object _) {}).whenComplete(() => _retries.remove(task.id));
     _finalizeTasks.add(tracked);
-    unawaited(tracked.whenComplete(() => _finalizeTasks.remove(tracked)));
+    unawaited(
+      tracked.whenComplete(() {
+        _finalizeTasks.remove(tracked);
+        _finalizingTasks.remove(task.id);
+      }),
+    );
     return null;
   }
 
@@ -1195,6 +1205,7 @@ final class RecorderEngine {
       // happen behind it. The settings and the store are read here, while the
       // engine is alive.
       _finalizing.add(p.normalize(session.root));
+      _finalizingTasks.add(session.task.id);
       final target = _FinalizeTarget(
         taskId: session.task.id,
         startedAt: session.task.startedAt,
@@ -1219,7 +1230,12 @@ final class RecorderEngine {
       );
       final tracked = finish.catchError((Object _) {});
       _finalizeTasks.add(tracked);
-      unawaited(tracked.whenComplete(() => _finalizeTasks.remove(tracked)));
+      unawaited(
+        tracked.whenComplete(() {
+          _finalizeTasks.remove(tracked);
+          _finalizingTasks.remove(session.task.id);
+        }),
+      );
     } else {
       unawaited(_disposeManager(session));
       // The finished take is no longer protected: apply the cap at once

@@ -143,6 +143,7 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
   /// window in which this page's own kernel teardown flushes the last
   /// playback events back into these handlers.
   bool _disposed = false;
+  int _playRequestEpoch = 0;
   StreamSubscription<PlayerHandle>? _handles;
   StreamSubscription<PlayerCoreState>? _states;
   StreamSubscription<PlayerFailure>? _failures;
@@ -213,6 +214,15 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
   /// The Android background-playback gate and the channel it paused.
   BackgroundPlaybackGate? _backgroundGate;
   String? _backgroundPausedChannel;
+
+  RouteObserver<ModalRoute<void>>? _routeObserver;
+  ModalRoute<void>? _route;
+  bool _routeCovered = false;
+  int _routeCoverDepth = 0;
+  String? _routePausedChannel;
+  int? _routePausedRequestEpoch;
+  Future<void>? _routePause;
+  int _routePauseGeneration = 0;
 
   /// The programme being replayed, null while the live stream plays.
   EpgProgramme? _catchup;
@@ -366,6 +376,92 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    if (route is! ModalRoute<void> || identical(route, _route)) return;
+    if (_route != null) _routeObserver?.unsubscribe(this);
+    _route = route;
+    final observer = ref.read(routeObserverProvider);
+    _routeObserver = observer;
+    observer.subscribe(this, route);
+  }
+
+  @override
+  void didPushNext() {
+    _routeCoverDepth++;
+    _routeCovered = true;
+    if (_routeCoverDepth != 1) return;
+    final generation = ++_routePauseGeneration;
+    final channel = _channel?.id;
+    final playback = _playback;
+    if (channel == null || playback == null || !_playbackState.playing || _routePausedChannel != null) return;
+    _routePausedChannel = channel;
+    _routePausedRequestEpoch = _playRequestEpoch;
+    _routePause = playback.pause().catchError((Object _) {
+      if (_routePauseGeneration == generation) _routePausedChannel = null;
+    });
+  }
+
+  @override
+  void didPopNext() {
+    if (_routeCoverDepth > 0) _routeCoverDepth--;
+    if (_routeCoverDepth > 0) return;
+    _routeCovered = false;
+    final generation = ++_routePauseGeneration;
+    final channel = _routePausedChannel;
+    final requestEpoch = _routePausedRequestEpoch;
+    final pause = _routePause;
+    final playback = _playback;
+    _routePausedChannel = null;
+    _routePausedRequestEpoch = null;
+    _routePause = null;
+    if (channel == null || requestEpoch == null || playback == null || channel != _channel?.id) return;
+    unawaited(_resumeAfterRoute(playback, pause, generation, channel, requestEpoch));
+  }
+
+  Future<void> _resumeAfterRoute(
+    LivePlaybackController playback,
+    Future<void>? pause,
+    int generation,
+    String channel,
+    int requestEpoch,
+  ) async {
+    try {
+      await pause;
+    } on Object {
+      return;
+    }
+    if (!mounted ||
+        _disposed ||
+        generation != _routePauseGeneration ||
+        !identical(playback, _playback) ||
+        channel != _channel?.id ||
+        requestEpoch != _playRequestEpoch ||
+        _playbackState.playing) {
+      return;
+    }
+    try {
+      await playback.resume();
+      if (generation != _routePauseGeneration) await playback.pause();
+    } on Object {
+      // Returning to the channel does not turn a refused resume into a failure.
+    }
+  }
+
+  void _pauseOpeningRoute(String channel, int requestEpoch) {
+    if (!_routeCovered || !_playbackState.playing || _routePausedChannel != null) return;
+    final playback = _playback;
+    if (playback == null || channel != _channel?.id || requestEpoch != _playRequestEpoch) return;
+    final generation = ++_routePauseGeneration;
+    _routePausedChannel = channel;
+    _routePausedRequestEpoch = requestEpoch;
+    _routePause = playback.pause().catchError((Object _) {
+      if (_routePauseGeneration == generation) _routePausedChannel = null;
+    });
+  }
+
+  @override
   void didUpdateWidget(IptvPlayPage oldWidget) {
     super.didUpdateWidget(oldWidget);
     // The module's channel list drives the embedded pane: a newly selected
@@ -416,6 +512,14 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
     // flag below closes the window. Cancelling the subscriptions first
     // also cuts the deliveries off before the cascade starts.
     _disposed = true;
+    if (_route != null) _routeObserver?.unsubscribe(this);
+    _route = null;
+    _routePauseGeneration++;
+    _routeCovered = false;
+    _routeCoverDepth = 0;
+    _routePausedChannel = null;
+    _routePausedRequestEpoch = null;
+    _routePause = null;
     unawaited(_handles?.cancel() ?? Future<void>.value());
     unawaited(_states?.cancel() ?? Future<void>.value());
     unawaited(_failures?.cancel() ?? Future<void>.value());
@@ -533,6 +637,12 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
   }
 
   Future<void> _play(List<String> urls, IptvChannel channel) async {
+    final requestEpoch = ++_playRequestEpoch;
+    _routePauseGeneration++;
+    _routePausedChannel = null;
+    _routePausedRequestEpoch = null;
+    _routePause = null;
+    bool isCurrent() => mounted && !_disposed && requestEpoch == _playRequestEpoch;
     if (mounted) {
       setState(() {
         _urls = List.of(urls);
@@ -596,24 +706,25 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
     try {
       await playback.play(request, preferredBackend: ref.read(playerKernelBackendProvider).id);
     } on Object catch (failure) {
+      if (!isCurrent()) return;
       // The engine's failure events usually land first through onError; a
       // throw here is the open refusing outright — the page says so instead
       // of leaving the word to the zone. One refusal has a shape worth a
       // second ask: the release pool still draining the engine a fast
       // switch let go, the kernel refusing a fourth engine while two hang
       // unfinished. A beat later the same sources go out once more.
-      if (mounted && '$failure'.contains('engine_release_pending')) {
+      if ('$failure'.contains('engine_release_pending')) {
         await Future<void>.delayed(const Duration(milliseconds: 200));
-        if (!mounted) return;
+        if (!isCurrent()) return;
         try {
           await playback.play(request, preferredBackend: ref.read(playerKernelBackendProvider).id);
           return;
         } on Object catch (retryFailure) {
-          if (mounted) setState(() => _error = '$retryFailure');
+          if (isCurrent()) setState(() => _error = '$retryFailure');
           return;
         }
       }
-      if (mounted) setState(() => _error = '$failure');
+      setState(() => _error = '$failure');
     }
   }
 
@@ -644,6 +755,10 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
     final wasPlaying = _playbackState.playing;
     setState(() => _playbackState = state);
     if (state.playing && !wasPlaying) _onPlaying();
+    if (state.playing && _routeCovered) {
+      final channel = _channel?.id;
+      if (channel != null) _pauseOpeningRoute(channel, _playRequestEpoch);
+    }
     if (!state.playing && (_cursorHidden || !_barVisible)) _revealPointer();
     if (state.paused) _cancelReconnect();
     _syncSeekTicker();
@@ -763,6 +878,10 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
   /// The sleep timer's end: the channel pauses where it stands, said with
   /// the room's own toast.
   void _onSleepFire() {
+    _routePauseGeneration++;
+    _routePausedChannel = null;
+    _routePausedRequestEpoch = null;
+    _routePause = null;
     unawaited(_handle?.pause() ?? Future<void>.value());
     if (mounted) showDsToast(context: context, title: context.t.player.sleepDone);
   }

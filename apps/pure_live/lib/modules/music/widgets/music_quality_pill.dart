@@ -45,11 +45,18 @@ final class MusicQualityPill extends ConsumerWidget {
       };
     }
 
-    bool offers(MusicQuality quality) => offered.any((entry) => sameTier(entry.id, quality));
+    bool offers(MusicQuality quality) {
+      if (quality == MusicQuality.lossless) {
+        return offered.any((entry) => entry.id == 'flac' || entry.id == 'flac24bit');
+      }
+      return offered.any((entry) => sameTier(entry.id, quality));
+    }
+
     final servedTier = served == null
         ? null
         : MusicQuality.values.where((quality) => sameTier(served.id, quality)).firstOrNull;
     final askedIsServed = servedTier == asked;
+    final servedIsUpgrade = servedTier != null && servedTier.index > asked.index;
     return DsMenuAnchor(
       semanticLabel: t.music.quality,
       items: [
@@ -58,10 +65,13 @@ final class MusicQualityPill extends ConsumerWidget {
             label: Text(quality.label(t)),
             checked: asked == quality,
             // The tier the song is really served at is marked where it differs
-            // from the asked one, so a source's downgrade reads as the
-            // source's doing.
+            // from the asked one, so a source's fallback or upgrade reads as
+            // the source's doing.
             trailing: served != null && servedTier == quality
-                ? Text(askedIsServed ? t.music.qualityServedHere : t.music.qualityDowngraded, style: hintStyle)
+                ? Text(
+                    askedIsServed || servedIsUpgrade ? t.music.qualityServedHere : t.music.qualityDowngraded,
+                    style: hintStyle,
+                  )
                 : (known && !offers(quality) ? Text(t.music.qualityNotInSong, style: hintStyle) : null),
             onPressed: () => unawaited(ref.read(musicPlaybackSettingsProvider.notifier).setQuality(quality)),
           ),

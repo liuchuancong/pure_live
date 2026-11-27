@@ -128,11 +128,17 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
   /// window is what carries it.
   BackgroundPlaybackGate? _backgroundGate;
   PlayerId? _backgroundPausedHandleId;
+  bool _sleepStopped = false;
 
   /// The route that covered a playing replay, and the pause it asked for.
   /// Fullscreen and PiP are presentation modes, not routes, so they never
   /// enter this gate.
   RouteObserver<ModalRoute<void>>? _routeObserver;
+  ModalRoute<void>? _route;
+  bool _routeCovered = false;
+  int _routeCoverDepth = 0;
+  bool _routeResumeWhenReady = false;
+  bool _routeAutoplayRequested = false;
   PlayerId? _routePausedHandleId;
   Future<void>? _routePause;
   int _routePauseGeneration = 0;
@@ -190,6 +196,7 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
           _backgroundPausedHandleId != null &&
           _handle != null &&
           _handle?.id == _backgroundPausedHandleId &&
+          !_sleepStopped &&
           !(_transport?.isPlaying ?? false),
       resume: () async {
         _backgroundPausedHandleId = null;
@@ -205,15 +212,19 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
   void didChangeDependencies() {
     super.didChangeDependencies();
     final route = ModalRoute.of(context);
-    if (route is ModalRoute<void>) {
-      final observer = ref.read(routeObserverProvider);
-      _routeObserver = observer;
-      observer.subscribe(this, route);
-    }
+    if (route is! ModalRoute<void> || identical(route, _route)) return;
+    if (_route != null) _routeObserver?.unsubscribe(this);
+    _route = route;
+    final observer = ref.read(routeObserverProvider);
+    _routeObserver = observer;
+    observer.subscribe(this, route);
   }
 
   @override
   void didPushNext() {
+    _routeCoverDepth++;
+    _routeCovered = true;
+    if (_routeCoverDepth != 1) return;
     final generation = ++_routePauseGeneration;
     final handle = _handle;
     if (handle == null || _routePausedHandleId != null || !(_transport?.isPlaying ?? false)) return;
@@ -225,14 +236,71 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
 
   @override
   void didPopNext() {
+    if (_routeCoverDepth > 0) _routeCoverDepth--;
+    if (_routeCoverDepth > 0) return;
+    final covered = _routeCovered;
     final generation = ++_routePauseGeneration;
     final pausedHandleId = _routePausedHandleId;
     final pause = _routePause;
     final handle = _handle;
+    final opening = pausedHandleId == null && (handle == null || (_controller?.busy ?? false));
+    _routeCovered = false;
+    _routeResumeWhenReady = opening && covered && _routeAutoplayRequested && !_sleepStopped;
     _routePausedHandleId = null;
     _routePause = null;
+    if (_routeResumeWhenReady) return;
     if (pausedHandleId == null || handle == null || handle.id != pausedHandleId) return;
     unawaited(_resumeAfterRoute(handle, pause, generation));
+  }
+
+  void _beginRouteOpen() {
+    _routeAutoplayRequested = !_sleepStopped;
+    _routePauseGeneration++;
+    _routePausedHandleId = null;
+    _routePause = null;
+    _routeResumeWhenReady = false;
+  }
+
+  Future<void> _pauseForRoute(PlayerHandle handle) async {
+    if (!_routeCovered) return;
+    final pending = _routePause;
+    if (pending != null) {
+      await pending;
+      return;
+    }
+    final generation = _routePauseGeneration;
+    _routePausedHandleId = handle.id;
+    _routePause = handle.pause().catchError((Object _) {
+      if (_routePauseGeneration == generation) _routePausedHandleId = null;
+    });
+    await _routePause;
+  }
+
+  Future<void> _settleRouteAutoplay(PlayerHandle handle) async {
+    if (_sleepStopped || !_routeAutoplayRequested) {
+      _routeResumeWhenReady = false;
+      return;
+    }
+    if (_routeCovered) {
+      _routeResumeWhenReady = true;
+      await _pauseForRoute(handle);
+      if (_routeCovered) {
+        if (_routePausedHandleId == null) {
+          _routePausedHandleId = handle.id;
+          _routePause = Future<void>.value();
+        }
+        return;
+      }
+      _routePausedHandleId = null;
+      _routePause = null;
+    }
+    if (!_routeResumeWhenReady) return;
+    _routeResumeWhenReady = false;
+    try {
+      if (!handle.state.hasError && handle.state.canPlay && !(handle.playIntent ?? false)) await handle.play();
+    } on Object {
+      // Returning to the page does not turn a refused play into a page failure.
+    }
   }
 
   Future<void> _resumeAfterRoute(PlayerHandle handle, Future<void>? pause, int generation) async {
@@ -241,7 +309,7 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
     } on Object {
       return;
     }
-    if (!mounted || _disposed || generation != _routePauseGeneration || _handle?.id != handle.id) {
+    if (!mounted || _disposed || generation != _routePauseGeneration || _handle?.id != handle.id || _sleepStopped) {
       return;
     }
     if (handle.state.hasError || !handle.state.canPlay || (_transport?.isPlaying ?? false)) return;
@@ -289,7 +357,9 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
       // new one here supersedes it (its close path checkpoints the old).
       FloatingVideoWindow.dismiss();
       setState(() {});
-      await _controller!.open(widget.id);
+      _beginRouteOpen();
+      await _controller!.open(widget.id, autoPlay: !_routeCovered && !_sleepStopped);
+      if (!_disposed && _handle != null) await _settleRouteAutoplay(_handle!);
     } on Object {
       if (!_disposed) setState(() => _startFailed = true);
     }
@@ -302,7 +372,10 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
     _transportSub = handle.playbackStream.listen((state) {
       if (!mounted) return;
       setState(() => _transport = state);
-      if (state.isPlaying) _scheduleHide();
+      if (state.isPlaying) {
+        _scheduleHide();
+        if (_routeCovered) unawaited(_pauseForRoute(handle));
+      }
     });
     _geometrySub = handle.geometryController.state.listen((state) {
       if (!mounted) return;
@@ -338,6 +411,14 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
   void dispose() {
     _disposed = true;
     _routePauseGeneration++;
+    _routeCovered = false;
+    _routeCoverDepth = 0;
+    _routeResumeWhenReady = false;
+    _routeAutoplayRequested = false;
+    _routePausedHandleId = null;
+    _routePause = null;
+    if (_route != null) _routeObserver?.unsubscribe(this);
+    _route = null;
     ref.read(audioArbiterProvider.notifier).release(AudioOwner(AudioOwnerKind.vod, 'huya-video:${widget.id}'));
     _tipTimer?.cancel();
     _hideTimer?.cancel();
@@ -602,9 +683,13 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
   /// The sleep timer's end: the video pauses where it stands, said with the
   /// room's own toast.
   void _onSleepFire() {
+    _sleepStopped = true;
+    _backgroundPausedHandleId = null;
     _routePauseGeneration++;
     _routePausedHandleId = null;
     _routePause = null;
+    _routeResumeWhenReady = false;
+    _routeAutoplayRequested = false;
     unawaited(_handle?.pause() ?? Future<void>.value());
     if (mounted) showDsToast(context: context, title: context.t.player.sleepDone);
   }
@@ -1030,27 +1115,37 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
                           size: DsSize.sm,
                           onPressed: () {
                             final current = controller;
-                            if (current != null) unawaited(current.open(widget.id));
+                            if (current != null) {
+                              _beginRouteOpen();
+                              unawaited(
+                                current.open(widget.id, autoPlay: !_routeCovered && !_sleepStopped).then((_) async {
+                                  if (!_disposed && _handle != null) await _settleRouteAutoplay(_handle!);
+                                }),
+                              );
+                            } else {
+                              _retry();
+                            }
                           },
                           child: Text(t.common.retry),
                         ),
                       ),
-                    ),
-                  if (showBar)
+                    )
+                  else if (!ready)
+                    const Center(child: DsSpinner(style: DsSpinnerStyle(size: 24))),
+                  if (ownChrome)
                     PositionedDirectional(
                       top: 0,
                       start: 0,
                       end: 0,
                       child: _strip(context, detail, immersive: immersive),
                     ),
-                  // The picture's right edge, the room column's shape: the
-                  // frame's copy above the download — the picture's own
-                  // actions one thumb from the frame's side.
-                  // The picture's right edge (the room's lock column): the
-                  // frame copy above the lock. Locked, the unlock pill is
-                  // the only thing drawn, whatever the page does next; the
-                  // download lives in the more container now.
-                  if (showBar || _locked)
+                  // The picture's right edge keeps the lock alone, the room's
+                  // own place: the frame's copy moved into the strip's cluster
+                  // with the rest of the picture's verbs. Locked, the unlock
+                  // pill is the only thing drawn, whatever the page does next;
+                  // the download lives in the more container now. The small
+                  // window has no column, but keeps the lock's way out.
+                  if (_locked || ownChrome)
                     PositionedDirectional(
                       end: DsSpace.s12,
                       top: 0,

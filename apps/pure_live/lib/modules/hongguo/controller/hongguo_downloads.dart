@@ -1008,8 +1008,9 @@ final class HongguoDownloadsController extends Notifier<List<HongguoDownloadItem
       await _delete(target);
       if (_stops.containsKey(id)) throw const _Stopped();
       await scratch.rename(target.path);
+      item = item.copyWith(received: received, speed: 0, phase: HongguoDownloadPhase.done);
+      _replace(item);
       if (_stops.containsKey(id)) throw const _Stopped();
-      _replace(item.copyWith(received: received, speed: 0, phase: HongguoDownloadPhase.done));
     } on Object catch (error) {
       appLog.forCategory('hongguo.download').error('download write failed', fields: {'error': '$error'});
       if (_isCurrent(id, generation) && error is! _Stopped && !stopped) {
@@ -1046,7 +1047,7 @@ final class HongguoDownloadsController extends Notifier<List<HongguoDownloadItem
           }
         } else {
           _deleteFiles.remove(id);
-          if (stop == _HongguoStop.pause) {
+          if (stop == _HongguoStop.pause && item.phase != HongguoDownloadPhase.done) {
             item = item.copyWith(received: received, speed: 0, phase: HongguoDownloadPhase.paused);
             _replace(item);
           }

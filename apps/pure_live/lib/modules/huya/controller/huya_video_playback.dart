@@ -145,7 +145,7 @@ final class HuyaVideoPlaybackController extends ArchivePlaybackController {
       _pending = resume > Duration.zero ? resume : null;
       _lastSaved = resume;
       await session.setVolume(volume);
-      await session.open(_source(selected), autoPlay: true);
+      await session.open(_source(selected), autoPlay: autoPlay);
       if (!_current(generation)) return;
       await session.setVolume(volume);
       // The kernel's open has no start position: the pending ask above is

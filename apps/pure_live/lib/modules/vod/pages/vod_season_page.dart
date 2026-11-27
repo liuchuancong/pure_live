@@ -200,6 +200,7 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
   bool _dashAudioFallbackTried = false;
   int _dashAudioUrlIndex = 0;
   bool _dashAudioFallbackPending = false;
+  int _adapterAttempt = 0;
   bool _dashAudioActive = false;
   bool _silent = false;
   bool _muted = false;
@@ -216,6 +217,14 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
   /// The window's observer, kept for `dispose` where the provider scope may
   /// already be gone.
   RouteObserver<ModalRoute<void>>? _routeObserver;
+  ModalRoute<void>? _route;
+  bool _routeCovered = false;
+  int _routeCoverDepth = 0;
+  bool _routeResumeWhenReady = false;
+  bool _routeAutoplayRequested = false;
+  PlayerId? _routePausedHandleId;
+  Future<void>? _routePause;
+  int _routePauseGeneration = 0;
 
   // Captured while the page is alive; `ref` is refused by the time dispose
   // runs, and the leaving page must still exit its presentation mode and
@@ -332,22 +341,108 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
   void didChangeDependencies() {
     super.didChangeDependencies();
     final route = ModalRoute.of(context);
-    if (route is ModalRoute<void>) {
-      // The field is not promoted by flow analysis, so name the type.
-      // ignore: omit_local_variable_types
-      final RouteObserver<ModalRoute<void>> observer = _routeObserver ?? ref.read(routeObserverProvider);
-      _routeObserver = observer;
-      observer.subscribe(this, route);
-    }
+    if (route is! ModalRoute<void> || identical(route, _route)) return;
+    if (_route != null) _routeObserver?.unsubscribe(this);
+    _route = route;
+    final observer = ref.read(routeObserverProvider);
+    _routeObserver = observer;
+    observer.subscribe(this, route);
   }
 
   /// Another page covers this one (a related title, a menu route): the picture
   /// pauses rather than playing under it — the archive page's own rule.
   @override
   void didPushNext() {
+    _routeCoverDepth++;
+    _routeCovered = true;
+    if (_routeCoverDepth != 1) return;
+    final generation = ++_routePauseGeneration;
     final handle = _playableHandle;
-    if (handle != null && (_transport?.isPlaying ?? false)) {
-      unawaited(handle.pause().catchError((Object _) {}));
+    if (handle == null || _routePausedHandleId != null || !(_transport?.isPlaying ?? false)) return;
+    _routePausedHandleId = handle.id;
+    _routePause = handle.pause().catchError((Object _) {
+      if (_routePauseGeneration == generation) _routePausedHandleId = null;
+    });
+  }
+
+  @override
+  void didPopNext() {
+    if (_routeCoverDepth > 0) _routeCoverDepth--;
+    if (_routeCoverDepth > 0) return;
+    final generation = ++_routePauseGeneration;
+    final pausedHandleId = _routePausedHandleId;
+    final pause = _routePause;
+    final handle = _playableHandle;
+    final opening = pausedHandleId == null && (_opening || handle == null);
+    _routeCovered = false;
+    _routeResumeWhenReady = opening && _routeAutoplayRequested;
+    _routePausedHandleId = null;
+    _routePause = null;
+    if (_routeResumeWhenReady) return;
+    if (pausedHandleId == null || handle == null || handle.id != pausedHandleId) return;
+    unawaited(_resumeAfterRoute(handle, pause, generation));
+  }
+
+  Future<void> _pauseForRoute(PlayerHandle handle) async {
+    if (!_routeCovered) return;
+    final pending = _routePause;
+    if (pending != null) {
+      await pending;
+      return;
+    }
+    final generation = _routePauseGeneration;
+    _routePausedHandleId = handle.id;
+    _routePause = handle.pause().catchError((Object _) {
+      if (_routePauseGeneration == generation) _routePausedHandleId = null;
+    });
+    await _routePause;
+  }
+
+  Future<void> _settleRouteAutoplay(PlayerHandle handle) async {
+    if (!_routeAutoplayRequested) {
+      _routeResumeWhenReady = false;
+      return;
+    }
+    if (_routeCovered) {
+      _routeResumeWhenReady = true;
+      await _pauseForRoute(handle);
+      if (_routeCovered) {
+        if (_routePausedHandleId == null) {
+          _routePausedHandleId = handle.id;
+          _routePause = Future<void>.value();
+        }
+        return;
+      }
+      _routePausedHandleId = null;
+      _routePause = null;
+    }
+    if (!_routeResumeWhenReady) return;
+    _routeResumeWhenReady = false;
+    try {
+      if (!handle.state.hasError && handle.state.canPlay && !(handle.playIntent ?? false)) await handle.play();
+    } on Object {
+      // Returning to the page does not turn a refused play into a page failure.
+    }
+  }
+
+  Future<void> _resumeAfterRoute(PlayerHandle handle, Future<void>? pause, int generation) async {
+    try {
+      await pause;
+    } on Object {
+      return;
+    }
+    if (!mounted ||
+        _disposed ||
+        generation != _routePauseGeneration ||
+        !identical(handle, _playableHandle) ||
+        (_transport?.isPlaying ?? false)) {
+      return;
+    }
+    try {
+      await handle.play();
+      if (generation != _routePauseGeneration) await handle.pause();
+    } on Object {
+      // Returning to the page does not turn a refused play into a page failure.
     }
   }
 
@@ -387,8 +482,13 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
       silencePlayer(handle);
       unawaited(_kernel.release(handle.id));
     }
-    _routeObserver?.unsubscribe(this);
-    _routeObserver = null;
+    _routePauseGeneration++;
+    _routeCovered = false;
+    _routeCoverDepth = 0;
+    _routeResumeWhenReady = false;
+    _routeAutoplayRequested = false;
+    if (_route != null) _routeObserver?.unsubscribe(this);
+    _route = null;
     WidgetsBinding.instance.removeObserver(this);
     _backgroundGate?.dispose();
     _backgroundGate = null;
@@ -445,8 +545,14 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
       _dashAudioFallbackTried = false;
       _dashAudioUrlIndex = 0;
       _dashAudioFallbackPending = false;
+      _adapterAttempt = 0;
       _dashAudioActive = false;
       _backgroundPausedHandle = null;
+      _routeAutoplayRequested = true;
+      _routePauseGeneration++;
+      _routePausedHandleId = null;
+      _routePause = null;
+      _routeResumeWhenReady = false;
       _clearTransportSubscriptions();
       // Retire the old source before any network wait. Reusing it here leaves
       // the previous episode audible when the next source fails to open.
@@ -510,8 +616,9 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
         if (!_isCurrentGeneration(generation)) return;
         if (dash != null) {
           _dashAudioActive = true;
+          _beginAdapterAttempt(handle, generation);
           try {
-            await handle.openMedia(dash, autoPlay: true);
+            await handle.openMedia(dash, autoPlay: !_routeCovered);
           } on Object catch (error) {
             if (error is! UnsupportedError && !isVodExternalAudioFailure('$error')) rethrow;
             final muxed = await _openMuxedEpisode(handle, episode, generation);
@@ -519,7 +626,7 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
             info = muxed;
           }
         } else {
-          await handle.open(_episodeSource(info, episode), autoPlay: true);
+          await handle.open(_episodeSource(info, episode), autoPlay: !_routeCovered);
         }
         if (!_isCurrentGeneration(generation)) return;
         await handle.setVolume(_volume);
@@ -529,6 +636,7 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
           await handle.seek(from);
         }
         if (!_isCurrentGeneration(generation)) return;
+        await _settleRouteAutoplay(handle);
         // The identity is published only after the source and its opening
         // options succeeded. Every control and checkpoint reads this identity.
         _openedIdentity = _identityOf(episode);
@@ -1000,6 +1108,7 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
     Duration? resume,
   }) async {
     if (!_isCurrentGeneration(generation) || !identical(_handle, handle)) return null;
+    _beginAdapterAttempt(handle, generation);
     _dashAudioActive = false;
     _dashAudioFallbackTried = true;
     _dashAudioFallbackPending = false;
@@ -1035,7 +1144,7 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
       return;
     }
     final position = _transport?.position ?? Duration.zero;
-    final autoPlay = handle.playIntent ?? _transport?.isPlaying ?? true;
+    final autoPlay = !_routeCovered && (handle.playIntent ?? _transport?.isPlaying ?? true);
     _dashAudioFallbackPending = false;
     setState(() {
       _error = null;
@@ -1046,17 +1155,14 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
       if (dash != null) {
         final audioUrls = vodDashAudioUrls(dash);
         while (_dashAudioUrlIndex + 1 < audioUrls.length && _isCurrentGeneration(generation)) {
-          final source = vodDashSourceOf(
-            dash,
-            maxQuality: _openedQn,
-            audioUrl: audioUrls[++_dashAudioUrlIndex],
-          );
+          final source = vodDashSourceOf(dash, maxQuality: _openedQn, audioUrl: audioUrls[++_dashAudioUrlIndex]);
           if (source == null) break;
           _holdSound();
           await handle.setVolume(_volume);
           await handle.setMute(muted: _effectivelyMuted);
           await handle.setRate(_speed);
           if (!_isCurrentGeneration(generation) || !identical(_handle, handle)) return;
+          _beginAdapterAttempt(handle, generation);
           try {
             await handle.openMedia(source, autoPlay: autoPlay);
           } on Object catch (error) {
@@ -1069,6 +1175,7 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
           await handle.setMute(muted: _effectivelyMuted);
           await handle.setRate(_speed);
           if (position > Duration.zero) await handle.seek(position);
+          await _settleRouteAutoplay(handle);
           if (!_dashAudioFallbackPending) {
             if (!mounted || !_isCurrentGeneration(generation)) return;
             setState(() => _opening = false);
@@ -1080,6 +1187,7 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
       }
       final info = await _openMuxedEpisode(handle, episode, generation, autoPlay: autoPlay, resume: position);
       if (info == null || !_isCurrentGeneration(generation) || !mounted) return;
+      await _settleRouteAutoplay(handle);
       setState(() {
         _play = info;
         _silent = info.silent;
@@ -1127,14 +1235,27 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
         _transport = state;
         if (state.isPlaying) _error = null;
       });
-      if (state.isPlaying) _scheduleHide();
+      if (state.isPlaying) {
+        _scheduleHide();
+        if (_routeCovered) unawaited(_pauseForRoute(handle));
+      }
       if (_openedGeneration == generation && _openedIdentity != null) _savePosition();
     });
     // The station's own events, not positions the page guesses at: the end
     // of an episode is what the finish action waits for, and a failed one
     // says so on the picture instead of spinning forever.
+    _listenAdapterEvents(handle, generation, 0);
+  }
+
+  void _beginAdapterAttempt(PlayerHandle handle, int generation) {
+    unawaited(_eventSub?.cancel() ?? Future<void>.value());
+    _dashAudioFallbackPending = false;
+    _listenAdapterEvents(handle, generation, ++_adapterAttempt);
+  }
+
+  void _listenAdapterEvents(PlayerHandle handle, int generation, int attempt) {
     _eventSub = handle.adapterEvents.listen((event) {
-      if (!_isCurrentGeneration(generation)) return;
+      if (!_isCurrentGeneration(generation) || attempt != _adapterAttempt) return;
       switch (event) {
         case final PlayerAdapterErrorEvent error:
           if (isVodExternalAudioFailure(error.message) && _dashAudioActive && !_dashAudioFallbackTried) {

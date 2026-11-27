@@ -410,6 +410,7 @@ final class VodDownloadsController extends Notifier<List<VodDownloadItem>> {
   final Map<String, Timer> _retryTimers = {};
   final Map<String, Object> _generations = {};
   final Map<String, bool> _deleteFiles = {};
+  final Map<String, Future<void>> _sidecarWrites = {};
   final Set<String> _dropping = {};
   final Set<String> _enqueuing = {};
   Timer? _persistTimer;
@@ -480,7 +481,12 @@ final class VodDownloadsController extends Notifier<List<VodDownloadItem>> {
       await directory.create(recursive: true);
       final extension = info.format.isEmpty ? 'mp4' : info.format;
       final name = vodDownloadFileName(title: title, part: part, index: index, parts: parts, extension: extension);
-      final target = freeDownloadFile(directory, name);
+      final sameTarget =
+          existing != null && p.extension(existing.filePath).toLowerCase() == '.$extension'.toLowerCase();
+      final target = existing != null && sameTarget ? File(existing.filePath) : freeDownloadFile(directory, name);
+      if (!sameTarget && existing != null && !await _delete(File('${existing.filePath}.part'))) {
+        throw FileSystemException('Cannot remove obsolete download part', existing.filePath);
+      }
       final item = VodDownloadItem(
         id: id,
         bvid: bvid,
@@ -619,6 +625,8 @@ final class VodDownloadsController extends Notifier<List<VodDownloadItem>> {
     if (token == null || !_dropping.add(id)) return;
     try {
       _retryTimers.remove(id)?.cancel();
+      final sidecarWrite = _sidecarWrites[id];
+      if (sidecarWrite != null) await sidecarWrite;
       if (!await _delete(File('${item.filePath}.part'))) {
         throw FileSystemException('Cannot remove download part', item.filePath);
       }
@@ -769,10 +777,10 @@ final class VodDownloadsController extends Notifier<List<VodDownloadItem>> {
       await _delete(target);
       if (_stops.containsKey(id)) throw const _Stopped();
       final file = await scratch.rename(target.path);
+      item = item.copyWith(received: received, speed: 0, phase: VodDownloadPhase.done);
+      _replace(item);
       if (_stops.containsKey(id)) throw const _Stopped();
-      item = item.copyWith(received: received, speed: 0);
-      _replace(item.copyWith(phase: VodDownloadPhase.done));
-      await _saveDanmaku(file, item.cid);
+      await _saveDanmaku(id, file, item.cid, generation);
     } on Object catch (error) {
       if (_isCurrent(id, generation) && error is! _Stopped && !stopped) {
         item = item.copyWith(received: received, speed: 0, phase: VodDownloadPhase.failed, error: '$error');
@@ -801,7 +809,7 @@ final class VodDownloadsController extends Notifier<List<VodDownloadItem>> {
           }
         } else {
           _deleteFiles.remove(id);
-          if (stop == _VodStop.pause) {
+          if (stop == _VodStop.pause && item.phase != VodDownloadPhase.done) {
             item = item.copyWith(received: received, speed: 0, phase: VodDownloadPhase.paused);
             _replace(item);
           }
@@ -842,12 +850,23 @@ final class VodDownloadsController extends Notifier<List<VodDownloadItem>> {
 
   /// The danmaku sidecars the viewer chose, beside the finished file — a
   /// courtesy, so a miss says nothing about the download itself.
-  Future<void> _saveDanmaku(File video, int cid) async {
+  Future<void> _saveDanmaku(String id, File video, int cid, Object generation) {
+    final previous = _sidecarWrites[id] ?? Future<void>.value();
+    final write = previous.then((_) => _writeDanmaku(id, video, cid, generation));
+    _sidecarWrites[id] = write;
+    return write.whenComplete(() {
+      if (identical(_sidecarWrites[id], write)) unawaited(_sidecarWrites.remove(id));
+    });
+  }
+
+  Future<void> _writeDanmaku(String id, File video, int cid, Object generation) async {
     try {
+      if (!_isCurrent(id, generation) || _dropping.contains(id) || _stops.containsKey(id)) return;
       if (!ref.read(vodDownloadDanmakuProvider)) return;
       final formats = ref.read(danmakuSaveFormatsProvider);
       if (formats.isEmpty || cid <= 0) return;
       final xml = await ref.read(vodClientProvider).danmakuXml(cid);
+      if (!_isCurrent(id, generation) || _dropping.contains(id) || _stops.containsKey(id)) return;
       await writeDanmakuFiles(video, BilibiliDanmakuXml.decode(xml), formats);
     } on Object {
       // The video stands on its own.
