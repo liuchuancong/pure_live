@@ -1,7 +1,12 @@
+import 'dart:async';
+import 'dart:convert' show jsonDecode;
+import 'dart:io' show HttpServer, InternetAddress, WebSocket, WebSocketTransformer;
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pure_live/modules/music/controller/sync/music_sync_codec.dart';
 import 'package:pure_live/modules/music/controller/sync/music_sync_data.dart';
 import 'package:pure_live/modules/music/controller/sync/music_sync_server.dart';
+import 'package:pure_live/modules/music/controller/sync/music_sync_wire.dart';
 
 Map<String, Object?> _song(String id) => <String, Object?>{'id': id, 'name': 'Song $id'};
 
@@ -92,6 +97,71 @@ void main() {
       // The reference splits on the marker, so a third field falls away.
       expect(musicSyncDislikeMerge('Weird@Name@1', ''), 'weird@name');
       expect(musicSyncDislikeMerge('@Singer Only', ''), '@singer only');
+    });
+  });
+
+  group('socket push acknowledgements', () {
+    late HttpServer server;
+    late WebSocket remote;
+    late MusicSyncServerSocket connection;
+    late StreamIterator<Object?> incoming;
+
+    setUp(() async {
+      server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+      final accepted = Completer<WebSocket>();
+      server.listen((request) async {
+        accepted.complete(await WebSocketTransformer.upgrade(request));
+      });
+      remote = await WebSocket.connect('ws://${server.address.address}:${server.port}/');
+      connection = MusicSyncServerSocket(
+        await accepted.future,
+        MusicSyncServerDevice(clientId: 'cid', key: 'key', deviceName: 'test', isMobile: false, lastConnectDate: 0),
+      );
+      incoming = StreamIterator<Object?>(remote);
+    });
+
+    tearDown(() async {
+      await incoming.cancel();
+      await connection.close(1000);
+      await remote.close();
+      await server.close(force: true);
+    });
+
+    test('an async push is acknowledged only after its work completes', () async {
+      final gate = Completer<void>();
+      final started = Completer<void>();
+      connection
+        ..registerPushHandler('slow', (_) {
+          started.complete();
+          return gate.future;
+        })
+        ..registerPushHandler('fast', (_) => 'ok');
+
+      remote.add(musicSyncEncodeRequest('slow', const [], const []));
+      await started.future;
+      remote.add(musicSyncEncodeRequest('fast', const [], const []));
+
+      expect(await incoming.moveNext(), isTrue);
+      final first = jsonDecode(incoming.current! as String) as List;
+      expect(first[1], 'fast');
+      expect(first[2], isNull);
+      expect(first[3], 'ok');
+
+      gate.complete();
+      expect(await incoming.moveNext(), isTrue);
+      final second = jsonDecode(incoming.current! as String) as List;
+      expect(second[1], 'slow');
+      expect(second[2], isNull);
+    });
+
+    test('a failed async push returns an RPC error', () async {
+      connection.registerPushHandler('fail', (_) => Future<void>.error(StateError('boom')));
+      remote.add(musicSyncEncodeRequest('fail', const [], const []));
+
+      expect(await incoming.moveNext(), isTrue);
+      final frame = jsonDecode(incoming.current! as String) as List;
+      expect(frame[1], 'fail');
+      expect((frame[2]! as Map)['message'], contains('boom'));
     });
   });
 

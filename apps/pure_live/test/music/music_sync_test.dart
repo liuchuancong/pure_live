@@ -159,8 +159,34 @@ void main() {
       expect(decoded.playlists.single.tracks.single.id, '123');
     });
 
+    test('quality ids survive a sync round-trip, including unknown tiers', () {
+      final withQualities = track.copyWith(
+        qualities: const [
+          audio.MusicQuality.k128,
+          audio.MusicQuality.k320,
+          audio.MusicQuality.flac,
+          audio.MusicQuality(id: 'studio', label: 'Studio'),
+        ],
+      );
+      final data = musicSyncListDataFromState([withQualities], const [], const []);
+      final decoded = musicSyncApplyListData(data);
+      expect(decoded.recent.single.qualities.map((quality) => quality.id), ['128k', '320k', 'flac', 'studio']);
+      expect(decoded.recent.single.qualities.last.label, 'studio');
+    });
+
     test('partial list data patches to empty', () {
       final decoded = musicSyncApplyListData(<String, Object?>{'loveList': []});
+      expect(decoded.recent, isEmpty);
+      expect(decoded.favourites, isEmpty);
+      expect(decoded.playlists, isEmpty);
+    });
+
+    test('malformed list fields are treated as empty instead of throwing', () {
+      final decoded = musicSyncApplyListData(<String, Object?>{
+        'defaultList': <String, Object?>{},
+        'loveList': 'broken',
+        'userList': 42,
+      });
       expect(decoded.recent, isEmpty);
       expect(decoded.favourites, isEmpty);
       expect(decoded.playlists, isEmpty);

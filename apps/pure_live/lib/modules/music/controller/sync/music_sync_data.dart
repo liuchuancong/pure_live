@@ -81,9 +81,20 @@ audio.MusicTrack? musicSyncTrackFromInfo(Object? json) {
     album: meta is Map && meta['albumName'] is String ? meta['albumName'] as String : '',
     albumId: meta is Map && meta['albumId'] is String ? meta['albumId'] as String : null,
     coverUri: meta is Map && meta['picUrl'] is String ? Uri.tryParse(meta['picUrl'] as String) : null,
+    qualities: _qualitiesOf(meta is Map ? meta['qualitys'] : null),
     duration: _durationOf(interval is String ? interval : null),
   );
 }
+
+List<audio.MusicQuality> _qualitiesOf(Object? json) => [
+  if (json is List)
+    for (final value in json)
+      if (value is String && value.isNotEmpty)
+        audio.MusicQuality.all.firstWhere(
+          (quality) => quality.id == value,
+          orElse: () => audio.MusicQuality(id: value, label: value),
+        ),
+];
 
 Duration? _durationOf(String? interval) {
   if (interval == null) return null;
@@ -102,8 +113,9 @@ musicSyncApplyListData(Object? listData) {
   if (listData is! Map) return (recent: const [], favourites: const [], playlists: const []);
   final love = _tracksOf(listData['loveList']);
   final defaultList = _tracksOf(listData['defaultList']);
+  final userList = listData['userList'];
   final playlists = <MusicPlaylist>[
-    for (final entry in listData['userList'] as List? ?? const <Object?>[])
+    for (final entry in userList is List ? userList : const <Object?>[])
       if (entry is Map && entry['id'] is String && entry['name'] is String)
         MusicPlaylist(
           id: entry['id'] as String,

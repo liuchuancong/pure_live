@@ -498,3 +498,12 @@ Windows 窗口全屏入口（第十五轮改）：播放行「全屏｜窗口全
   - **配置与主要文件**：无新增持久化配置、Slang key、依赖或主题 token；回调结果与 socket 身份均属运行时状态。修改 `modules/music/controller/sync/music_sync_client.dart`、`music_sync_codec.dart`、`music_sync_wire.dart`、`test/music/music_sync_test.dart` 与本台账。
   - **验证**：四个修改文件仅做单文件格式化；音乐同步聚焦回归 **30/30** 通过；App `dart analyze lib test` 为 **No issues found**；App 全量测试 **1336/1336（4 分 25 秒）** 通过；`git diff --check` 通过。仓外 media_core 无本轮修改。
   - **多平台与限制**：修复位于音乐同步运行时，不区分桌面、平板、手机、TV 或浅色/深色/自定义主题。未构建 APK/桌面产物、未截图或运行 UI，未做真实 LX 服务回调、授权失败、长连接重连、多窗口、TV、触控、大字体或读屏验收；本地 LX Desktop checkout 锁定的 0.1.3 与当前 2.x wire 不同，真实跨版本互通仍需以目标服务版本抓包联调，自动测试不能替代这些运行时验收。
+
+- 2026-11-27：第八十七轮（LX 同步音质保真、畸形列表容错与服务端异步确认）⇒
+  - **音质往返**：`musicSyncTrackFromInfo` 现在读回 `meta.qualitys`，已知 id 映射为共享 `MusicQuality` 常量，未知 id 保留为通用档位；同步后的 recent、favourites 与歌单歌曲不再丢失音质信息，音质徽标、列表说明和 lx 取流梯度可继续读取原有数据。
+  - **畸形列表容错**：`musicSyncApplyListData` 对 `userList` 采用与 `defaultList`、`loveList` 一致的类型检查，远端返回对象、字符串或数字时按空歌单处理，不再因单个畸形字段抛 `TypeError` 中断整个列表同步。
+  - **服务端异步确认**：`MusicSyncServerSocket` 的 push handler 改为可返回 Future，列表与屏蔽覆盖动作等待实际写入及广播完成后再回包；同步异常和异步异常转为 RPC error，避免服务端在落盘前误报成功。
+  - **回归覆盖**：新增已知与未知音质 id 往返、三类畸形列表字段容错、异步 push 在 gate 完成后才确认且后续快请求先返回、异步 push 失败返回 RPC error 四项回归；后两项使用本地 HTTP/WebSocket，不依赖延时猜测。
+  - **配置与主要文件**：无新增持久化配置、Slang key、依赖或主题 token。修改 `modules/music/controller/sync/music_sync_data.dart`、`music_sync_server.dart`、`test/music/music_sync_test.dart`、`music_sync_server_test.dart` 与本台账。
+  - **验证**：四个 Dart 文件仅做单文件格式化；音乐同步聚焦回归 **47/47** 通过；App `dart analyze lib test` 为 **No issues found**；App 全量测试 **1340/1340（4 分 22 秒）** 通过；`git diff --check` 通过。仓外 media_core 无本轮修改。
+  - **多平台与限制**：修复位于音乐同步运行时，不区分桌面、平板、手机、TV 或浅色/深色/自定义主题。未构建 APK/桌面产物、未截图或运行 UI，未做真实 LX 服务音质同步、畸形 payload、落盘失败、多客户端广播、多窗口、TV、触控、大字体或读屏验收；下载恢复仍受外部 `media_core_audio` 缺少 resolver 重绑 API 限制，本轮未修改该包。

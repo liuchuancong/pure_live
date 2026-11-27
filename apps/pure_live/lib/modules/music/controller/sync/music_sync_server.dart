@@ -126,7 +126,8 @@ final class MusicSyncServerSocket {
   void Function()? onClosed;
 
   final Map<String, Completer<Object?>> _pending = <String, Completer<Object?>>{};
-  final Map<String, void Function(List<Object?> args)> _pushHandlers = <String, void Function(List<Object?> args)>{};
+  final Map<String, Object? Function(List<Object?> args)> _pushHandlers =
+      <String, Object? Function(List<Object?> args)>{};
   Timer? _pinger;
   var _callId = 0;
   var _closed = false;
@@ -134,7 +135,7 @@ final class MusicSyncServerSocket {
   bool get isClosed => _closed;
 
   /// Registers the server-side push target (`onListSyncAction`).
-  void registerPushHandler(String name, void Function(List<Object?> args) handler) => _pushHandlers[name] = handler;
+  void registerPushHandler(String name, Object? Function(List<Object?> args) handler) => _pushHandlers[name] = handler;
 
   /// Calls one of the client's exposed methods.
   Future<Object?> call(String name, List<Object?> args, {Duration timeout = const Duration(seconds: 120)}) {
@@ -193,8 +194,20 @@ final class MusicSyncServerSocket {
     switch (decoded) {
       case final MusicSyncRpcRequest request:
         final handler = _pushHandlers[request.name];
-        _send(musicSyncEncodeFrame(request.reply(null)));
-        if (handler != null) handler(request.args);
+        if (handler == null) {
+          _send(musicSyncEncodeFrame(request.reply(null)));
+          return;
+        }
+        try {
+          final result = handler(request.args);
+          if (result is Future) {
+            unawaited(_completePush(request, result));
+          } else {
+            _send(musicSyncEncodeFrame(request.reply(result)));
+          }
+        } on Object catch (error) {
+          _send(musicSyncEncodeFrame(request.replyError(error.toString())));
+        }
       case final MusicSyncRpcResponse response:
         final completer = _pending.remove(response.name);
         if (completer == null) return;
@@ -205,6 +218,15 @@ final class MusicSyncServerSocket {
         }
       default:
         break;
+    }
+  }
+
+  Future<void> _completePush(MusicSyncRpcRequest request, Future<dynamic> future) async {
+    try {
+      final result = await future;
+      _send(musicSyncEncodeFrame(request.reply(result)));
+    } on Object catch (error) {
+      _send(musicSyncEncodeFrame(request.replyError(error.toString())));
     }
   }
 
@@ -577,8 +599,8 @@ final class MusicSyncServer {
       _emitStatus();
     };
     connection
-      ..registerPushHandler('onListSyncAction', (args) => unawaited(_onRemoteListAction(connection, args)))
-      ..registerPushHandler('onDislikeSyncAction', (args) => unawaited(_onRemoteDislikeAction(connection, args)));
+      ..registerPushHandler('onListSyncAction', (args) => _onRemoteListAction(connection, args))
+      ..registerPushHandler('onDislikeSyncAction', (args) => _onRemoteDislikeAction(connection, args));
     _sockets[keyInfo.clientId] = connection;
     _emitStatus();
     unawaited(_runSync(connection));
