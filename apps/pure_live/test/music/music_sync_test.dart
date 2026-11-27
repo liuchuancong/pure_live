@@ -1,7 +1,10 @@
+import 'dart:async';
 import 'dart:convert' show jsonDecode, jsonEncode;
+import 'dart:io' show HttpServer, HttpStatus, InternetAddress, WebSocket, WebSocketTransformer;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:live_net/live_net.dart';
 import 'package:live_storage/live_storage.dart';
 import 'package:media_core_audio/media_core_audio.dart' as audio;
 import 'package:pure_live/modules/music/controller/library/music_playlists.dart' show MusicPlaylist;
@@ -166,6 +169,64 @@ void main() {
     });
   });
 
+  group('client lifecycle', () {
+    const keyInfo = MusicSyncKeyInfo(clientId: 'id', key: '0123456789abcdef', serverName: 'test');
+    late HttpServer server;
+    late MusicSyncAddress address;
+    late _UnusedHttp http;
+    late MusicSyncClient client;
+
+    setUp(() async {
+      server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+      address = MusicSyncAddress(httpScheme: 'http', wsScheme: 'ws', hostPath: '127.0.0.1:${server.port}');
+      http = _UnusedHttp();
+      client = MusicSyncClient(http: http, deviceName: 'test');
+    });
+
+    tearDown(() async {
+      await client.dispose();
+      await server.close(force: true);
+    });
+
+    test('a rejected socket handshake is not reported as connected', () async {
+      server.listen((request) async {
+        request.response.statusCode = HttpStatus.unauthorized;
+        await request.response.close();
+      });
+
+      await expectLater(client.connect(address, keyInfo), throwsException);
+      expect(client.isConnected, isFalse);
+    });
+
+    test('disconnect fails an outstanding call without waiting for its timeout', () async {
+      final accepted = Completer<WebSocket>();
+      server.listen((request) async {
+        accepted.complete(await WebSocketTransformer.upgrade(request));
+      });
+      await client.connect(address, keyInfo);
+      final call = client.call('wait', const []);
+
+      final result = expectLater(call, throwsA(isA<Exception>()));
+      await client.disconnect();
+      await result;
+    });
+
+    test('a lost socket fails its outstanding call while transport reconnects', () async {
+      final accepted = Completer<WebSocket>();
+      server.listen((request) async {
+        accepted.complete(await WebSocketTransformer.upgrade(request));
+      });
+      await client.connect(address, keyInfo);
+      final call = client.call('wait', const []);
+
+      await (await accepted.future).close();
+      await expectLater(
+        call.timeout(const Duration(seconds: 2), onTimeout: () => throw StateError('call was not released')),
+        throwsA(isA<Exception>()),
+      );
+    });
+  });
+
   group('client surface', () {
     test('the newest connect supersedes an earlier attempt before it opens a client', () async {
       final container = ProviderContainer();
@@ -214,4 +275,9 @@ void main() {
       expect(() => MusicSyncKeyInfo.fromJson(<String, Object?>{}), throwsFormatException);
     });
   });
+}
+
+final class _UnusedHttp implements LiveHttp {
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }

@@ -4,13 +4,13 @@
 /// answers its calls and pushes local-change actions back.
 library;
 
-import 'dart:async' show Completer, StreamController, Timer, unawaited;
+import 'dart:async' show Completer, StreamController, StreamSubscription, Timer, unawaited;
 import 'dart:convert' show jsonDecode, jsonEncode;
 import 'dart:io' show Platform;
 
 import 'package:live_net/live_net.dart';
 import 'package:live_storage/live_storage.dart' show StoragePrefs;
-import 'package:live_websocket/live_websocket.dart' show LiveWebSocketClient;
+import 'package:live_websocket/live_websocket.dart' show LiveWebSocketClient, WebSocketConnectionState;
 
 import 'package:pure_live/modules/music/controller/sync/music_sync_codec.dart';
 import 'package:pure_live/modules/music/controller/sync/music_sync_wire.dart';
@@ -112,6 +112,12 @@ final class MusicSyncClient {
   final Map<String, void Function(List<Object?> args)> _pushHandlers = <String, void Function(List<Object?> args)>{};
 
   LiveWebSocketClient? _socket;
+  // Both subscriptions are cancelled together by _cancelSocketListeners.
+  // ignore: cancel_subscriptions
+  StreamSubscription<Object?>? _messageSubscription;
+  // The same teardown owns the state subscription.
+  // ignore: cancel_subscriptions
+  StreamSubscription<WebSocketConnectionState>? _stateSubscription;
   Timer? _idleTimer;
   int _callbackCounter = 0;
   var _callbackId = 0;
@@ -209,8 +215,24 @@ final class MusicSyncClient {
     );
     final socket = LiveWebSocketClient(uri: uri);
     _socket = socket;
-    socket.messages.listen(_onFrame, onDone: _onClosed, onError: (Object error) => _onClosed());
+    _messageSubscription = socket.messages.listen(_onFrame);
+    _stateSubscription = socket.states.listen((state) {
+      if (!identical(_socket, socket)) return;
+      switch (state) {
+        case WebSocketConnectionState.connected:
+          _emit(MusicSyncStatus.connected);
+        case WebSocketConnectionState.reconnecting:
+          _failPending();
+          _emit(MusicSyncStatus.connecting);
+        case WebSocketConnectionState.disconnected:
+          _onClosed(socket);
+        case WebSocketConnectionState.connecting:
+          _emit(MusicSyncStatus.connecting);
+      }
+    });
     await socket.connect();
+    if (!identical(_socket, socket)) throw Exception('同步连接已关闭');
+    if (!socket.isConnected) throw Exception('同步服务连接失败');
     _emit(MusicSyncStatus.connected);
     _armIdleWatch();
   }
@@ -229,7 +251,8 @@ final class MusicSyncClient {
     final socket = _socket;
     _socket = null;
     unregisterAll();
-    _pending.clear();
+    _failPending();
+    await _cancelSocketListeners();
     if (socket != null) await socket.disconnect();
     _emit(MusicSyncStatus.idle);
   }
@@ -328,19 +351,37 @@ final class MusicSyncClient {
 
   void _armIdleWatch() {
     _idleTimer?.cancel();
-    _idleTimer = Timer(const Duration(seconds: 60), _onClosed);
+    final socket = _socket;
+    if (socket == null) return;
+    _idleTimer = Timer(const Duration(seconds: 60), () => _onClosed(socket));
   }
 
-  void _onClosed() {
+  void _onClosed(LiveWebSocketClient socket) {
+    if (!identical(_socket, socket)) return;
     _idleTimer?.cancel();
-    final socket = _socket;
     _socket = null;
-    for (final completer in _pending.values) {
-      completer.completeError(Exception('同步连接已断开'));
-    }
+    unregisterAll();
+    _failPending();
+    unawaited(_cancelSocketListeners());
+    unawaited(socket.disconnect());
+    _emit(MusicSyncStatus.failed);
+  }
+
+  Future<void> _cancelSocketListeners() async {
+    final messages = _messageSubscription;
+    final states = _stateSubscription;
+    _messageSubscription = null;
+    _stateSubscription = null;
+    await messages?.cancel();
+    await states?.cancel();
+  }
+
+  void _failPending() {
+    final pending = _pending.values.toList(growable: false);
     _pending.clear();
-    if (socket != null) unawaited(socket.disconnect());
-    _emit(isConnected ? MusicSyncStatus.connected : MusicSyncStatus.failed);
+    for (final completer in pending) {
+      if (!completer.isCompleted) completer.completeError(Exception('同步连接已断开'));
+    }
   }
 
   void _emit(MusicSyncStatus status) {

@@ -455,3 +455,11 @@ Windows 窗口全屏入口（第十五轮改）：播放行「全屏｜窗口全
   - **配置与主要文件**：无新增持久化配置、Slang key、依赖或主题 token。修改 `modules/music/controller/library/music_playlists.dart`、`test/music/music_playlists_test.dart` 与本台账。
   - **验证**：两个修改文件单文件格式化无变化；App `dart analyze lib test` 为 **No issues found**；歌单聚焦回归 **6/6** 通过。本轮未重跑 App 全量测试。
   - **多平台与限制**：修复位于音乐数据层，不区分桌面、平板、手机、TV 或浅色/深色/自定义主题。未构建 APK/桌面产物、未截图或运行 UI，未做真实批量搬移、失效目标竞态、同步自动推送、恢复下载重试、多窗口、TV、触控、大字体或读屏验收；自动测试不能替代这些运行时验收，仓外 media_core 无本轮修改。
+
+- 2026-11-27：第八十二轮（LX 同步 WebSocket 生命周期与在途调用收口）⇒
+  - **传输状态监听**：`MusicSyncClient` 从 `messages` 的 `onDone/onError` 改为订阅 `LiveWebSocketClient.states`，按 connecting、connected、reconnecting、disconnected 处理连接阶段；握手失败后传输会自行重连，因此 `connect()` 返回时额外校验 socket 身份与实际连接状态，不再把失败握手报告为已连接。
+  - **在途调用释放**：主动断开、远端掉线进入重连以及重连耗尽时，立即用错误完成所有 pending RPC，调用方无需等待 30 秒超时；消息与状态订阅统一取消，旧 socket 的迟到状态事件不能关闭或覆盖新连接。
+  - **回归覆盖**：新增拒绝握手不误报 connected、主动断开立即释放在途调用、远端掉线重连期间立即释放在途调用三项本地 HTTP/WebSocket 集成回归。
+  - **配置与主要文件**：无新增持久化配置、Slang key、依赖或主题 token；socket 订阅、身份守卫与 pending 调用清理均属运行时状态。修改 `modules/music/controller/sync/music_sync_client.dart`、`test/music/music_sync_test.dart` 与本台账。
+  - **验证**：两个修改文件单文件格式化无变化；音乐同步聚焦回归 **20/20** 通过；App `dart analyze lib test` 为 **No issues found**；`flutter test --no-pub` 全量 **1326/1326（4 分 34 秒）** 通过。仓外 media_core 无本轮修改。
+  - **多平台与限制**：修复位于音乐同步运行时，不区分桌面、平板、手机、TV 或浅色/深色/自定义主题。未构建 APK/桌面产物、未截图或运行 UI，未做真实 LX 服务握手、长连接重连、同步中主动断开、多窗口、TV、触控、大字体或读屏验收；自动测试不能替代这些运行时验收。
