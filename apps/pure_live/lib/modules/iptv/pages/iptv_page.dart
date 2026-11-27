@@ -14,11 +14,13 @@ import 'package:pure_live/modules/iptv/controllers/iptv_browse_settings.dart'
     show IptvChannelOrder, iptvBrowseSettingsProvider;
 import 'package:pure_live/modules/iptv/controllers/iptv_controller.dart';
 import 'package:pure_live/modules/iptv/controllers/iptv_epg_controller.dart';
+import 'package:pure_live/modules/iptv/controllers/iptv_now_playing.dart' show iptvNowPlayingProvider;
 import 'package:pure_live/modules/iptv/controllers/iptv_reminders.dart' show iptvRemindersProvider;
 import 'package:pure_live/modules/iptv/controllers/iptv_sources_controller.dart';
 import 'package:pure_live/modules/iptv/pages/iptv_play_page.dart' show IptvPlayPage;
 import 'package:pure_live/modules/iptv/views/iptv_channel_preview.dart';
 import 'package:pure_live/modules/iptv/views/iptv_group_rail.dart';
+import 'package:pure_live/modules/iptv/views/iptv_guide_panel.dart' show showIptvGuide;
 import 'package:pure_live/modules/iptv/views/iptv_import_dialog.dart';
 import 'package:pure_live/modules/iptv/views/iptv_panels.dart';
 import 'package:pure_live/shared/shared.dart';
@@ -203,9 +205,22 @@ final class _ChannelsViewState extends ConsumerState<_ChannelsView> {
     });
   }
 
-  void _open(IptvChannel channel) {
-    unawaited(context.push(RouteNames.iptvPlay.replaceFirst(':channelId', channel.id), extra: channel));
+  void _open(IptvChannel channel, {EpgProgramme? catchup}) {
+    unawaited(
+      context.push(
+        RouteNames.iptvPlay.replaceFirst(':channelId', channel.id),
+        extra: (channel: channel, catchupProgramme: catchup),
+      ),
+    );
   }
+
+  Future<void> _showGuide(IptvChannel channel) => showIptvGuide(
+    context,
+    channel: channel,
+    catchup: null,
+    onCatchup: (programme) async => _open(channel, catchup: programme),
+    onBackToLive: () async => _open(channel),
+  );
 
   /// Opens [group] (null for every channel at once) on the browser's own
   /// state, so the column, the entry and the table all follow one choice.
@@ -254,6 +269,7 @@ final class _ChannelsViewState extends ConsumerState<_ChannelsView> {
     }
     _fillViewport();
     final filter = _groupFilter;
+    final onAir = ref.watch(iptvNowPlayingProvider);
     return LayoutBuilder(
       builder: (context, constraints) {
         final width = constraints.maxWidth;
@@ -272,7 +288,13 @@ final class _ChannelsViewState extends ConsumerState<_ChannelsView> {
               if (hasGroups) IptvGroupEntry(filter: filter, onSelect: _selectGroup),
             ],
           ),
-          child: _ChannelsList(channels: channels, scrollController: _scroll, onOpen: _open),
+          child: _ChannelsList(
+            channels: channels,
+            scrollController: _scroll,
+            selected: onAir,
+            onOpen: _open,
+            onOpenGuide: _showGuide,
+          ),
         );
         return Padding(
           padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s16),
@@ -303,10 +325,11 @@ final class _ChannelsViewState extends ConsumerState<_ChannelsView> {
                               search: widget.search,
                               searchFocus: widget.searchFocus,
                               scrollController: _scroll,
-                              selected: _selected,
+                              selected: onAir,
                               showGroupEntry: hasGroups && !rail,
                               filter: filter,
                               onSelectGroup: _selectGroup,
+                              onOpenGuide: _showGuide,
                               onSelect: (channel) => setState(() => _selected = channel.id),
                               onToggleFavourite: (channel) =>
                                   unawaited(ref.read(iptvChannelsProvider.notifier).toggleFavorite(channel.id)),
@@ -554,11 +577,19 @@ String _groupOf(Translations t, IptvChannel channel) => iptvGroupLabel(t, iptvGr
 /// module's 最近观看 page already uses, and it pages off the same scroll
 /// controller.
 final class _ChannelsList extends ConsumerWidget {
-  const _ChannelsList({required this.channels, required this.scrollController, required this.onOpen});
+  const _ChannelsList({
+    required this.channels,
+    required this.scrollController,
+    required this.selected,
+    required this.onOpen,
+    required this.onOpenGuide,
+  });
 
   final IptvChannelsState channels;
   final ScrollController scrollController;
+  final String? selected;
   final ValueChanged<IptvChannel> onOpen;
+  final ValueChanged<IptvChannel> onOpenGuide;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -585,10 +616,11 @@ final class _ChannelsList extends ConsumerWidget {
           child: IptvChannelTile(
             channel: channel,
             slot: browse.showProgrammeLine ? channels.slots[channel.id] : null,
-            selected: false,
+            selected: selected == channel.id,
             showNumber: browse.showChannelNumber,
             groupLine: channels.selectedGroup != null ? null : _groupOf(t, channel),
-            onPlay: () => onOpen(channel),
+            onPlay: () => selected == channel.id ? onOpenGuide(channel) : onOpen(channel),
+            onOpenGuide: () => onOpenGuide(channel),
             onToggleFavourite: () => unawaited(ref.read(iptvChannelsProvider.notifier).toggleFavorite(channel.id)),
           ),
         );
@@ -643,6 +675,7 @@ final class _ChannelListPane extends ConsumerWidget {
     required this.scrollController,
     required this.selected,
     required this.onSelect,
+    required this.onOpenGuide,
     required this.onToggleFavourite,
     required this.filter,
     required this.onSelectGroup,
@@ -656,6 +689,7 @@ final class _ChannelListPane extends ConsumerWidget {
   final ScrollController scrollController;
   final String? selected;
   final ValueChanged<IptvChannel> onSelect;
+  final ValueChanged<IptvChannel> onOpenGuide;
   final ValueChanged<IptvChannel> onToggleFavourite;
 
   /// The group picker rides the pane's head where the window has no room
@@ -694,7 +728,8 @@ final class _ChannelListPane extends ConsumerWidget {
                   selected: selected == channel.id,
                   showNumber: browse.showChannelNumber,
                   groupLine: channels.selectedGroup == null ? iptvGroupLabel(t, iptvGroupKeyOf(channel)) : null,
-                  onPlay: () => onSelect(channel),
+                  onPlay: () => selected == channel.id ? onOpenGuide(channel) : onSelect(channel),
+                  onOpenGuide: () => onOpenGuide(channel),
                   onToggleFavourite: () => onToggleFavourite(channel),
                 );
                 // The glance rides the rows the pane is not already playing:
