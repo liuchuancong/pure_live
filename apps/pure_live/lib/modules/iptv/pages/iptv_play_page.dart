@@ -376,6 +376,24 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
     }
   }
 
+  Future<void> _togglePlayPause() async {
+    final playback = _playback;
+    if (playback == null) {
+      await _open();
+      return;
+    }
+    if (_playbackState.isTransitioning) return;
+    if (_playbackState.canPause) {
+      await playback.pause();
+      return;
+    }
+    if (_playbackState.canPlay) {
+      await playback.resume();
+      return;
+    }
+    await _open();
+  }
+
   /// The page's hold on the app's sound: opening a channel hushes a live
   /// window or the music the viewer left running. The pause verb reads the
   /// field, so a hush lands on the channel the page holds when it lands.
@@ -1759,7 +1777,7 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
                     muted: muted,
                     onDrag: () =>
                         unawaited(ref.read(windowsPipWindowProvider)?.startDragging() ?? Future<void>.value()),
-                    onPlayPause: () => unawaited(_playback?.togglePlayPause() ?? Future<void>.value()),
+                    onPlayPause: () => unawaited(_togglePlayPause()),
                     onMute: handle == null ? null : () => unawaited(_toggleMute()),
                     onRestore: handle == null ? null : () => unawaited(presentationController.exit(handle.id)),
                     onClose: _closeChannel,
@@ -1800,7 +1818,7 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
           if (!_zapperOpen) const SingleActivator(LogicalKeyboardKey.escape): leave,
           // Space plays and pauses, the baseline the other players already bind.
           const SingleActivator(LogicalKeyboardKey.space): () =>
-              unawaited(_playback?.togglePlayPause() ?? Future<void>.value()),
+              unawaited(_togglePlayPause()),
           // The stream's own figures: the key every player answers to.
           if (!tv)
             const SingleActivator(LogicalKeyboardKey.keyI): () =>
@@ -2139,7 +2157,7 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
                                                         label: playing ? t.player.pause : t.player.play,
                                                         icon: playing ? DsIcons.pause : DsIcons.play,
                                                         onPressed: () => unawaited(
-                                                          _playback?.togglePlayPause() ?? Future<void>.value(),
+                                                          _togglePlayPause(),
                                                         ),
                                                       ),
                                                       PlayerBarButton(
