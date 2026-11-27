@@ -797,6 +797,7 @@ final class BilibiliVodClient {
     final value = score is Map ? score['score'] : null;
     return VodSeason(
       seasonId: seasonId,
+      episodeId: _intOf(hit['episode_id']),
       title: title,
       subtitle: '${hit['season_type_name'] ?? ''}'.trim(),
       coverUrl: _coverOf(hit['cover']),
@@ -938,8 +939,11 @@ final class BilibiliVodClient {
       throw VodFailure('HTTP ${response.statusCode}', statusCode: response.statusCode);
     }
     final json = _tryDecode(response.text);
-    final data = json is Map ? json['data'] : null;
-    if (data is! Map) return const VodAccount(isLogin: false);
+    if (json is Map && _intOf(json['code']) == -101) {
+      return const VodAccount(isLogin: false);
+    }
+    final data = _body(response)['data'];
+    if (data is! Map) throw const VodFailure('the account answer carried no data');
     final name = '${data['uname'] ?? ''}'.trim();
     final face = '${data['face'] ?? ''}'.trim();
     return VodAccount(

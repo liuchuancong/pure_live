@@ -384,6 +384,18 @@ final class BilibiliAppClient {
       return byQuality != 0 ? byQuality : (b.bandwidth ?? 0).compareTo(a.bandwidth ?? 0);
     });
     final qns = <int>{for (final video in tracks) video.quality}.toList()..sort((a, b) => b.compareTo(a));
+    if (tracks.isEmpty) throw const VodFailure('the app interface answered no playable video');
+    final audioTracks = [
+      for (final row in audios)
+        if (row.url.startsWith('http'))
+          VodDashAudio(id: row.id, url: row.url, bandwidth: row.bandwidth, backupUrls: row.backup),
+    ];
+    final flacTrack = flac != null && flac.url.startsWith('http')
+        ? VodDashAudio(id: flac.id, url: flac.url, bandwidth: flac.bandwidth, backupUrls: flac.backup)
+        : null;
+    final dolbyTrack = dolby != null && dolby.url.startsWith('http')
+        ? VodDashAudio(id: dolby.id, url: dolby.url, bandwidth: dolby.bandwidth, backupUrls: dolby.backup)
+        : null;
     return VodPlayInfo(
       url: '',
       quality: _kQualityLabels[quality],
@@ -392,16 +404,10 @@ final class BilibiliAppClient {
       ],
       servedQuality: quality,
       videos: tracks,
-      audios: [
-        for (final row in audios)
-          if (row.url.startsWith('http'))
-            VodDashAudio(id: row.id, url: row.url, bandwidth: row.bandwidth, backupUrls: row.backup),
-      ],
-      flac: flac == null ? null : VodDashAudio(id: flac.id, url: flac.url, bandwidth: flac.bandwidth, backupUrls: flac.backup),
-      dolby: dolby == null
-          ? null
-          : VodDashAudio(id: dolby.id, url: dolby.url, bandwidth: dolby.bandwidth, backupUrls: dolby.backup),
-      silent: tracks.isNotEmpty && audios.isEmpty && flac == null && dolby == null,
+      audios: audioTracks,
+      flac: flacTrack,
+      dolby: dolbyTrack,
+      silent: audioTracks.isEmpty && flacTrack == null && dolbyTrack == null,
     );
   }
 }

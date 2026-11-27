@@ -683,7 +683,8 @@ final class VodDownloadsController extends Notifier<List<VodDownloadItem>> {
   /// Fills the free lanes with queued tasks, oldest first.
   void _pump() {
     if (!ref.mounted) return;
-    var lanes = ref.read(vodDownloadSettingsProvider);
+    final running = _items.where((item) => item.phase == VodDownloadPhase.running).length;
+    var lanes = ref.read(vodDownloadSettingsProvider) - running;
     for (final item in _items) {
       if (lanes <= 0) break;
       if (item.phase != VodDownloadPhase.queued || _dropping.contains(item.id)) continue;
@@ -846,9 +847,9 @@ final class VodDownloadsController extends Notifier<List<VodDownloadItem>> {
             _replace(item);
           }
           await _persist();
-          _pump();
         }
       }
+      _pump();
     }
   }
 

@@ -205,6 +205,34 @@ void main() {
       expect(entries.last.total, 12);
     });
 
+    test('a burst of writes caps the shelf without losing a malformed neighbour', () async {
+      final seed = <String, Object?>{
+        for (var i = 0; i < kVodSeasonProgressLimit; i++)
+          '${kVodSeasonProgressPrefix}old$i': jsonEncode({
+            'title': '旧$i',
+            'episodeIndex': 1,
+            'total': 12,
+            'updatedAt': 1000 + i,
+          }),
+        '${kVodSeasonProgressPrefix}broken': 'not json',
+      };
+      final container = await _container(seed);
+      final controller = container.read(vodSeasonProgressProvider.notifier);
+
+      await Future.wait([
+        for (var i = 0; i < 3; i++)
+          controller.save(seasonId: 'new$i', title: '新$i', cover: '', episodeIndex: 2, total: 12),
+      ]);
+
+      final records = StoragePrefs.snapshot().entries.where((entry) => entry.key.startsWith(kVodSeasonProgressPrefix));
+      expect(
+        records.where((entry) => entry.key != '${kVodSeasonProgressPrefix}broken'),
+        hasLength(kVodSeasonProgressLimit),
+      );
+      expect(StoragePrefs.getString('${kVodSeasonProgressPrefix}broken'), 'not json');
+      expect(container.read(vodSeasonProgressProvider), hasLength(kVodSeasonProgressLimit));
+    });
+
     test('completed requires the finish mark, not the last episode index', () {
       final stamp = DateTime.fromMillisecondsSinceEpoch(1000);
       final middle = VodSeasonProgress(seasonId: '1', title: 'x', episodeIndex: 5, total: 12, updatedAt: stamp);
@@ -273,6 +301,33 @@ void main() {
       });
       final controller = container.read(vodHistoryProvider.notifier);
       expect(controller.resumePoint('a'), (cid: 2, seconds: 0.0));
+    });
+
+    test('a burst of writes keeps only the newest limit from the store', () async {
+      final seed = <String, Object?>{
+        for (var i = 0; i < kVodHistoryLimit; i++)
+          '${kVodProgressPrefix}old$i': jsonEncode({
+            'title': '旧$i',
+            'seconds': 10,
+            'completed': false,
+            'updatedAt': 1000 + i,
+          }),
+      };
+      final container = await _container(seed);
+      final controller = container.read(vodHistoryProvider.notifier);
+
+      await Future.wait([
+        for (var i = 0; i < 3; i++)
+          controller.save(bvid: 'new$i', cid: i, seconds: 20, title: '新$i', durationSeconds: 60),
+      ]);
+
+      final records = StoragePrefs.snapshot().entries.where((entry) => entry.key.startsWith(kVodProgressPrefix));
+      expect(records, hasLength(kVodHistoryLimit));
+      expect(
+        records.map((entry) => entry.key).toSet(),
+        containsAll(['${kVodProgressPrefix}new0', '${kVodProgressPrefix}new1', '${kVodProgressPrefix}new2']),
+      );
+      expect(container.read(vodHistoryProvider), hasLength(kVodHistoryLimit));
     });
 
     test('removeMany drops the selected records and keeps the rest', () async {

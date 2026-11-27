@@ -1301,7 +1301,7 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
           config: PlayerConfig(name: 'floating-video', playbackRate: handle.rate, muted: handle.muted),
           preferredBackend: backend,
         ),
-        onClose: (position, {required reopen}) {
+        onClose: (position, {required reopen, duration = Duration.zero, completed = false}) {
           if (reopen) {
             final root = rootNavigatorKey.currentContext;
             if (root != null && root.mounted) {

@@ -26,6 +26,15 @@ void main() {
     );
   }
 
+  test('completion uses the final transport and a five second tail', () {
+    const total = Duration(minutes: 10);
+    expect(isFloatingVideoPlaybackComplete(const Duration(seconds: 594), total), isFalse);
+    expect(isFloatingVideoPlaybackComplete(const Duration(seconds: 595), total), isTrue);
+    expect(isFloatingVideoPlaybackComplete(const Duration(seconds: 600), total), isTrue);
+    expect(isFloatingVideoPlaybackComplete(const Duration(seconds: 30), Duration.zero), isFalse);
+    expect(isFloatingVideoPlaybackComplete(Duration.zero, const Duration(seconds: 3)), isFalse);
+  });
+
   testWidgets('show inserts the window and dismiss removes it', (tester) async {
     tester.view.physicalSize = const Size(1200, 800);
     tester.view.devicePixelRatio = 1;
@@ -61,7 +70,7 @@ void main() {
       FloatingVideoHandoff(
         title: '第一个视频',
         open: (kernel) async => throw StateError('no engine in tests'),
-        onClose: (_, {required reopen}) => firstCloses++,
+        onClose: (_, {required reopen, duration = Duration.zero, completed = false}) => firstCloses++,
       ),
     );
     await tester.pump();
@@ -72,7 +81,7 @@ void main() {
       FloatingVideoHandoff(
         title: '第二个视频',
         open: (kernel) async => throw StateError('no engine in tests'),
-        onClose: (_, {required reopen}) => secondCloses++,
+        onClose: (_, {required reopen, duration = Duration.zero, completed = false}) => secondCloses++,
       ),
     );
     await tester.pump();
@@ -126,18 +135,24 @@ void main() {
 
     var firstCloses = 0;
     var secondCloses = 0;
+    Duration? firstDuration;
+    var firstCompleted = true;
     final first = FloatingVideoWindow.show(
       FloatingVideoHandoff(
         title: '排队中的旧视频',
         open: (kernel) async => throw StateError('no engine in tests'),
-        onClose: (_, {required reopen}) => firstCloses++,
+        onClose: (_, {required reopen, duration = Duration.zero, completed = false}) {
+          firstCloses++;
+          firstDuration = duration;
+          firstCompleted = completed;
+        },
       ),
     );
     final second = FloatingVideoWindow.show(
       FloatingVideoHandoff(
         title: '排队中的新视频',
         open: (kernel) async => throw StateError('no engine in tests'),
-        onClose: (_, {required reopen}) => secondCloses++,
+        onClose: (_, {required reopen, duration = Duration.zero, completed = false}) => secondCloses++,
       ),
     );
     await tester.pump();
@@ -150,6 +165,8 @@ void main() {
     FloatingVideoWindow.dismiss();
     await tester.pump();
     expect(firstCloses, 1);
+    expect(firstDuration, Duration.zero);
+    expect(firstCompleted, isFalse);
     expect(secondCloses, 1);
   });
 }

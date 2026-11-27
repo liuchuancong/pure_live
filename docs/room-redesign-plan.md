@@ -589,3 +589,13 @@ Windows 窗口全屏入口（第十五轮改）：播放行「全屏｜窗口全
   - **配置与主要文件**：无新增持久化配置、Slang key、依赖或主题 token。修改 `modules/vod/controller/vod_pgc.dart`、`vod_downloads.dart`、`modules/vod/pages/vod_regions_page.dart`、`vod_pgc_page.dart`、`test/vod/vod_search_and_pgc_test.dart`、`vod_downloads_test.dart`、新增 `test/vod/vod_account_reload_test.dart` 与本台账；两个页面既有 `PageLayoutScope` 并行改动未纳入本轮。
   - **验证**：本轮 Dart 文件仅做单文件格式化；App `dart analyze lib test` 为 **No issues found**；`flutter test --no-pub test/vod` **109/109** 通过。新增回归覆盖分区/影视页面账号切换重载、PGC 旧账号迟到成功隔离、关闭重试取消等待、缩短间隔后按新值重试。
   - **多平台与限制**：修复位于 VOD 页面监听、控制器状态和下载计时器，不区分桌面、平板、手机、TV 或浅色/深色/自定义主题。未构建 APK/桌面产物、未截图或运行 UI，未做真实账号切换慢网、电视遥控器、触控、大字号和读屏验收；自动测试不能替代这些运行时验收。DASH 音视频轨下载仍不在本轮范围。
+
+- 2026-11-28：第九十七轮（Bilibili App 解析回退、分享身份、小窗完成状态、下载并发与记录上限）⇒
+  - **App 解析回退**：UGC/PGC 在 App 返回成功但没有可播放视频时抛 `VodFailure`，让既有页面回退到 Web；FLAC、Dolby 只接受 HTTP 地址，无效高级音轨不再伪装成有声结果或阻止静音视频播放。
+  - **影视身份与空态**：PGC 搜索保留 `episode_id`，预览优先使用该集；详情没有集数时返回空而不是抛异常；`nav` 只有明确的 `-101` 才视为游客，风控、无效 JSON 和异常数据继续作为失败处理。
+  - **分享与小窗完成状态**：普通视频分享保留当前分P，影视分享指向当前剧集；共享小窗关闭时回传其最终 position/duration，并在距结尾 5 秒内传递完成状态，VOD 历史与追剧据此保存，替换尚未显示的小窗不会误报完成。
+  - **下载并发释放**：删除运行中任务后，无论清理成功或失败都会补启动下一项；提高并发上限时扣除已在运行的任务数，避免超额启动。
+  - **记录持久化裁剪**：历史与追剧写入后从 `StoragePrefs.snapshot()` 读取权威集合再删除最旧记录，不再依赖可能滞后 800ms 的内存 state；并发突发写入仍保留各自上限。
+  - **配置与主要文件**：无新增持久化配置、Slang key、依赖或主题 token；共享小窗 callback 扩展可选 `duration`/`completed`。修改 `packages/live_vod/lib/src/bilibili_app_client.dart`、`bilibili_vod_client.dart`、`test/bilibili_app_client_test.dart`（新增）、`test/bilibili_vod_client_test.dart`，App 的 `modules/vod/controller/vod_library.dart`、`vod_downloads.dart`、`modules/vod/pages/vod_video_page.dart`、`vod_season_page.dart`、`modules/vod/widgets/vod_preview.dart`、`lib/shared/player/floating_video.dart`、五个既有小窗消费者、`test/vod/vod_library_history_test.dart`、`vod_downloads_test.dart`、`test/shared/floating_video_test.dart` 与本台账；并行布局、PiP 与其他模块改动未纳入本轮。
+  - **验证**：本轮 Dart 文件仅做单文件格式化；App `dart analyze lib test` 为 **No issues found**；`flutter test --no-pub test/vod test/shared/floating_video_test.dart` **118/118** 通过；`packages/live_vod` 的 `dart analyze lib test` 为 **No issues found**，`dart test` **73/73** 通过。新增回归覆盖 App 空 ladder、无效高级音轨、游客错误码、PGC 集数身份、并发记录裁剪、删除任务释放 lane、动态并发上限和小窗完成阈值。
+  - **多平台与限制**：解析、队列与持久化修复不区分平台或主题；共享小窗关闭逻辑统一服务桌面、平板、手机和 TV 宿主。未构建 APK/桌面产物、未截图或运行 UI，未做真实 App/Web 回退、扫码风控、分享打开、小窗真实进度、TV 遥控器、触控和读屏验收；自动测试不能替代这些运行时验收。账号登录竞态、newBV 试看流与 DASH 音视频轨下载留待后续独立任务。

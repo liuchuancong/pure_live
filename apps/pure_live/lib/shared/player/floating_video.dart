@@ -53,11 +53,19 @@ final class FloatingVideoHandoff {
   /// The page's mute state, kept so a muted take stays muted.
   final bool? muted;
 
-  /// Hears the window's last position when it closes, whichever way it
+  /// Hears the window's last transport when it closes, whichever way it
   /// closes — the ✕, the expand button, or a newer video superseding it.
   /// `reopen` says the viewer asked for the page back; the page pushes its
   /// own route there, resuming from `position` where it supports one.
-  final void Function(Duration position, {required bool reopen})? onClose;
+  /// `duration` and `completed` come from the window's own handle, not the
+  /// page's stale handoff snapshot.
+  final void Function(Duration position, {required bool reopen, Duration duration, bool completed})? onClose;
+}
+
+bool isFloatingVideoPlaybackComplete(Duration position, Duration duration) {
+  final total = duration.inMilliseconds;
+  final positionMs = position.inMilliseconds;
+  return positionMs > 0 && total > 0 && positionMs >= total - 5000;
 }
 
 /// The app-wide floating mini window for VOD-class playback. The live room
@@ -106,7 +114,7 @@ final class FloatingVideoWindow {
       _handoff = handoff;
       _showCompleter = latest;
       if (!replaced.isCompleted) replaced.complete(false);
-      previous?.onClose?.call(previous.resume, reopen: false);
+      previous?.onClose?.call(previous.resume, reopen: false, duration: Duration.zero, completed: false);
       return latest.future;
     }
     _scheduled = true;
@@ -287,13 +295,21 @@ final class _FloatingVideoViewState extends ConsumerState<FloatingVideoView> {
     // let a close that beat the first frame checkpoint a fresh start over
     // the progress the page had.
     final position = handle?.position ?? FloatingVideoWindow._handoff?.resume ?? Duration.zero;
+    final duration = handle?.duration ?? Duration.zero;
     final onClose = FloatingVideoWindow._handoff?.onClose;
     FloatingVideoWindow._removeEntry();
     // The callback runs after the overlay is gone: a page that pushes its
     // route back does so with the window already out of the way, and one
     // that only persists progress does it before this State — and the
     // handle — is released.
-    if (onClose != null) onClose(position, reopen: reopen);
+    if (onClose != null) {
+      onClose(
+        position,
+        reopen: reopen,
+        duration: duration,
+        completed: isFloatingVideoPlaybackComplete(position, duration),
+      );
+    }
   }
 
   void _returnToVideo() => _close(reopen: true);

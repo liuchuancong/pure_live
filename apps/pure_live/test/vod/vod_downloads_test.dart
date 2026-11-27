@@ -175,6 +175,84 @@ void main() {
     await pumpEventQueue();
   });
 
+  test('dropping a running task frees its lane for the next queued task', () async {
+    final first = item('first');
+    final second = item('second');
+    await StoragePrefs.setString(kVodDownloadsKey, jsonEncode([first.toJson(), second.toJson()]));
+    final gate = Completer<String>();
+    final answer = jsonEncode({
+      'code': 0,
+      'data': {
+        'quality': 64,
+        'durl': [
+          {'url': 'https://cdn/video.mp4'},
+        ],
+      },
+    });
+    final stub = _DownloadHttp()
+      ..handlers['/x/player/playurl'] = ((_) => answer)
+      ..hold('/x/player/playurl', gate);
+    final container = ProviderContainer(overrides: [vodClientProvider.overrideWithValue(BilibiliVodClient(stub))]);
+    addTearDown(container.dispose);
+    addTearDown(() {
+      if (!gate.isCompleted) gate.complete(answer);
+    });
+    container.read(vodDownloadSettingsProvider.notifier).select(1);
+    container.read(vodDownloadRetryProvider.notifier).select(0);
+    final controller = container.read(vodDownloadsProvider.notifier);
+    await pumpEventQueue();
+    expect(container.read(vodDownloadsProvider).map((task) => task.phase), [
+      VodDownloadPhase.running,
+      VodDownloadPhase.queued,
+    ]);
+
+    await controller.remove(first.id);
+    gate.complete(answer);
+    await pumpEventQueue();
+
+    expect(stub.seen.where((request) => request.url.path == '/x/player/playurl'), hasLength(2));
+    expect(container.read(vodDownloadsProvider).single.id, second.id);
+    expect(container.read(vodDownloadsProvider).single.phase, VodDownloadPhase.running);
+  });
+
+  test('raising the lane limit counts tasks that are already running', () async {
+    await StoragePrefs.setString(
+      kVodDownloadsKey,
+      jsonEncode([for (var index = 0; index < 4; index++) item('task-$index').toJson()]),
+    );
+    final gate = Completer<String>();
+    final answer = jsonEncode({
+      'code': 0,
+      'data': {
+        'quality': 64,
+        'durl': [
+          {'url': 'https://cdn/video.mp4'},
+        ],
+      },
+    });
+    final stub = _DownloadHttp()
+      ..handlers['/x/player/playurl'] = ((_) => answer)
+      ..hold('/x/player/playurl', gate);
+    final container = ProviderContainer(overrides: [vodClientProvider.overrideWithValue(BilibiliVodClient(stub))]);
+    addTearDown(container.dispose);
+    addTearDown(() {
+      if (!gate.isCompleted) gate.complete(answer);
+    });
+    container.read(vodDownloadSettingsProvider.notifier).select(1);
+    container.read(vodDownloadRetryProvider.notifier).select(0);
+    container.read(vodDownloadsProvider);
+    await pumpEventQueue();
+
+    container.read(vodDownloadSettingsProvider.notifier).select(3);
+    await pumpEventQueue();
+
+    final tasks = container.read(vodDownloadsProvider);
+    expect(tasks.where((task) => task.phase == VodDownloadPhase.running), hasLength(3));
+    expect(tasks.where((task) => task.phase == VodDownloadPhase.queued), hasLength(1));
+    gate.complete(answer);
+    await pumpEventQueue();
+  });
+
   test('resuming waits for the paused worker to release its stop signal', () async {
     final queued = item('BV1test:9001');
     await StoragePrefs.setString(kVodDownloadsKey, jsonEncode([queued.toJson()]));

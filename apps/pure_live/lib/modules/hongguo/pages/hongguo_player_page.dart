@@ -1254,7 +1254,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
           config: PlayerConfig(name: 'floating-video', playbackRate: handle.rate, muted: handle.muted),
           preferredBackend: backend,
         ),
-        onClose: (position, {required reopen}) {
+        onClose: (position, {required reopen, duration = Duration.zero, completed = false}) {
           // The page is gone by then, but its progress fields survive as
           // plain data: the write lands in the same local history row (and,
           // signed in, the same cloud copy) a return resumes from.

@@ -1461,10 +1461,10 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
           config: PlayerConfig(name: 'floating-video', playbackRate: handle.rate, muted: handle.muted),
           preferredBackend: backend,
         ),
-        onClose: (position, {required reopen}) {
+        onClose: (position, {required reopen, duration = Duration.zero, completed = false}) {
           // The window's last second lands where a return to the season
           // resumes from.
-          if (detail != null && index >= 0 && position.inMilliseconds > 0) {
+          if (detail != null && index >= 0 && duration.inMilliseconds > 0 && position.inMilliseconds > 0) {
             unawaited(
               progress.save(
                 seasonId: '${widget.seasonId}',
@@ -1473,6 +1473,7 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
                 episodeIndex: index,
                 total: detail.episodes.length,
                 positionSeconds: position.inMilliseconds / 1000,
+                completed: completed,
               ),
             );
           }
@@ -1953,7 +1954,10 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
   Future<void> _share() async {
     final season = ref.read(vodSeasonDetailProvider(widget.seasonId)).value;
     final title = season?.title.trim() ?? '';
-    final link = 'https://www.bilibili.com/bangumi/play/ss${widget.seasonId}';
+    final episode = _episodeOf(_openedIdentity) ?? _episode;
+    final link = episode == null
+        ? 'https://www.bilibili.com/bangumi/play/ss${widget.seasonId}'
+        : 'https://www.bilibili.com/bangumi/play/ep${episode.id}';
     final platform = defaultTargetPlatform;
     final sheet =
         !kIsWeb &&

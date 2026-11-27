@@ -769,7 +769,7 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
           config: PlayerConfig(name: 'floating-video', playbackRate: handle.rate, muted: handle.muted),
           preferredBackend: backend,
         ),
-        onClose: (position, {required reopen}) {
+        onClose: (position, {required reopen, duration = Duration.zero, completed = false}) {
           // The page is gone by then, so the walk's own store takes the
           // position the same way the controller would have.
           unawaited(ArchiveProgress().save('huya-video:$videoId', position));

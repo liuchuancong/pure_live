@@ -1821,7 +1821,6 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
     final detail = _detail;
     final identity = _openedIdentity;
     final part = _partOf(identity);
-    final duration = _transport?.duration ?? Duration.zero;
     final ok = await FloatingVideoWindow.show(
       FloatingVideoHandoff(
         title: detail?.title ?? part?.title ?? t.vod.opening,
@@ -1833,7 +1832,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
           config: PlayerConfig(name: 'floating-video', playbackRate: handle.rate, muted: handle.muted),
           preferredBackend: backend,
         ),
-        onClose: (position, {required reopen}) {
+        onClose: (position, {required reopen, duration = Duration.zero, completed = false}) {
           // The page is gone by then; write the exact part handed over, not
           // whatever selection a later page state might name.
           if (identity != null && part != null && duration.inMilliseconds > 0 && position.inMilliseconds > 0) {
@@ -1846,7 +1845,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                 cover: detail?.coverUrl,
                 uploader: detail?.uploader,
                 durationSeconds: duration.inMilliseconds / 1000,
-                completed: position.inMilliseconds >= duration.inMilliseconds - 5000,
+                completed: completed,
               ),
             );
           }
@@ -1884,7 +1883,9 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
   Future<void> _share() async {
     final detail = _detail;
     if (detail == null) return;
-    await Clipboard.setData(ClipboardData(text: 'https://www.bilibili.com/video/${detail.bvid}'));
+    final part = _partOf(_openedIdentity);
+    final suffix = part != null && part.page > 1 ? '?p=${part.page}' : '';
+    await Clipboard.setData(ClipboardData(text: 'https://www.bilibili.com/video/${detail.bvid}$suffix'));
     if (!mounted) return;
     showDsToast(context: context, title: context.t.common.copied, status: DsStatus.success);
   }

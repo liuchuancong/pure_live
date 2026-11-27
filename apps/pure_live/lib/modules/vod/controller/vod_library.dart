@@ -325,30 +325,14 @@ final class VodHistoryController extends Notifier<List<VodHistoryEntry>> {
     } on Object {
       // A preference; a closed store loses it.
     }
-    await _prune(
-      written: VodHistoryEntry(
-        video: VodSavedVideo(
-          bvid: bvid,
-          title: title,
-          coverUrl: cover,
-          uploader: uploader,
-          durationSeconds: durationSeconds,
-          updatedAt: DateTime.now(),
-        ),
-        positionSeconds: completed ? durationSeconds : seconds,
-        completed: completed,
-      ),
-    );
+    await _prune();
   }
 
-  /// Caps the record at [kVodHistoryLimit]: the overflow's oldest
-  /// checkpoints leave the store after each write. The in-memory list
-  /// plus the entry just written decides — a full-store rescan on every
-  /// five-second checkpoint is the expensive kind of tidiness.
-  Future<void> _prune({required VodHistoryEntry written}) async {
-    final merged = [written, ...state.where((entry) => entry.video.bvid != written.video.bvid)]
-      ..sort((a, b) => b.video.updatedAt.compareTo(a.video.updatedAt));
-    for (final entry in merged.skip(kVodHistoryLimit)) {
+  /// Caps the record at [kVodHistoryLimit] using the store itself, because
+  /// the debounced in-memory refresh can lag behind queued checkpoint writes.
+  Future<void> _prune() async {
+    final entries = _read(enforceLimit: false);
+    for (final entry in entries.skip(kVodHistoryLimit)) {
       try {
         await StoragePrefs.remove('$kVodProgressPrefix${entry.video.bvid}');
       } on Object {
@@ -455,7 +439,7 @@ final class VodHistoryController extends Notifier<List<VodHistoryEntry>> {
     return result.future;
   }
 
-  static List<VodHistoryEntry> _read() {
+  static List<VodHistoryEntry> _read({bool enforceLimit = true}) {
     final List<VodHistoryEntry> entries;
     try {
       entries = [
@@ -466,7 +450,7 @@ final class VodHistoryController extends Notifier<List<VodHistoryEntry>> {
       return const [];
     }
     entries.sort((a, b) => b.video.updatedAt.compareTo(a.video.updatedAt));
-    if (entries.length > kVodHistoryLimit) return entries.take(kVodHistoryLimit).toList();
+    if (enforceLimit && entries.length > kVodHistoryLimit) return entries.take(kVodHistoryLimit).toList();
     return entries;
   }
 
@@ -660,18 +644,14 @@ final class VodSeasonProgressController extends Notifier<List<VodSeasonProgress>
     } on Object {
       // A preference; a closed store loses it.
     }
-    await _prune(written: written);
+    await _prune();
   }
 
-  /// Drops the oldest checkpoints once the shelf passes its limit, so a
-  /// viewer who opens a hundred series does not keep a thousand entries.
-  /// The in-memory shelf plus the entry just written decides — the
-  /// prune runs after every checkpoint write and must not rescan the
-  /// whole store each time.
-  Future<void> _prune({required VodSeasonProgress written}) async {
-    final merged = [written, ...state.where((entry) => entry.seasonId != written.seasonId)]
-      ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
-    for (final entry in merged.skip(kVodSeasonProgressLimit)) {
+  /// Drops the oldest checkpoints once the shelf passes its limit, reading
+  /// the store rather than its debounced in-memory reflection.
+  Future<void> _prune() async {
+    final entries = _read();
+    for (final entry in entries.skip(kVodSeasonProgressLimit)) {
       try {
         await StoragePrefs.remove('$kVodSeasonProgressPrefix${entry.seasonId}');
       } on Object {

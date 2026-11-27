@@ -255,6 +255,7 @@ void main() {
           'result': [
             {
               'season_id': 4242,
+              'episode_id': 7001,
               'title': '某<em class="keyword">番</em>剧',
               'cover': '//i0.hdslb.com/season.jpg',
               'season_type_name': '番剧',
@@ -274,6 +275,7 @@ void main() {
     expect(media.hasMore, isTrue);
     final season = media.seasons.single;
     expect(season.seasonId, 4242);
+    expect(season.episodeId, 7001);
     expect(season.title, '某番剧');
     expect(season.rating, '9.1');
     expect(season.subtitle, '番剧');
@@ -795,6 +797,24 @@ void main() {
     for (final body in http.bodies.take(4)) {
       expect(body, contains('csrf=token456'));
       expect(body, contains('csrf_token=token456'));
+    }
+  });
+
+  test('only the explicit guest code turns the account into a visitor', () async {
+    final guest = BilibiliVodClient(
+      _FakeHttp({
+        '/x/web-interface/nav': {'code': -101, 'message': '未登录'},
+      }),
+    );
+    expect((await guest.account()).isLogin, isFalse);
+
+    for (final answer in <Object>[
+      {'code': -412, 'message': '请求被拦截'},
+      {'code': 0, 'data': null},
+      'not json',
+    ]) {
+      final client = BilibiliVodClient(_FakeHttp({'/x/web-interface/nav': answer}));
+      await expectLater(client.account(), throwsA(isA<VodFailure>()));
     }
   });
 
