@@ -175,6 +175,49 @@ void main() {
     });
   });
 
+  group('the dynamic feed', () {
+    test('an account change clears the feed and drains the old response', () async {
+      final stub = _RouteStub();
+      final gate = Completer<String>();
+      stub.hold('/x/polymer/web-dynamic/v1/feed/all', gate);
+      stub.routes['/x/polymer/web-dynamic/v1/feed/all'] = jsonEncode({
+        'data': {
+          'items': [
+            {
+              'id_str': 'old-post',
+              'modules': {
+                'module_author': {'name': '旧账号'},
+                'module_dynamic': {
+                  'desc': {'text': '旧动态'},
+                },
+              },
+            },
+          ],
+          'has_more': false,
+        },
+      });
+      final container = ProviderContainer(
+        overrides: [vodClientProvider.overrideWith((ref) => BilibiliVodClient(stub, cookie: 'SESSDATA=old'))],
+      );
+      addTearDown(container.dispose);
+      container.listen(vodDynamicsProvider, (_, _) {});
+      final controller = container.read(vodDynamicsProvider.notifier);
+      final flying = controller.open();
+      await pumpEventQueue();
+
+      container
+        ..updateOverrides([vodClientProvider.overrideWith((ref) => BilibiliVodClient(stub, cookie: 'SESSDATA=new'))])
+        ..invalidate(vodDynamicsProvider);
+      await pumpEventQueue();
+      expect(container.read(vodDynamicsProvider).items, isEmpty);
+
+      gate.complete(stub.routes['/x/polymer/web-dynamic/v1/feed/all']!);
+      await flying;
+      await pumpEventQueue();
+      expect(container.read(vodDynamicsProvider).items, isEmpty);
+    });
+  });
+
   group('the comment walk', () {
     test('opens, pages, ends where the duplicates begin, and sorts from the head', () async {
       final stub = _RouteStub();

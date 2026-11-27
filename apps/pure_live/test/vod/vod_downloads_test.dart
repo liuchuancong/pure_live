@@ -175,6 +175,70 @@ void main() {
     await pumpEventQueue();
   });
 
+  test('resuming waits for the paused worker to release its stop signal', () async {
+    final queued = item('BV1test:9001');
+    await StoragePrefs.setString(kVodDownloadsKey, jsonEncode([queued.toJson()]));
+    final gate = Completer<String>();
+    final answer = jsonEncode({
+      'code': 0,
+      'data': {
+        'quality': 64,
+        'durl': [
+          {'url': 'https://cdn/video.mp4'},
+        ],
+      },
+    });
+    final stub = _DownloadHttp()
+      ..handlers['/x/player/playurl'] = ((_) => answer)
+      ..hold('/x/player/playurl', gate);
+    final container = ProviderContainer(overrides: [vodClientProvider.overrideWithValue(BilibiliVodClient(stub))]);
+    addTearDown(container.dispose);
+    final controller = container.read(vodDownloadsProvider.notifier);
+    await pumpEventQueue();
+    await controller.pause(queued.id);
+
+    final resumed = controller.resume(queued.id);
+    await pumpEventQueue();
+    expect(stub.seen.where((request) => request.url.path == '/x/player/playurl'), hasLength(1));
+
+    gate.complete(answer);
+    await resumed;
+    await pumpEventQueue();
+    expect(stub.seen.where((request) => request.url.path == '/x/player/playurl'), hasLength(2));
+  });
+
+  test('a dash-only source fails instead of saving a silent video', () async {
+    final queued = item('BV1test:9001');
+    await StoragePrefs.setString(kVodDownloadsKey, jsonEncode([queued.toJson()]));
+    final stub = _DownloadHttp()
+      ..handlers['/x/player/playurl'] = (_) => jsonEncode({
+        'code': 0,
+        'data': {
+          'quality': 64,
+          'dash': {
+            'video': [
+              {'id': 64, 'baseUrl': 'https://cdn/video.m4s'},
+            ],
+            'audio': [
+              {'id': 30280, 'baseUrl': 'https://cdn/audio.m4s'},
+            ],
+          },
+        },
+      });
+    final container = ProviderContainer(overrides: [vodClientProvider.overrideWithValue(BilibiliVodClient(stub))]);
+    addTearDown(container.dispose);
+    container.read(vodDownloadRetryProvider.notifier).select(0);
+    final controller = container.read(vodDownloadsProvider.notifier);
+
+    await pumpEventQueue();
+
+    final task = container.read(vodDownloadsProvider).single;
+    expect(controller.hasPendingRetry(queued.id), isFalse);
+    expect(task.phase, VodDownloadPhase.failed);
+    expect(task.error, contains('separated video and audio'));
+    expect(File(task.filePath).existsSync(), isFalse);
+  });
+
   test('pause all cancels a failed task waiting to retry', () async {
     final failed = item('BV1test:9001', phase: VodDownloadPhase.failed);
     await StoragePrefs.setString(kVodDownloadsKey, jsonEncode([failed.toJson()]));

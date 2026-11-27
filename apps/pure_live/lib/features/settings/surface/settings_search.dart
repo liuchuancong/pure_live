@@ -568,6 +568,8 @@ List<SettingsSearchHit> settingsSearchCatalog(Translations t) {
       t.vod.seekPreview,
       'seek bar preview frame pointer hover bubble 进度条 预览 悬浮 帧 气泡 指针',
     ),
+    _hit(SettingsSection.vodPlayback, t.vod.apiType, 'api interface web app grpc rest 接口 网页 客户端 取流'),
+    _hit(SettingsSection.vodPlayback, t.vod.appLogin, 'app tv qr scan sign in login 扫码 登录 账号 电视'),
     _hit(
       SettingsSection.vodDownload,
       t.settings.downloadMaxConcurrent,

@@ -143,6 +143,7 @@ final class VodDynamicsController extends Notifier<VodDynamicsState> {
     // accounts makes what was loaded someone else's answer, so the controller
     // starts over and the page's next ask reads it again with the new cookie.
     ref.watch(accountsProvider.select((accounts) => accounts.credentials[SiteIds.bilibili]?.userId));
+    _generation++;
     return _dynamicsInitial();
   }
 

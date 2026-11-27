@@ -107,5 +107,16 @@ void main() {
       // The music page's own words are 音质 — it answers that query instead.
       expect(settingsSearchHits(t, '音质', SettingsSection.values).map((hit) => hit.title), contains(t.music.quality));
     });
+
+    test('the vod interface and app sign-in rows open the playback page', () {
+      final t = Translations();
+      final interface = settingsSearchHits(t, '接口', [SettingsSection.vodPlayback]);
+      expect(interface.map((hit) => hit.title), contains(t.vod.apiType));
+      expect(interface.every((hit) => hit.section == SettingsSection.vodPlayback), isTrue);
+
+      final signIn = settingsSearchHits(t, '扫码', [SettingsSection.vodPlayback]);
+      expect(signIn.map((hit) => hit.title), contains(t.vod.appLogin));
+      expect(signIn.every((hit) => hit.section == SettingsSection.vodPlayback), isTrue);
+    });
   });
 }

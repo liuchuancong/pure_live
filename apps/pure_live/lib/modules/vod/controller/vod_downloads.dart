@@ -4,6 +4,7 @@ import 'dart:io' show Directory, File, FileMode, FileSystemException, HttpClient
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_storage/live_storage.dart' show StoragePrefs;
+import 'package:live_vod/live_vod.dart' show VodFailure;
 import 'package:path/path.dart' as p;
 import 'package:pure_live/app/providers/boot/storage_providers.dart' show appPathsProvider;
 import 'package:pure_live/modules/vod/controller/vod_controller.dart' show vodClientProvider;
@@ -411,6 +412,7 @@ final class VodDownloadsController extends Notifier<List<VodDownloadItem>> {
   final Map<String, Object> _generations = {};
   final Map<String, bool> _deleteFiles = {};
   final Map<String, Future<void>> _sidecarWrites = {};
+  final Map<String, Future<void>> _workers = {};
   final Set<String> _dropping = {};
   final Set<String> _enqueuing = {};
   Timer? _persistTimer;
@@ -550,6 +552,8 @@ final class VodDownloadsController extends Notifier<List<VodDownloadItem>> {
   /// Resumes a paused task, or retries a failed one — the bytes already
   /// written stay and a range request carries on from there.
   Future<void> resume(String id) async {
+    final worker = _workers[id];
+    if (worker != null) await worker;
     final item = _items.where((row) => row.id == id).firstOrNull;
     if (item == null || _dropping.contains(id)) return;
     if (item.phase != VodDownloadPhase.paused && item.phase != VodDownloadPhase.failed) return;
@@ -595,6 +599,16 @@ final class VodDownloadsController extends Notifier<List<VodDownloadItem>> {
 
   /// Resumes every paused and failed task.
   Future<void> resumeAll() async {
+    final workers = <Future<void>>[];
+    for (final item in _items) {
+      if (_dropping.contains(item.id) ||
+          (item.phase != VodDownloadPhase.paused && item.phase != VodDownloadPhase.failed)) {
+        continue;
+      }
+      final worker = _workers[item.id];
+      if (worker != null) workers.add(worker);
+    }
+    await Future.wait(workers);
     for (var index = 0; index < _items.length; index++) {
       final item = _items[index];
       if (!_dropping.contains(item.id) &&
@@ -672,7 +686,17 @@ final class VodDownloadsController extends Notifier<List<VodDownloadItem>> {
       if (lanes <= 0) break;
       if (item.phase != VodDownloadPhase.queued || _dropping.contains(item.id)) continue;
       lanes--;
-      unawaited(_run(item.id));
+      unawaited(_start(item.id));
+    }
+  }
+
+  Future<void> _start(String id) async {
+    final worker = _run(id);
+    _workers[id] = worker;
+    try {
+      await worker;
+    } finally {
+      if (identical(_workers[id], worker)) unawaited(_workers.remove(id));
     }
   }
 
@@ -694,6 +718,9 @@ final class VodDownloadsController extends Notifier<List<VodDownloadItem>> {
       final info = item.epId > 0
           ? await vod.pgcDownloadPart(episodeId: item.epId, cid: item.cid, qn: item.qn)
           : await vod.downloadPart(bvid: item.bvid, cid: item.cid, qn: item.qn);
+      if (info.format == 'm4s') {
+        throw const VodFailure('the download source separated video and audio');
+      }
       if (_stops.containsKey(id)) throw const _Stopped();
       // A row kept from the last session can outlive its folder (the viewer
       // moved or deleted it); the run makes room for itself again.
@@ -799,8 +826,8 @@ final class VodDownloadsController extends Notifier<List<VodDownloadItem>> {
           // The socket is gone; the bytes written are already on disk.
         }
       }
+      if (client != null && identical(_clients[id], client)) _clients.remove(id);
       if (_isCurrent(id, generation)) {
-        _clients.remove(id);
         final stop = _stops.remove(id);
         if (stop == _VodStop.drop) {
           try {

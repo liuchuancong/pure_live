@@ -550,3 +550,14 @@ Windows 窗口全屏入口（第十五轮改）：播放行「全屏｜窗口全
   - **配置与主要文件**：无新增持久化配置、Slang key、依赖或主题 token。修改 `modules/vod/controller/vod_controller.dart`、`vod_pgc.dart`、`vod_social.dart`、`vod_downloads.dart`、`vod_library.dart`、`modules/vod/pages/vod_search_page.dart`、`vod_pgc_page.dart`、`test/vod/vod_search_and_pgc_test.dart`、`vod_social_test.dart`、`vod_downloads_test.dart`、`vod_library_history_test.dart` 与本台账；两个页面既有 `PageLayoutScope` 并行改动未纳入本轮。
   - **验证**：本轮 Dart 文件仅做单文件格式化；App `dart analyze lib` 为 **No issues found**；`flutter test --no-pub test/vod` **97/97** 通过。新增回归覆盖替换搜索首页失败、影视失败 cursor、搜索页恢复所需状态、旧关注读取失败、运行中暂停落库、暂停全部取消重试和立即清空新历史。
   - **多平台与限制**：修复位于 VOD 控制器和现有页面状态，不区分桌面、平板、手机、TV 或浅色/深色/自定义主题。未构建 APK/桌面产物、未截图或运行 UI，未做真实搜索深链、慢网暂停、进程中断恢复、大字号/TV/触控/读屏验收；自动测试不能替代这些运行时验收。DASH 音视频轨下载仍不在本轮范围。
+
+- 2026-11-27：第九十三轮（Bilibili 设置搜索、下载续传竞态、DASH 下载边界与账号状态隔离）⇒
+  - **设置搜索补全**：VOD 播放页已有的“接口类型”和“App 扫码登录”加入设置搜索目录，可按接口、扫码、账号等关键词直达对应页面。
+  - **下载暂停续传**：单个恢复和全部恢复会先等待旧 worker 释放停止信号，再重新入队，避免刚暂停就恢复时第二次下载被旧停止信号吞掉；worker 结束仅清理自己对应的句柄。
+  - **DASH 下载边界**：站点回退为仅含视频 essence 的 `m4s` 地址时明确失败，不再把无声视频保存为完成任务；完整音视频轨下载仍留待后续实现。
+  - **账号状态隔离**：B 站账号切换会推进动态列表请求代次，旧账号迟到的响应不能写入新账号界面。
+  - **会话写入一致性**：App 扫码登录的 access token、device id 和 UID 通过同一偏好事务写入，避免崩溃或部分写入形成半套会话。
+  - **下载连接清理**：HttpClient 清理不再依赖任务代次仍为当前值，弹幕 sidecar 写入未完成时清理已完成任务也不会漏关连接。
+  - **配置与主要文件**：无新增持久化配置、Slang key、依赖或主题 token。修改 `modules/vod/controller/vod_app_login.dart`、`vod_downloads.dart`、`vod_social.dart`、`features/settings/surface/settings_search.dart`、`test/vod/vod_downloads_test.dart`、`vod_social_test.dart`、`test/features/settings/settings_search_test.dart` 与本台账；设置搜索文件中的多词搜索、弹幕显示方式及 IPTV 目录并行改动未纳入本轮。
+  - **验证**：本轮 Dart 文件仅做单文件格式化；App `dart analyze lib test` 为 **No issues found**；`flutter test --no-pub test/vod test/features/settings/settings_search_test.dart` **111/111** 通过。新增回归覆盖暂停后立即恢复、DASH 单 essence 拒绝落盘、账号切换动态隔离，以及接口类型和 App 扫码登录搜索命中。
+  - **多平台与限制**：修复位于 VOD 控制器、登录会话和设置搜索层，不区分桌面、平板、手机、TV 或浅色/深色/自定义主题。未构建 APK/桌面产物、未截图或运行 UI，未做真实慢网恢复、进程中断、大字号/TV/触控/读屏验收；自动测试不能替代这些运行时验收。DASH 音视频轨下载仍不在本轮范围。

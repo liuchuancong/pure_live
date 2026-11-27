@@ -31,9 +31,7 @@ final class VodAppLoginController extends Notifier<VodAppSession?> {
   Future<void> save(TvLoginResult result, {required String deviceId}) async {
     state = (accessKey: result.accessToken, deviceId: deviceId, mid: result.mid);
     try {
-      await StoragePrefs.setString(_accessKeyPref, result.accessToken);
-      await StoragePrefs.setString(_deviceIdPref, deviceId);
-      await StoragePrefs.setInt(_midPref, result.mid);
+      await StoragePrefs.setPrefs({_accessKeyPref: result.accessToken, _deviceIdPref: deviceId, _midPref: result.mid});
     } on Object {
       // A closed store loses the sign-in; the session still works.
     }
