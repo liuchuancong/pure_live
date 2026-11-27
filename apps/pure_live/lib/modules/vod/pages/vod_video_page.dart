@@ -40,7 +40,7 @@ import 'package:pure_live/modules/vod/controller/vod_social.dart'
     show VodCommentsController, vodCommentsProvider, vodFollowUpProvider, vodLikeProvider, vodWriteReadyProvider;
 import 'package:pure_live/modules/vod/widgets/vod_jump_dialog.dart' show showVodJumpDialog;
 import 'package:pure_live/modules/vod/widgets/vod_media_source.dart'
-    show vodDashSourceOf, vodDashVideoOf, vodQualityLabel;
+    show isVodExternalAudioFailure, vodDashAudioUrls, vodDashSourceOf, vodDashVideoOf, vodQualityLabel;
 import 'package:pure_live/modules/vod/widgets/vod_picture_gestures.dart' show VodPictureGestures, VodTapSide;
 import 'package:pure_live/modules/vod/widgets/vod_player_chrome.dart'
     show VodGestureKind, VodGestureTip, VodPictureNotice, VodSeekBar, VodSubtitleLayer;
@@ -126,6 +126,10 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
   bool _gaveInitialFocus = false;
   bool _loading = true;
   bool _opening = false;
+  bool _dashAudioFallbackTried = false;
+  int _dashAudioUrlIndex = 0;
+  bool _dashAudioFallbackPending = false;
+  bool _dashAudioActive = false;
   bool _silent = false;
   bool _disposed = false;
   String? _error;
@@ -650,6 +654,10 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
       _attemptHandle = null;
       _openedIdentity = null;
       _openedGeneration = 0;
+      _dashAudioFallbackTried = false;
+      _dashAudioUrlIndex = 0;
+      _dashAudioFallbackPending = false;
+      _dashAudioActive = false;
       _backgroundPausedHandle = null;
       _routePauseGeneration++;
       _routePausedHandleId = null;
@@ -746,22 +754,14 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
         await handle.setMute(muted: _effectivelyMuted);
         if (!_isCurrentGeneration(generation)) return;
         if (dash != null) {
+          _dashAudioActive = true;
           try {
             await handle.openMedia(dash, autoPlay: !_sleepStopped);
-            // media_core signals "this engine cannot join two essences" as an
-            // UnsupportedError; the muxed request below is its handler.
-            // ignore: avoid_catching_errors
-          } on UnsupportedError {
-            // This engine joins one URL only: ask for the muxed answer, whose
-            // definition is lower but whose sound is already inside it.
-            if (!_isCurrentGeneration(generation)) return;
-            info = await client.playPart(bvid: widget.bvid, cid: part.cid, dash: false);
-            if (!_isCurrentGeneration(generation)) return;
-            _openedQn = info.servedQuality ?? _openedQn;
-            _openedLabel = info.quality;
-            _holdSound();
-            await handle.setMute(muted: _effectivelyMuted);
-            await handle.open(_partSource(info, part), autoPlay: !_sleepStopped);
+          } on Object catch (error) {
+            if (error is! UnsupportedError && !isVodExternalAudioFailure('$error')) rethrow;
+            final muxed = await _openMuxedPart(handle, part, generation, autoPlay: !_sleepStopped);
+            if (muxed == null || !_isCurrentGeneration(generation)) return;
+            info = muxed;
           }
         } else {
           await handle.open(_partSource(info, part), autoPlay: !_sleepStopped);
@@ -792,6 +792,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
           _silent = info.silent;
           _opening = false;
         });
+        if (_dashAudioFallbackPending) unawaited(_fallbackDashAudio(handle, generation));
         unawaited(_loadDanmaku(part.cid));
         unawaited(_loadExtra(part.cid));
         _giveInitialFocus();
@@ -817,6 +818,117 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
           _error = error is VodFailure ? error.message : '$error';
         });
       }
+    }
+  }
+
+  /// Opens the muxed answer on the same handle after a DASH compatibility
+  /// failure. The caller keeps ownership of the generation and publishes the
+  /// returned answer only after every restored option has succeeded.
+  Future<VodPlayInfo?> _openMuxedPart(
+    PlayerHandle handle,
+    VodPart part,
+    int generation, {
+    required bool autoPlay,
+    Duration? resume,
+  }) async {
+    if (!_isCurrentGeneration(generation) || !identical(_handle, handle)) return null;
+    _dashAudioActive = false;
+    _dashAudioFallbackTried = true;
+    _dashAudioFallbackPending = false;
+    final info = await ref.read(vodClientProvider).playPart(bvid: widget.bvid, cid: part.cid, dash: false);
+    if (!_isCurrentGeneration(generation) || !identical(_handle, handle)) return null;
+    _openedQn = info.servedQuality ?? _openedQn;
+    _openedLabel = info.quality;
+    _holdSound();
+    await handle.setVolume(_volume);
+    await handle.setMute(muted: _effectivelyMuted);
+    await handle.setRate(_speed);
+    if (!_isCurrentGeneration(generation) || !identical(_handle, handle)) return null;
+    await handle.open(_partSource(info, part), autoPlay: autoPlay);
+    if (!_isCurrentGeneration(generation) || !identical(_handle, handle)) return null;
+    await handle.setVolume(_volume);
+    await handle.setMute(muted: _effectivelyMuted);
+    await handle.setRate(_speed);
+    if (_audioOnly) await _applyAudioOnly(handle);
+    if (resume != null && resume > Duration.zero) {
+      await handle.seek(resume);
+    }
+    return _isCurrentGeneration(generation) && identical(_handle, handle) ? info : null;
+  }
+
+  /// Tries alternate audio addresses without lowering the DASH picture, then
+  /// falls back to a muxed source. Errors during the first open wait for its
+  /// identity; stale sessions never touch the new handle.
+  Future<void> _fallbackDashAudio(PlayerHandle handle, int generation) async {
+    final part = _partOf(_openedIdentity) ?? _part;
+    if (!_isCurrentGeneration(generation) ||
+        !identical(_handle, handle) ||
+        !_dashAudioActive ||
+        _dashAudioFallbackTried ||
+        part == null) {
+      return;
+    }
+    final position = _transport?.position ?? Duration.zero;
+    final autoPlay = !_sleepStopped && (handle.playIntent ?? _transport?.isPlaying ?? true);
+    _dashAudioFallbackPending = false;
+    setState(() {
+      _error = null;
+      _opening = true;
+    });
+    try {
+      final dash = _play;
+      if (dash != null) {
+        final audioUrls = vodDashAudioUrls(dash);
+        while (_dashAudioUrlIndex + 1 < audioUrls.length && _isCurrentGeneration(generation)) {
+          final source = vodDashSourceOf(
+            dash,
+            maxQuality: _openedQn,
+            audioUrl: audioUrls[++_dashAudioUrlIndex],
+          );
+          if (source == null) break;
+          _holdSound();
+          await handle.setVolume(_volume);
+          await handle.setMute(muted: _effectivelyMuted);
+          await handle.setRate(_speed);
+          if (!_isCurrentGeneration(generation) || !identical(_handle, handle)) return;
+          try {
+            await handle.openMedia(source, autoPlay: autoPlay);
+          } on Object catch (error) {
+            if (error is UnsupportedError) break;
+            if (isVodExternalAudioFailure('$error')) continue;
+            rethrow;
+          }
+          if (!_isCurrentGeneration(generation) || !identical(_handle, handle)) return;
+          await handle.setVolume(_volume);
+          await handle.setMute(muted: _effectivelyMuted);
+          await handle.setRate(_speed);
+          if (_audioOnly) await _applyAudioOnly(handle);
+          if (position > Duration.zero) await handle.seek(position);
+          if (!_dashAudioFallbackPending) {
+            if (!mounted || !_isCurrentGeneration(generation)) return;
+            setState(() => _opening = false);
+            if (_pendingPart != null) unawaited(_drainPartOpens());
+            return;
+          }
+          _dashAudioFallbackPending = false;
+        }
+      }
+      final info = await _openMuxedPart(handle, part, generation, autoPlay: autoPlay, resume: position);
+      if (info == null || !_isCurrentGeneration(generation)) return;
+      if (!mounted) return;
+      setState(() {
+        _play = info;
+        _silent = info.silent;
+        _opening = false;
+      });
+      if (_pendingPart != null) unawaited(_drainPartOpens());
+    } on Object catch (error) {
+      if (!_isCurrentGeneration(generation) || !identical(_handle, handle) || !mounted) return;
+      setState(() {
+        _opening = false;
+        _error = error is VodFailure ? error.message : '$error';
+      });
+      if (_pendingPart != null) unawaited(_drainPartOpens());
     }
   }
 
@@ -865,7 +977,12 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
       if (!_isCurrentGeneration(generation)) return;
       switch (event) {
         case final PlayerAdapterErrorEvent error:
-          setState(() => _error = error.message);
+          if (isVodExternalAudioFailure(error.message) && _dashAudioActive && !_dashAudioFallbackTried) {
+            _dashAudioFallbackPending = true;
+            if (!_opening) unawaited(_fallbackDashAudio(handle, generation));
+          } else {
+            setState(() => _error = error.message);
+          }
         case PlayerAdapterCompleted():
           if (_openedGeneration == generation && _openedIdentity != null) unawaited(_handleFinished());
         default:

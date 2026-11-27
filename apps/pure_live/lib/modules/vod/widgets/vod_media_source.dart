@@ -8,7 +8,27 @@ import 'package:media_core/media_core.dart';
 /// (mpv through its external-audio channel, ExoPlayer through its native
 /// merging). An engine that cannot join them throws `UnsupportedError` from
 /// `openMedia`, which is the cue to ask for the muxed answer instead.
-MediaSource? vodDashSourceOf(VodPlayInfo info, {required int maxQuality}) {
+bool isVodExternalAudioFailure(String message) {
+  final text = message.toLowerCase();
+  if (!text.contains('audio')) return false;
+  return text.contains('external audio') ||
+      text.contains('audio track') ||
+      text.contains('audio-track') ||
+      text.contains('audio-add') ||
+      text.contains('audio trick');
+}
+
+List<String> vodDashAudioUrls(VodPlayInfo info) {
+  final audio = info.bestAudio;
+  if (audio == null) return const [];
+  return {
+    audio.url,
+    for (final url in audio.backupUrls)
+      if (url.isNotEmpty) url,
+  }.toList(growable: false);
+}
+
+MediaSource? vodDashSourceOf(VodPlayInfo info, {required int maxQuality, String? audioUrl}) {
   if (!info.hasDash) return null;
   final video = vodDashVideoOf(info, maxQuality: maxQuality);
   final audio = info.bestAudio;
@@ -27,7 +47,7 @@ MediaSource? vodDashSourceOf(VodPlayInfo info, {required int maxQuality}) {
     ],
     audioTracks: [
       MediaTrack.of(
-        uri: Uri.parse(audio.url),
+        uri: Uri.parse(audioUrl ?? audio.url),
         kind: MediaTrackType.audio,
         headers: headers,
         mimeType: 'audio/mp4',

@@ -29,7 +29,7 @@ import 'package:pure_live/modules/vod/controller/vod_settings.dart' show vodQual
 import 'package:pure_live/modules/vod/controller/vod_social.dart' show vodWriteReadyProvider;
 import 'package:pure_live/modules/vod/widgets/vod_jump_dialog.dart' show showVodJumpDialog;
 import 'package:pure_live/modules/vod/widgets/vod_media_source.dart'
-    show vodDashSourceOf, vodDashVideoOf, vodQualityLabel;
+    show isVodExternalAudioFailure, vodDashAudioUrls, vodDashSourceOf, vodDashVideoOf, vodQualityLabel;
 import 'package:pure_live/modules/vod/widgets/vod_picture_gestures.dart' show VodPictureGestures, VodTapSide;
 import 'package:pure_live/modules/vod/widgets/vod_player_chrome.dart'
     show VodGestureKind, VodGestureTip, VodPictureNotice, VodSeekBar;
@@ -197,6 +197,10 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
   PlayerTransportState? _transport;
   String? _error;
   bool _opening = false;
+  bool _dashAudioFallbackTried = false;
+  int _dashAudioUrlIndex = 0;
+  bool _dashAudioFallbackPending = false;
+  bool _dashAudioActive = false;
   bool _silent = false;
   bool _muted = false;
   bool _globalMute = false;
@@ -438,6 +442,10 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
       _attemptHandle = null;
       _openedIdentity = null;
       _openedGeneration = 0;
+      _dashAudioFallbackTried = false;
+      _dashAudioUrlIndex = 0;
+      _dashAudioFallbackPending = false;
+      _dashAudioActive = false;
       _backgroundPausedHandle = null;
       _clearTransportSubscriptions();
       // Retire the old source before any network wait. Reusing it here leaves
@@ -501,21 +509,14 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
         await handle.setMute(muted: _effectivelyMuted);
         if (!_isCurrentGeneration(generation)) return;
         if (dash != null) {
+          _dashAudioActive = true;
           try {
             await handle.openMedia(dash, autoPlay: true);
-            // media_core signals "this engine cannot join two essences" as an
-            // UnsupportedError; the muxed request below is its handler.
-            // ignore: avoid_catching_errors
-          } on UnsupportedError {
-            info = await ref
-                .read(vodClientProvider)
-                .pgcPlay(episodeId: episode.id, cid: episode.cid, aid: episode.aid, dash: false);
-            if (!_isCurrentGeneration(generation)) return;
-            _openedQn = info.servedQuality ?? _openedQn;
-            _openedLabel = info.quality;
-            _holdSound();
-            await handle.setMute(muted: _effectivelyMuted);
-            await handle.open(_episodeSource(info, episode), autoPlay: true);
+          } on Object catch (error) {
+            if (error is! UnsupportedError && !isVodExternalAudioFailure('$error')) rethrow;
+            final muxed = await _openMuxedEpisode(handle, episode, generation);
+            if (muxed == null || !_isCurrentGeneration(generation)) return;
+            info = muxed;
           }
         } else {
           await handle.open(_episodeSource(info, episode), autoPlay: true);
@@ -538,6 +539,7 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
           _silent = info.silent;
           _opening = false;
         });
+        if (_dashAudioFallbackPending) unawaited(_fallbackDashAudio(handle, generation));
         if (detail != null && index >= 0) {
           unawaited(
             ref
@@ -990,6 +992,110 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
     setState(() => _countdown = 0);
   }
 
+  Future<VodPlayInfo?> _openMuxedEpisode(
+    PlayerHandle handle,
+    VodEpisode episode,
+    int generation, {
+    bool autoPlay = true,
+    Duration? resume,
+  }) async {
+    if (!_isCurrentGeneration(generation) || !identical(_handle, handle)) return null;
+    _dashAudioActive = false;
+    _dashAudioFallbackTried = true;
+    _dashAudioFallbackPending = false;
+    final info = await ref
+        .read(vodClientProvider)
+        .pgcPlay(episodeId: episode.id, cid: episode.cid, aid: episode.aid, dash: false);
+    if (!_isCurrentGeneration(generation) || !identical(_handle, handle)) return null;
+    _openedQn = info.servedQuality ?? _openedQn;
+    _openedLabel = info.quality;
+    _holdSound();
+    await handle.setVolume(_volume);
+    await handle.setMute(muted: _effectivelyMuted);
+    await handle.setRate(_speed);
+    if (!_isCurrentGeneration(generation) || !identical(_handle, handle)) return null;
+    await handle.open(_episodeSource(info, episode), autoPlay: autoPlay);
+    if (!_isCurrentGeneration(generation) || !identical(_handle, handle)) return null;
+    await handle.setVolume(_volume);
+    await handle.setMute(muted: _effectivelyMuted);
+    await handle.setRate(_speed);
+    if (resume != null && resume > Duration.zero) {
+      await handle.seek(resume);
+    }
+    return _isCurrentGeneration(generation) && identical(_handle, handle) ? info : null;
+  }
+
+  Future<void> _fallbackDashAudio(PlayerHandle handle, int generation) async {
+    final episode = _episodeOf(_openedIdentity) ?? _episode;
+    if (!_isCurrentGeneration(generation) ||
+        !identical(_handle, handle) ||
+        !_dashAudioActive ||
+        _dashAudioFallbackTried ||
+        episode == null) {
+      return;
+    }
+    final position = _transport?.position ?? Duration.zero;
+    final autoPlay = handle.playIntent ?? _transport?.isPlaying ?? true;
+    _dashAudioFallbackPending = false;
+    setState(() {
+      _error = null;
+      _opening = true;
+    });
+    try {
+      final dash = _play;
+      if (dash != null) {
+        final audioUrls = vodDashAudioUrls(dash);
+        while (_dashAudioUrlIndex + 1 < audioUrls.length && _isCurrentGeneration(generation)) {
+          final source = vodDashSourceOf(
+            dash,
+            maxQuality: _openedQn,
+            audioUrl: audioUrls[++_dashAudioUrlIndex],
+          );
+          if (source == null) break;
+          _holdSound();
+          await handle.setVolume(_volume);
+          await handle.setMute(muted: _effectivelyMuted);
+          await handle.setRate(_speed);
+          if (!_isCurrentGeneration(generation) || !identical(_handle, handle)) return;
+          try {
+            await handle.openMedia(source, autoPlay: autoPlay);
+          } on Object catch (error) {
+            if (error is UnsupportedError) break;
+            if (isVodExternalAudioFailure('$error')) continue;
+            rethrow;
+          }
+          if (!_isCurrentGeneration(generation) || !identical(_handle, handle)) return;
+          await handle.setVolume(_volume);
+          await handle.setMute(muted: _effectivelyMuted);
+          await handle.setRate(_speed);
+          if (position > Duration.zero) await handle.seek(position);
+          if (!_dashAudioFallbackPending) {
+            if (!mounted || !_isCurrentGeneration(generation)) return;
+            setState(() => _opening = false);
+            if (_pendingEpisode != null) unawaited(_drainEpisodeOpens());
+            return;
+          }
+          _dashAudioFallbackPending = false;
+        }
+      }
+      final info = await _openMuxedEpisode(handle, episode, generation, autoPlay: autoPlay, resume: position);
+      if (info == null || !_isCurrentGeneration(generation) || !mounted) return;
+      setState(() {
+        _play = info;
+        _silent = info.silent;
+        _opening = false;
+      });
+      if (_pendingEpisode != null) unawaited(_drainEpisodeOpens());
+    } on Object catch (error) {
+      if (!_isCurrentGeneration(generation) || !identical(_handle, handle) || !mounted) return;
+      setState(() {
+        _opening = false;
+        _error = error is VodFailure ? error.message : '$error';
+      });
+      if (_pendingEpisode != null) unawaited(_drainEpisodeOpens());
+    }
+  }
+
   /// The flat source of a muxed answer: the shape a single-URL engine opens,
   /// and the fallback when the DASH pair is unsupported.
   PlayerSource _episodeSource(VodPlayInfo info, VodEpisode episode) {
@@ -1031,7 +1137,12 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
       if (!_isCurrentGeneration(generation)) return;
       switch (event) {
         case final PlayerAdapterErrorEvent error:
-          setState(() => _error = error.message);
+          if (isVodExternalAudioFailure(error.message) && _dashAudioActive && !_dashAudioFallbackTried) {
+            _dashAudioFallbackPending = true;
+            if (!_opening) unawaited(_fallbackDashAudio(handle, generation));
+          } else {
+            setState(() => _error = error.message);
+          }
         case PlayerAdapterCompleted():
           if (_openedGeneration == generation && _openedIdentity != null) unawaited(_handleFinished());
         default:
